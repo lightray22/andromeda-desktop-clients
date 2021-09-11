@@ -7,5 +7,7 @@ int main(int argc, char** argv)
 {
     std::cout << "hello world!" << std::endl;
 
+    A2Fuse::Start(nullptr, nullptr); // TODO
+
     return 0;
 }
