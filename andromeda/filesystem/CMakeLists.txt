@@ -1,10 +1,9 @@
 
 set(SOURCE_FILES 
     BaseFolder.cpp
+    DataManager.cpp
     File.cpp
     FileData.cpp
-    FileDataMgr.cpp
-    Folder.cpp
     Item.cpp 
     )
 

@@ -15,3 +15,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}" ${CMAKE_MODULE_PATH})
 find_package(FUSE REQUIRED)
 target_link_libraries(a2fuse PRIVATE ${FUSE_LIBRARIES})
 target_include_directories(a2fuse PRIVATE ${FUSE_INCLUDE_DIR})
+
+find_package(nlohmann_json)
+target_link_libraries(a2fuse PRIVATE nlohmann_json)

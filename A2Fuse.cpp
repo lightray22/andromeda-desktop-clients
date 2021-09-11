@@ -3,14 +3,11 @@
 #include <fuse3/fuse.h>
 
 #include "A2Fuse.hpp"
-#include "Backend.hpp"
 #include "filesystem/BaseFolder.hpp"
 
-Backend* A2Fuse::backend = nullptr;
-BaseFolder* A2Fuse::folder = nullptr;
+BaseFolder* A2Fuse::root = nullptr;
 
-void A2Fuse::Start(Backend* backend, BaseFolder* folder)
+void A2Fuse::Start(BaseFolder* root)
 {
-    A2Fuse::backend = backend;
-    A2Fuse::folder = folder;
+    A2Fuse::root = root;
 }
