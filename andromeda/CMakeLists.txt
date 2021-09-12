@@ -4,6 +4,7 @@ project(libandromeda)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+
 add_library(andromeda)
 
 set(SOURCE_FILES 
@@ -14,8 +15,19 @@ set(SOURCE_FILES
     )
 
 target_sources(andromeda PRIVATE ${SOURCE_FILES})
-
 target_include_directories(andromeda
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(HTTPLIB_COMPILE True)
+set(HTTPLIB_REQUIRE_OPENSSL True)
+set(HTTPLIB_REQUIRE_ZLIB True)
+
+add_subdirectory(thirdparty/cpp-httplib)
+target_include_directories(andromeda PRIVATE 
+    "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
+target_link_libraries(andromeda INTERFACE httplib)
+
+find_package(nlohmann_json REQUIRED)
+target_link_libraries(andromeda INTERFACE nlohmann_json)
 
 add_subdirectory(filesystem)

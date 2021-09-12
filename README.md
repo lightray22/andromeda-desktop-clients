@@ -5,7 +5,7 @@ This is a FUSE client for an Andromeda backend API.
 
 `mkdir build; cd build; cmake ..; cmake --build .`
 
-`apt install make cmake g++ libfuse3-dev nlohmann-json3-dev`
+`apt install make cmake g++ libfuse3-dev nlohmann-json3-dev zlib1g-dev libssl-dev libcrypt-dev`
 
 `cmake -DCMAKE_BUILD_TYPE=Debug`
 

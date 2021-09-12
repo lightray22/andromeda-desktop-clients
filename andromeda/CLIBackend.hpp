@@ -6,7 +6,7 @@
 
 class CLIBackend : public Backend
 {
-
+    using Backend::Backend;
 };
 
 #endif

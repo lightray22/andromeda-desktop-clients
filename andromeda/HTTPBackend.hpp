@@ -6,7 +6,7 @@
 
 class HTTPBackend : public Backend
 {
-
+    using Backend::Backend;
 };
 
 #endif
