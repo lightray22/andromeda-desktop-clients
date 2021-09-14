@@ -3,16 +3,25 @@
 #define LIBA2_BACKEND_H_
 
 #include <string>
+#include "Runner.hpp"
+#include "Config.hpp"
+
+#include <nlohmann/json_fwd.hpp>
 
 class Backend
 {
 public:
 
-    Backend(const std::string& apiLocation, const std::string& username); // TODO maybe take a struct?
+    Backend(Runner& runner);
+
+    void Authenticate(const std::string& username);
 
 private:
 
-    std::string apiLocation;
+    nlohmann::json DecodeResponse(const std::string& response);
+
+    Runner& runner;
+    Config config;
 };
 
 #endif

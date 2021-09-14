@@ -1,8 +1,11 @@
 #include "Options.hpp"
 
+#include "andromeda/Utilities.hpp"
+
 #include <map>
 #include <list>
-#include <string>
+#include <vector>
+#include <sstream>
 
 using namespace std;
 
@@ -11,17 +14,17 @@ string Options::HelpText()
     ostringstream output;
 
     output << "Usage: a2fuse [-d|--debug int] [-u|--username username]" << endl
-           << "\t((-s|--apiurl url) | (-p|--apipath path))" << endl;
+           << "\t((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl;
 
     return output.str();
 }
 
-void Options::Initialize(int argc, char** argv)
+void Options::Parse(int argc, char** argv)
 {
     list<string> flags;
     map<string,string> options;
 
-    for (size_t i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         if (argv[i][0] != '-')
             throw BadUsageException();
@@ -40,11 +43,10 @@ void Options::Initialize(int argc, char** argv)
         else throw BadFlagException(flag);
     }
 
-    for (map<string,string>::iterator it = options.begin(); 
-        it != options.end(); it++)
+    for (const map<string,string>::value_type& pair : options) 
     {
-        const string& option = it->first; 
-        const string& value = it->second;
+        const string& option = pair.first;
+        const string& value = pair.second;
 
         if (option == "d" || option == "-debug")
         {
@@ -58,18 +60,30 @@ void Options::Initialize(int argc, char** argv)
         }
         else if (option == "s" || option == "-apiurl")
         {
-            this->apiLoc = value;
+            std::vector<std::string> parts = 
+                Utilities::explode(value, "/", 2, 2);
+
+            if (parts.size() != 2) 
+                throw BadValueException("apiurl");
+
+            this->apiPath = parts[1];
+            this->apiHostname = parts[0];
             this->apiType = ApiType::API_URL;
         }
         else if (option == "p" || option == "-apipath")
         {
-            this->apiLoc = value;
+            this->apiPath = value;
             this->apiType = ApiType::API_PATH;
         }
-
+        else if (option == "m" || option == "-mountpath")
+        {
+            this->mountPath = value;
+        }
         else throw BadOptionException(option);
     }
 
-    if (this->apiLoc.empty())
+    if (this->apiPath.empty())
         throw MissingOptionException("apiurl/apipath");
+    if (this->mountPath.empty())
+        throw MissingOptionException("mountpath");
 }

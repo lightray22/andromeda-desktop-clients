@@ -4,13 +4,15 @@ project(libandromeda)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
 add_library(andromeda)
+
+target_compile_options(a2fuse PRIVATE "-Wall")
 
 set(SOURCE_FILES 
     Backend.cpp
-    CLIBackend.cpp
-    HTTPBackend.cpp
+    Config.cpp
+    CLIRunner.cpp
+    HTTPRunner.cpp
     Utilities.cpp
     )
 

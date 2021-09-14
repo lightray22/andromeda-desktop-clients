@@ -4,9 +4,10 @@ project(andromeda-fuse-client VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-
 set(SOURCE_FILES main.cpp A2Fuse.cpp Options.cpp)
 add_executable(a2fuse ${SOURCE_FILES})
+
+target_compile_options(a2fuse PRIVATE "-Wall")
 
 add_subdirectory(andromeda)
 target_link_libraries(a2fuse PRIVATE andromeda)

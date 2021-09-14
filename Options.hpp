@@ -1,29 +1,31 @@
-
 #ifndef LIBA2_OPTIONS_H_
 #define LIBA2_OPTIONS_H_
 
-#include <exception>
-#include <sstream>
+#include <stdexcept>
 #include <string>
 
-class BadUsageException : public std::runtime_error { 
-    public: BadUsageException() : runtime_error("Invalid Usage") {} };
+class OptionsException : public std::runtime_error { 
+    using std::runtime_error::runtime_error; };
 
-class BadFlagException : public std::runtime_error { 
+class BadUsageException : public OptionsException { 
+    public: BadUsageException() : 
+        OptionsException("Invalid Usage") {} };
+
+class BadFlagException : public OptionsException { 
     public: BadFlagException(const std::string& flag) : 
-        runtime_error("Unknown Flag: "+flag) {} };
+        OptionsException("Unknown Flag: "+flag) {} };
 
-class BadOptionException : public std::runtime_error { 
+class BadOptionException : public OptionsException { 
     public: BadOptionException(const std::string& option) : 
-        runtime_error("Unknown Option: "+option) {} };
+        OptionsException("Unknown Option: "+option) {} };
 
-class BadValueException : public std::runtime_error {
+class BadValueException : public OptionsException {
     public: BadValueException(const std::string& option) :
-        runtime_error("Bad Option Value: "+option) {} };
+        OptionsException("Bad Option Value: "+option) {} };
 
-class MissingOptionException : public std::runtime_error {
+class MissingOptionException : public OptionsException {
     public: MissingOptionException(const std::string& option) :
-        runtime_error("Missing Option: "+option) {} };
+        OptionsException("Missing Option: "+option) {} };
 
 class Options
 {
@@ -44,15 +46,18 @@ public:
 
     static std::string HelpText();
 
-    void Initialize(int argc, char** argv);
+    void Parse(int argc, char** argv);
 
     DebugLevel GetDebugLevel() { return this->debug; }
 
     bool HasUsername() { return !this->username.empty(); }
     std::string GetUsername() { return this->username; }
 
-    ApiType GetApiType() { return this->apiType; }
-    std::string GetApiLocation() { return this->apiLoc; }
+    ApiType GetApiType() { return this->apiType; }    
+    std::string GetApiPath() { return this->apiPath; }
+    std::string GetApiHostname() { return this->apiHostname; }
+
+    std::string GetMountPath() { return this->mountPath; }
 
 private:
     
@@ -61,7 +66,10 @@ private:
     std::string username;
 
     ApiType apiType;
-    std::string apiLoc;
+    std::string apiPath;
+    std::string apiHostname;
+
+    std::string mountPath;
 };
 
 #endif
