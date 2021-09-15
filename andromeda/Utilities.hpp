@@ -43,6 +43,7 @@ public:
     Debug(const std::string& prefix, void* addr = nullptr) : 
         addr(addr), prefix(prefix) { }
 
+    static Level GetLevel() { return Debug::level; }
     static void SetLevel(Level level){ Debug::level = level; }
 
     void Out(Level level, const std::string& str = "");

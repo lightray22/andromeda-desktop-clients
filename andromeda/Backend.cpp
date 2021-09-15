@@ -18,18 +18,20 @@ nlohmann::json Backend::RunAction(const std::string& app, const std::string& act
     std::string resp = this->runner.RunAction("server", "getconfig");
     this->debug << __func__ << ": resp:" << resp; this->debug.Print();
 
-    try
+    nlohmann::json val; try
     {
-        nlohmann::json val = nlohmann::json::parse(resp);
-        std::cout << val.dump(4) << std::endl;
-        // TODO do our usual andromeda response checks
-
-        return std::move(val);
+        val = nlohmann::json::parse(resp);
     }
     catch (const nlohmann::json::exception& ex)
     {
         throw JSONErrorException(ex.what());
     }
+
+    this->debug << __func__ << ": json:" << val.dump(4); this->debug.Print();
+
+    // TODO do our usual andromeda response checks
+
+    return std::move(val);
 }
 
 void Backend::Authenticate(const std::string& username)
