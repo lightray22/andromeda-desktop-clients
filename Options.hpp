@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "Utilities.hpp"
+
 class OptionsException : public std::runtime_error { 
     using std::runtime_error::runtime_error; };
 
@@ -31,13 +33,6 @@ class Options
 {
 public:
 
-    enum class DebugLevel
-    {
-        DEBUG_NONE,
-        DEBUG_BASIC,
-        DEBUG_DETAILS
-    };
-
     enum class ApiType
     {
         API_URL,
@@ -48,7 +43,7 @@ public:
 
     void Parse(int argc, char** argv);
 
-    DebugLevel GetDebugLevel() { return this->debug; }
+    Debug::Level GetDebugLevel() { return this->debug; }
 
     bool HasUsername() { return !this->username.empty(); }
     std::string GetUsername() { return this->username; }
@@ -61,7 +56,7 @@ public:
 
 private:
     
-    DebugLevel debug = DebugLevel::DEBUG_NONE;
+    Debug::Level debug = Debug::Level::DEBUG_NONE;
 
     std::string username;
 

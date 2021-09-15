@@ -6,7 +6,7 @@
 class Config
 {
 public:
-    Config(const nlohmann::json& data);
+    void Initialize(const nlohmann::json& data);
 };
 
 #endif

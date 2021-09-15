@@ -1,0 +1,4 @@
+#!/bin/sh
+(find . -iname "*.cpp"; find . -iname "*.hpp") | 
+	grep -v "build/" | grep -v "thirdparty/" | 
+	xargs -d '\n' wc -l | sort -r

@@ -7,6 +7,7 @@
 #include "CLIRunner.hpp"
 #include "HTTPRunner.hpp"
 #include "Backend.hpp"
+#include "Utilities.hpp"
 
 using namespace std;
 
@@ -32,6 +33,8 @@ int main(int argc, char** argv)
         cout << Options::HelpText() << endl;
         exit(static_cast<int>(ExitCode::BAD_USAGE));
     }
+
+    Debug::SetLevel(options.GetDebugLevel());
 
     std::unique_ptr<Runner> runner;
     switch (options.GetApiType())

@@ -38,7 +38,7 @@ void Options::Parse(int argc, char** argv)
     for (const string& flag : flags)
     {
         if (flag == "d" || flag == "debug")
-            debug = DebugLevel::DEBUG_BASIC;
+            debug = Debug::Level::DEBUG_BASIC;
 
         else throw BadFlagException(flag);
     }
@@ -50,7 +50,7 @@ void Options::Parse(int argc, char** argv)
 
         if (option == "d" || option == "-debug")
         {
-            try { this->debug = (DebugLevel)stoi(value); }
+            try { this->debug = static_cast<Debug::Level>(stoi(value)); }
             catch (const logic_error& e) { 
                 throw BadValueException(option); }
         }

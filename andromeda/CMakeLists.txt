@@ -29,7 +29,6 @@ target_include_directories(andromeda PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
 target_link_libraries(andromeda INTERFACE httplib)
 
-find_package(nlohmann_json REQUIRED)
-target_link_libraries(andromeda INTERFACE nlohmann_json)
+find_package(nlohmann_json 3 REQUIRED)
 
 add_subdirectory(filesystem)

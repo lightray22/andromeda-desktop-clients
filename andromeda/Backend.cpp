@@ -7,35 +7,33 @@
 #include <iostream>
 #include <utility>
 
-Backend::Backend(Runner& runner) : runner(runner),
-    config(DecodeResponse(runner.RunAction("server", "getconfig")))
+Backend::Backend(Runner& runner) : 
+    runner(runner), debug("Backend",this)
 {
-
+    this->config.Initialize(RunAction("server","getconfig"));
 }
 
-nlohmann::json Backend::DecodeResponse(const std::string& response)
+nlohmann::json Backend::RunAction(const std::string& app, const std::string& action)
 {
-    std::cout << "decode: " << response << std::endl;
+    std::string resp = this->runner.RunAction("server", "getconfig");
+    this->debug << __func__ << ": resp:" << resp; this->debug.Print();
 
-    nlohmann::json val;
-    
     try
     {
-        val = nlohmann::json::parse(response);
+        nlohmann::json val = nlohmann::json::parse(resp);
         std::cout << val.dump(4) << std::endl;
         // TODO do our usual andromeda response checks
 
         return std::move(val);
     }
-    catch(const nlohmann::json::exception& ex)
+    catch (const nlohmann::json::exception& ex)
     {
-        std::cout << "Exception: " << ex.what() << std::endl;
-        return "???"; // TODO rethrow our own exception here
+        throw JSONErrorException(ex.what());
     }
 }
 
 void Backend::Authenticate(const std::string& username)
 {
-//   std::cout << "Password?" << std::endl;
+//    std::cout << "Password?" << std::endl;
 //    std::string password; std::getline(std::cin, password);
 }

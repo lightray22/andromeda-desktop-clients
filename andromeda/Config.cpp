@@ -2,9 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <iostream>
-
-Config::Config(const nlohmann::json& data)
+void Config::Initialize(const nlohmann::json& data)
 {
-    std::cout << data["appdata"]["config"]["apps"]["server"] << std::endl; // TODO
+    //std::cout << data["appdata"]["config"]["apps"]["server"] << std::endl; // TODO
 }

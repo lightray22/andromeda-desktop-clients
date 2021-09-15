@@ -1,5 +1,8 @@
 #include "Utilities.hpp"
 
+#include <iostream>
+#include <thread>
+
 std::vector<std::string> Utilities::explode(
     std::string str, const std::string& delim, 
     const int max, const size_t skip)
@@ -25,4 +28,37 @@ std::vector<std::string> Utilities::explode(
 
     retval.push_back(str);
     return std::move(retval);
+}
+
+std::mutex Debug::mutex;
+
+Debug::Level Debug::level = Debug::Level::DEBUG_NONE;
+
+void Debug::Out(Debug::Level level, const std::string& str)
+{
+    if (level <= Debug::level) Debug::Print(str);
+}
+
+void Debug::Print(const std::string& str)
+{
+    // TODO log time?
+
+    const std::lock_guard<std::mutex> lock(Debug::mutex);
+
+    std::cout << this->prefix << ": tid:" << std::this_thread::get_id();
+
+    if (this->addr != nullptr) std::cout << " @" << this->addr << ": ";
+
+    if (str.empty())
+    {
+        std::cout << this->buffer.str() << std::endl; 
+        
+        this->buffer.str(std::string()); // reset
+    }
+    else std::cout << str << std::endl;
+}
+
+Debug& Debug::operator<<(const std::string& str)
+{ 
+    this->buffer << str; return *this; 
 }
