@@ -1,13 +1,14 @@
-#ifndef LIBA2_CLIRUNNER_H_
-#define LIBA2_CLIRUNNER_H_
+#ifndef LIBA2_CLIBACKEND_H_
+#define LIBA2_CLIBACKEND_H_
 
-#include "Runner.hpp"
 #include <string>
 
-class CLIRunner : public Runner
+#include "Backend.hpp"
+
+class CLIBackend : public Backend
 {
 public:
-    CLIRunner(const std::string& apiPath) : apiPath(apiPath){ };
+    CLIBackend(const std::string& apiPath) : apiPath(apiPath){ };
 
     virtual std::string RunAction(const std::string& app, const std::string& action) override;
 

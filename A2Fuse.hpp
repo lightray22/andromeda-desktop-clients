@@ -1,4 +1,3 @@
-
 #ifndef A2FUSE_H_
 #define A2FUSE_H_
 

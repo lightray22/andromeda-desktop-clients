@@ -1,7 +1,7 @@
-#include "Utilities.hpp"
-
 #include <iostream>
 #include <thread>
+
+#include "Utilities.hpp"
 
 std::vector<std::string> Utilities::explode(
     std::string str, const std::string& delim, 
@@ -41,19 +41,26 @@ void Debug::Out(Debug::Level level, const std::string& str)
 
 void Debug::Print(const std::string& str)
 {
-    // TODO log time?
+    // TODO log time also?
 
     const std::lock_guard<std::mutex> lock(Debug::mutex);
 
-    std::cout << this->prefix << ": tid:" << std::this_thread::get_id();
+    std::cout << this->prefix << ":";
+    
+    if (level >= Debug::Level::DEBUG_DETAILS)
+    {
+        std::cout << " tid:" << std::this_thread::get_id();
 
-    if (this->addr != nullptr) std::cout << " @" << this->addr << ": ";
+        if (this->addr != nullptr) std::cout << " @" << this->addr;
+    }
+
+    std::cout << ": ";
 
     if (str.empty())
     {
         std::cout << this->buffer.str() << std::endl; 
         
-        this->buffer.str(std::string()); // reset
+        this->buffer.str(std::string()); // reset buffer
     }
     else std::cout << str << std::endl;
 }

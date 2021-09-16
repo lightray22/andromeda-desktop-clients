@@ -11,8 +11,8 @@ target_compile_options(a2fuse PRIVATE "-Wall")
 set(SOURCE_FILES 
     Backend.cpp
     Config.cpp
-    CLIRunner.cpp
-    HTTPRunner.cpp
+    CLIBackend.cpp
+    HTTPBackend.cpp
     Utilities.cpp
     )
 

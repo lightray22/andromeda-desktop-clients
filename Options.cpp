@@ -1,11 +1,10 @@
-#include "Options.hpp"
-
-#include "andromeda/Utilities.hpp"
-
 #include <map>
 #include <list>
 #include <vector>
 #include <sstream>
+
+#include "Options.hpp"
+#include "andromeda/Utilities.hpp"
 
 using namespace std;
 
@@ -60,7 +59,7 @@ void Options::Parse(int argc, char** argv)
         }
         else if (option == "s" || option == "-apiurl")
         {
-            std::vector<std::string> parts = 
+            vector<string> parts = 
                 Utilities::explode(value, "/", 2, 2);
 
             if (parts.size() != 2) 

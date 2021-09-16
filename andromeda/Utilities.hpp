@@ -1,4 +1,3 @@
-
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
@@ -9,12 +8,13 @@
 #include <sstream>
 #include <stdexcept>
 
-class AndromedaException : public std::runtime_error { 
-    using std::runtime_error::runtime_error; };
-
 class Utilities
 {
 public:
+
+    class Exception : public std::runtime_error { 
+        using std::runtime_error::runtime_error; };
+
     template <class T>
     static std::string implode(T arr, const std::string& delim)
     {

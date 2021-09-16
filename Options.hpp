@@ -6,32 +6,32 @@
 
 #include "Utilities.hpp"
 
-class OptionsException : public std::runtime_error { 
-    using std::runtime_error::runtime_error; };
-
-class BadUsageException : public OptionsException { 
-    public: BadUsageException() : 
-        OptionsException("Invalid Usage") {} };
-
-class BadFlagException : public OptionsException { 
-    public: BadFlagException(const std::string& flag) : 
-        OptionsException("Unknown Flag: "+flag) {} };
-
-class BadOptionException : public OptionsException { 
-    public: BadOptionException(const std::string& option) : 
-        OptionsException("Unknown Option: "+option) {} };
-
-class BadValueException : public OptionsException {
-    public: BadValueException(const std::string& option) :
-        OptionsException("Bad Option Value: "+option) {} };
-
-class MissingOptionException : public OptionsException {
-    public: MissingOptionException(const std::string& option) :
-        OptionsException("Missing Option: "+option) {} };
-
 class Options
 {
 public:
+
+    class Exception : public Utilities::Exception { 
+        using Utilities::Exception::Exception; };
+
+    class BadUsageException : public Exception { 
+        public: BadUsageException() : 
+            Exception("Invalid Usage") {} };
+
+    class BadFlagException : public Exception { 
+        public: BadFlagException(const std::string& flag) : 
+            Exception("Unknown Flag: "+flag) {} };
+
+    class BadOptionException : public Exception { 
+        public: BadOptionException(const std::string& option) : 
+            Exception("Unknown Option: "+option) {} };
+
+    class BadValueException : public Exception {
+        public: BadValueException(const std::string& option) :
+            Exception("Bad Option Value: "+option) {} };
+
+    class MissingOptionException : public Exception {
+        public: MissingOptionException(const std::string& option) :
+            Exception("Missing Option: "+option) {} };
 
     enum class ApiType
     {

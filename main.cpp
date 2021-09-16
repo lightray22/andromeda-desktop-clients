@@ -4,9 +4,8 @@
 #include "A2Fuse.hpp"
 #include "Options.hpp"
 
-#include "CLIRunner.hpp"
-#include "HTTPRunner.hpp"
-#include "Backend.hpp"
+#include "CLIBackend.hpp"
+#include "HTTPBackend.hpp"
 #include "Utilities.hpp"
 
 using namespace std;
@@ -14,20 +13,19 @@ using namespace std;
 enum class ExitCode
 {
     SUCCESS,
-    BAD_USAGE
+    BAD_USAGE,
+    BACKEND_INIT
 };
 
 int main(int argc, char** argv)
 {
-    Options options{};
+    Debug debug("main"); Options options{};
 
-    // TODO add config file parsing with <std::filesystem>
-    
     try
     {
         options.Parse(argc, argv);
     }
-    catch (const OptionsException& ex)
+    catch (const Options::Exception& ex)
     {
         cout << ex.what() << endl;
         cout << Options::HelpText() << endl;
@@ -36,28 +34,38 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    std::unique_ptr<Runner> runner;
+    std::unique_ptr<Backend> backend;
     switch (options.GetApiType())
     {
         case Options::ApiType::API_URL:
         {
-            runner = std::make_unique<HTTPRunner>(
+            backend = std::make_unique<HTTPBackend>(
                 options.GetApiHostname(), options.GetApiPath()); break;
         }
         case Options::ApiType::API_PATH:
         {
-            runner = std::make_unique<CLIRunner>(
+            backend = std::make_unique<CLIBackend>(
                 options.GetApiPath()); break;
         }
     }
 
-    Backend backend(*runner);
+    try
+    {
+        backend->Initialize();
+    }
+    catch (const Utilities::Exception& ex)
+    {
+        cout << ex.what() << endl;
+        exit(static_cast<int>(ExitCode::BACKEND_INIT));
+    }    
 
-    if (options.HasUsername())
-        backend.Authenticate(options.GetUsername());
+    //if (options.HasUsername())
+    //    backend.Authenticate(options.GetUsername());
     
     // TODO construct a BaseFolder with the back end
     // TODO construct and run A2Fuse with a BaseFolder
+
+    debug.Print("exiting!");
 
     return static_cast<int>(ExitCode::SUCCESS);
 }

@@ -1,8 +1,5 @@
-#ifndef LIBA2_HTTPRUNNER_H_
-#define LIBA2_HTTPRUNNER_H_
-
-#include "Runner.hpp"
-#include "Utilities.hpp"
+#ifndef LIBA2_HTTPBACKEND_H_
+#define LIBA2_HTTPBACKEND_H_
 
 #include <string>
 
@@ -10,14 +7,17 @@
 #define CPPHTTPLIB_ZLIB_SUPPORT 1
 #include "httplib.h"
 
-class HTTPRunner : public Runner
+#include "Backend.hpp"
+#include "Utilities.hpp"
+
+class HTTPBackend : public Backend
 {
 public:
     class LibErrorException : public Exception { 
         public: LibErrorException(httplib::Error error) : 
             Exception(httplib::to_string(error)) {} };
 
-    HTTPRunner(const std::string& hostname, const std::string& baseURL);
+    HTTPBackend(const std::string& hostname, const std::string& baseURL);
     
     virtual std::string RunAction(const std::string& app, const std::string& action) override;
 
