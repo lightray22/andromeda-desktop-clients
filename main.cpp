@@ -19,7 +19,7 @@ enum class ExitCode
 
 int main(int argc, char** argv)
 {
-    Debug debug("main"); Options options{};
+    Debug debug("main"); Options options;
 
     try
     {
@@ -52,15 +52,15 @@ int main(int argc, char** argv)
     try
     {
         backend->Initialize();
+
+        if (options.HasUsername())
+            backend->Authenticate(options.GetUsername());
     }
     catch (const Utilities::Exception& ex)
     {
         cout << ex.what() << endl;
         exit(static_cast<int>(ExitCode::BACKEND_INIT));
-    }    
-
-    //if (options.HasUsername())
-    //    backend.Authenticate(options.GetUsername());
+    }
     
     // TODO construct a BaseFolder with the back end
     // TODO construct and run A2Fuse with a BaseFolder

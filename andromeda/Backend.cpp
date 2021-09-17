@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <utility>
+#include <sstream>
 
 #include <nlohmann/json.hpp>
 
@@ -15,21 +16,26 @@ void Backend::Initialize()
     this->config.Initialize(*this);
 }
 
-nlohmann::json Backend::RunJsonAction(const std::string& app, const std::string& action)
+std::string Backend::RunBinaryAction(const std::string& app, const std::string& action, const Params& params)
 {
     this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Print();
 
-    std::string resp = RunAction(app, action);
+    return std::move(RunAction(app, action, params));
+}
 
-    this->debug << __func__ << ": resp:" << resp; this->debug.Print();
+nlohmann::json Backend::RunJsonAction(const std::string& app, const std::string& action, const Params& params)
+{
+    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Print();
+
+    std::string resp(RunAction(app, action, params));
 
     try
     {
-        nlohmann::json val = nlohmann::json::parse(resp);
+        nlohmann::json val(nlohmann::json::parse(resp));
 
-        this->debug << __func__ << ": json:" << val.dump(4); this->debug.Print();
+        this->debug << __func__ << ": resp:" << val.dump(4); this->debug.Print();
 
-        if (static_cast<int>(val["ok"])) 
+        if (static_cast<bool>(val["ok"])) 
             return val["appdata"];
         else
         {
@@ -40,8 +46,13 @@ nlohmann::json Backend::RunJsonAction(const std::string& app, const std::string&
             }
         }
     }
-    catch (const nlohmann::json::exception& ex) {
-        throw JSONErrorException(ex.what()); }
+    catch (const nlohmann::json::exception& ex) 
+    {
+        std::ostringstream message; message << 
+            ex.what() << " ... body:" << resp;
+
+        throw JSONErrorException(message.str()); 
+    }
 }
 
 void Backend::Authenticate(const std::string& username)
@@ -51,8 +62,15 @@ void Backend::Authenticate(const std::string& username)
 //    std::string password; std::getline(std::cin, password);
 }
 
-nlohmann::json Backend::GetServerConfig()
+nlohmann::json Backend::GetConfig()
 {
     // TODO load all 3 configs in one transaction
-    return std::move(RunJsonAction("server","getconfig"));
+
+    nlohmann::json config;
+
+    config["server"] = RunJsonAction("server","getconfig");
+    config["accounts"] = RunJsonAction("accounts","getconfig");
+    config["files"] = RunJsonAction("files","getconfig");
+
+    return std::move(config);
 }

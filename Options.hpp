@@ -43,7 +43,7 @@ public:
 
     void Parse(int argc, char** argv);
 
-    Debug::Level GetDebugLevel() { return this->debug; }
+    Debug::Level GetDebugLevel() { return this->debugLevel; }
 
     bool HasUsername() { return !this->username.empty(); }
     std::string GetUsername() { return this->username; }
@@ -55,8 +55,8 @@ public:
     std::string GetMountPath() { return this->mountPath; }
 
 private:
-    
-    Debug::Level debug = Debug::Level::DEBUG_NONE;
+
+    Debug::Level debugLevel = Debug::Level::DEBUG_NONE;
 
     std::string username;
 

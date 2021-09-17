@@ -45,7 +45,7 @@ void Debug::Print(const std::string& str)
 
     const std::lock_guard<std::mutex> lock(Debug::mutex);
 
-    std::cout << this->prefix << ":";
+    std::cout << this->prefix;
     
     if (level >= Debug::Level::DEBUG_DETAILS)
     {

@@ -22,7 +22,7 @@ target_include_directories(andromeda
 
 set(HTTPLIB_COMPILE True)
 set(HTTPLIB_REQUIRE_OPENSSL True)
-set(HTTPLIB_REQUIRE_ZLIB True)
+#set(HTTPLIB_REQUIRE_ZLIB True)
 
 add_subdirectory(thirdparty/cpp-httplib)
 target_include_directories(andromeda PRIVATE 

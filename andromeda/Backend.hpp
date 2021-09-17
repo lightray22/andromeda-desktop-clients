@@ -2,6 +2,7 @@
 #ifndef LIBA2_BACKEND_H_
 #define LIBA2_BACKEND_H_
 
+#include <map>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
@@ -14,7 +15,7 @@ public:
 
     class Exception : public Utilities::Exception { public:
         Exception(int code) : 
-            Utilities::Exception("Backend Error: HTTP "+code){};
+            Utilities::Exception("Backend Error: HTTP "+std::to_string(code)){};
         Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message){}; };
 
@@ -40,13 +41,17 @@ public:
 
     void Authenticate(const std::string& username);
 
-    nlohmann::json GetServerConfig();
+    nlohmann::json GetConfig();
+
+    typedef std::map<std::string, std::string> Params;
+
+protected:
+
+    virtual std::string RunAction(const std::string& app, const std::string& action, const Params& params = Params()) = 0;
 
 private:
-
-    virtual std::string RunAction(const std::string& app, const std::string& action) = 0;
-
-    nlohmann::json RunJsonAction(const std::string& app, const std::string& action);
+    std::string RunBinaryAction(const std::string& app, const std::string& action, const Params& params = Params());
+    nlohmann::json RunJsonAction(const std::string& app, const std::string& action, const Params& params = Params());
 
     Debug debug;
     Config config;

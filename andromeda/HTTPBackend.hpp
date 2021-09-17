@@ -4,7 +4,6 @@
 #include <string>
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
-#define CPPHTTPLIB_ZLIB_SUPPORT 1
 #include "httplib.h"
 
 #include "Backend.hpp"
@@ -19,7 +18,7 @@ public:
 
     HTTPBackend(const std::string& hostname, const std::string& baseURL);
     
-    virtual std::string RunAction(const std::string& app, const std::string& action) override;
+    virtual std::string RunAction(const std::string& app, const std::string& action, const Params& params = Params()) override;
 
 private:
     Debug debug;

@@ -37,7 +37,7 @@ void Options::Parse(int argc, char** argv)
     for (const string& flag : flags)
     {
         if (flag == "d" || flag == "debug")
-            debug = Debug::Level::DEBUG_BASIC;
+            this->debugLevel = Debug::Level::DEBUG_BASIC;
 
         else throw BadFlagException(flag);
     }
@@ -49,7 +49,7 @@ void Options::Parse(int argc, char** argv)
 
         if (option == "d" || option == "-debug")
         {
-            try { this->debug = static_cast<Debug::Level>(stoi(value)); }
+            try { this->debugLevel = static_cast<Debug::Level>(stoi(value)); }
             catch (const logic_error& e) { 
                 throw BadValueException(option); }
         }
@@ -65,7 +65,7 @@ void Options::Parse(int argc, char** argv)
             if (parts.size() != 2) 
                 throw BadValueException("apiurl");
 
-            this->apiPath = parts[1];
+            this->apiPath = "/"+parts[1];
             this->apiHostname = parts[0];
             this->apiType = ApiType::API_URL;
         }

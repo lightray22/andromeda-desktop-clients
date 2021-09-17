@@ -7,13 +7,13 @@
 
 class Backend;
 
-constexpr int API_VERSION = 2;
-
 class Config
 {
 public:
     Config();
     
+    static constexpr int API_VERSION = 2;
+
     class Exception : public Utilities::Exception { public:
         Exception(const std::string& message) :
             Utilities::Exception("Config Error: "+message){}; };
@@ -27,10 +27,20 @@ public:
         AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
-    void Initialize(Backend& data);
+    void Initialize(Backend& backend);
+
+    bool isReadOnly() { return this->readOnly; }
+
+    unsigned int getUploadMaxBytes() { return this->uploadMaxBytes; }
+    unsigned int getUploadMaxFiles() { return this->uploadMaxFiles; }
 
 private:
     Debug debug;
+
+    bool readOnly;
+
+    unsigned int uploadMaxBytes;
+    unsigned int uploadMaxFiles;
 };
 
 #endif
