@@ -8,6 +8,10 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
+#include "filesystem/BaseFolder.hpp"
+#include "filesystem/folders/Folder.hpp"
+#include "filesystem/folders/SuperRoot.hpp"
+
 using namespace std;
 
 enum class ExitCode
@@ -50,6 +54,7 @@ int main(int argc, char** argv)
     }
 
     Backend backend(*runner);
+    std::unique_ptr<BaseFolder> folder;
 
     try
     {
@@ -58,15 +63,25 @@ int main(int argc, char** argv)
         if (options.HasUsername())
             backend.AuthInteractive(options.GetUsername());
 
-        // TODO construct a Folder/SuperRoot/etc. with the back end
+        switch (options.GetMountItemType())
+        {
+            case Options::ItemType::SUPERROOT:
+            {
+                folder = std::make_unique<SuperRoot>(backend); break;
+            }
+            case Options::ItemType::FOLDER:
+            {
+                folder = std::make_unique<Folder>(backend, options.GetMountItemID()); break;
+            }
+        }
     }
     catch (const Utilities::Exception& ex)
     {
         cout << ex.what() << endl;
         exit(static_cast<int>(ExitCode::BACKEND_INIT));
     }
-    
-    // TODO construct and run A2Fuse with a BaseFolder
+
+    A2Fuse::Start(*folder);
 
     debug.Out("returning...");
 

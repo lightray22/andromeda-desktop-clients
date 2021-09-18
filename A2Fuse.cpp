@@ -5,7 +5,11 @@
 
 BaseFolder* A2Fuse::root = nullptr;
 
+Debug A2Fuse::debug("A2Fuse");
+
 void A2Fuse::Start(BaseFolder& root)
 {
+    debug << __func__ << "()"; debug.Out();
+    
     A2Fuse::root = &root;
 }

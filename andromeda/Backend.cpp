@@ -15,11 +15,9 @@ Backend::Backend(Runner& runner) :
 /*****************************************************/
 Backend::~Backend()
 {
-    try
-    {
-        if (this->createdSession)
-            GetJSON(RunAction("accounts", "deleteclient"));
-    }
+    this->debug << __func__ << "()"; this->debug.Out();
+
+    try { CloseSession(); }
     catch(const Utilities::Exception& ex) 
     { 
         this->debug << __func__ << "..." << ex.what(); this->debug.Print();
@@ -93,6 +91,8 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
 {
     this->debug << __func__ << "(username:" << username << ")"; this->debug.Out();
 
+    CloseSession();
+
     Params params {{ "username", username }, { "auth_password", password }};
 
     if (!twofactor.empty()) params["auth_twofactor"] = twofactor;
@@ -140,8 +140,26 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
 {
     this->debug << __func__ << "()"; this->debug.Out();
 
+    CloseSession();
+
     this->sessionID = sessionID;
     this->sessionKey = sessionKey;
+
+    nlohmann::json resp(GetJSON(RunAction("accounts", "getaccount")));
+    if (!resp.contains("id")) throw AuthenticationFailedException();
+}
+
+/*****************************************************/
+void Backend::CloseSession()
+{
+    if (this->createdSession)
+    {
+        GetJSON(RunAction("accounts", "deleteclient"));
+    }
+
+    this->createdSession = false;
+    this->sessionID.clear();
+    this->sessionKey.clear();
 }
 
 /*****************************************************/
@@ -157,4 +175,14 @@ nlohmann::json Backend::GetConfig()
     config["files"] = GetJSON(RunAction("files","getconfig"));
 
     return config;
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetFolder(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Out();
+
+    Params params; if (!id.empty()) params["folder"] = id;
+
+    return GetJSON(RunAction("files", "getfolder", params));
 }

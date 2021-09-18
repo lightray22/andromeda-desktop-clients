@@ -13,8 +13,9 @@ string Options::HelpText()
 {
     ostringstream output;
 
-    output << "Usage: andromeda-fuse [-d|--debug int] [-u|--username username]" << endl
-           << "\t((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl;
+    output << "Usage: andromeda-fuse [-d|--debug [int]] [-u|--username username]" << endl
+           << "\t((-s|--apiurl url) | (-p|--apipath path))" << endl
+           << "\t[-f|--folder [id]] -m|--mount path" << endl;
 
     return output.str();
 }
@@ -40,6 +41,8 @@ void Options::Parse(int argc, char** argv)
     {
         if (flag == "d" || flag == "debug")
             this->debugLevel = Debug::Level::ERRORS;
+        else if (flag == "f" || flag == "-folder")
+            this->mountItemType = ItemType::FOLDER;
 
         else throw BadFlagException(flag);
     }
@@ -75,6 +78,11 @@ void Options::Parse(int argc, char** argv)
         else if (option == "u" || option == "-username")
         {
             this->username = value;
+        }
+        else if (option == "f" || option == "-folder")
+        {
+            this->mountItemID = value;
+            this->mountItemType = ItemType::FOLDER;
         }
         else if (option == "m" || option == "-mountpath")
         {

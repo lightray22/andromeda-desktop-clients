@@ -84,11 +84,20 @@ public:
     /** Registers a pre-existing session for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
 
+    /** Closes the existing session */
+    void CloseSession();
+
     /**
-     * Loads server config from the backend
+     * Loads server config
      * @return loaded config as JSON with "server" and "files" keys
      */
     nlohmann::json GetConfig();
+
+    /**
+     * Load folder metadata
+     * @param id folder ID (or blank for default)
+     */
+    nlohmann::json GetFolder(const std::string& id = "");
 
 private:
 

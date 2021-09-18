@@ -40,12 +40,6 @@ public:
         public: MissingOptionException(const std::string& option) :
             Exception("Missing Option: "+option) {} };
 
-    enum class ApiType
-    {
-        API_URL,
-        API_PATH
-    };
-
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
@@ -54,6 +48,12 @@ public:
 
     /** Returns the desired debug level */
     Debug::Level GetDebugLevel() { return this->debugLevel; }
+
+    enum class ApiType
+    {
+        API_URL,
+        API_PATH
+    };
 
     /** Returns the specified API type */
     ApiType GetApiType() { return this->apiType; }    
@@ -70,6 +70,18 @@ public:
     /** Returns the specified username */
     std::string GetUsername() { return this->username; }
 
+    enum class ItemType
+    {
+        SUPERROOT,
+        FOLDER
+    };
+
+    /** Returns the specified mount item type */
+    ItemType GetMountItemType() { return this->mountItemType; }
+
+    /** Returns the specified mount item ID */
+    std::string GetMountItemID() { return this->mountItemID; }
+
     /** Returns the FUSE directory to mount */
     std::string GetMountPath() { return this->mountPath; }
 
@@ -82,6 +94,10 @@ private:
     std::string apiHostname;
 
     std::string username;
+    
+    ItemType mountItemType = ItemType::SUPERROOT;
+    std::string mountItemID;
+
     std::string mountPath;
 };
 
