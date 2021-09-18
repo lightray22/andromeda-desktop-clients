@@ -118,7 +118,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
 
     if (password.empty())
     {
-        std::cout << "Password?" << std::endl;
+        std::cout << "Password? ";
         Utilities::SilentReadConsole(password);
     }
 
@@ -128,7 +128,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
     }
     catch (const TwoFactorRequiredException& e)
     {
-        std::cout << "Two Factor?" << std::endl;
+        std::cout << "Two Factor? ";
         Utilities::SilentReadConsole(twofactor);
 
         Authenticate(username, password, twofactor);
@@ -152,6 +152,8 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
 /*****************************************************/
 void Backend::CloseSession()
 {
+    this->debug << __func__ << "()"; this->debug.Out();
+    
     if (this->createdSession)
     {
         GetJSON(RunAction("accounts", "deleteclient"));

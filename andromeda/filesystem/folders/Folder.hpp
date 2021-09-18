@@ -4,7 +4,7 @@
 #include <string>
 
 #include "../BaseFolder.hpp"
-#include "../../Utilities.hpp"
+#include "Utilities.hpp"
 
 /** A regular Andromeda folder */
 class Folder : public BaseFolder

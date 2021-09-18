@@ -4,7 +4,7 @@ project(andromeda-fuse-client VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(SOURCE_FILES main.cpp A2Fuse.cpp Options.cpp)
+set(SOURCE_FILES main.cpp FuseWrapper.cpp Options.cpp)
 add_executable(andromeda-fuse ${SOURCE_FILES})
 
 target_compile_options(andromeda-fuse PRIVATE "-Wall")

@@ -1,8 +1,8 @@
 #include <iostream>
 #include <memory>
 
-#include "A2Fuse.hpp"
 #include "Options.hpp"
+#include "FuseWrapper.hpp"
 
 #include "CLIRunner.hpp"
 #include "HTTPRunner.hpp"
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
         exit(static_cast<int>(ExitCode::BACKEND_INIT));
     }
 
-    A2Fuse::Start(*folder);
+    FuseWrapper::Start(*folder, options.GetMountPath());
 
     debug.Out("returning...");
 

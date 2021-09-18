@@ -19,6 +19,8 @@ set(SOURCE_FILES
 target_sources(andromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(andromeda
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(HTTPLIB_COMPILE True)
 set(HTTPLIB_REQUIRE_OPENSSL True)
