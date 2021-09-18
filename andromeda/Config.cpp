@@ -28,8 +28,6 @@ void Config::Initialize(Backend& backend)
                 throw AppMissingException(app);
 
         this->readOnly = config["server"]["features"]["read_only"] != "off";
-
-        // TODO do we need to store default_auth?
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

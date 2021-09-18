@@ -12,6 +12,8 @@ class Utilities
 {
 public:
 
+    static void SilentReadConsole(std::string& retval);
+    
     class Exception : public std::runtime_error { 
         using std::runtime_error::runtime_error; };
 

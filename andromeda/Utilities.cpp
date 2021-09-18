@@ -1,7 +1,25 @@
 #include <iostream>
 #include <thread>
+#include <termios.h>
 
 #include "Utilities.hpp"
+
+void Utilities::SilentReadConsole(std::string& retval)
+{
+    struct termios oflags, nflags;
+    
+    tcgetattr(fileno(stdin), &oflags);
+
+    nflags = oflags;
+    nflags.c_lflag &= ~ECHO;
+    nflags.c_lflag |= ECHONL;
+
+    tcsetattr(fileno(stdin), TCSANOW, &nflags);
+
+    std::getline(std::cin, retval);
+
+    tcsetattr(fileno(stdin), TCSANOW, &oflags);
+}
 
 std::vector<std::string> Utilities::explode(
     std::string str, const std::string& delim, 

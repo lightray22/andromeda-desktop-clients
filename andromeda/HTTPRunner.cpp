@@ -2,18 +2,20 @@
 #include <string>
 #include <utility>
 
-#include "HTTPBackend.hpp"
+#include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
-HTTPBackend::HTTPBackend(const std::string& hostname, const std::string& baseURL) : 
-    debug("HTTPBackend",this), baseURL(baseURL), httpClient(hostname)
+HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) : 
+    debug("HTTPRunner",this), baseURL(baseURL), httpClient(hostname)
 {
     debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Print();
 
     this->httpClient.set_keep_alive(true);
 }
 
-std::string HTTPBackend::RunAction(const std::string& app, const std::string& action, const Params& params)
+std::string HTTPRunner::RunAction(
+    const std::string& app, const std::string& action, 
+    const Backend::Params& params)
 {
     httplib::Params urlParams {{"app",app},{"action",action}};
 
@@ -21,7 +23,7 @@ std::string HTTPBackend::RunAction(const std::string& app, const std::string& ac
 
     httplib::Params postParams;
 
-    for (Params::const_iterator it = params.cbegin(); it != params.cend(); it++)
+    for (Backend::Params::const_iterator it = params.cbegin(); it != params.cend(); it++)
         postParams.insert(httplib::Params::value_type(it->first, it->second));  
     
     httplib::Result response = this->httpClient.Post(url.c_str(), postParams);
@@ -30,12 +32,13 @@ std::string HTTPBackend::RunAction(const std::string& app, const std::string& ac
 
     // TODO look into more httplib functionality like reading into functions
 
-    debug << __func__ << "(...) HTTP:" << std::to_string(response->status); debug.Print();
+    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Print();
 
     switch (response->status)
     {
         case 200: return std::move(response->body); 
-        case 404: throw NotFoundException(); break;
-        default: throw Exception(response->status); break;
+        case 403: throw Backend::APIDeniedException(); break;
+        case 404: throw Backend::APINotFoundException(); break;
+        default: throw Backend::Exception(response->status); break;
     }
 }

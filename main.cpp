@@ -4,8 +4,8 @@
 #include "A2Fuse.hpp"
 #include "Options.hpp"
 
-#include "CLIBackend.hpp"
-#include "HTTPBackend.hpp"
+#include "CLIRunner.hpp"
+#include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
 using namespace std;
@@ -34,27 +34,31 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    std::unique_ptr<Backend> backend;
+    std::unique_ptr<Backend::Runner> runner;
     switch (options.GetApiType())
     {
         case Options::ApiType::API_URL:
         {
-            backend = std::make_unique<HTTPBackend>(
+            runner = std::make_unique<HTTPRunner>(
                 options.GetApiHostname(), options.GetApiPath()); break;
         }
         case Options::ApiType::API_PATH:
         {
-            backend = std::make_unique<CLIBackend>(
+            runner = std::make_unique<CLIRunner>(
                 options.GetApiPath()); break;
         }
     }
 
+    Backend backend(*runner);
+
     try
     {
-        backend->Initialize();
+        backend.Initialize();
 
         if (options.HasUsername())
-            backend->Authenticate(options.GetUsername());
+            backend.AuthInteractive(options.GetUsername());
+
+        // TODO construct a BaseFolder with the back end
     }
     catch (const Utilities::Exception& ex)
     {
@@ -62,7 +66,6 @@ int main(int argc, char** argv)
         exit(static_cast<int>(ExitCode::BACKEND_INIT));
     }
     
-    // TODO construct a BaseFolder with the back end
     // TODO construct and run A2Fuse with a BaseFolder
 
     debug.Print("exiting!");
