@@ -5,11 +5,13 @@
 #include "Config.hpp"
 #include "Backend.hpp"
 
+/*****************************************************/
 Config::Config() : debug("Config",this){ }
 
+/*****************************************************/
 void Config::Initialize(Backend& backend)
 {
-    this->debug << __func__ << "()"; this->debug.Print();
+    this->debug << __func__ << "()"; this->debug.Out();
 
     nlohmann::json config(backend.GetConfig());
 

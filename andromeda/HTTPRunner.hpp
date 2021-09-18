@@ -9,13 +9,20 @@
 #include "Backend.hpp"
 #include "Utilities.hpp"
 
+/** Runs the API remotely over HTTP */
 class HTTPRunner : public Backend::Runner
 {
 public:
+
+    /** Exception indicating the HTTP library had an error */
     class LibErrorException : public Backend::Exception { 
         public: LibErrorException(httplib::Error error) : 
             Exception(httplib::to_string(error)) {} };
 
+    /**
+     * @param hostname to use with HTTP
+     * @param baseURL URL of the endpoint
+     */
     HTTPRunner(const std::string& hostname, const std::string& baseURL);
     
     virtual std::string RunAction(

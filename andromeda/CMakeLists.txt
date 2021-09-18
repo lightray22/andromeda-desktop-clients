@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(andromeda)
 
-target_compile_options(a2fuse PRIVATE "-Wall")
+target_compile_options(andromeda PRIVATE "-Wall")
 
 set(SOURCE_FILES 
     Backend.cpp

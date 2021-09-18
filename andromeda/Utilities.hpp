@@ -7,16 +7,23 @@
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
+#include <chrono>
 
+/** Misc Utilities */
 class Utilities
 {
 public:
 
-    static void SilentReadConsole(std::string& retval);
-    
+    /** Base Exception for all Andromeda errors */
     class Exception : public std::runtime_error { 
         using std::runtime_error::runtime_error; };
 
+    /**
+     * Collapse an array into a string
+     * @param arr container with strings
+     * @param delim character to put between entries
+     * @return imploded string
+     */ 
     template <class T>
     static std::string implode(T arr, const std::string& delim)
     {
@@ -26,32 +33,71 @@ public:
         return std::move(retval);
     }
 
+    /**
+     * Split a string into an array
+     * @param str string to split
+     * @param delim string separating pieces
+     * @param max max # of elements to return
+     * @param skip the number of delims to skip
+     */
     static std::vector<std::string> explode(
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
+
+    /**
+     * Silently read a line of input from stdin
+     * @param retval reference to string to fill
+     */
+    static void SilentReadConsole(std::string& retval);    
 };
 
+/** Global thread-safe debug printing */
 class Debug
 {
 public:
 
+    /** Debug verbosity */
     enum class Level
     {
-        DEBUG_NONE,
-        DEBUG_BASIC,
-        DEBUG_DETAILS
+        NONE,   /** Debug off */
+        ERRORS, /** Only show Print()s */
+        CALLS,  /** Also show Out()s */
+        DETAILS /** Show extra details */
     };
 
+    /**
+     * @param prefix to use for all prints
+     * @param addr address to print with details
+     */
     Debug(const std::string& prefix, void* addr = nullptr) : 
         addr(addr), prefix(prefix) { }
 
+    /** Returns the configured global debug level */
     static Level GetLevel() { return Debug::level; }
+
+    /** Sets the configured global debug level */
     static void SetLevel(Level level){ Debug::level = level; }
 
-    void Out(Level level, const std::string& str = "");
+    /**
+     * Shows the debug buffer filled with <<
+     * @param minlevel required debug level
+     */
+    void Out(Level minlevel = Level::CALLS);
 
+    /**
+     * Shows the given debug string
+     * @param str the string to show
+     * @param minlevel required debug level
+     */
+    void Out(const std::string& str, Level minlevel = Level::CALLS);
+
+    /**
+     * Shows the given debug string with minlevel=ERRORS
+     * @param str string to show, or "" to use the buffer
+     */
     void Print(const std::string& str = "");
 
+    /** Append str to an internal buffer that can be shown with Out/Print */
     Debug& operator<<(const std::string& str);
 
 private:
@@ -62,6 +108,8 @@ private:
 
     static Level level;
     static std::mutex mutex;
+
+    static std::chrono::high_resolution_clock::time_point start;
 };
 
 #endif

@@ -8,16 +8,18 @@
 
 using namespace std;
 
+/*****************************************************/
 string Options::HelpText()
 {
     ostringstream output;
 
-    output << "Usage: a2fuse [-d|--debug int] [-u|--username username]" << endl
+    output << "Usage: andromeda-fuse [-d|--debug int] [-u|--username username]" << endl
            << "\t((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl;
 
     return output.str();
 }
 
+/*****************************************************/
 void Options::Parse(int argc, char** argv)
 {
     list<string> flags;
@@ -37,7 +39,7 @@ void Options::Parse(int argc, char** argv)
     for (const string& flag : flags)
     {
         if (flag == "d" || flag == "debug")
-            this->debugLevel = Debug::Level::DEBUG_BASIC;
+            this->debugLevel = Debug::Level::ERRORS;
 
         else throw BadFlagException(flag);
     }
@@ -52,10 +54,6 @@ void Options::Parse(int argc, char** argv)
             try { this->debugLevel = static_cast<Debug::Level>(stoi(value)); }
             catch (const logic_error& e) { 
                 throw BadValueException(option); }
-        }
-        else if (option == "u" || option == "-username")
-        {
-            this->username = value;
         }
         else if (option == "s" || option == "-apiurl")
         {
@@ -73,6 +71,10 @@ void Options::Parse(int argc, char** argv)
         {
             this->apiPath = value;
             this->apiType = ApiType::API_PATH;
+        }
+        else if (option == "u" || option == "-username")
+        {
+            this->username = value;
         }
         else if (option == "m" || option == "-mountpath")
         {

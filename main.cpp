@@ -58,7 +58,7 @@ int main(int argc, char** argv)
         if (options.HasUsername())
             backend.AuthInteractive(options.GetUsername());
 
-        // TODO construct a BaseFolder with the back end
+        // TODO construct a Folder/SuperRoot/etc. with the back end
     }
     catch (const Utilities::Exception& ex)
     {
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     
     // TODO construct and run A2Fuse with a BaseFolder
 
-    debug.Print("exiting!");
+    debug.Out("returning...");
 
     return static_cast<int>(ExitCode::SUCCESS);
 }

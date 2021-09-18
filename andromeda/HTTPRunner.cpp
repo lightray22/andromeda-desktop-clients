@@ -5,14 +5,16 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
+/*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) : 
     debug("HTTPRunner",this), baseURL(baseURL), httpClient(hostname)
 {
-    debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Print();
+    debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Out();
 
     this->httpClient.set_keep_alive(true);
 }
 
+/*****************************************************/
 std::string HTTPRunner::RunAction(
     const std::string& app, const std::string& action, 
     const Backend::Params& params)
@@ -30,9 +32,7 @@ std::string HTTPRunner::RunAction(
 
     if (!response) throw LibErrorException(response.error());
 
-    // TODO look into more httplib functionality like reading into functions
-
-    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Print();
+    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Out(Debug::Level::DETAILS);
 
     switch (response->status)
     {

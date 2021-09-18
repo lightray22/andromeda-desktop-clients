@@ -8,9 +8,11 @@
 #include "Backend.hpp"
 #include "Utilities.hpp"
 
+/*****************************************************/
 Backend::Backend(Runner& runner) : 
     debug("Backend",this), runner(runner) { }
 
+/*****************************************************/
 Backend::~Backend()
 {
     try
@@ -24,21 +26,24 @@ Backend::~Backend()
     }
 }
 
+/*****************************************************/
 void Backend::Initialize()
 {
-    this->debug << __func__ << "()"; this->debug.Print();
+    this->debug << __func__ << "()"; this->debug.Out();
 
     this->config.Initialize(*this);
 }
 
+/*****************************************************/
 std::string Backend::RunAction(const std::string& app, const std::string& action)
 {
     Params params; return std::move(RunAction(app, action, params));
 }
 
+/*****************************************************/
 std::string Backend::RunAction(const std::string& app, const std::string& action, Params& params)
 {
-    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Print();
+    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Out();
 
     if (!this->sessionID.empty())
     {
@@ -49,12 +54,13 @@ std::string Backend::RunAction(const std::string& app, const std::string& action
     return std::move(this->runner.RunAction(app, action, params));
 }
 
+/*****************************************************/
 nlohmann::json Backend::GetJSON(const std::string& resp)
 {
     try {
         nlohmann::json val(nlohmann::json::parse(resp));
 
-        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Print();
+        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Out(Debug::Level::DETAILS);
 
         if (static_cast<bool>(val["ok"])) 
             return val["appdata"];
@@ -82,9 +88,10 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
     }
 }
 
+/*****************************************************/
 void Backend::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
-    this->debug << __func__ << "(username:" << username << ")"; this->debug.Print();
+    this->debug << __func__ << "(username:" << username << ")"; this->debug.Out();
 
     Params params {{ "username", username }, { "auth_password", password }};
 
@@ -98,14 +105,17 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
         this->sessionID = resp["client"]["session"]["id"];
         this->sessionKey = resp["client"]["session"]["authkey"];
 
-        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Print();
+        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Out(Debug::Level::DETAILS);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 }
 
+/*****************************************************/
 void Backend::AuthInteractive(const std::string& username, std::string password, std::string twofactor)
 {
+    this->debug << __func__ << "(username:" << username << ")"; this->debug.Out();
+
     if (password.empty())
     {
         std::cout << "Password?" << std::endl;
@@ -125,22 +135,26 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
     }
 }
 
+/*****************************************************/
 void Backend::PreAuthenticate(const std::string& sessionID, const std::string& sessionKey)
 {
+    this->debug << __func__ << "()"; this->debug.Out();
+
     this->sessionID = sessionID;
     this->sessionKey = sessionKey;
 }
 
+/*****************************************************/
 nlohmann::json Backend::GetConfig()
 {
-    // TODO load all configs in one transaction
+    this->debug << __func__ << "()"; this->debug.Out();
 
-    this->debug << __func__ << "()"; this->debug.Print();
+    // TODO load all configs in one transaction
 
     nlohmann::json config;
 
     config["server"] = GetJSON(RunAction("server","getconfig"));
     config["files"] = GetJSON(RunAction("files","getconfig"));
 
-    return std::move(config);
+    return config;
 }
