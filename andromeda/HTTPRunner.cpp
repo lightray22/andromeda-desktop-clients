@@ -21,7 +21,8 @@ std::string HTTPRunner::RunAction(
 {
     httplib::Params urlParams {{"app",app},{"action",action}};
 
-    std::string url(this->baseURL + "?" + httplib::detail::params_to_query_str(urlParams));
+    std::string url(this->baseURL + "?" + 
+        httplib::detail::params_to_query_str(urlParams));
 
     httplib::Params postParams;
 

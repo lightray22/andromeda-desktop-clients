@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <chrono>
 
+#define A2LIBVERSION "0.1-alpha"
+
 /** Misc Utilities */
 class Utilities
 {

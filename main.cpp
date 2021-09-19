@@ -18,8 +18,11 @@ enum class ExitCode
 {
     SUCCESS,
     BAD_USAGE,
-    BACKEND_INIT
+    BACKEND_INIT,
+    FUSE_INIT
 };
+
+#define VERSION "0.1-alpha"
 
 int main(int argc, char** argv)
 {
@@ -28,6 +31,19 @@ int main(int argc, char** argv)
     try
     {
         options.Parse(argc, argv);
+    }
+    catch (const Options::ShowHelpException& ex)
+    {
+        cout << Options::HelpText() << endl;
+        FuseWrapper::ShowHelpText();
+        exit(static_cast<int>(ExitCode::SUCCESS));
+    }
+    catch (const Options::ShowVersionException& ex)
+    {
+        cout << "version: " << VERSION << endl;
+        cout << "a2lib-version: " << A2LIBVERSION << endl;
+        FuseWrapper::ShowVersionText();
+        exit(static_cast<int>(ExitCode::SUCCESS));
     }
     catch (const Options::Exception& ex)
     {
@@ -81,9 +97,16 @@ int main(int argc, char** argv)
         exit(static_cast<int>(ExitCode::BACKEND_INIT));
     }
 
-    FuseWrapper::Start(*folder, options.GetMountPath());
+    try
+    {
+        FuseWrapper::Start(*folder, options);
+    }
+    catch (const FuseWrapper::Exception& ex)
+    {
+        cout << ex.what() << endl;
+        exit(static_cast<int>(ExitCode::FUSE_INIT));
+    }
 
     debug.Out("returning...");
-
     return static_cast<int>(ExitCode::SUCCESS);
 }

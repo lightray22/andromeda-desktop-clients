@@ -13,9 +13,11 @@ string Options::HelpText()
 {
     ostringstream output;
 
-    output << "Usage: andromeda-fuse [-d|--debug [int]] [-u|--username username]" << endl
-           << "\t((-s|--apiurl url) | (-p|--apipath path))" << endl
-           << "\t[-f|--folder [id]] -m|--mount path" << endl;
+    output << "Usage Syntax: " << endl
+           << "andromeda-fuse (-h|--help | -V|--version)" << endl
+           << "andromeda-fuse [-d|--debug [int]] [-u|--username username]" << endl
+               << "\t((-s|--apiurl url) | (-p|--apipath path)) [-f|--folder [id]]" << endl
+               << "\t[[-o fuseoption=fuseval]] -m|--mount path" << endl;
 
     return output.str();
 }
@@ -39,7 +41,12 @@ void Options::Parse(int argc, char** argv)
 
     for (const string& flag : flags)
     {
-        if (flag == "d" || flag == "debug")
+        if (flag == "h" || flag == "-help")
+            throw ShowHelpException();
+        else if (flag == "V" || flag == "-version")
+            throw ShowVersionException();
+
+        else if (flag == "d" || flag == "-debug")
             this->debugLevel = Debug::Level::ERRORS;
         else if (flag == "f" || flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
@@ -87,6 +94,10 @@ void Options::Parse(int argc, char** argv)
         else if (option == "m" || option == "-mountpath")
         {
             this->mountPath = value;
+        }
+        else if (option == "o" || option == "-option")
+        {
+            this->fuseOptions.push_back(value);
         }
         else throw BadOptionException(option);
     }
