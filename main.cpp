@@ -36,20 +36,20 @@ int main(int argc, char** argv)
     {
         cout << Options::HelpText() << endl;
         FuseWrapper::ShowHelpText();
-        exit(static_cast<int>(ExitCode::SUCCESS));
+        return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::ShowVersionException& ex)
     {
         cout << "version: " << VERSION << endl;
         cout << "a2lib-version: " << A2LIBVERSION << endl;
         FuseWrapper::ShowVersionText();
-        exit(static_cast<int>(ExitCode::SUCCESS));
+        return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::Exception& ex)
     {
         cout << ex.what() << endl;
         cout << Options::HelpText() << endl;
-        exit(static_cast<int>(ExitCode::BAD_USAGE));
+        return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
     Debug::SetLevel(options.GetDebugLevel());
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
     catch (const Utilities::Exception& ex)
     {
         cout << ex.what() << endl;
-        exit(static_cast<int>(ExitCode::BACKEND_INIT));
+        return static_cast<int>(ExitCode::BACKEND_INIT);
     }
 
     try
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     catch (const FuseWrapper::Exception& ex)
     {
         cout << ex.what() << endl;
-        exit(static_cast<int>(ExitCode::FUSE_INIT));
+        return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
     debug.Out("returning...");

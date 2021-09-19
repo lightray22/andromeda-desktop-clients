@@ -22,10 +22,8 @@ static struct fuse_operations fuse_ops = {
 /*****************************************************/
 void FuseWrapper::ShowHelpText()
 {
-    // TODO don't show cmdline_help ? do lowlevel_help or lib_help even apply?
+    // TODO why don't clone_fd or max_idle_threads work with -o ?
 
-    std::cout << "fuse_cmdline_help()" << std::endl; fuse_cmdline_help(); std::cout << std::endl;
-    std::cout << "fuse_lowlevel_help()" << std::endl; fuse_lowlevel_help(); std::cout << std::endl;
     std::cout << "fuse_lib_help()" << std::endl; fuse_lib_help(0); std::cout << std::endl;
 }
 

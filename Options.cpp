@@ -16,8 +16,8 @@ string Options::HelpText()
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl
            << "andromeda-fuse [-d|--debug [int]] [-u|--username username]" << endl
-               << "\t((-s|--apiurl url) | (-p|--apipath path)) [-f|--folder [id]]" << endl
-               << "\t[[-o fuseoption=fuseval]] -m|--mount path" << endl;
+               << "\t((-s|--apiurl url) | (-p|--apipath path)) [-rf|--folder [id]]" << endl
+               << "\t[[-o fuseoption]] -m|--mount path" << endl;
 
     return output.str();
 }
@@ -48,7 +48,7 @@ void Options::Parse(int argc, char** argv)
 
         else if (flag == "d" || flag == "-debug")
             this->debugLevel = Debug::Level::ERRORS;
-        else if (flag == "f" || flag == "-folder")
+        else if (flag == "rf" || flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
 
         else throw BadFlagException(flag);
@@ -86,7 +86,7 @@ void Options::Parse(int argc, char** argv)
         {
             this->username = value;
         }
-        else if (option == "f" || option == "-folder")
+        else if (option == "rf" || option == "-folder")
         {
             this->mountItemID = value;
             this->mountItemType = ItemType::FOLDER;
