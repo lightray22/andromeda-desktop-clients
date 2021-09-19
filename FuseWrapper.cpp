@@ -8,8 +8,8 @@
 #include "FuseWrapper.hpp"
 #include "filesystem/BaseFolder.hpp"
 
-Debug debug("FuseWrapper");
-BaseFolder* rootPtr = nullptr;
+static Debug debug("FuseWrapper");
+static BaseFolder* rootPtr = nullptr;
 
 static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
@@ -138,9 +138,7 @@ struct FuseLoop
         debug << __func__ << "() fuse_loop()"; debug.Out();
 
         fuse_loop(context.fuse);
-    }
-    ~FuseLoop()
-    {
+
         debug << __func__ << "() fuse_loop() returned!"; debug.Out();
     }
 };
