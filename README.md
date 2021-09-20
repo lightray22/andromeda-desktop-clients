@@ -24,7 +24,7 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 
 # Building
 
-- Get submodules `git submodule update --init`
-- Make build folder `mkdir build; cd build`
-- Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
-- Run compile `cmake --build .`
+1. Get submodules `git submodule update --init`
+2. Make build folder `mkdir build; cd build`
+3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
+4. Run compile `cmake --build .`
