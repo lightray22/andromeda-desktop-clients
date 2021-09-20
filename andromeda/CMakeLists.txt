@@ -32,5 +32,6 @@ target_include_directories(andromeda PRIVATE
 target_link_libraries(andromeda INTERFACE httplib)
 
 find_package(nlohmann_json 3 REQUIRED)
+target_link_libraries(andromeda PRIVATE nlohmann_json)
 
 add_subdirectory(filesystem)
