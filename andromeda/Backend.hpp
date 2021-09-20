@@ -20,6 +20,8 @@ public:
     class Runner
     {
     public:
+        virtual ~Runner(){ };
+
         /**
          * Runs an API call and returns the result
          * @param app the app name to run

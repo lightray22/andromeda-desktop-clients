@@ -1,6 +1,5 @@
 #include <string>
 #include <iostream>
-#include <utility>
 #include <sstream>
 
 #include <nlohmann/json.hpp>
@@ -35,7 +34,7 @@ void Backend::Initialize()
 /*****************************************************/
 std::string Backend::RunAction(const std::string& app, const std::string& action)
 {
-    Params params; return std::move(RunAction(app, action, params));
+    Params params; return RunAction(app, action, params);
 }
 
 /*****************************************************/
@@ -49,7 +48,7 @@ std::string Backend::RunAction(const std::string& app, const std::string& action
         params["auth_sessionkey"] = this->sessionKey;
     }
 
-    return std::move(this->runner.RunAction(app, action, params));
+    return this->runner.RunAction(app, action, params);
 }
 
 /*****************************************************/

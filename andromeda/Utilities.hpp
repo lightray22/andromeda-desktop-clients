@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <string>
-#include <utility>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -32,7 +31,7 @@ public:
         std::string retval;
         for (const std::string& piece : arr) 
             retval += piece;
-        return std::move(retval);
+        return retval;
     }
 
     /**
