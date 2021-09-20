@@ -36,6 +36,21 @@ std::vector<std::string> Utilities::explode(
 }
 
 /*****************************************************/
+std::pair<std::string,std::string> Utilities::split(
+    const std::string& str, const std::string& delim)
+{
+    std::pair<std::string,std::string> retval;
+
+    size_t pos = str.find(delim);
+    retval.first = str.substr(0, pos);
+
+    if (pos != std::string::npos)
+        retval.second = str.substr(pos + delim.length());
+
+    return retval;
+}
+
+/*****************************************************/
 void Utilities::SilentReadConsole(std::string& retval)
 {
     struct termios oflags, nflags;

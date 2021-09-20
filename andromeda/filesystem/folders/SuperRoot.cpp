@@ -7,5 +7,7 @@ SuperRoot::SuperRoot(Backend& backend) :
 {
     debug << __func__ << "()"; debug.Out();
 
+    backend.RequireAuthentication();
+    
     this->name = "SUPERROOT";
 };

@@ -15,9 +15,9 @@ string Options::HelpText()
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl
-           << "andromeda-fuse [-d|--debug [int]] [-u|--username username]" << endl
-               << "\t((-s|--apiurl url) | (-p|--apipath path)) [-rf|--folder [id]]" << endl
-               << "\t[[-o fuseoption]] -m|--mount path" << endl;
+           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl
+               << "\t[-d|--debug [int]] [-u|--username username] [-o fuseoption]+" << endl
+               << "\t[(-rf|--folder [id]) | (-rs|--share [id])]" << endl;
 
     return output.str();
 }

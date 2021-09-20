@@ -9,6 +9,8 @@ Folder::Folder(Backend& backend, const std::string& id) :
 {
     debug << __func__ << "(id:" << id << ")"; debug.Out();
 
+    if (id.empty()) backend.RequireAuthentication();
+
     nlohmann::json folder(backend.GetFolder(id));
 
     try

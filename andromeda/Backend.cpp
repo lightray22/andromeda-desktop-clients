@@ -164,6 +164,13 @@ void Backend::CloseSession()
 }
 
 /*****************************************************/
+void Backend::RequireAuthentication() const
+{
+    if (this->sessionID.empty())
+        throw AuthRequiredException();
+}
+
+/*****************************************************/
 nlohmann::json Backend::GetConfig()
 {
     this->debug << __func__ << "()"; this->debug.Out();

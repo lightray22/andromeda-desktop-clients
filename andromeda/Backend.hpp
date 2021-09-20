@@ -41,6 +41,9 @@ public:
         Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message) {}; };
 
+    class AuthRequiredException : public Exception { public:
+        AuthRequiredException() : Exception("Authentication Required") {}; };
+
     /** Exception indicating there was a JSON format error */
     class JSONErrorException : public Exception { public:
         JSONErrorException(const std::string& error) : 
@@ -88,6 +91,9 @@ public:
 
     /** Closes the existing session */
     void CloseSession();
+
+    /** Throws if a session is not in use */
+    void RequireAuthentication() const;
 
     /**
      * Loads server config

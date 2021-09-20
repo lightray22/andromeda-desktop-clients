@@ -12,7 +12,7 @@
 #include "filesystem/folders/Folder.hpp"
 #include "filesystem/folders/SuperRoot.hpp"
 
-using namespace std;
+#define VERSION "0.1-alpha"
 
 enum class ExitCode
 {
@@ -21,8 +21,6 @@ enum class ExitCode
     BACKEND_INIT,
     FUSE_INIT
 };
-
-#define VERSION "0.1-alpha"
 
 int main(int argc, char** argv)
 {
@@ -34,21 +32,21 @@ int main(int argc, char** argv)
     }
     catch (const Options::ShowHelpException& ex)
     {
-        cout << Options::HelpText() << endl;
+        std::cout << Options::HelpText() << std::endl;
         FuseWrapper::ShowHelpText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::ShowVersionException& ex)
     {
-        cout << "version: " << VERSION << endl;
-        cout << "a2lib-version: " << A2LIBVERSION << endl;
+        std::cout << "version: " << VERSION << std::endl;
+        std::cout << "a2lib-version: " << A2LIBVERSION << std::endl;
         FuseWrapper::ShowVersionText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::Exception& ex)
     {
-        cout << ex.what() << endl;
-        cout << Options::HelpText() << endl;
+        std::cout << ex.what() << std::endl;
+        std::cout << Options::HelpText() << std::endl;
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
@@ -93,7 +91,7 @@ int main(int argc, char** argv)
     }
     catch (const Utilities::Exception& ex)
     {
-        cout << ex.what() << endl;
+        std::cout << ex.what() << std::endl;
         return static_cast<int>(ExitCode::BACKEND_INIT);
     }
 
@@ -103,7 +101,7 @@ int main(int argc, char** argv)
     }
     catch (const FuseWrapper::Exception& ex)
     {
-        cout << ex.what() << endl;
+        std::cout << ex.what() << std::endl;
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 

@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <chrono>
+#include <utility>
 
 #define A2LIBVERSION "0.1-alpha"
 
@@ -44,6 +45,10 @@ public:
     static std::vector<std::string> explode(
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
+
+    /** Special case of explode with max=1,skip=0 and returns a pair */
+    static std::pair<std::string,std::string> split(
+        const std::string& str, const std::string& delim);
 
     /**
      * Silently read a line of input from stdin
