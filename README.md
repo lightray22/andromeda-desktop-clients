@@ -13,14 +13,21 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### Libraries
 
-- OpenSSL (>= 1.1.1) (libssl, libcrypto)
-- libfuse (>= 3.10) https://github.com/libfuse/libfuse
-- nlohmann-json (>= 3) https://github.com/nlohmann/json
+- OpenSSL (1.1.1) (libssl, libcrypto)
+- libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
+- nlohmann-json (3.x) https://github.com/nlohmann/json
+
+nlohmann-json and thirdparty/ are statically linked.  
+OpenSSL and libfuse are dynamically linked so they must be available at runtime.
 
 ### OS Examples
 
 - Ubuntu: `apt install make cmake g++ fuse3 libfuse3-dev nlohmann-json3-dev libssl-dev libcrypt-dev`
+- Manjaro: `pacman -S make cmake gcc fuse3 nlohmann-json3`
+- Alpine: `apk add make cmake g++ fuse3 fuse3-dev nlohmann-json openssl-dev`
 - FreeBSD: `pkg install cmake fusefs-libs3 nlohmann-json`
+- OpenBSD: TODO
+- macOS: TODO
 
 # Building
 
