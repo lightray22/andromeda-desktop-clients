@@ -105,6 +105,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
-    debug.Out("returning...");
+    debug.Info("returning...");
     return static_cast<int>(ExitCode::SUCCESS);
 }

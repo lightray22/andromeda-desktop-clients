@@ -14,19 +14,19 @@ Backend::Backend(Runner& runner) :
 /*****************************************************/
 Backend::~Backend()
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
 
     try { CloseSession(); }
     catch(const Utilities::Exception& ex) 
     { 
-        this->debug << __func__ << "..." << ex.what(); this->debug.Print();
+        this->debug << __func__ << "..." << ex.what(); this->debug.Error();
     }
 }
 
 /*****************************************************/
 void Backend::Initialize()
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
 
     this->config.Initialize(*this);
 }
@@ -40,7 +40,7 @@ std::string Backend::RunAction(const std::string& app, const std::string& action
 /*****************************************************/
 std::string Backend::RunAction(const std::string& app, const std::string& action, Params& params)
 {
-    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Out();
+    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Info();
 
     if (!this->sessionID.empty())
     {
@@ -57,7 +57,7 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
     try {
         nlohmann::json val(nlohmann::json::parse(resp));
 
-        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Out(Debug::Level::DETAILS);
+        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Info(Debug::Level::DETAILS);
 
         if (static_cast<bool>(val["ok"])) 
             return val["appdata"];
@@ -88,7 +88,7 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
 /*****************************************************/
 void Backend::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
-    this->debug << __func__ << "(username:" << username << ")"; this->debug.Out();
+    this->debug << __func__ << "(username:" << username << ")"; this->debug.Info();
 
     CloseSession();
 
@@ -104,7 +104,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
         this->sessionID = resp["client"]["session"]["id"];
         this->sessionKey = resp["client"]["session"]["authkey"];
 
-        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Out(Debug::Level::DETAILS);
+        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Info(Debug::Level::DETAILS);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
@@ -113,7 +113,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
 /*****************************************************/
 void Backend::AuthInteractive(const std::string& username, std::string password, std::string twofactor)
 {
-    this->debug << __func__ << "(username:" << username << ")"; this->debug.Out();
+    this->debug << __func__ << "(username:" << username << ")"; this->debug.Info();
 
     if (password.empty())
     {
@@ -137,7 +137,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
 /*****************************************************/
 void Backend::PreAuthenticate(const std::string& sessionID, const std::string& sessionKey)
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
 
     CloseSession();
 
@@ -151,7 +151,7 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
 /*****************************************************/
 void Backend::CloseSession()
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
     
     if (this->createdSession)
     {
@@ -173,7 +173,7 @@ void Backend::RequireAuthentication() const
 /*****************************************************/
 nlohmann::json Backend::GetConfig()
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
 
     // TODO load all configs in one transaction
 
@@ -188,7 +188,7 @@ nlohmann::json Backend::GetConfig()
 /*****************************************************/
 nlohmann::json Backend::GetFolder(const std::string& id)
 {
-    this->debug << __func__ << "(id:" << id << ")"; this->debug.Out();
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
     Params params; if (!id.empty()) params["folder"] = id;
 

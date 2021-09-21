@@ -73,21 +73,21 @@ Debug::Level Debug::level = Debug::Level::NONE;
 high_resolution_clock::time_point Debug::start = high_resolution_clock::now();
 
 /*****************************************************/
-void Debug::Out(Debug::Level minlevel)
+void Debug::Info(Debug::Level minlevel)
 {
-    std::string str; Debug::Out(str, minlevel);
+    std::string str; Debug::Info(str, minlevel);
 }
 
 /*****************************************************/
-void Debug::Out(const std::string& str, Debug::Level minlevel)
+void Debug::Info(const std::string& str, Debug::Level minlevel)
 {
-    if (Debug::level >= minlevel) Debug::Print(str);
+    if (Debug::level >= minlevel) Debug::Error(str);
 
     if (str.empty()) this->buffer.str(std::string());
 }
 
 /*****************************************************/
-void Debug::Print(const std::string& str)
+void Debug::Error(const std::string& str)
 {
     if (Debug::level < Debug::Level::ERRORS) return;
 

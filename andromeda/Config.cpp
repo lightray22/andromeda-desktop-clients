@@ -11,7 +11,7 @@ Config::Config() : debug("Config",this){ }
 /*****************************************************/
 void Config::Initialize(Backend& backend)
 {
-    this->debug << __func__ << "()"; this->debug.Out();
+    this->debug << __func__ << "()"; this->debug.Info();
 
     nlohmann::json config(backend.GetConfig());
 
@@ -23,9 +23,9 @@ void Config::Initialize(Backend& backend)
             throw APIVersionException(api);
 
         const nlohmann::json& apps1 = config["server"]["apps"];
-        std::vector apps2 { "server", "accounts", "files" };
+        std::vector<const char*> apps2 { "server", "accounts", "files" };
 
-        for (const std::string& app : apps2)
+        for (const std::string app : apps2)
             if (apps1.find(app) == apps1.end())
                 throw AppMissingException(app);
 

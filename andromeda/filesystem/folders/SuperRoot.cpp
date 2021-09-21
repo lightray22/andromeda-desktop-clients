@@ -5,7 +5,7 @@
 SuperRoot::SuperRoot(Backend& backend) :
     BaseFolder(backend), debug("SuperRoot",this)
 {
-    debug << __func__ << "()"; debug.Out();
+    debug << __func__ << "()"; debug.Info();
 
     backend.RequireAuthentication();
     

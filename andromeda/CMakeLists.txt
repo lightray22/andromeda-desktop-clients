@@ -24,6 +24,8 @@ target_include_directories(andromeda
 
 set(HTTPLIB_COMPILE True)
 set(HTTPLIB_REQUIRE_OPENSSL True)
+set(HTTPLIB_USE_ZLIB_IF_AVAILABLE False)
+set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 #set(HTTPLIB_REQUIRE_ZLIB True)
 
 add_subdirectory(thirdparty/cpp-httplib)

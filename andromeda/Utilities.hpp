@@ -66,8 +66,8 @@ public:
     enum class Level
     {
         NONE,   /** Debug off */
-        ERRORS, /** Only show Print()s */
-        CALLS,  /** Also show Out()s */
+        ERRORS, /** Only show Error()s */
+        CALLS,  /** Also show Info()s */
         DETAILS /** Show extra details */
     };
 
@@ -88,22 +88,22 @@ public:
      * Shows the debug buffer filled with <<
      * @param minlevel required debug level
      */
-    void Out(Level minlevel = Level::CALLS);
+    void Info(Level minlevel = Level::CALLS);
 
     /**
      * Shows the given debug string
      * @param str the string to show
      * @param minlevel required debug level
      */
-    void Out(const std::string& str, Level minlevel = Level::CALLS);
+    void Info(const std::string& str, Level minlevel = Level::CALLS);
 
     /**
      * Shows the given debug string with minlevel=ERRORS
      * @param str string to show, or "" to use the buffer
      */
-    void Print(const std::string& str = "");
+    void Error(const std::string& str = "");
 
-    /** Append str to an internal buffer that can be shown with Out/Print */
+    /** Append str to an internal buffer that can be shown with Info/Error */
     Debug& operator<<(const std::string& str);
 
 private:

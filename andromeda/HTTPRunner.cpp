@@ -9,7 +9,7 @@
 HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) : 
     debug("HTTPRunner",this), baseURL(baseURL), httpClient(hostname)
 {
-    debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Out();
+    debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
 
     this->httpClient.set_keep_alive(true);
 }
@@ -33,7 +33,7 @@ std::string HTTPRunner::RunAction(
 
     if (!response) throw LibErrorException(response.error());
 
-    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Out(Debug::Level::DETAILS);
+    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Info(Debug::Level::DETAILS);
 
     switch (response->status)
     {
