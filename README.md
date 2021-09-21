@@ -3,8 +3,6 @@ This is a FUSE client for an Andromeda backend API (early development).
 
 # Prerequisites
 
-Some other dependencies are included in thirdparty/ and built in-tree.
-
 ### Build System
 
 - C++17 compiler (GCC 8+ or Clang 5+)
@@ -13,12 +11,13 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### Libraries
 
+Some other dependencies are included in thirdparty/ and built in-tree.
+
 - OpenSSL (1.1.1) (libssl, libcrypto)
 - libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
 - nlohmann-json (3.x) https://github.com/nlohmann/json
 
-nlohmann-json and thirdparty/ are statically linked.  
-OpenSSL and libfuse are dynamically linked so they must be available at runtime.
+libssl, libcrypto, and libfuse are dynamically linked so they must be available at runtime.
 
 ### OS Examples
 

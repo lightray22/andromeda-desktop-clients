@@ -57,17 +57,15 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
     try {
         nlohmann::json val(nlohmann::json::parse(resp));
 
-        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Info(Debug::Level::DETAILS);
+        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Details();
 
-        if (static_cast<bool>(val["ok"])) 
-            return val["appdata"];
+        if (val.at("ok").get<bool>())
+            return val.at("appdata");
         else
         {
-            std::vector<std::string> mpair(Utilities::explode(val["message"], ":", 2));
-            std::string details = (mpair.size() == 2) ? mpair[1] : "";
-
-            std::string message = mpair[0];
-            const int code = val["code"];
+            const int code = val.at("code").get<int>();
+            const auto [message, details] = Utilities::split(
+                val.at("message").get<std::string>(),":");
 
                  if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
@@ -101,10 +99,10 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     try
     {
         this->createdSession = true;
-        this->sessionID = resp["client"]["session"]["id"];
-        this->sessionKey = resp["client"]["session"]["authkey"];
+        resp.at("client").at("session").at("id").get_to(this->sessionID);
+        resp.at("client").at("session").at("authkey").get_to(this->sessionKey);
 
-        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Info(Debug::Level::DETAILS);
+        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Details();
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

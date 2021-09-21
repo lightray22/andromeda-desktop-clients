@@ -33,7 +33,7 @@ std::string HTTPRunner::RunAction(
 
     if (!response) throw LibErrorException(response.error());
 
-    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Info(Debug::Level::DETAILS);
+    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Details();
 
     switch (response->status)
     {

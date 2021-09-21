@@ -8,12 +8,12 @@
 using namespace std::chrono;
 
 /*****************************************************/
-std::vector<std::string> Utilities::explode(
+Utilities::StringList Utilities::explode(
     std::string str, const std::string& delim, 
     const int max, const size_t skip)
 {
     size_t skipped = 0, start = 0, end;
-    std::vector<std::string> retval;
+    StringList retval;
 
     while ((end = str.find(delim, start)) != std::string::npos
             && (max < 0 || retval.size()+1 < (size_t)max))
@@ -36,10 +36,10 @@ std::vector<std::string> Utilities::explode(
 }
 
 /*****************************************************/
-std::pair<std::string,std::string> Utilities::split(
+Utilities::StringPair Utilities::split(
     const std::string& str, const std::string& delim)
 {
-    std::pair<std::string,std::string> retval;
+    StringPair retval;
 
     size_t pos = str.find(delim);
     retval.first = str.substr(0, pos);
@@ -73,15 +73,17 @@ Debug::Level Debug::level = Debug::Level::NONE;
 high_resolution_clock::time_point Debug::start = high_resolution_clock::now();
 
 /*****************************************************/
-void Debug::Info(Debug::Level minlevel)
+void Debug::Details(const std::string& str)
 {
-    std::string str; Debug::Info(str, minlevel);
+    if (level >= Level::DETAILS) Error(str);
+
+    if (str.empty()) this->buffer.str(std::string());
 }
 
 /*****************************************************/
-void Debug::Info(const std::string& str, Debug::Level minlevel)
+void Debug::Info(const std::string& str)
 {
-    if (Debug::level >= minlevel) Debug::Error(str);
+    if (level >= Level::CALLS) Error(str);
 
     if (str.empty()) this->buffer.str(std::string());
 }
@@ -89,11 +91,11 @@ void Debug::Info(const std::string& str, Debug::Level minlevel)
 /*****************************************************/
 void Debug::Error(const std::string& str)
 {
-    if (Debug::level < Debug::Level::ERRORS) return;
+    if (level < Level::ERRORS) return;
 
-    const std::lock_guard<std::mutex> lock(Debug::mutex);
+    const std::lock_guard<std::mutex> lock(mutex);
 
-    if (Debug::level >= Debug::Level::DETAILS)
+    if (level >= Level::DETAILS)
     {
         duration<double> time = high_resolution_clock::now() - start;
         std::cout << "time:" << time.count() << " ";

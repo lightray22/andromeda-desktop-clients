@@ -35,6 +35,9 @@ public:
         return retval;
     }
 
+    typedef std::vector<std::string> StringList;
+    typedef std::pair<std::string,std::string> StringPair;
+
     /**
      * Split a string into an array
      * @param str string to split
@@ -42,12 +45,12 @@ public:
      * @param max max # of elements to return
      * @param skip the number of delims to skip
      */
-    static std::vector<std::string> explode(
+    static StringList explode(
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
 
     /** Special case of explode with max=1,skip=0 and returns a pair */
-    static std::pair<std::string,std::string> split(
+    static StringPair split(
         const std::string& str, const std::string& delim);
 
     /**
@@ -79,23 +82,22 @@ public:
         addr(addr), prefix(prefix) { }
 
     /** Returns the configured global debug level */
-    static Level GetLevel() { return Debug::level; }
+    static Level GetLevel() { return level; }
 
     /** Sets the configured global debug level */
     static void SetLevel(Level level){ Debug::level = level; }
 
     /**
-     * Shows the debug buffer filled with <<
-     * @param minlevel required debug level
+     * Shows the given debug string with minlevel=DETAILS
+     * @param str the string to show, or "" to use the buffer
      */
-    void Info(Level minlevel = Level::CALLS);
+    void Details(const std::string& str = "");
 
     /**
-     * Shows the given debug string
-     * @param str the string to show
-     * @param minlevel required debug level
+     * Shows the given debug string with minlevel=CALLS
+     * @param str the string to show, or "" to use the buffer
      */
-    void Info(const std::string& str, Level minlevel = Level::CALLS);
+    void Info(const std::string& str = "");
 
     /**
      * Shows the given debug string with minlevel=ERRORS

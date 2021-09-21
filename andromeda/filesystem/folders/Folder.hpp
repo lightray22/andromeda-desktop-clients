@@ -2,9 +2,12 @@
 #define LIBA2_FOLDER_H_
 
 #include <string>
+#include <nlohmann/json_fwd.hpp>
 
 #include "../BaseFolder.hpp"
 #include "Utilities.hpp"
+
+class Backend;
 
 /** A regular Andromeda folder */
 class Folder : public BaseFolder
@@ -18,11 +21,17 @@ public:
      */
     Folder(Backend& backend, const std::string& id);
 
+protected: 
+
+    Folder(Backend& backend);
+
+    virtual void Initialize(const nlohmann::json& data);
+
+    std::string id;
+
 private:
 
     Debug debug;
-
-    std::string id;
 };
 
 #endif
