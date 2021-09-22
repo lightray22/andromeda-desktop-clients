@@ -48,29 +48,24 @@ public:
     class JSONErrorException : public Exception { public:
         JSONErrorException(const std::string& error) : 
             Exception("JSON Error: "+error) {}; };
-    
-    /** Base exception for Andromeda-returned errors */
-    class APIException : public Exception { public:
-        APIException(int code, const std::string& message) : 
-            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
 
     /** Base exception for Andromeda-returned 403 errors */
-    class APIDeniedException : public Exception { public:
-        APIDeniedException() : Exception("Access Denied") {};
-        APIDeniedException(const std::string& message) : Exception(message) {}; };
+    class DeniedException : public Exception { public:
+        DeniedException() : Exception("Access Denied") {};
+        DeniedException(const std::string& message) : Exception(message) {}; };
 
     /** Base exception for Andromeda-returned 404 errors */
-    class APINotFoundException : public Exception { public:
-        APINotFoundException() : Exception("Not Found") {};
-        APINotFoundException(const std::string& message) : Exception(message) {}; };
+    class NotFoundException : public Exception { public:
+        NotFoundException() : Exception("Not Found") {};
+        NotFoundException(const std::string& message) : Exception(message) {}; };
 
     /** Andromeda exception indicating authentication failed */
-    class AuthenticationFailedException : public APIDeniedException { public:
-        AuthenticationFailedException() : APIDeniedException("Authentication Failed") {}; };
+    class AuthenticationFailedException : public DeniedException { public:
+        AuthenticationFailedException() : DeniedException("Authentication Failed") {}; };
 
     /** Andromeda exception indicating two factor is needed */
-    class TwoFactorRequiredException : public APIDeniedException { public:
-        TwoFactorRequiredException() : APIDeniedException("Two Factor Required") {}; };
+    class TwoFactorRequiredException : public DeniedException { public:
+        TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
 
     /** @param runner the Runner to use */
     Backend(Runner& runner);
@@ -108,6 +103,11 @@ public:
     nlohmann::json GetFolder(const std::string& id = "");
 
 private:
+    
+    /** Base exception for Andromeda-returned errors */
+    class APIException : public Exception { public:
+        APIException(int code, const std::string& message) : 
+            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
 
     std::string RunAction(const std::string& app, const std::string& action);
 

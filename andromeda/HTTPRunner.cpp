@@ -38,8 +38,8 @@ std::string HTTPRunner::RunAction(
     switch (response->status)
     {
         case 200: return std::move(response->body); 
-        case 403: throw Backend::APIDeniedException(); break;
-        case 404: throw Backend::APINotFoundException(); break;
+        case 403: throw Backend::DeniedException(); break;
+        case 404: throw Backend::NotFoundException(); break;
         default: throw Backend::Exception(response->status); break;
     }
 }

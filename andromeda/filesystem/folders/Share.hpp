@@ -2,9 +2,9 @@
 #ifndef LIBA2_SHARE_H_
 #define LIBA2_SHARE_H_
 
-#include "../BaseFolder.hpp"
+#include "../Folder.hpp"
 
-class Share : public BaseFolder
+class Share : public Folder
 {
 
 };

@@ -8,8 +8,7 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
-#include "filesystem/BaseFolder.hpp"
-#include "filesystem/folders/Folder.hpp"
+#include "filesystem/Folder.hpp"
 #include "filesystem/folders/SuperRoot.hpp"
 
 #define VERSION "0.1-alpha"
@@ -68,7 +67,7 @@ int main(int argc, char** argv)
     }
 
     Backend backend(*runner);
-    std::unique_ptr<BaseFolder> folder;
+    std::unique_ptr<Folder> folder;
 
     try
     {
@@ -85,7 +84,7 @@ int main(int argc, char** argv)
             }
             case Options::ItemType::FOLDER:
             {
-                folder = std::make_unique<Folder>(backend, options.GetMountItemID()); break;
+                folder = Folder::LoadByID(backend, options.GetMountItemID()); break;
             }
         }
     }

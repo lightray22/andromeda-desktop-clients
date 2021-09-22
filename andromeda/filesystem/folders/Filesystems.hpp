@@ -2,9 +2,9 @@
 #ifndef LIBA2_FILESYSTEMS_H_
 #define LIBA2_FILESYSTEMS_H_
 
-#include "../BaseFolder.hpp"
+#include "../Folder.hpp"
 
-class Filesystems : public BaseFolder
+class Filesystems : public Folder
 {
 
 };

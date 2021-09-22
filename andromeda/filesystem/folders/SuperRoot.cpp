@@ -3,9 +3,15 @@
 
 /*****************************************************/
 SuperRoot::SuperRoot(Backend& backend) : 
-    BaseFolder(backend), debug("SuperRoot",this)
+    Folder(backend), debug("SuperRoot",this)
 {
     debug << __func__ << "()"; debug.Info();
 
     backend.RequireAuthentication();
-};
+}
+
+/*****************************************************/
+void SuperRoot::LoadItems()
+{
+    // TODO load from server
+}

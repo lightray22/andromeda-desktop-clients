@@ -2,9 +2,9 @@
 #ifndef LIBA2_ADOPTED_H_
 #define LIBA2_ADOPTED_H_
 
-#include "../BaseFolder.hpp"
+#include "../Folder.hpp"
 
-class Adopted : public BaseFolder
+class Adopted : public Folder
 {
 
 };

@@ -22,6 +22,9 @@ public:
     /** Returns the FS type */
     virtual const Type GetType() const = 0;
 
+    /** Returns the Andromeda object ID */
+    virtual const std::string& GetID() const { return this->id; }
+
     /** Returns the FS name */
     virtual const std::string& GetName() const { return this->name; }
 
@@ -39,14 +42,22 @@ public:
 
 protected:
 
-    /** @param backend reference to backend */
+    /** 
+     * Construct an item w/o initializing
+     * @param backend reference to backend 
+     */
     Item(Backend& backend);
 
-    /** @param data data loaded from the backend */
-    virtual void Initialize(const nlohmann::json& data);
+    /** 
+     * Construct an item with JSON data
+     * @param backend reference to backend 
+     * @param data json data from backend
+     */
+    Item(Backend& backend, const nlohmann::json& data);
     
     Backend& backend;
 
+    std::string id;
     std::string name;
 
     Size size = 0;

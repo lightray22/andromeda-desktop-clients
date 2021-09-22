@@ -6,7 +6,7 @@
 #include "Utilities.hpp"
 #include "Options.hpp"
 
-class BaseFolder;
+class Folder;
 
 /** Static class for FUSE operations */
 class FuseWrapper
@@ -23,7 +23,7 @@ public:
      * @param root andromeda folder as root
      * @param options command line options
      */
-    static void Start(BaseFolder& root, const Options& options);
+    static void Start(Folder& root, const Options& options);
 
     /** Print help text to stdout */
     static void ShowHelpText();

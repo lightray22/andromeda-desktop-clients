@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <functional>
 
 #define FUSE_USE_VERSION 35
 #include <fuse3/fuse.h>
@@ -7,11 +8,11 @@
 
 #include "FuseWrapper.hpp"
 #include "Backend.hpp"
-#include "filesystem/BaseFolder.hpp"
+#include "filesystem/Folder.hpp"
 #include "filesystem/Item.hpp"
 
 static Debug debug("FuseWrapper");
-static BaseFolder* rootPtr = nullptr;
+static Folder* rootPtr = nullptr;
 
 static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
@@ -145,15 +146,11 @@ struct FuseLoop
 };
 
 /*****************************************************/
-void FuseWrapper::Start(BaseFolder& root, const Options& options)
+void FuseWrapper::Start(Folder& root, const Options& options)
 {
     rootPtr = &root; std::string mountPath(options.GetMountPath());    
     
     debug << __func__ << "(path:" << mountPath << ")"; debug.Info();
-
-    // TODO add multithreading option: fuse_loop_mt() and fuse_loop_config
-
-    // TODO set up FUSE logging module?
 
     // TODO see fuse_conn_info ... capability flags?
     // fuse_apply_conn_info_opts() : fuse_common.h
@@ -176,43 +173,66 @@ void FuseWrapper::Start(BaseFolder& root, const Options& options)
 /*****************************************************/
 /*****************************************************/
 
+/*****************************************************/
+int standardTry(std::function<int()> func)
+{
+    try
+    {
+        return func();
+    }
+    catch (const Folder::NotFileException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -EISDIR;
+    }
+    catch (const Folder::NotFolderException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTDIR;
+    }
+    catch (const Backend::NotFoundException& e)  
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOENT;
+    }
+    catch (const Utilities::Exception& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Error(); return -EIO;
+    }
+}
+
+/*****************************************************/
+void item_stat(const Item& item, struct stat* stbuf)
+{
+    switch (item.GetType())
+    {
+        case Item::Type::FILE: stbuf->st_mode = S_IFREG; break;
+        case Item::Type::FOLDER: stbuf->st_mode = S_IFDIR; break;
+    }
+
+    stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
+
+    stbuf->st_size = static_cast<off_t>(item.GetSize());
+
+    stbuf->st_ctime = static_cast<time_t>(item.GetCreated());
+
+    stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
+    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
+
+    stbuf->st_mtime = static_cast<time_t>(item.GetModified());
+    if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
+}
+
+/*****************************************************/
 int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 {
     if (path[0] == '/') path++;
 
     debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    try
+    return standardTry([&]()->int
     {
-        Item& item = rootPtr->GetItemByPath(path);
+        item_stat(rootPtr->GetItemByPath(path), stbuf);
 
-        switch (item.GetType())
-        {
-            case Item::Type::FILE: stbuf->st_mode = S_IFREG; break;
-            case Item::Type::FOLDER: stbuf->st_mode = S_IFDIR; break;
-        }
-
-        stbuf->st_size = static_cast<off_t>(item.GetSize());
-
-        stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO; 
-        // TODO mount permissions? what about uid/gid
-
-        // TODO set block size...? explore kernel caching settings
-
-        stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
-        stbuf->st_ctime = static_cast<time_t>(item.GetCreated());
-        stbuf->st_mtime = static_cast<time_t>(item.GetModified());
-
-        return SUCCESS;
-    }
-    catch (const Backend::APINotFoundException& e)
-    {
-        debug << __func__ << "..." << e.what(); debug.Details(); return ENOENT;
-    }
-    catch (const Utilities::Exception& e)
-    {
-        debug << __func__ << "..." << e.what(); debug.Error(); return EIO;
-    }
+        debug << __func__ << "... RETURN"; debug.Details(); return SUCCESS;
+    });
 }
 
 /*****************************************************/
@@ -222,20 +242,25 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
 
     debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    try
+    return standardTry([&]()->int
     {
-        Item& item = rootPtr->GetItemByPath(path);
+        Folder& folder(rootPtr->GetFolderByPath(path));
+        const Folder::ItemMap& items(folder.GetItems());
 
-        // TODO implement me
+        debug << __func__ << "... #items:" << std::to_string(items.size()); debug.Details();
 
-        return SUCCESS;
-    }
-    catch (const Backend::APINotFoundException& e)
-    {
-        debug << __func__ << "..." << e.what(); debug.Details(); return ENOENT;
-    }
-    catch (const Utilities::Exception& e)
-    {
-        debug << __func__ << "..." << e.what(); debug.Error(); return EIO;
-    }
+        for (const Folder::ItemMap::value_type& pair : items)
+        {
+            const std::unique_ptr<Item>& item = pair.second;
+
+            struct stat stbuf; item_stat(*item, &stbuf);
+
+            if (filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS) != SUCCESS) 
+            {
+                debug << __func__ << "... filler() failed"; debug.Error(); return -EIO;
+            }
+        }
+
+        debug << __func__ << "... RETURN"; debug.Details(); return SUCCESS;
+    });
 }

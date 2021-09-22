@@ -70,8 +70,8 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
                  if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
 
-            else if (code == 403) throw APIDeniedException(message); 
-            else if (code == 404) throw APINotFoundException(message);
+            else if (code == 403) throw DeniedException(message); 
+            else if (code == 404) throw NotFoundException(message);
             else throw APIException(code, message);
         }
     }
