@@ -6,7 +6,9 @@
 
 class Shared : public Folder
 {
-
+public:
+	
+	virtual ~Shared(){};
 };
 
 #endif

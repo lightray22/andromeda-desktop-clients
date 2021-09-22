@@ -6,7 +6,9 @@
 
 class Filesystems : public Folder
 {
-
+public:
+	
+	virtual ~Filesystems(){};
 };
 
 #endif

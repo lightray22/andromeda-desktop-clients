@@ -14,6 +14,8 @@ class Item
 {
 public:
 
+	virtual ~Item(){};
+
     typedef unsigned long long Size;
     typedef double Date;
 

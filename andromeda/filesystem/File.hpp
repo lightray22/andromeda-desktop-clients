@@ -13,6 +13,8 @@ class File : public Item
 {
 public:
 
+	virtual ~File(){};
+
     virtual const Type GetType() const override { return Type::FILE; }
 
     File(Backend& backend, const nlohmann::json& data);

@@ -6,7 +6,9 @@
 
 class Adopted : public Folder
 {
+public:
 
+	virtual ~Adopted(){};
 };
 
 #endif

@@ -17,6 +17,8 @@ class Folder : public Item
 {
 public:
 
+	virtual ~Folder(){};
+
     /** Base Exception for all backend issues */
     class NotFileException : public Utilities::Exception { public:
         NotFileException() : Utilities::Exception("Item is not a File") {}; };

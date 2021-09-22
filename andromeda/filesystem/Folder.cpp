@@ -13,7 +13,7 @@ std::unique_ptr<Folder> Folder::LoadByID(Backend& backend, const std::string& id
 
     nlohmann::json data(backend.GetFolder(id));
 
-    return std::move(std::make_unique<Folder>(backend, data, true));
+    return std::make_unique<Folder>(backend, data, true);
 }
 
 /*****************************************************/

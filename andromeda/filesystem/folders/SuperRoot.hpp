@@ -11,6 +11,8 @@ class SuperRoot : public Folder
 public:
 
     SuperRoot(Backend& backend);
+    
+    virtual ~SuperRoot(){};
 
 protected:
 
