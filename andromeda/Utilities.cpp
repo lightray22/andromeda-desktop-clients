@@ -37,11 +37,12 @@ Utilities::StringList Utilities::explode(
 
 /*****************************************************/
 Utilities::StringPair Utilities::split(
-    const std::string& str, const std::string& delim)
+    const std::string& str, const std::string& delim, const bool last)
 {
     StringPair retval;
 
-    size_t pos = str.find(delim);
+    size_t pos = last ? str.find(delim) : str.rfind(delim);
+    
     retval.first = str.substr(0, pos);
 
     if (pos != std::string::npos)

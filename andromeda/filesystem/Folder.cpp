@@ -7,16 +7,6 @@
 #include "File.hpp"
 
 /*****************************************************/
-std::unique_ptr<Folder> Folder::LoadByID(Backend& backend, const std::string& id)
-{
-    backend.RequireAuthentication();
-
-    nlohmann::json data(backend.GetFolder(id));
-
-    return std::make_unique<Folder>(backend, data, true);
-}
-
-/*****************************************************/
 Folder::Folder(Backend& backend) : 
     Item(backend), debug("Folder",this)
 {
@@ -32,6 +22,8 @@ Folder::Folder(Backend& backend, const nlohmann::json& data, bool haveItems) :
     try
     {
         data.at("counters").at("size").get_to(this->size);
+        // TODO filesystems/etc. that extend this will not have size...
+        // need to abstract GetSize() from data (static?)
 
         if (haveItems)
         {
@@ -44,18 +36,29 @@ Folder::Folder(Backend& backend, const nlohmann::json& data, bool haveItems) :
 }
 
 /*****************************************************/
-Item& Folder::GetItemByPath(const std::string& path)
+Folder::Folder(Backend& backend, Folder& parent, const nlohmann::json& data, bool haveItems) : 
+    Folder(backend, data, haveItems)
+{
+    this->parent = &parent;
+}
+
+/*****************************************************/
+Item& Folder::GetItemByPath(std::string path)
 {
     this->debug << __func__ << "(path:" << path << ")"; this->debug.Info();
+
+    if (path[0] == '/') path.erase(0,1);
 
     if (path.empty()) return *this;
 
     const auto [name, subpath] = Utilities::split(path,"/");
 
-    this->debug << __func__ << "... name:" << name << " subpath:" << subpath; this->debug.Details();
+    this->debug << __func__ << "... name:" << name 
+        << " subpath:" << subpath; this->debug.Details();
 
-    ItemMap::iterator it = itemMap.find(name);
-    if (it == itemMap.end()) throw Backend::NotFoundException();
+    const ItemMap& items = GetItems();
+    ItemMap::const_iterator it = items.find(name);
+    if (it == items.end()) throw Backend::NotFoundException();
 
     Item& item = *(it->second);
 
@@ -99,7 +102,7 @@ const Folder::ItemMap& Folder::GetItems()
     this->debug << __func__ << "()"; this->debug.Info();
 
     if (!this->haveItems) LoadItems();
-    
+
     this->haveItems = true;
     return this->itemMap;
 }
@@ -123,14 +126,14 @@ void Folder::LoadItems(const nlohmann::json& data)
     {
         for (const nlohmann::json& el : data.at("files"))
         {
-            std::unique_ptr<File> file(std::make_unique<File>(backend, el));
+            std::unique_ptr<File> file(std::make_unique<File>(backend, *this, el));
 
             this->itemMap[file->GetName()] = std::move(file);
         }
 
         for (const nlohmann::json& el : data.at("folders"))
         {
-            std::unique_ptr<Folder> folder(std::make_unique<Folder>(backend, el, false));
+            std::unique_ptr<Folder> folder(std::make_unique<Folder>(backend, *this, el));
 
             this->itemMap[folder->GetName()] = std::move(folder);
         }
@@ -139,3 +142,45 @@ void Folder::LoadItems(const nlohmann::json& data)
         throw Backend::JSONErrorException(ex.what()); }
 }
 
+/*****************************************************/
+void Folder::CreateFile(const std::string& name)
+{
+    const ItemMap& items = GetItems(); // pre-populate items
+
+    if (items.count(name)) throw DuplicateItemException();
+
+    throw Utilities::Exception("not implemented"); // TODO implement me
+}
+
+/*****************************************************/
+void Folder::CreateFolder(const std::string& name)
+{
+    const ItemMap& items = GetItems(); // pre-populate items
+
+    if (items.count(name)) throw DuplicateItemException();
+
+    nlohmann::json data(backend.CreateFolder(this->id, name));
+
+    std::unique_ptr<Folder> folder(std::make_unique<Folder>(backend, *this, data));
+
+    this->itemMap[folder->GetName()] = std::move(folder);
+}
+
+/*****************************************************/
+void Folder::RemoveItem(const std::string& name)
+{
+    const ItemMap& items = GetItems();
+
+    ItemMap::const_iterator it = items.find(name);
+
+    if (it != items.end()) itemMap.erase(name);
+}
+
+/*****************************************************/
+void Folder::Delete()
+{
+    backend.DeleteFolder(this->id);
+
+    if (this->parent != nullptr)
+        this->parent->RemoveItem(this->name);
+}

@@ -41,6 +41,7 @@ public:
         Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message) {}; };
 
+    /** Exception indicating that authentication is required */
     class AuthRequiredException : public Exception { public:
         AuthRequiredException() : Exception("Authentication Required") {}; };
 
@@ -102,6 +103,19 @@ public:
      */
     nlohmann::json GetFolder(const std::string& id = "");
 
+    /**
+     * Creates a new folder
+     * @param id parent folder ID
+     * @param name name of new folder
+     */
+    nlohmann::json CreateFolder(const std::string& parent, const std::string& name);
+
+    /** Deletes a file by ID */
+    void DeleteFile(const std::string& id);
+
+    /** Deletes a folder by ID */
+    void DeleteFolder(const std::string& id);
+
 private:
     
     /** Base exception for Andromeda-returned errors */
@@ -126,9 +140,9 @@ private:
     std::string sessionID;
     std::string sessionKey;
 
-    Debug debug;
     Runner& runner;
     Config config;
+    Debug debug;
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
-#include "filesystem/Folder.hpp"
+#include "filesystem/folders/RootFolder.hpp"
 #include "filesystem/folders/SuperRoot.hpp"
 
 #define VERSION "0.1-alpha"
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
             }
             case Options::ItemType::FOLDER:
             {
-                folder = Folder::LoadByID(backend, options.GetMountItemID()); break;
+                folder = RootFolder::LoadByID(backend, options.GetMountItemID()); break;
             }
         }
     }

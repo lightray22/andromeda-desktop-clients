@@ -49,9 +49,12 @@ public:
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
 
-    /** Special case of explode with max=1,skip=0 and returns a pair */
-    static StringPair split(
-        const std::string& str, const std::string& delim);
+    /** 
+     * Special case of explode with max=1,skip=0 and returns a pair 
+     * @param last if true, find last delim else first
+     */
+    static StringPair split(const std::string& str, 
+        const std::string& delim, const bool last = false);
 
     /**
      * Silently read a line of input from stdin

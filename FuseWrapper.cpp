@@ -8,18 +8,47 @@
 
 #include "FuseWrapper.hpp"
 #include "Backend.hpp"
-#include "filesystem/Folder.hpp"
 #include "filesystem/Item.hpp"
+#include "filesystem/File.hpp"
+#include "filesystem/Folder.hpp"
 
 static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
 
+static int fuse_statfs(const char *path, struct statvfs* buf);
 static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
+static int fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
+static int fuse_mkdir(const char* path, mode_t mode);
+static int fuse_unlink(const char* path);
+static int fuse_rmdir(const char* path);
+static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
+static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
+static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
+static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
+static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+
+/* TODO
+flush??
+copy_file_range?
+fsyncdir?
+chmod/chown??? stub
+fallocate? (vs. truncate?)
+*/
 
 static struct fuse_operations fuse_ops = {
     .getattr = fuse_getattr,
-    .readdir = fuse_readdir
+    .mkdir = fuse_mkdir,
+    .unlink = fuse_unlink,
+    .rmdir = fuse_rmdir,
+    .rename = fuse_rename,
+    .truncate = fuse_truncate,
+    .read = fuse_read,
+    .write = fuse_write,
+    .statfs = fuse_statfs,
+    .fsync = fuse_fsync,
+    .readdir = fuse_readdir,
+    .create = fuse_create
 };
 
 constexpr int SUCCESS = 0;
@@ -199,6 +228,37 @@ int standardTry(std::function<int()> func)
 }
 
 /*****************************************************/
+int fuse_statfs(const char *path, struct statvfs* buf)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    buf->f_namemax = 255;
+    
+    // The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored 
+//           struct statvfs {
+//           unsigned long  f_bsize;    /* Filesystem block size */
+//           unsigned long  f_frsize;   /* Fragment size */
+//           fsblkcnt_t     f_blocks;   /* Size of fs in f_frsize units */
+//           fsblkcnt_t     f_bfree;    /* Number of free blocks */
+//           fsblkcnt_t     f_bavail;   /* Number of free blocks for
+//                                         unprivileged users */
+//           fsfilcnt_t     f_files;    /* Number of inodes */
+//           fsfilcnt_t     f_ffree;    /* Number of free inodes */
+//    ///    fsfilcnt_t     f_favail;   /* Number of free inodes for
+//                                         unprivileged users */
+//    ///    unsigned long  f_fsid;     /* Filesystem ID */
+//    ///    unsigned long  f_flag;     /* Mount flags */
+//           unsigned long  f_namemax;  /* Maximum filename length */
+
+// files getlimits & files getlimits --filesystem to calculate free space?
+// then the root folder knows the total space used...?
+// DO actually need the path as the answer would be different for each SuperRoot filesystem
+// this could be a call into a filesystem object... superRoot would need to extend Filesystem
+
+    return -EIO; // TODO
+}
+
+/*****************************************************/
 void item_stat(const Item& item, struct stat* stbuf)
 {
     switch (item.GetType())
@@ -223,9 +283,7 @@ void item_stat(const Item& item, struct stat* stbuf)
 /*****************************************************/
 int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 {
-    if (path[0] == '/') path++;
-
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry([&]()->int
     {
@@ -238,14 +296,11 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
 /*****************************************************/
 int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 {
-    if (path[0] == '/') path++;
-
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry([&]()->int
     {
-        Folder& folder(rootPtr->GetFolderByPath(path));
-        const Folder::ItemMap& items(folder.GetItems());
+        const Folder::ItemMap& items(rootPtr->GetFolderByPath(path).GetItems());
 
         debug << __func__ << "... #items:" << std::to_string(items.size()); debug.Details();
 
@@ -262,5 +317,122 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
         }
 
         debug << __func__ << "... RETURN"; debug.Details(); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
+{
+    const auto [path, name] = Utilities::split(fullpath,"/",true);
+    
+    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        Folder& parent(rootPtr->GetFolderByPath(path));
+
+        parent.CreateFile(name); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_mkdir(const char* fullpath, mode_t mode)
+{
+    const auto [path, name] = Utilities::split(fullpath,"/",true);
+    
+    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        Folder& parent(rootPtr->GetFolderByPath(path));
+
+        parent.CreateFolder(name); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_unlink(const char* path)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        rootPtr->GetFileByPath(path).Delete(); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_rmdir(const char* path)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        rootPtr->GetFolderByPath(path).Delete(); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
+{
+    oldpath++; newpath++; debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        return -EIO; // TODO
+    });
+}
+
+/*****************************************************/
+int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        return -EIO; // TODO
+    });
+}
+
+/*****************************************************/
+int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) 
+        << " offset:" << std::to_string(off) << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        return -EIO; // TODO
+    });
+}
+
+/*****************************************************/
+int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) 
+        << " offset:" << std::to_string(off) << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        return -EIO; // TODO
+    });
+}
+
+/*****************************************************/
+int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        return -EIO; // TODO
     });
 }

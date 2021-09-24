@@ -3,6 +3,7 @@
 
 #include "Item.hpp"
 #include "Backend.hpp"
+#include "Folder.hpp"
 
 /*****************************************************/
 Item::Item(Backend& backend) : 
@@ -12,8 +13,9 @@ Item::Item(Backend& backend) :
 }
 
 /*****************************************************/
-Item::Item(Backend& backend, const nlohmann::json& data) : Item(backend)
-{    
+Item::Item(Backend& backend, const nlohmann::json& data) : 
+    Item(backend)
+{
     try
     {
         data.at("id").get_to(this->id);
@@ -27,4 +29,11 @@ Item::Item(Backend& backend, const nlohmann::json& data) : Item(backend)
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
+}
+
+/*****************************************************/
+Item::Item(Backend& backend, Folder& parent, const nlohmann::json& data) : 
+    Item(backend, data)
+{  
+    this->parent = &parent;
 }

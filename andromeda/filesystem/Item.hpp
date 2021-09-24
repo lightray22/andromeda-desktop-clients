@@ -8,6 +8,7 @@
 #include "Utilities.hpp"
 
 class Backend;
+class Folder;
 
 /** An abstract item in a filesystem */
 class Item
@@ -42,22 +43,35 @@ public:
     /** Get the accessed time stamp */
     virtual const Date GetAccessed() const { return this->accessed; } 
 
+    /** Delete this item */
+    virtual void Delete() = 0;
+
 protected:
 
     /** 
      * Construct an item w/o initializing
-     * @param backend reference to backend 
+     * @param backend reference to backend
      */
     Item(Backend& backend);
 
     /** 
      * Construct an item with JSON data
-     * @param backend reference to backend 
+     * @param backend reference to backend
      * @param data json data from backend
      */
     Item(Backend& backend, const nlohmann::json& data);
+
+    /** 
+     * Construct an item with JSON data
+     * @param backend reference to backend 
+     * @param parent pointer to parent
+     * @param data json data from backend
+     */
+    Item(Backend& backend, Folder& parent, const nlohmann::json& data);
     
     Backend& backend;
+
+    Folder* parent;
 
     std::string id;
     std::string name;

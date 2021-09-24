@@ -8,6 +8,7 @@
 #include "Utilities.hpp"
 
 class Backend;
+class Folder;
 
 class File : public Item
 {
@@ -17,7 +18,9 @@ public:
 
     virtual const Type GetType() const override { return Type::FILE; }
 
-    File(Backend& backend, const nlohmann::json& data);
+    File(Backend& backend, Folder& parent, const nlohmann::json& data);
+
+    virtual void Delete() override;
 
 private:
 

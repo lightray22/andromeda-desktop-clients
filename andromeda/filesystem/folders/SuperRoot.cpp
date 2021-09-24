@@ -3,7 +3,7 @@
 
 /*****************************************************/
 SuperRoot::SuperRoot(Backend& backend) : 
-    Folder(backend), debug("SuperRoot",this)
+    RootFolder(backend), debug("SuperRoot",this)
 {
     debug << __func__ << "()"; debug.Info();
 

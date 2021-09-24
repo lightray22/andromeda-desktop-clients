@@ -9,7 +9,7 @@
 
 /*****************************************************/
 Backend::Backend(Runner& runner) : 
-    debug("Backend",this), runner(runner) { }
+    runner(runner), debug("Backend",this) { }
 
 /*****************************************************/
 Backend::~Backend()
@@ -191,4 +191,34 @@ nlohmann::json Backend::GetFolder(const std::string& id)
     Params params; if (!id.empty()) params["folder"] = id;
 
     return GetJSON(RunAction("files", "getfolder", params));
+}
+
+/*****************************************************/
+nlohmann::json Backend::CreateFolder(const std::string& parent, const std::string& name)
+{
+    this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
+
+    Params params {{"parent", parent},{"name", name}};
+
+    return GetJSON(RunAction("files", "createfolder", params));
+}
+
+/*****************************************************/
+void Backend::DeleteFile(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    Params params {{"file", id}};
+    
+     GetJSON(RunAction("files", "deletefile", params));
+}
+
+/*****************************************************/
+void Backend::DeleteFolder(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    Params params {{"folder", id}}; 
+    
+    GetJSON(RunAction("files", "deletefolder", params));
 }
