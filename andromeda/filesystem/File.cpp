@@ -23,6 +23,5 @@ void File::Delete()
 {
     backend.DeleteFile(this->id);
 
-    if (this->parent != nullptr)
-        this->parent->RemoveItem(this->name);
+    GetParent().RemoveItem(this->name);
 }

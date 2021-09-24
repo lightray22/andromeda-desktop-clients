@@ -26,9 +26,3 @@ RootFolder::RootFolder(Backend& backend, const nlohmann::json& data) :
 {
     debug << __func__ << "()"; debug.Info();
 }
-
-/*****************************************************/
-void RootFolder::Delete()
-{
-    throw DeleteRootException();
-}

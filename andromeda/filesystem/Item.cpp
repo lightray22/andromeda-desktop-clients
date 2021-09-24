@@ -37,3 +37,12 @@ Item::Item(Backend& backend, Folder& parent, const nlohmann::json& data) :
 {  
     this->parent = &parent;
 }
+
+/*****************************************************/
+Folder& Item::GetParent() const     
+{ 
+    if (this->parent == nullptr) 
+        throw NullParentException();
+            
+    return *this->parent; 
+}

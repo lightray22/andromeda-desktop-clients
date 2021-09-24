@@ -15,6 +15,10 @@ class Item
 {
 public:
 
+    /** Exception indicating this item has no parent */
+    class NullParentException : public Utilities::Exception { public:
+        NullParentException() : Utilities::Exception("Item parent is null") {}; };
+
 	virtual ~Item(){};
 
     typedef unsigned long long Size;
@@ -24,6 +28,12 @@ public:
 
     /** Returns the FS type */
     virtual const Type GetType() const = 0;
+
+    /** Returns true if this item has a parent */
+    virtual const bool HasParent() const { return this->parent != nullptr; }
+
+    /** Returns the parent folder */
+    virtual Folder& GetParent() const;
 
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() const { return this->id; }

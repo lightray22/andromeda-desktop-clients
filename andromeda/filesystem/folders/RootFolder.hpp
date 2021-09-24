@@ -6,7 +6,6 @@
 #include <string>
 
 #include "../Folder.hpp"
-#include "Utilities.hpp"
 
 class Backend;
 
@@ -14,10 +13,6 @@ class Backend;
 class RootFolder : public Folder
 {
 public:
-
-    /** Exception indicating the root cannot be deleted */
-    class DeleteRootException : public Utilities::Exception { public:
-        DeleteRootException() : Utilities::Exception("Item is not a File") {}; };
 
 	virtual ~RootFolder(){};
     
@@ -34,8 +29,6 @@ public:
      * @param data json data from backend with items
      */
     RootFolder(Backend& backend, const nlohmann::json& data);
-
-    virtual void Delete();
 
 protected:
 

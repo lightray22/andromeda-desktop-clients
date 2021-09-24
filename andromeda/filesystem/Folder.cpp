@@ -180,7 +180,6 @@ void Folder::RemoveItem(const std::string& name)
 void Folder::Delete()
 {
     backend.DeleteFolder(this->id);
-
-    if (this->parent != nullptr)
-        this->parent->RemoveItem(this->name);
+    
+    GetParent().RemoveItem(this->name);
 }
