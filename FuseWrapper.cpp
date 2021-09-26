@@ -2,9 +2,16 @@
 #include <iostream>
 #include <functional>
 
+#ifdef __APPLE__
+#define FUSE_USE_VERSION 26
+#define _FILE_OFFSET_BITS 64
+#include <fuse/fuse.h>
+#include <fuse/fuse_lowlevel.h>
+#else
 #define FUSE_USE_VERSION 35
 #include <fuse3/fuse.h>
 #include <fuse3/fuse_lowlevel.h>
+#endif
 
 #include "FuseWrapper.hpp"
 #include "Backend.hpp"
@@ -16,17 +23,25 @@ static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
 
 static int fuse_statfs(const char *path, struct statvfs* buf);
-static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
-static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
 static int fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
 static int fuse_mkdir(const char* path, mode_t mode);
 static int fuse_unlink(const char* path);
 static int fuse_rmdir(const char* path);
-static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
 static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+
+#ifdef __APPLE__
+static int fuse_getattr(const char* path, struct stat* stbuf);
+static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
+static int fuse_rename(const char* oldpath, const char* newpath);
+static int fuse_truncate(const char* path, off_t size);
+#else
+static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
+static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
+static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
 static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
+#endif
 
 /* TODO
 flush??
@@ -56,17 +71,24 @@ constexpr int SUCCESS = 0;
 /*****************************************************/
 void FuseWrapper::ShowHelpText()
 {
+#ifndef __APPLE__
     std::cout << "fuse_lib_help()" << std::endl; fuse_lib_help(0); std::cout << std::endl;
+#endif
 }
 
 /*****************************************************/
 void FuseWrapper::ShowVersionText()
 {
-    std::cout << "libfuse version: " << 
-        std::to_string(fuse_version()) << 
-        " (" << fuse_pkgversion() << ")" << std::endl;
-    
+    std::cout << "libfuse version: "
+        << std::to_string(fuse_version())
+#ifndef __APPLE__
+        << " (" << fuse_pkgversion() << ")"
+#endif
+        << std::endl;
+
+#ifndef __APPLE__
     fuse_lowlevel_version();
+#endif
 }
 
 /*****************************************************/
@@ -97,15 +119,41 @@ struct FuseOptions
     struct fuse_args args;
 };
 
+#ifdef __APPLE__
+
+/*****************************************************/
+/** Scope-managed fuse_mount/fuse_unmount */
+struct FuseMount
+{
+    FuseMount(FuseOptions& options, const char* path):path(path)
+    {
+        debug << __func__ << "() fuse_mount()"; debug.Info();
+        
+        chan = fuse_mount(path, &options.args); mounted = true;
+        
+        if (!chan) throw FuseWrapper::Exception("fuse_mount() failed");
+    };
+    void Unmount()
+    {
+        debug << __func__ << "() fuse_unmount()"; debug.Info();
+        
+        if (mounted) fuse_unmount(path.c_str(), chan);
+    }
+    
+    bool mounted;
+    const std::string path;
+    struct fuse_chan* chan;
+};
+
 /*****************************************************/
 /** Scope-managed fuse_new/fuse_destroy */
 struct FuseContext
 {
-    FuseContext(FuseOptions& opts)
+    FuseContext(FuseMount& mount, FuseOptions& opts):mount(mount)
     { 
         debug << __func__ << "() fuse_new()"; debug.Info();
 
-        fuse = fuse_new(&(opts.args), &fuse_ops, sizeof(fuse_ops), (void*)nullptr);
+        fuse = fuse_new(mount.chan, &(opts.args), &fuse_ops, sizeof(fuse_ops), (void*)nullptr);
 
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
@@ -113,7 +161,31 @@ struct FuseContext
     { 
         debug << __func__ << "() fuse_destroy()"; debug.Info();
 
-        fuse_destroy(fuse); 
+        mount.Unmount(); fuse_destroy(fuse);
+    };
+    struct fuse* fuse;
+    FuseMount& mount;
+};
+
+#else
+
+/*****************************************************/
+/** Scope-managed fuse_new/fuse_destroy */
+struct FuseContext
+{
+    FuseContext(FuseOptions& opts)
+    {
+        debug << __func__ << "() fuse_new()"; debug.Info();
+        
+        fuse = fuse_new(&(opts.args), &fuse_ops, sizeof(fuse_ops), (void*)nullptr);
+        
+        if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
+    };
+    ~FuseContext()
+    {
+        debug << __func__ << "() fuse_destroy()"; debug.Info();
+        
+        fuse_destroy(fuse);
     };
     struct fuse* fuse;
 };
@@ -126,17 +198,19 @@ struct FuseMount
     {
         debug << __func__ << "() fuse_mount()"; debug.Info();
 
-        if (fuse_mount(fuse, path) != SUCCESS) 
+        if (fuse_mount(fuse, path) != SUCCESS)
             throw FuseWrapper::Exception("fuse_mount() failed");
     };
     ~FuseMount()
-    { 
+    {
         debug << __func__ << "() fuse_unmount()"; debug.Info();
-
-        fuse_unmount(fuse); 
-    };
+        
+        fuse_unmount(fuse);
+    }
     struct fuse* fuse;
 };
+
+#endif
 
 /*****************************************************/
 /** Scope-managed fuse_set/remove_signal_handlers */
@@ -187,9 +261,14 @@ void FuseWrapper::Start(Folder& root, const Options& options)
     
     FuseOptions opts; for (const std::string& opt : options.GetFuseOptions()) opts.AddArg(opt);
 
+#ifdef __APPLE__
+    FuseMount mount(opts, mountPath.c_str());
+    FuseContext context(mount, opts);
+#else
     FuseContext context(opts); 
     FuseMount mount(context, mountPath.c_str());
-
+#endif
+    
     debug << __func__ << "... fuse_daemonize()"; debug.Info();
     if (fuse_daemonize(static_cast<int>(Debug::GetLevel())) != SUCCESS)
         throw FuseWrapper::Exception("fuse_daemonize() failed");
@@ -285,7 +364,11 @@ void item_stat(const Item& item, struct stat* stbuf)
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_getattr(const char* path, struct stat* stbuf)
+#else
 int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
+#endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -298,7 +381,11 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+#else
 int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
+#endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -313,7 +400,10 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
             const std::unique_ptr<Item>& item = pair.second;
 
             debug << __func__ << "... subitem: " << item->GetName(); debug.Details();
-
+            
+#ifdef __APPLE__
+            int retval = filler(buf, item->GetName().c_str(), NULL, 0);
+#else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
                 struct stat stbuf; item_stat(*item, &stbuf);
@@ -321,7 +411,8 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
             else retval = filler(buf, item->GetName().c_str(), NULL, 0, (fuse_fill_dir_flags)0);
-
+#endif
+            
             if (retval != SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
 
@@ -382,7 +473,11 @@ int fuse_rmdir(const char* path)
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_rename(const char* oldpath, const char* newpath)
+#else
 int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
+#endif
 {
     oldpath++; newpath++; debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
 
@@ -434,7 +529,11 @@ int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_truncate(const char* path, off_t size)
+#else
 int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
+#endif
 {
     path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) << ")"; debug.Info();
 

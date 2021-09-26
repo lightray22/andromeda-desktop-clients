@@ -27,9 +27,14 @@ set(HTTPLIB_REQUIRE_OPENSSL True)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE False)
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
+if (APPLE)
+   set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
+endif()
+
 add_subdirectory(thirdparty/cpp-httplib)
 target_include_directories(andromeda PRIVATE 
     "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
+target_link_libraries(andromeda PRIVATE httplib)
 target_link_libraries(andromeda INTERFACE httplib)
 
 set(JSON_ImplicitConversions "OFF")
