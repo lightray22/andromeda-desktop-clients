@@ -31,7 +31,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, const nlo
 /*****************************************************/
 std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, Folder& parent, const nlohmann::json& data)
 {
-    std::unique_ptr<Filesystem> filesystem = Filesystem::LoadFromData(backend, data);
+    std::unique_ptr<Filesystem> filesystem(Filesystem::LoadFromData(backend, data));
 
     filesystem->parent = &parent; return filesystem;
 }

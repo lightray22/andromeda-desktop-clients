@@ -12,9 +12,11 @@ Utilities::StringList Utilities::explode(
     std::string str, const std::string& delim, 
     const int max, const size_t skip)
 {
-    size_t skipped = 0, start = 0, end;
     StringList retval;
+    
+    if (str.empty()) return retval;
 
+    size_t skipped = 0, start = 0, end;
     while ((end = str.find(delim, start)) != std::string::npos
             && (max < 0 || retval.size()+1 < (size_t)max))
     {
@@ -42,11 +44,18 @@ Utilities::StringPair Utilities::split(
     StringPair retval;
 
     size_t pos = last ? str.rfind(delim) : str.find(delim);
-    
-    retval.first = str.substr(0, pos);
 
-    if (pos != std::string::npos)
+    if (pos == std::string::npos)
+    {
+        if (last) 
+             retval.second = str;
+        else retval.first = str;
+    }
+    else
+    {
+        retval.first = str.substr(0, pos);
         retval.second = str.substr(pos + delim.length());
+    }
 
     return retval;
 }

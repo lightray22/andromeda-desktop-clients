@@ -21,6 +21,11 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
 /*****************************************************/
 void File::Delete(bool real)
 {
-    if (real) backend.DeleteFile(this->id);
+    if (real) 
+    {
+        debug << __func__ << "()"; debug.Info();
+
+        backend.DeleteFile(this->id);
+    }
     else this->parent.RemoveItem(this->name);
 }

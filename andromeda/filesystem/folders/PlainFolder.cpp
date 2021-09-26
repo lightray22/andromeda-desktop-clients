@@ -52,12 +52,16 @@ void PlainFolder::LoadItems()
 /*****************************************************/
 void PlainFolder::SubCreateFile(const std::string& name)
 {
+    debug << __func__ << "(name:" << name << ")"; debug.Info();
+
     throw Utilities::Exception("not implemented"); // TODO implement me
 }
 
 /*****************************************************/
 void PlainFolder::SubCreateFolder(const std::string& name)
 {
+    debug << __func__ << "(name:" << name << ")"; debug.Info();
+
     nlohmann::json data(backend.CreateFolder(this->id, name));
 
     std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, *this, data));
@@ -75,6 +79,10 @@ void PlainFolder::SubRemoveItem(Item& item)
 void PlainFolder::Delete(bool real)
 {
     if (real || !HasParent()) 
+    {
+        debug << __func__ << "()"; debug.Info();
+
         backend.DeleteFolder(this->id);
+    }
     else GetParent().RemoveItem(this->name);
 }

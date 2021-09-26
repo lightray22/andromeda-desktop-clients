@@ -46,8 +46,9 @@ public:
     virtual const Date GetAccessed() const { return this->accessed; } 
 
     /** 
-     * Delete this item from its parent
+     * Remove this item from its parent
      * @param real INTERNAL actually delete it else notify parent
+     *  which may want to do something else
      */
     virtual void Delete(bool real = false) = 0;
 

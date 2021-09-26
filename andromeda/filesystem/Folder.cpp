@@ -36,27 +36,26 @@ Item& Folder::GetItemByPath(std::string path)
 
     if (path[0] == '/') path.erase(0,1);
 
-    if (path.empty()) return *this;
+    if (path.empty()) return *this;    
 
-    const auto [name, subpath] = Utilities::split(path,"/");
+    Utilities::StringList parts = Utilities::explode(path,"/");
 
-    this->debug << __func__ << "... name:" << name 
-        << " subpath:" << subpath; this->debug.Details();
-
-    const ItemMap& items = GetItems();
-    ItemMap::const_iterator it = items.find(name);
-    if (it == items.end()) throw Backend::NotFoundException();
-
-    Item& item = *(it->second);
-
-    if (subpath.empty()) return item;
-    else if (item.GetType() != Item::Type::FOLDER) 
-        throw NotFolderException();
-    else 
+    Folder* parent = this; for (size_t i = 0; i < parts.size(); i++)
     {
-        Folder& folder = dynamic_cast<Folder&>(item);
-        return folder.GetItemByPath(subpath);
+        const ItemMap& items = parent->GetItems();
+        ItemMap::const_iterator it = items.find(parts[i]);
+        if (it == items.end()) throw Backend::NotFoundException();
+
+        Item& item = *(it->second);
+
+        if (i + 1 == parts.size()) return item;
+
+        if (item.GetType() != Type::FOLDER) throw NotFolderException();
+
+        parent = dynamic_cast<Folder*>(&item);
     }
+
+    throw Backend::NotFoundException(); // should never get here
 }
 
 /*****************************************************/
@@ -64,7 +63,7 @@ File& Folder::GetFileByPath(const std::string& path)
 {
     Item& item = GetItemByPath(path);
 
-    if (item.GetType() != Item::Type::FILE)
+    if (item.GetType() != Type::FILE)
         throw NotFileException();
 
     return dynamic_cast<File&>(item);
@@ -75,7 +74,7 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 {
     Item& item = GetItemByPath(path);
 
-    if (item.GetType() != Item::Type::FOLDER)
+    if (item.GetType() != Type::FOLDER)
         throw NotFolderException();
 
     return dynamic_cast<Folder&>(item);
@@ -131,13 +130,9 @@ void Folder::RemoveItem(const std::string& name)
     const ItemMap& items = GetItems();
 
     ItemMap::const_iterator it = items.find(name);
+    if (it == items.end()) throw Backend::NotFoundException();
 
-    if (it != items.end())
-    {
-        SubRemoveItem(*(it->second));
-
-        itemMap.erase(it);
-    }
+    SubRemoveItem(*(it->second)); itemMap.erase(it);
 }
 
 /*****************************************************/

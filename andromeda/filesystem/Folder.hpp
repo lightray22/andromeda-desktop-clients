@@ -87,15 +87,19 @@ protected:
     /** Populate itemMap using the given JSON */
     virtual void LoadItemsFrom(const nlohmann::json& data);
 
+    /** The folder-type-specific create file */
     virtual void SubCreateFile(const std::string& name) = 0;
 
+    /** The folder-type-specific create folder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
+    /** The folder-type-specific remove item */
     virtual void SubRemoveItem(Item& item) = 0;
 
     /** map of subitems */
     ItemMap itemMap;
 
+    /** Pointer to parent folder (or null) */
     Folder* parent;
 
 private:
