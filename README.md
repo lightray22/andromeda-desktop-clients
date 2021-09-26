@@ -28,7 +28,8 @@ libssl, libcrypto, and libfuse are dynamically linked so they must be available 
 - Alpine: `apk add make cmake g++ fuse3 fuse3-dev nlohmann-json openssl-dev`
 - FreeBSD: `pkg install cmake fusefs-libs3 nlohmann-json`
 - OpenBSD: TODO
-- macOS: TODO
+- macOS: `brew install cmake nlohmann-json openssl@1.1`
+    - Install macFUSE from https://osxfuse.github.io/
 
 # Building
 

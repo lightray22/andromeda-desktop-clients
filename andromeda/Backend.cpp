@@ -117,6 +117,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
     {
         std::cout << "Password? ";
         Utilities::SilentReadConsole(password);
+        //password = "password";
     }
 
     try
@@ -219,6 +220,14 @@ nlohmann::json Backend::GetFilesystems()
     this->debug << __func__ << "()"; this->debug.Info();
 
     return GetJSON(RunAction("files", "getfilesystems"));
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetAdopted()
+{
+    this->debug << __func__ << "()"; this->debug.Info();
+
+    return GetJSON(RunAction("files", "listadopted"));
 }
 
 /*****************************************************/

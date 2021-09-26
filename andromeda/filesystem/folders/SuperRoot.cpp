@@ -1,5 +1,6 @@
 #include "SuperRoot.hpp"
 #include "Backend.hpp"
+#include "Adopted.hpp"
 #include "Filesystems.hpp"
 
 /*****************************************************/
@@ -16,7 +17,9 @@ void SuperRoot::LoadItems()
 {
     debug << __func__ << "()"; debug.Info();
 
-    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(backend, *this));
+    std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(backend, *this));
+    this->itemMap[adopted->GetName()] = std::move(adopted);
 
+    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(backend, *this));
     this->itemMap[filesystems->GetName()] = std::move(filesystems);
 }

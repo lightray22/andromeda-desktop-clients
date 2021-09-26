@@ -118,6 +118,9 @@ public:
     /** Loads filesystem list metadata */
     nlohmann::json GetFilesystems();
 
+    /** Loads items owned but in another user's parent */
+    nlohmann::json GetAdopted();
+
     /**
      * Creates a new folder
      * @param id parent folder ID

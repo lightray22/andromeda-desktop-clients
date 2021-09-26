@@ -15,10 +15,6 @@ class PlainFolder : public Folder
 {
 public:
 
-    /** Exception indicating that filesystems cannot be deleted  */
-    class ModifyException : public Exception { public:
-        ModifyException() : Exception("Cannot modify filesystems") {}; };
-
 	virtual ~PlainFolder(){};
 
     /**

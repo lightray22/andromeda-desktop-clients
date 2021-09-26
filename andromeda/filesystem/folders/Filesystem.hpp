@@ -16,6 +16,10 @@ class Filesystem : public PlainFolder
 {
 public:
 
+    /** Exception indicating that filesystems cannot be deleted  */
+    class DeleteException : public Exception { public:
+        DeleteException() : Exception("Cannot delete filesystems") {}; };
+
 	virtual ~Filesystem(){};
 
     /**
@@ -49,7 +53,7 @@ public:
      */
     Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
 
-    virtual void Delete(bool real = false) override { throw ModifyException(); }
+    virtual void Delete(bool real = false) override { throw DeleteException(); }
 
 private:
 
