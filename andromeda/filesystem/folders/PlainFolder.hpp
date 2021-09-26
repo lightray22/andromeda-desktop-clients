@@ -52,13 +52,13 @@ protected:
     PlainFolder(Backend& backend);
 
     /** populate itemMap from the backend */
-    virtual void LoadItems();
+    virtual void LoadItems() override;
 
-    virtual void SubCreateFile(const std::string& name);
+    virtual void SubCreateFile(const std::string& name) override;
 
-    virtual void SubCreateFolder(const std::string& name);
+    virtual void SubCreateFolder(const std::string& name) override;
 
-    virtual void SubRemoveItem(Item& item);
+    virtual void SubRemoveItem(Item& item) override;
 
 private:
 

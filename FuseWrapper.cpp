@@ -336,7 +336,7 @@ int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry([path=path,name=name]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 
@@ -351,7 +351,7 @@ int fuse_mkdir(const char* fullpath, mode_t mode)
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry([path=path,name=name]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 

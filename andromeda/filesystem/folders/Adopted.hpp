@@ -30,7 +30,7 @@ public:
 protected:
 
     /** populate itemMap from the backend */
-    virtual void LoadItems();
+    virtual void LoadItems() override;
 	
 private:
 
