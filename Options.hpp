@@ -83,6 +83,7 @@ public:
     enum class ItemType
     {
         SUPERROOT,
+        FILESYSTEM,
         FOLDER
     };
 

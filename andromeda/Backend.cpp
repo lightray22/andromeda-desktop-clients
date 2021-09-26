@@ -173,8 +173,6 @@ nlohmann::json Backend::GetConfig()
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    // TODO load all configs in one transaction
-
     nlohmann::json config;
 
     config["server"] = GetJSON(RunAction("server","getconfig"));
@@ -194,6 +192,36 @@ nlohmann::json Backend::GetFolder(const std::string& id)
 }
 
 /*****************************************************/
+nlohmann::json Backend::GetFSRoot(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    Params params {{"files","false"},{"folders","false"}}; 
+    
+    if (!id.empty()) params["filesystem"] = id;
+
+    return GetJSON(RunAction("files", "getfolder", params));
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetFilesystem(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    Params params; if (!id.empty()) params["filesystem"] = id;
+
+    return GetJSON(RunAction("files", "getfilesystem", params));
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetFilesystems()
+{
+    this->debug << __func__ << "()"; this->debug.Info();
+
+    return GetJSON(RunAction("files", "getfilesystems"));
+}
+
+/*****************************************************/
 nlohmann::json Backend::CreateFolder(const std::string& parent, const std::string& name)
 {
     this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
@@ -210,7 +238,7 @@ void Backend::DeleteFile(const std::string& id)
 
     Params params {{"file", id}};
     
-     GetJSON(RunAction("files", "deletefile", params));
+    GetJSON(RunAction("files", "deletefile", params));
 }
 
 /*****************************************************/

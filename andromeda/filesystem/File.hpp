@@ -20,9 +20,11 @@ public:
 
     File(Backend& backend, Folder& parent, const nlohmann::json& data);
 
-    virtual void Delete() override;
+    virtual void Delete(bool real = false) override;
 
 private:
+
+    Folder& parent;
 
     Debug debug;
 };

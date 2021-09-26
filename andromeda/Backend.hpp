@@ -98,10 +98,25 @@ public:
     nlohmann::json GetConfig();
 
     /**
-     * Load folder metadata
+     * Load folder metadata (with subitems)
      * @param id folder ID (or blank for default)
      */
     nlohmann::json GetFolder(const std::string& id = "");
+
+    /**
+     * Load root folder metadata (no subitems)
+     * @param id filesystem ID (or blank for default)
+     */
+    nlohmann::json GetFSRoot(const std::string& id = "");
+
+    /**
+     * Load filesystem metadata
+     * @param id filesystem ID (or blank for default)
+     */
+    nlohmann::json GetFilesystem(const std::string& id = "");
+
+    /** Loads filesystem list metadata */
+    nlohmann::json GetFilesystems();
 
     /**
      * Creates a new folder

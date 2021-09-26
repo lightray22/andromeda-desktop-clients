@@ -41,7 +41,7 @@ Utilities::StringPair Utilities::split(
 {
     StringPair retval;
 
-    size_t pos = last ? str.find(delim) : str.rfind(delim);
+    size_t pos = last ? str.rfind(delim) : str.find(delim);
     
     retval.first = str.substr(0, pos);
 

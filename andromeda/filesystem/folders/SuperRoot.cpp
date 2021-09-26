@@ -1,9 +1,10 @@
 #include "SuperRoot.hpp"
 #include "Backend.hpp"
+#include "Filesystems.hpp"
 
 /*****************************************************/
 SuperRoot::SuperRoot(Backend& backend) : 
-    RootFolder(backend), debug("SuperRoot",this)
+    Folder(backend), debug("SuperRoot",this)
 {
     debug << __func__ << "()"; debug.Info();
 
@@ -13,5 +14,9 @@ SuperRoot::SuperRoot(Backend& backend) :
 /*****************************************************/
 void SuperRoot::LoadItems()
 {
-    // TODO load from server
+    debug << __func__ << "()"; debug.Info();
+
+    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(backend, *this));
+
+    this->itemMap[filesystems->GetName()] = std::move(filesystems);
 }

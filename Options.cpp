@@ -17,7 +17,7 @@ string Options::HelpText()
            << "andromeda-fuse (-h|--help | -V|--version)" << endl
            << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl
                << "\t[-d|--debug [int]] [-u|--username username] [-o fuseoption]+" << endl
-               << "\t[(-rf|--folder [id]) | (-rs|--share [id])]" << endl;
+               << "\t[(-rf|--folder [id]) | (-ri|--filesystem [id]) | (-rs|--share [id])]" << endl;
 
     return output.str();
 }
@@ -48,6 +48,8 @@ void Options::Parse(int argc, char** argv)
 
         else if (flag == "d" || flag == "-debug")
             this->debugLevel = Debug::Level::ERRORS;
+        else if (flag == "ri" || flag == "-filesystem")
+            this->mountItemType = ItemType::FILESYSTEM;
         else if (flag == "rf" || flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
 
@@ -85,6 +87,11 @@ void Options::Parse(int argc, char** argv)
         else if (option == "u" || option == "-username")
         {
             this->username = value;
+        }
+        else if (option == "ri" || option == "-filesystem")
+        {
+            this->mountItemID = value;
+            this->mountItemType = ItemType::FILESYSTEM;
         }
         else if (option == "rf" || option == "-folder")
         {

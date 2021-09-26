@@ -6,7 +6,7 @@
 
 /*****************************************************/
 File::File(Backend& backend, Folder& parent, const nlohmann::json& data) : 
-    Item(backend, parent, data), debug("File",this)
+    Item(backend, data), parent(parent), debug("File",this)
 {
     debug << __func__ << "()"; debug.Info();
     
@@ -19,9 +19,8 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
 }
 
 /*****************************************************/
-void File::Delete()
+void File::Delete(bool real)
 {
-    backend.DeleteFile(this->id);
-
-    GetParent().RemoveItem(this->name);
+    if (real) backend.DeleteFile(this->id);
+    else this->parent.RemoveItem(this->name);
 }

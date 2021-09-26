@@ -23,10 +23,10 @@ static int fuse_mkdir(const char* path, mode_t mode);
 static int fuse_unlink(const char* path);
 static int fuse_rmdir(const char* path);
 static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
-static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
 static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
 
 /* TODO
 flush??
@@ -217,6 +217,10 @@ int standardTry(std::function<int()> func)
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTDIR;
     }
+    catch (const Folder::DuplicateItemException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -EEXIST;
+    }
     catch (const Backend::NotFoundException& e)  
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -ENOENT;
@@ -273,11 +277,11 @@ void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_ctime = static_cast<time_t>(item.GetCreated());
 
-    stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
-    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
-
     stbuf->st_mtime = static_cast<time_t>(item.GetModified());
     if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
+
+    stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
+    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
 }
 
 /*****************************************************/
@@ -289,7 +293,7 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
     {
         item_stat(rootPtr->GetItemByPath(path), stbuf);
 
-        debug << __func__ << "... RETURN"; debug.Details(); return SUCCESS;
+        debug << __func__ << "... RETURN SUCCESS"; debug.Details(); return SUCCESS;
     });
 }
 
@@ -308,15 +312,20 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
         {
             const std::unique_ptr<Item>& item = pair.second;
 
-            struct stat stbuf; item_stat(*item, &stbuf);
+            debug << __func__ << "... subitem: " << item->GetName(); debug.Details();
 
-            if (filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS) != SUCCESS) 
+            int retval; if (flags & FUSE_READDIR_PLUS)
             {
-                debug << __func__ << "... filler() failed"; debug.Error(); return -EIO;
+                struct stat stbuf; item_stat(*item, &stbuf);
+
+                retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
+            else retval = filler(buf, item->GetName().c_str(), NULL, 0, (fuse_fill_dir_flags)0);
+
+            if (retval != SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
 
-        debug << __func__ << "... RETURN"; debug.Details(); return SUCCESS;
+        debug << __func__ << "... RETURN SUCCESS"; debug.Details(); return SUCCESS;
     });
 }
 
@@ -384,19 +393,6 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 }
 
 /*****************************************************/
-int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
-{
-    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) << ")"; debug.Info();
-
-    return standardTry([&]()->int
-    {
-        File& file(rootPtr->GetFileByPath(path));
-
-        return -EIO; // TODO
-    });
-}
-
-/*****************************************************/
 int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) 
@@ -428,6 +424,19 @@ int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct
 int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry([&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        return -EIO; // TODO
+    });
+}
+
+/*****************************************************/
+int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) << ")"; debug.Info();
 
     return standardTry([&]()->int
     {

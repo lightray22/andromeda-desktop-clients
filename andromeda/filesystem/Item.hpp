@@ -8,16 +8,14 @@
 #include "Utilities.hpp"
 
 class Backend;
-class Folder;
 
 /** An abstract item in a filesystem */
 class Item
 {
 public:
 
-    /** Exception indicating this item has no parent */
-    class NullParentException : public Utilities::Exception { public:
-        NullParentException() : Utilities::Exception("Item parent is null") {}; };
+    class Exception : public Utilities::Exception { public:
+        using Utilities::Exception::Exception; };
 
 	virtual ~Item(){};
 
@@ -28,12 +26,6 @@ public:
 
     /** Returns the FS type */
     virtual const Type GetType() const = 0;
-
-    /** Returns true if this item has a parent */
-    virtual const bool HasParent() const { return this->parent != nullptr; }
-
-    /** Returns the parent folder */
-    virtual Folder& GetParent() const;
 
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() const { return this->id; }
@@ -53,35 +45,28 @@ public:
     /** Get the accessed time stamp */
     virtual const Date GetAccessed() const { return this->accessed; } 
 
-    /** Delete this item */
-    virtual void Delete() = 0;
+    /** 
+     * Delete this item from its parent
+     * @param real INTERNAL actually delete it else notify parent
+     */
+    virtual void Delete(bool real = false) = 0;
 
 protected:
 
     /** 
-     * Construct an item w/o initializing
+     * Construct without initializing
      * @param backend reference to backend
      */
     Item(Backend& backend);
 
     /** 
-     * Construct an item with JSON data
+     * Construct with JSON data
      * @param backend reference to backend
      * @param data json data from backend
      */
     Item(Backend& backend, const nlohmann::json& data);
-
-    /** 
-     * Construct an item with JSON data
-     * @param backend reference to backend 
-     * @param parent pointer to parent
-     * @param data json data from backend
-     */
-    Item(Backend& backend, Folder& parent, const nlohmann::json& data);
     
     Backend& backend;
-
-    Folder* parent;
 
     std::string id;
     std::string name;

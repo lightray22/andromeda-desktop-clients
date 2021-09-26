@@ -8,7 +8,9 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
-#include "filesystem/folders/RootFolder.hpp"
+#include "filesystem/Folder.hpp"
+#include "filesystem/folders/PlainFolder.hpp"
+#include "filesystem/folders/Filesystem.hpp"
 #include "filesystem/folders/SuperRoot.hpp"
 
 #define VERSION "0.1-alpha"
@@ -82,9 +84,13 @@ int main(int argc, char** argv)
             {
                 folder = std::make_unique<SuperRoot>(backend); break;
             }
+            case Options::ItemType::FILESYSTEM:
+            {
+                folder = Filesystem::LoadByID(backend, options.GetMountItemID()); break;
+            }
             case Options::ItemType::FOLDER:
             {
-                folder = RootFolder::LoadByID(backend, options.GetMountItemID()); break;
+                folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
             }
         }
     }

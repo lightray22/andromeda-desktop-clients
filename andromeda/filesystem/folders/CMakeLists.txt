@@ -1,8 +1,9 @@
 
 set(SOURCE_FILES 
     Adopted.cpp
+    Filesystem.cpp
     Filesystems.cpp
-    RootFolder.cpp
+    PlainFolder.cpp
     Share.cpp
     Shared.cpp
     SuperRoot.cpp

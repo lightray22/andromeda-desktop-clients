@@ -3,7 +3,6 @@
 
 #include "Item.hpp"
 #include "Backend.hpp"
-#include "Folder.hpp"
 
 /*****************************************************/
 Item::Item(Backend& backend) : 
@@ -24,25 +23,13 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
         debug << __func__ << "... name:" << this->name; debug.Details();
 
         data.at("dates").at("created").get_to(this->created);
-        data.at("dates").at("modified").get_to(this->modified);
-        data.at("dates").at("accessed").get_to(this->accessed);
+
+        if (data.at("dates").contains("modified"))
+            data.at("dates").at("modified").get_to(this->modified);
+
+        if (data.at("dates").contains("accessed"))
+            data.at("dates").at("accessed").get_to(this->accessed);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
-}
-
-/*****************************************************/
-Item::Item(Backend& backend, Folder& parent, const nlohmann::json& data) : 
-    Item(backend, data)
-{  
-    this->parent = &parent;
-}
-
-/*****************************************************/
-Folder& Item::GetParent() const     
-{ 
-    if (this->parent == nullptr) 
-        throw NullParentException();
-            
-    return *this->parent; 
 }

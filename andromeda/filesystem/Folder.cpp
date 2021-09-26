@@ -1,45 +1,32 @@
-
 #include <utility>
 #include <nlohmann/json.hpp>
 
 #include "Folder.hpp"
-#include "Backend.hpp"
 #include "File.hpp"
+#include "Backend.hpp"
+#include "folders/PlainFolder.hpp"
 
 /*****************************************************/
 Folder::Folder(Backend& backend) : 
     Item(backend), debug("Folder",this)
 {
-    debug << __func__ << "()"; debug.Info();    
+    debug << __func__ << "()"; debug.Info();
 }
 
 /*****************************************************/
-Folder::Folder(Backend& backend, const nlohmann::json& data, bool haveItems) : 
+Folder::Folder(Backend& backend, const nlohmann::json& data) : 
     Item(backend, data), debug("Folder",this)
 {
     debug << __func__ << "()"; debug.Info();
-    
-    try
-    {
-        data.at("counters").at("size").get_to(this->size);
-        // TODO filesystems/etc. that extend this will not have size...
-        // need to abstract GetSize() from data (static?)
-
-        if (haveItems)
-        {
-            this->LoadItems(data);
-            this->haveItems = true;
-        }
-    }
-    catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
-Folder::Folder(Backend& backend, Folder& parent, const nlohmann::json& data, bool haveItems) : 
-    Folder(backend, data, haveItems)
-{
-    this->parent = &parent;
+Folder& Folder::GetParent() const     
+{ 
+    if (this->parent == nullptr) 
+        throw NullParentException();
+            
+    return *this->parent; 
 }
 
 /*****************************************************/
@@ -61,8 +48,6 @@ Item& Folder::GetItemByPath(std::string path)
     if (it == items.end()) throw Backend::NotFoundException();
 
     Item& item = *(it->second);
-
-    // TODO replace with an iterative verison? (see server)
 
     if (subpath.empty()) return item;
     else if (item.GetType() != Item::Type::FOLDER) 
@@ -99,7 +84,7 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 /*****************************************************/
 const Folder::ItemMap& Folder::GetItems()
 {
-    this->debug << __func__ << "()"; this->debug.Info();
+    this->debug << __func__ << "(name:" << this->name << ")"; this->debug.Info();
 
     if (!this->haveItems) LoadItems();
 
@@ -108,19 +93,9 @@ const Folder::ItemMap& Folder::GetItems()
 }
 
 /*****************************************************/
-void Folder::LoadItems()
+void Folder::LoadItemsFrom(const nlohmann::json& data)
 {
     debug << __func__ << "()"; debug.Info();
-
-    this->LoadItems(backend.GetFolder(this->id));
-}
-
-/*****************************************************/
-void Folder::LoadItems(const nlohmann::json& data)
-{
-    debug << __func__ << "()"; debug.Info();
-
-    this->itemMap.clear();
 
     try
     {
@@ -128,58 +103,63 @@ void Folder::LoadItems(const nlohmann::json& data)
         {
             std::unique_ptr<File> file(std::make_unique<File>(backend, *this, el));
 
+            debug << __func__ << "... file:" << file->GetName(); debug.Details();
+
             this->itemMap[file->GetName()] = std::move(file);
         }
 
         for (const nlohmann::json& el : data.at("folders"))
         {
-            std::unique_ptr<Folder> folder(std::make_unique<Folder>(backend, *this, el));
+            std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, *this, el));
+
+            debug << __func__ << "... folder:" << folder->GetName(); debug.Details();
 
             this->itemMap[folder->GetName()] = std::move(folder);
         }
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
-}
 
-/*****************************************************/
-void Folder::CreateFile(const std::string& name)
-{
-    const ItemMap& items = GetItems(); // pre-populate items
-
-    if (items.count(name)) throw DuplicateItemException();
-
-    throw Utilities::Exception("not implemented"); // TODO implement me
-}
-
-/*****************************************************/
-void Folder::CreateFolder(const std::string& name)
-{
-    const ItemMap& items = GetItems(); // pre-populate items
-
-    if (items.count(name)) throw DuplicateItemException();
-
-    nlohmann::json data(backend.CreateFolder(this->id, name));
-
-    std::unique_ptr<Folder> folder(std::make_unique<Folder>(backend, *this, data));
-
-    this->itemMap[folder->GetName()] = std::move(folder);
+    this->haveItems = true;
 }
 
 /*****************************************************/
 void Folder::RemoveItem(const std::string& name)
 {
+     debug << __func__ << "(name:" << name << ")"; debug.Info();
+
     const ItemMap& items = GetItems();
 
     ItemMap::const_iterator it = items.find(name);
 
-    if (it != items.end()) itemMap.erase(name);
+    if (it != items.end())
+    {
+        SubRemoveItem(*(it->second));
+
+        itemMap.erase(it);
+    }
 }
 
 /*****************************************************/
-void Folder::Delete()
+void Folder::CreateFile(const std::string& name)
 {
-    backend.DeleteFolder(this->id);
-    
-    GetParent().RemoveItem(this->name);
+    debug << __func__ << "(name:" << name << ")"; debug.Info();
+
+    const ItemMap& items = GetItems(); // pre-populate items
+
+    if (items.count(name)) throw DuplicateItemException();
+
+    SubCreateFile(name);
+}
+
+/*****************************************************/
+void Folder::CreateFolder(const std::string& name)
+{
+    debug << __func__ << "(name:" << name << ")"; debug.Info();
+
+    const ItemMap& items = GetItems(); // pre-populate items
+
+    if (items.count(name)) throw DuplicateItemException();
+
+    SubCreateFolder(name);
 }
