@@ -27,9 +27,11 @@ public:
 
     File(Backend& backend, Folder& parent, const nlohmann::json& data);
 
-    virtual void Delete(bool internal = false) override;
+protected:
 
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override;
+    virtual void SubDelete() override;
+
+    virtual void SubRename(const std::string& name, bool overwrite) override;
 
 private:
 

@@ -41,10 +41,6 @@ public:
      */
     PlainFolder(Backend& backend, Folder& parent, const nlohmann::json& data, bool haveItems = false);
 
-    virtual void Delete(bool internal = false) override;
-
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override;
-
 protected:
 
     /** 
@@ -63,6 +59,10 @@ protected:
     virtual void SubDeleteItem(Item& item) override;
 
     virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override;
+
+    virtual void SubDelete() override;
+
+    virtual void SubRename(const std::string& name, bool overwrite) override;
 
 private:
 

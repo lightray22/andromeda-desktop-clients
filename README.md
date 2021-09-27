@@ -11,14 +11,14 @@ This is a FUSE client for an Andromeda backend API (early development).
 
 ### Libraries
 
-Some other dependencies are included in thirdparty/ and built in-tree.
-
 - OpenSSL (1.1.1) (libssl, libcrypto)
 - libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://github.com/osxfuse/fuse
 - nlohmann-json (3.x) https://github.com/nlohmann/json
 
 libssl, libcrypto, and libfuse are dynamically linked so they must be available at runtime.
+
+Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### OS Examples
 

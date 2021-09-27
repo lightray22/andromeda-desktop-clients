@@ -2,6 +2,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Item.hpp"
+#include "Folder.hpp"
 #include "Backend.hpp"
 
 /*****************************************************/
@@ -32,4 +33,21 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
+}
+
+/*****************************************************/
+void Item::Delete(bool internal)
+{
+    if (internal || !HasParent()) SubDelete();
+    else GetParent().DeleteItem(this->name);
+}
+
+/*****************************************************/
+void Item::Rename(const std::string& name, bool overwrite, bool internal)
+{
+    if (internal || !HasParent())
+    { 
+        SubRename(name, overwrite); this->name = name;
+    }
+    else GetParent().RenameItem(this->name, name, overwrite);
 }

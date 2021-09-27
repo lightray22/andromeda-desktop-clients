@@ -57,10 +57,10 @@ public:
     /** Load the map of child items */
     virtual const ItemMap& GetItems() final;
 
-    /** Create a new file with the given name */
+    /** Create a new subfile with the given name */
     virtual void CreateFile(const std::string& name);
 
-    /** Create a new folder with the given name */
+    /** Create a new subfolder with the given name */
     virtual void CreateFolder(const std::string& name);
 
     /** Delete the subitem with the given name */
@@ -90,16 +90,16 @@ protected:
     /** Populate itemMap using the given JSON */
     virtual void LoadItemsFrom(const nlohmann::json& data);
 
-    /** The folder-type-specific create file */
+    /** The folder-type-specific create subfile */
     virtual void SubCreateFile(const std::string& name) = 0;
 
-    /** The folder-type-specific create folder */
+    /** The folder-type-specific create subfolder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
-    /** The folder-type-specific delete item */
+    /** The folder-type-specific delete subitem */
     virtual void SubDeleteItem(Item& item) = 0;
 
-    /** The folder-type-specific rename item */
+    /** The folder-type-specific rename subitem */
     virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) = 0;
 
     /** map of subitems */

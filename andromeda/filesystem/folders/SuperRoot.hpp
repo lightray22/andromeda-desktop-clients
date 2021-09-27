@@ -18,10 +18,6 @@ public:
     
     virtual ~SuperRoot(){};
 
-    virtual void Delete(bool internal = false) override { throw ModifyException(); }
-
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
-
 protected:
 
     virtual void LoadItems() override;
@@ -33,6 +29,10 @@ protected:
     virtual void SubDeleteItem(Item& item) override { throw ModifyException(); }
 
     virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override { throw ModifyException(); }
+
+    virtual void SubDelete() override { throw ModifyException(); }
+
+    virtual void SubRename(const std::string& name, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

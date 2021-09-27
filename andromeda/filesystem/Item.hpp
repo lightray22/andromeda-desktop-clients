@@ -53,10 +53,10 @@ public:
     virtual const Date GetAccessed() const { return this->accessed; } 
 
     /** Remove this item from its parent */
-    virtual void Delete(bool internal = false) = 0;
+    virtual void Delete(bool internal = false);
 
     /** Set this item's name to the given name, optionally overwrite */
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) = 0;
+    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false);
 
 protected:
 
@@ -72,6 +72,12 @@ protected:
      * @param data json data from backend
      */
     Item(Backend& backend, const nlohmann::json& data);
+
+    /** Item type-specific delete */
+    virtual void SubDelete() = 0;
+
+    /** Item type-specific rename */
+    virtual void SubRename(const std::string& name, bool overwrite) = 0;
     
     Backend& backend;
 
