@@ -70,19 +70,39 @@ void PlainFolder::SubCreateFolder(const std::string& name)
 }
 
 /*****************************************************/
-void PlainFolder::SubRemoveItem(Item& item)
+void PlainFolder::Delete(bool internal)
 {
-    item.Delete(true);
-}
-
-/*****************************************************/
-void PlainFolder::Delete(bool real)
-{
-    if (real || !HasParent()) 
+    if (internal || !HasParent()) 
     {
         debug << __func__ << "()"; debug.Info();
 
         backend.DeleteFolder(this->id);
     }
-    else GetParent().RemoveItem(this->name);
+    else GetParent().DeleteItem(this->name);
 }
+
+/*****************************************************/
+void PlainFolder::SubDeleteItem(Item& item)
+{
+    item.Delete(true);
+}
+
+/*****************************************************/
+void PlainFolder::Rename(const std::string& name, bool overwrite, bool internal)
+{
+    if (internal || !HasParent())
+    {
+        debug << __func__ << "(name:" << name << ")"; debug.Info();
+
+        backend.RenameFolder(this->id, name, overwrite); this->name = name;
+    }
+    else GetParent().RenameItem(this->name, name, overwrite);
+}
+
+/*****************************************************/
+void PlainFolder::SubRenameItem(Item& item, const std::string& name, bool overwrite)
+{
+    item.Rename(name, overwrite, true);
+}
+
+// TODO move Delete/Rename parent check/call to Folder, have SubDelete/SubRename for inner backend call

@@ -13,9 +13,9 @@ class Adopted : public PlainFolder
 {
 public:
 
-    /** Exception indicating that Adopted cannot be deleted  */
-    class DeleteException : public Exception { public:
-        DeleteException() : Exception("Cannot delete Adopted") {}; };
+    /** Exception indicating that Adopted cannot be modified  */
+    class ModifyException : public Exception { public:
+        ModifyException() : Exception("Cannot modify Adopted") {}; };
 
 	virtual ~Adopted(){};
 
@@ -25,7 +25,9 @@ public:
 	 */
 	Adopted(Backend& backend, Folder& parent);
 
-	virtual void Delete(bool real = false) override { throw DeleteException(); }
+	virtual void Delete(bool internal = false) override { throw ModifyException(); }
+
+	virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
 
 protected:
 

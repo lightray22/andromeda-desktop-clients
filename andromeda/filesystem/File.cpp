@@ -19,13 +19,25 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
 }
 
 /*****************************************************/
-void File::Delete(bool real)
+void File::Delete(bool internal)
 {
-    if (real) 
+    if (internal) 
     {
         debug << __func__ << "()"; debug.Info();
 
         backend.DeleteFile(this->id);
     }
-    else this->parent.RemoveItem(this->name);
+    else this->parent.DeleteItem(this->name);
+}
+
+/*****************************************************/
+void File::Rename(const std::string& name, bool overwrite, bool internal)
+{
+    if (internal)
+    {
+        debug << __func__ << "(name:" << name << ")"; debug.Info();
+
+        backend.RenameFile(this->id, name, overwrite); this->name = name;
+    }
+    else this->parent.RenameItem(this->name, name, overwrite);
 }

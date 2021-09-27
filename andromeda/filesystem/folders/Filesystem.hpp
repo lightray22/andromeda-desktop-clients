@@ -16,9 +16,9 @@ class Filesystem : public PlainFolder
 {
 public:
 
-    /** Exception indicating that filesystems cannot be deleted  */
-    class DeleteException : public Exception { public:
-        DeleteException() : Exception("Cannot delete filesystems") {}; };
+    /** Exception indicating that filesystems cannot be modified  */
+    class ModifyException : public Exception { public:
+        ModifyException() : Exception("Cannot modify filesystems") {}; };
 
 	virtual ~Filesystem(){};
 
@@ -53,7 +53,9 @@ public:
      */
     Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
 
-    virtual void Delete(bool real = false) override { throw DeleteException(); }
+    virtual void Delete(bool internal = false) override { throw ModifyException(); }
+
+    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
 
 private:
 

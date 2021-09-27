@@ -123,19 +123,6 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
 }
 
 /*****************************************************/
-void Folder::RemoveItem(const std::string& name)
-{
-     debug << __func__ << "(name:" << name << ")"; debug.Info();
-
-    const ItemMap& items = GetItems();
-
-    ItemMap::const_iterator it = items.find(name);
-    if (it == items.end()) throw Backend::NotFoundException();
-
-    SubRemoveItem(*(it->second)); itemMap.erase(it);
-}
-
-/*****************************************************/
 void Folder::CreateFile(const std::string& name)
 {
     debug << __func__ << "(name:" << name << ")"; debug.Info();
@@ -157,4 +144,36 @@ void Folder::CreateFolder(const std::string& name)
     if (items.count(name)) throw DuplicateItemException();
 
     SubCreateFolder(name);
+}
+
+/*****************************************************/
+void Folder::DeleteItem(const std::string& name)
+{
+    debug << __func__ << "(name:" << name << ")"; debug.Info();
+
+    const ItemMap& items = GetItems();
+
+    ItemMap::const_iterator it = items.find(name);
+    if (it == items.end()) throw Backend::NotFoundException();
+
+    SubDeleteItem(*(it->second)); itemMap.erase(it);
+}
+
+/*****************************************************/
+void Folder::RenameItem(const std::string& name0, const std::string& name1, bool overwrite)
+{
+    debug << __func__ << "(name0:" << name0 << " name1:" << name1 << ")"; debug.Info();
+
+    const ItemMap& items = GetItems();
+
+    ItemMap::const_iterator it = items.find(name0);
+    if (it == items.end()) throw Backend::NotFoundException();
+
+    if (!overwrite && items.find(name1) != items.end())
+        throw DuplicateItemException();
+
+    SubRenameItem(*(it->second), name1, overwrite);
+
+    ItemMap::node_type node(itemMap.extract(it));
+    node.key() = name1; itemMap.insert(std::move(node));
 }

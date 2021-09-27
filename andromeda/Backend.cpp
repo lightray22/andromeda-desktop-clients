@@ -259,3 +259,23 @@ void Backend::DeleteFolder(const std::string& id)
     
     GetJSON(RunAction("files", "deletefolder", params));
 }
+
+/*****************************************************/
+void Backend::RenameFile(const std::string& id, const std::string& name, bool overwrite)
+{
+    this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
+
+    Params params {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}};
+
+    GetJSON(RunAction("files", "renamefile", params));
+}
+
+/*****************************************************/
+void Backend::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
+{
+    this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
+
+    Params params {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}};
+
+    GetJSON(RunAction("files", "renamefolder", params));
+}

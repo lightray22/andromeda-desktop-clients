@@ -8,6 +8,7 @@
 #include "Utilities.hpp"
 
 class Backend;
+class Folder;
 
 /** An abstract item in a filesystem */
 class Item
@@ -27,6 +28,12 @@ public:
     /** Returns the FS type */
     virtual const Type GetType() const = 0;
 
+    /** Returns true if this item has a parent */
+    virtual const bool HasParent() const = 0;
+
+    /** Returns the parent folder */
+    virtual Folder& GetParent() const = 0;
+
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() const { return this->id; }
 
@@ -45,12 +52,11 @@ public:
     /** Get the accessed time stamp */
     virtual const Date GetAccessed() const { return this->accessed; } 
 
-    /** 
-     * Remove this item from its parent
-     * @param real INTERNAL actually delete it else notify parent
-     *  which may want to do something else
-     */
-    virtual void Delete(bool real = false) = 0;
+    /** Remove this item from its parent */
+    virtual void Delete(bool internal = false) = 0;
+
+    /** Set this item's name to the given name, optionally overwrite */
+    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) = 0;
 
 protected:
 

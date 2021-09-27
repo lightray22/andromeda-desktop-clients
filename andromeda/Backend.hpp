@@ -134,6 +134,22 @@ public:
     /** Deletes a folder by ID */
     void DeleteFolder(const std::string& id);
 
+    /** 
+     * Renames a file
+     * @param id file ID
+     * @param name new name
+     * @param overwrite whether to overwrite existing
+     */
+    void RenameFile(const std::string& id, const std::string& name, bool overwrite = false);
+
+    /** 
+     * Renames a folder
+     * @param id folder ID
+     * @param name new name
+     * @param overwrite whether to overwrite existing
+     */
+    void RenameFolder(const std::string& id, const std::string& name, bool overwrite = false);
+
 private:
     
     /** Base exception for Andromeda-returned errors */

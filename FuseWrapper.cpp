@@ -129,18 +129,20 @@ struct FuseMount
     {
         debug << __func__ << "() fuse_mount()"; debug.Info();
         
-        chan = fuse_mount(path, &options.args); mounted = true;
+        chan = fuse_mount(path, &options.args);
         
         if (!chan) throw FuseWrapper::Exception("fuse_mount() failed");
     };
     void Unmount()
     {
+        if (!chan) return;
+
         debug << __func__ << "() fuse_unmount()"; debug.Info();
         
-        if (mounted) fuse_unmount(path.c_str(), chan);
-    }
+        fuse_unmount(path.c_str(), chan);
+    };
+    ~FuseMount(){ Unmount(); };
     
-    bool mounted;
     const std::string path;
     struct fuse_chan* chan;
 };
@@ -158,10 +160,12 @@ struct FuseContext
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
     ~FuseContext()
-    { 
+    {
+        mount.Unmount(); 
+
         debug << __func__ << "() fuse_destroy()"; debug.Info();
 
-        mount.Unmount(); fuse_destroy(fuse);
+        fuse_destroy(fuse);
     };
     struct fuse* fuse;
     FuseMount& mount;
@@ -423,11 +427,12 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
 /*****************************************************/
 int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
-    const auto [path, name] = Utilities::split(fullpath,"/",true);
-    
+    fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    const std::string& path = pair.first; const std::string& name = pair.second;
+
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([path=path,name=name]()->int
+    return standardTry([&]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 
@@ -438,11 +443,12 @@ int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 /*****************************************************/
 int fuse_mkdir(const char* fullpath, mode_t mode)
 {
-    const auto [path, name] = Utilities::split(fullpath,"/",true);
+    fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    const std::string& path = pair.first; const std::string& name = pair.second;
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([path=path,name=name]()->int
+    return standardTry([&]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 
@@ -479,11 +485,29 @@ int fuse_rename(const char* oldpath, const char* newpath)
 int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif
 {
-    oldpath++; newpath++; debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
+    oldpath++; const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
+    const std::string& path0 = pair0.first; const std::string& name0 = pair0.second;
+
+    newpath++; const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
+    const std::string& path1 = pair1.first; const std::string& name1 = pair1.second;
+
+    debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
 
     return standardTry([&]()->int
     {
-        return -EIO; // TODO
+        Item& item(rootPtr->GetItemByPath(oldpath));
+
+        if (path0 != path1 && name0 != name1)
+        {
+            return -EIO; // TODO
+        }
+        else if (path0 != path1)
+        {
+            return -EIO; // TODO
+        }
+        else if (name0 != name1) item.Rename(name1, true);
+
+        return SUCCESS;
     });
 }
 

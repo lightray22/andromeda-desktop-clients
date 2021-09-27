@@ -38,10 +38,10 @@ public:
     virtual const Type GetType() const override final { return Type::FOLDER; }
 
     /** Returns true if this item has a parent */
-    virtual const bool HasParent() const { return this->parent != nullptr; }
+    virtual const bool HasParent() const override { return this->parent != nullptr; }
 
     /** Returns the parent folder */
-    virtual Folder& GetParent() const;
+    virtual Folder& GetParent() const override;
 
     /** Load the item with the given relative path */
     virtual Item& GetItemByPath(std::string path) final;
@@ -63,8 +63,11 @@ public:
     /** Create a new folder with the given name */
     virtual void CreateFolder(const std::string& name);
 
-    /** Remove the item with the given name */
-    virtual void RemoveItem(const std::string& name) final;
+    /** Delete the subitem with the given name */
+    virtual void DeleteItem(const std::string& name) final;
+
+    /** Rename the subitem name0 to name1, optionally overwrite */
+    virtual void RenameItem(const std::string& name0, const std::string& name1, bool overwrite = false);
 
 protected:
 
@@ -93,8 +96,11 @@ protected:
     /** The folder-type-specific create folder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
-    /** The folder-type-specific remove item */
-    virtual void SubRemoveItem(Item& item) = 0;
+    /** The folder-type-specific delete item */
+    virtual void SubDeleteItem(Item& item) = 0;
+
+    /** The folder-type-specific rename item */
+    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) = 0;
 
     /** map of subitems */
     ItemMap itemMap;

@@ -18,7 +18,9 @@ public:
     
     virtual ~SuperRoot(){};
 
-    virtual void Delete(bool real = false) override { throw ModifyException(); }
+    virtual void Delete(bool internal = false) override { throw ModifyException(); }
+
+    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
 
 protected:
 
@@ -28,7 +30,9 @@ protected:
 
     virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }
 
-    virtual void SubRemoveItem(Item& item) override { throw ModifyException(); }
+    virtual void SubDeleteItem(Item& item) override { throw ModifyException(); }
+
+    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override { throw ModifyException(); }
 
 private:
 
