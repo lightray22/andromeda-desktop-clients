@@ -25,15 +25,15 @@ public:
 	 */
 	Adopted(Backend& backend, Folder& parent);
 
-	virtual void Delete(bool internal = false) override { throw ModifyException(); }
-
-	virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
-
 protected:
 
     /** populate itemMap from the backend */
     virtual void LoadItems() override;
 	
+	virtual void SubDelete() override { throw ModifyException(); }
+
+	virtual void SubRename(const std::string& name, bool overwrite = false) override { throw ModifyException(); }
+
 private:
 
 	Debug debug;

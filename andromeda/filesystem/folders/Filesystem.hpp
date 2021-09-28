@@ -53,9 +53,9 @@ public:
      */
     Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
 
-    virtual void Delete(bool internal = false) override { throw ModifyException(); }
+protected:
 
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) override { throw ModifyException(); }
+    virtual void SubDelete() override { throw ModifyException(); }
 
 private:
 

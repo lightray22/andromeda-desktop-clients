@@ -58,16 +58,16 @@ public:
     virtual const ItemMap& GetItems() final;
 
     /** Create a new subfile with the given name */
-    virtual void CreateFile(const std::string& name);
+    virtual void CreateFile(const std::string& name) final;
 
     /** Create a new subfolder with the given name */
-    virtual void CreateFolder(const std::string& name);
+    virtual void CreateFolder(const std::string& name) final;
 
     /** Delete the subitem with the given name */
     virtual void DeleteItem(const std::string& name) final;
 
     /** Rename the subitem name0 to name1, optionally overwrite */
-    virtual void RenameItem(const std::string& name0, const std::string& name1, bool overwrite = false);
+    virtual void RenameItem(const std::string& name0, const std::string& name1, bool overwrite = false) final;
 
 protected:
 
@@ -95,12 +95,6 @@ protected:
 
     /** The folder-type-specific create subfolder */
     virtual void SubCreateFolder(const std::string& name) = 0;
-
-    /** The folder-type-specific delete subitem */
-    virtual void SubDeleteItem(Item& item) = 0;
-
-    /** The folder-type-specific rename subitem */
-    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) = 0;
 
     /** map of subitems */
     ItemMap itemMap;

@@ -156,7 +156,7 @@ void Folder::DeleteItem(const std::string& name)
     ItemMap::const_iterator it = items.find(name);
     if (it == items.end()) throw Backend::NotFoundException();
 
-    SubDeleteItem(*(it->second)); itemMap.erase(it);
+    it->second->Delete(true); itemMap.erase(it);
 }
 
 /*****************************************************/
@@ -172,7 +172,7 @@ void Folder::RenameItem(const std::string& name0, const std::string& name1, bool
     if (!overwrite && items.find(name1) != items.end())
         throw DuplicateItemException();
 
-    SubRenameItem(*(it->second), name1, overwrite);
+    it->second->Rename(name1, overwrite, true);
 
     ItemMap::node_type node(itemMap.extract(it));
     node.key() = name1; itemMap.insert(std::move(node));

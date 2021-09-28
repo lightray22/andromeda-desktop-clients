@@ -53,10 +53,10 @@ public:
     virtual const Date GetAccessed() const { return this->accessed; } 
 
     /** Remove this item from its parent */
-    virtual void Delete(bool internal = false);
+    virtual void Delete(bool internal = false) final;
 
     /** Set this item's name to the given name, optionally overwrite */
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false);
+    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) final;
 
 protected:
 

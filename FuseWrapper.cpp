@@ -304,6 +304,10 @@ int standardTry(std::function<int()> func)
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -EEXIST;
     }
+    catch (const Backend::DeniedException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -EACCES;
+    }
     catch (const Backend::NotFoundException& e)  
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -ENOENT;

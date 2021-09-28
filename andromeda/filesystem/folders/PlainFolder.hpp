@@ -56,10 +56,6 @@ protected:
 
     virtual void SubCreateFolder(const std::string& name) override;
 
-    virtual void SubDeleteItem(Item& item) override;
-
-    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override;
-
     virtual void SubDelete() override;
 
     virtual void SubRename(const std::string& name, bool overwrite) override;

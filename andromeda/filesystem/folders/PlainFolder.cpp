@@ -70,18 +70,6 @@ void PlainFolder::SubCreateFolder(const std::string& name)
 }
 
 /*****************************************************/
-void PlainFolder::SubDeleteItem(Item& item)
-{
-    item.Delete(true);
-}
-
-/*****************************************************/
-void PlainFolder::SubRenameItem(Item& item, const std::string& name, bool overwrite)
-{
-    item.Rename(name, overwrite, true);
-}
-
-/*****************************************************/
 void PlainFolder::SubDelete()
 {
     debug << __func__ << "()"; debug.Info();
