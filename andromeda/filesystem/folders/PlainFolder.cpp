@@ -70,6 +70,24 @@ void PlainFolder::SubCreateFolder(const std::string& name)
 }
 
 /*****************************************************/
+void PlainFolder::SubDeleteItem(Item& item)
+{
+    item.Delete(true);
+}
+
+/*****************************************************/
+void PlainFolder::SubRenameItem(Item& item, const std::string& name, bool overwrite)
+{
+    item.Rename(name, overwrite, true);
+}
+
+/*****************************************************/
+void PlainFolder::SubMoveItem(Item& item, Folder& parent, bool overwrite)
+{
+    item.Move(parent, overwrite, true);
+}
+
+/*****************************************************/
 void PlainFolder::SubDelete()
 {
     debug << __func__ << "()"; debug.Info();
@@ -83,4 +101,12 @@ void PlainFolder::SubRename(const std::string& name, bool overwrite)
     debug << __func__ << "(name:" << name << ")"; debug.Info();
 
     backend.RenameFolder(this->id, name, overwrite);
+}
+
+/*****************************************************/
+void PlainFolder::SubMove(Folder& parent, bool overwrite)
+{
+    debug << __func__ << "(parent:" << parent.GetName() << ")"; debug.Info();
+
+    backend.MoveFolder(this->id, parent.GetID(), overwrite);
 }

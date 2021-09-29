@@ -21,15 +21,6 @@ Folder::Folder(Backend& backend, const nlohmann::json& data) :
 }
 
 /*****************************************************/
-Folder& Folder::GetParent() const     
-{ 
-    if (this->parent == nullptr) 
-        throw NullParentException();
-            
-    return *this->parent; 
-}
-
-/*****************************************************/
 Item& Folder::GetItemByPath(std::string path)
 {
     this->debug << __func__ << "(path:" << path << ")"; this->debug.Info();
@@ -156,7 +147,7 @@ void Folder::DeleteItem(const std::string& name)
     ItemMap::const_iterator it = items.find(name);
     if (it == items.end()) throw Backend::NotFoundException();
 
-    it->second->Delete(true); itemMap.erase(it);
+    SubDeleteItem(*(it->second)); this->itemMap.erase(it);
 }
 
 /*****************************************************/
@@ -172,8 +163,31 @@ void Folder::RenameItem(const std::string& name0, const std::string& name1, bool
     if (!overwrite && items.find(name1) != items.end())
         throw DuplicateItemException();
 
-    it->second->Rename(name1, overwrite, true);
+    SubRenameItem(*(it->second), name1, overwrite);
 
-    ItemMap::node_type node(itemMap.extract(it));
-    node.key() = name1; itemMap.insert(std::move(node));
+    ItemMap::node_type node(this->itemMap.extract(it));
+    node.key() = name1; this->itemMap.insert(std::move(node));
+}
+
+/*****************************************************/
+void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
+{
+    debug << __func__ << "(name:" << name << " parent:" << parent.GetName() << ")"; debug.Info();
+
+    const ItemMap& items = GetItems();
+    ItemMap::const_iterator it = items.find(name);
+    if (it == items.end()) throw Backend::NotFoundException();
+
+    if (!parent.CanReceiveItems()) throw ModifyException();
+
+    if (!overwrite)
+    {
+        const ItemMap& items1 = parent.GetItems();
+        ItemMap::const_iterator it1 = items1.find(name);
+        if (it1 != items1.end()) throw DuplicateItemException();
+    }
+
+    SubMoveItem(*(it->second), parent, overwrite);
+
+    parent.itemMap.insert(std::move(this->itemMap.extract(it)));
 }

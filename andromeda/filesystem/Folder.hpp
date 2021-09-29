@@ -17,7 +17,7 @@ class Folder : public Item
 {
 public:
 
-	virtual ~Folder(){};
+    virtual ~Folder(){};
 
     /** Exception indicating the item found is not a file */
     class NotFileException : public Exception { public:
@@ -30,18 +30,11 @@ public:
     /** Exception indicating the requested item already exists */
     class DuplicateItemException : public Exception { public:
         DuplicateItemException() : Exception("Item already exists") {}; };
-    
-    /** Exception indicating this folder has no parent */
-    class NullParentException : public Exception { public:
-        NullParentException() : Exception("Folder parent is null") {}; };
+
+    class ModifyException : public Exception { public:
+        ModifyException() : Exception("Item cannot be modified") {}; };
 
     virtual const Type GetType() const override final { return Type::FOLDER; }
-
-    /** Returns true if this item has a parent */
-    virtual const bool HasParent() const override { return this->parent != nullptr; }
-
-    /** Returns the parent folder */
-    virtual Folder& GetParent() const override;
 
     /** Load the item with the given relative path */
     virtual Item& GetItemByPath(std::string path) final;
@@ -68,6 +61,9 @@ public:
 
     /** Rename the subitem name0 to name1, optionally overwrite */
     virtual void RenameItem(const std::string& name0, const std::string& name1, bool overwrite = false) final;
+
+    /** Move the subitem name to parent folder, optionally overwrite */
+    virtual void MoveItem(const std::string& name, Folder& parent, bool overwrite = false) final;
 
 protected:
 
@@ -96,11 +92,20 @@ protected:
     /** The folder-type-specific create subfolder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
+    /** The folder-type-specific delete subitem */
+    virtual void SubDeleteItem(Item& item) = 0;
+
+    /** The folder-type-specific rename subitem */
+    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) = 0;
+
+    /** The folder-type-specific move subitem */
+    virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) = 0;
+
+    /** Whether or not this folder can have items moved into it */
+    virtual bool CanReceiveItems() = 0;
+
     /** map of subitems */
     ItemMap itemMap;
-
-    /** Pointer to parent folder (or null) */
-    Folder* parent;
 
 private:
 

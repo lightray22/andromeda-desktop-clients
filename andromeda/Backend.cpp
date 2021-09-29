@@ -67,7 +67,8 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             const auto [message, details] = Utilities::split(
                 val.at("message").get<std::string>(),":");
 
-                 if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
+                 if (code == 400 && message == "FILESYSTEM_MISMATCH")   throw UnsupportedException();
+            else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
 
             else if (code == 403) throw DeniedException(message); 
@@ -278,4 +279,24 @@ void Backend::RenameFolder(const std::string& id, const std::string& name, bool 
     Params params {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}};
 
     GetJSON(RunAction("files", "renamefolder", params));
+}
+
+/*****************************************************/
+void Backend::MoveFile(const std::string& id, const std::string& parent, bool overwrite)
+{
+    this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
+
+    Params params {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}};
+
+    GetJSON(RunAction("files", "movefile", params));
+}
+
+/*****************************************************/
+void Backend::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
+{
+    this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
+
+    Params params {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}};
+
+    GetJSON(RunAction("files", "movefolder", params));
 }

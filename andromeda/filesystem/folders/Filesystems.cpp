@@ -37,3 +37,15 @@ void Filesystems::LoadItems()
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 }
+
+/*****************************************************/
+void Filesystems::SubDeleteItem(Item& item)
+{
+    item.Delete(true);
+}
+
+/*****************************************************/
+void Filesystems::SubRenameItem(Item& item, const std::string& name, bool overwrite)
+{
+    item.Rename(name, overwrite, true);
+}

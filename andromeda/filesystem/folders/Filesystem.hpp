@@ -16,11 +16,7 @@ class Filesystem : public PlainFolder
 {
 public:
 
-    /** Exception indicating that filesystems cannot be modified  */
-    class ModifyException : public Exception { public:
-        ModifyException() : Exception("Cannot modify filesystems") {}; };
-
-	virtual ~Filesystem(){};
+    virtual ~Filesystem(){};
 
     /**
      * Load a filesystem from the backend with the given ID
@@ -56,6 +52,8 @@ public:
 protected:
 
     virtual void SubDelete() override { throw ModifyException(); }
+
+    virtual void SubMove(Folder& parent, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

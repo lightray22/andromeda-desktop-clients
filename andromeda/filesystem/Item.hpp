@@ -17,8 +17,12 @@ public:
 
     class Exception : public Utilities::Exception { public:
         using Utilities::Exception::Exception; };
+    
+    /** Exception indicating this item has no parent */
+    class NullParentException : public Exception { public:
+        NullParentException() : Exception("Item parent is null") {}; };
 
-	virtual ~Item(){};
+    virtual ~Item(){};
 
     typedef unsigned long long Size;
     typedef double Date;
@@ -29,10 +33,10 @@ public:
     virtual const Type GetType() const = 0;
 
     /** Returns true if this item has a parent */
-    virtual const bool HasParent() const = 0;
+    virtual const bool HasParent() const { return this->parent != nullptr; }
 
     /** Returns the parent folder */
-    virtual Folder& GetParent() const = 0;
+    virtual Folder& GetParent() const;
 
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() const { return this->id; }
@@ -58,6 +62,9 @@ public:
     /** Set this item's name to the given name, optionally overwrite */
     virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) final;
 
+    /** Move this item to the given parent folder, optionally overwrite */
+    virtual void Move(Folder& parent, bool overwrite = false, bool internal = false) final;
+
 protected:
 
     /** 
@@ -78,8 +85,13 @@ protected:
 
     /** Item type-specific rename */
     virtual void SubRename(const std::string& name, bool overwrite) = 0;
+
+    /** Item type-specific move */
+    virtual void SubMove(Folder& parent, bool overwrite) = 0;
     
     Backend& backend;
+
+    Folder* parent = nullptr;
 
     std::string id;
     std::string name;

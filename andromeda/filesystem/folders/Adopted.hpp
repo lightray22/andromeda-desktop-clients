@@ -13,30 +13,30 @@ class Adopted : public PlainFolder
 {
 public:
 
-    /** Exception indicating that Adopted cannot be modified  */
-    class ModifyException : public Exception { public:
-        ModifyException() : Exception("Cannot modify Adopted") {}; };
+    virtual ~Adopted(){};
 
-	virtual ~Adopted(){};
-
-	/**
-	 * @param backend backend reference
-	 * @param parent reference to parent 
-	 */
-	Adopted(Backend& backend, Folder& parent);
+    /**
+     * @param backend backend reference
+     * @param parent reference to parent 
+     */
+    Adopted(Backend& backend, Folder& parent);
 
 protected:
 
     /** populate itemMap from the backend */
     virtual void LoadItems() override;
-	
-	virtual void SubDelete() override { throw ModifyException(); }
+        
+    virtual bool CanReceiveItems() override { return false; }
 
-	virtual void SubRename(const std::string& name, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubDelete() override { throw ModifyException(); }
+
+    virtual void SubRename(const std::string& name, bool overwrite = false) override { throw ModifyException(); }
+
+    virtual void SubMove(Folder& parent, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 
-	Debug debug;
+    Debug debug;
 };
 
 #endif

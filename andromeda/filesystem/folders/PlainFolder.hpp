@@ -15,7 +15,7 @@ class PlainFolder : public Folder
 {
 public:
 
-	virtual ~PlainFolder(){};
+    virtual ~PlainFolder(){};
 
     /**
      * Load from the backend with the given ID
@@ -55,10 +55,20 @@ protected:
     virtual void SubCreateFile(const std::string& name) override;
 
     virtual void SubCreateFolder(const std::string& name) override;
+    
+    virtual void SubDeleteItem(Item& item) override;
+
+    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override;
+
+    virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) override;
+
+    virtual bool CanReceiveItems() override { return true; }
 
     virtual void SubDelete() override;
 
     virtual void SubRename(const std::string& name, bool overwrite) override;
+
+    virtual void SubMove(Folder& parent, bool overwrite) override;
 
 private:
 

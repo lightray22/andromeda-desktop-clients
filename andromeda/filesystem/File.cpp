@@ -6,9 +6,11 @@
 
 /*****************************************************/
 File::File(Backend& backend, Folder& parent, const nlohmann::json& data) : 
-    Item(backend, data), parent(parent), debug("File",this)
+    Item(backend, data), debug("File",this)
 {
     debug << __func__ << "()"; debug.Info();
+
+    this->parent = &parent;
     
     try
     {
@@ -32,4 +34,12 @@ void File::SubRename(const std::string& name, bool overwrite)
     debug << __func__ << "(name:" << name << ")"; debug.Info();
 
     backend.RenameFile(this->id, name, overwrite);
+}
+
+/*****************************************************/
+void File::SubMove(Folder& parent, bool overwrite)
+{
+    debug << __func__ << "(parent:" << parent.GetName() << ")"; debug.Info();
+
+    backend.MoveFile(this->id, parent.GetID(), overwrite);
 }

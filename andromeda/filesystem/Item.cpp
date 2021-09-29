@@ -36,6 +36,15 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
 }
 
 /*****************************************************/
+Folder& Item::GetParent() const     
+{ 
+    if (this->parent == nullptr) 
+        throw NullParentException();
+            
+    return *this->parent; 
+}
+
+/*****************************************************/
 void Item::Delete(bool internal)
 {
     if (internal || !HasParent()) SubDelete();
@@ -47,7 +56,19 @@ void Item::Rename(const std::string& name, bool overwrite, bool internal)
 {
     if (internal || !HasParent())
     { 
-        SubRename(name, overwrite); this->name = name;
+        SubRename(name, overwrite); 
+        this->name = name;
     }
     else GetParent().RenameItem(this->name, name, overwrite);
+}
+
+/*****************************************************/
+void Item::Move(Folder& parent, bool overwrite, bool internal)
+{
+    if (internal)
+    {
+        SubMove(parent, overwrite); 
+        this->parent = &parent;
+    }
+    else GetParent().MoveItem(this->name, parent, overwrite);
 }

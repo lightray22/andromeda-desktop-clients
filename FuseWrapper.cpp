@@ -304,6 +304,14 @@ int standardTry(std::function<int()> func)
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -EEXIST;
     }
+    catch (const Folder::ModifyException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTSUP;
+    }
+    catch (const Backend::UnsupportedException& e)
+    {
+        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTSUP;
+    }
     catch (const Backend::DeniedException& e)
     {
         debug << __func__ << "..." << e.what(); debug.Details(); return -EACCES;
@@ -503,13 +511,20 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 
         if (path0 != path1 && name0 != name1)
         {
+            Folder& parent(rootPtr->GetFolderByPath(path1));
+
             return -EIO; // TODO
         }
         else if (path0 != path1)
         {
-            return -EIO; // TODO
+            Folder& parent(rootPtr->GetFolderByPath(path1));
+
+            item.Move(parent, true);
         }
-        else if (name0 != name1) item.Rename(name1, true);
+        else if (name0 != name1) 
+        {
+            item.Rename(name1, true);
+        }
 
         return SUCCESS;
     });

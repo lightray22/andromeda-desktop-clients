@@ -68,6 +68,10 @@ public:
     class TwoFactorRequiredException : public DeniedException { public:
         TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
 
+    /** Andromeda exception indicating the requested operation is invalid */
+    class UnsupportedException : public Exception { public:
+        UnsupportedException() : Exception("Invalid Operation") {}; };
+
     /** @param runner the Runner to use */
     Backend(Runner& runner);
 
@@ -149,6 +153,22 @@ public:
      * @param overwrite whether to overwrite existing
      */
     void RenameFolder(const std::string& id, const std::string& name, bool overwrite = false);
+
+    /** 
+     * Moves a file
+     * @param id file ID
+     * @param parent new parent ID
+     * @param overwrite whether to overwrite existing
+     */
+    void MoveFile(const std::string& id, const std::string& parent, bool overwrite = false);
+
+    /** 
+     * Moves a file
+     * @param id file ID
+     * @param parent new parent ID
+     * @param overwrite whether to overwrite existing
+     */
+    void MoveFolder(const std::string& id, const std::string& parent, bool overwrite = false);
 
 private:
     
