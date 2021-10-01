@@ -61,7 +61,8 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             const auto [message, details] = Utilities::split(
                 val.at("message").get<std::string>(),":");
 
-                 if (code == 400 && message == "FILESYSTEM_MISMATCH")   throw UnsupportedException();
+                 if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
+            else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
 
