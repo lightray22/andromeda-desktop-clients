@@ -108,8 +108,11 @@ public:
      */
     void Error(const std::string& str = "");
 
-    /** Append str to an internal buffer that can be shown with Info/Error */
-    Debug& operator<<(const std::string& str);
+    /** Append to an internal buffer that can be shown with Info/Error */
+    template <class T> Debug& operator<<(const T& dat)
+    {
+        this->buffer << dat; return *this;
+    }
 
 private:
 

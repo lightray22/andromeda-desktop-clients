@@ -74,8 +74,6 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 /*****************************************************/
 const Folder::ItemMap& Folder::GetItems()
 {
-    this->debug << __func__ << "(name:" << this->name << ")"; this->debug.Info();
-
     if (!this->haveItems) LoadItems();
 
     this->haveItems = true;
@@ -142,10 +140,8 @@ void Folder::DeleteItem(const std::string& name)
 {
     debug << __func__ << "(name:" << name << ")"; debug.Info();
 
-    const ItemMap& items = GetItems();
-
-    ItemMap::const_iterator it = items.find(name);
-    if (it == items.end()) throw Backend::NotFoundException();
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
+    if (it == this->itemMap.end()) throw Backend::NotFoundException();
 
     SubDeleteItem(*(it->second)); this->itemMap.erase(it);
 }
@@ -155,15 +151,16 @@ void Folder::RenameItem(const std::string& name0, const std::string& name1, bool
 {
     debug << __func__ << "(name0:" << name0 << " name1:" << name1 << ")"; debug.Info();
 
-    const ItemMap& items = GetItems();
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name0);
+    if (it == this->itemMap.end()) throw Backend::NotFoundException();
 
-    ItemMap::const_iterator it = items.find(name0);
-    if (it == items.end()) throw Backend::NotFoundException();
-
-    if (!overwrite && items.find(name1) != items.end())
+    ItemMap::const_iterator dup = this->itemMap.find(name1);
+    if (!overwrite && dup != this->itemMap.end())
         throw DuplicateItemException();
 
     SubRenameItem(*(it->second), name1, overwrite);
+
+    if (dup != this->itemMap.end()) this->itemMap.erase(dup);
 
     ItemMap::node_type node(this->itemMap.extract(it));
     node.key() = name1; this->itemMap.insert(std::move(node));
@@ -174,20 +171,18 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
 {
     debug << __func__ << "(name:" << name << " parent:" << parent.GetName() << ")"; debug.Info();
 
-    const ItemMap& items = GetItems();
-    ItemMap::const_iterator it = items.find(name);
-    if (it == items.end()) throw Backend::NotFoundException();
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
+    if (it == this->itemMap.end()) throw Backend::NotFoundException();
 
-    if (!parent.CanReceiveItems()) throw ModifyException();
+    parent.GetItems(); if (!parent.CanReceiveItems()) throw ModifyException();
 
-    if (!overwrite)
-    {
-        const ItemMap& items1 = parent.GetItems();
-        ItemMap::const_iterator it1 = items1.find(name);
-        if (it1 != items1.end()) throw DuplicateItemException();
-    }
+    ItemMap::const_iterator dup = parent.itemMap.find(name);    
+    if (!overwrite && dup != parent.itemMap.end())
+        throw DuplicateItemException();
 
     SubMoveItem(*(it->second), parent, overwrite);
 
-    parent.itemMap.insert(std::move(this->itemMap.extract(it)));
+    if (dup != parent.itemMap.end()) parent.itemMap.erase(dup);
+
+    parent.itemMap.insert(this->itemMap.extract(it));
 }

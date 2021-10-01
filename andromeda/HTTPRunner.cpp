@@ -12,28 +12,36 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) 
     debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
 
     this->httpClient.set_keep_alive(true);
+
+    this->httpClient.set_read_timeout(60, 0);
+    this->httpClient.set_write_timeout(60, 0);
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(
-    const std::string& app, const std::string& action, 
-    const Backend::Params& params)
+std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 {
-    httplib::Params urlParams {{"app",app},{"action",action}};
+    httplib::Params urlParams {{"app",input.app},{"action",input.action}};
 
     std::string url(this->baseURL + "?" + 
         httplib::detail::params_to_query_str(urlParams));
 
-    httplib::Params postParams;
+    httplib::MultipartFormDataItems postParams;
 
-    for (Backend::Params::const_iterator it = params.cbegin(); it != params.cend(); it++)
-        postParams.insert(httplib::Params::value_type(it->first, it->second));  
+    for (Params::const_iterator it = input.params.cbegin(); it != input.params.cend(); it++)
+    {
+        postParams.push_back({it->first, it->second});
+    }
+
+    for (Files::const_iterator it = input.files.cbegin(); it != input.files.cend(); it++)
+    {
+        postParams.push_back({it->first, it->second.data, it->second.name});
+    }
     
     httplib::Result response = this->httpClient.Post(url.c_str(), postParams);
 
     if (!response) throw LibErrorException(response.error());
 
-    debug << __func__ << "... HTTP:" << std::to_string(response->status); debug.Details();
+    debug << __func__ << "... HTTP:" << response->status; debug.Details();
 
     switch (response->status)
     {

@@ -25,9 +25,7 @@ public:
      */
     HTTPRunner(const std::string& hostname, const std::string& baseURL);
     
-    virtual std::string RunAction(
-        const std::string& app, const std::string& action, 
-        const Backend::Params& params = Backend::Params()) override;
+    virtual std::string RunAction(const Input& input) override;
 
 private:
     Debug debug;

@@ -13,9 +13,7 @@ public:
     /** @param apiPath path to the API index.php */
     CLIRunner(const std::string& apiPath) : apiPath(apiPath){ };
 
-    virtual std::string RunAction(
-        const std::string& app, const std::string& action, 
-        const Backend::Params& params = Backend::Params()) override;
+    virtual std::string RunAction(const Input& input) override;
 
 private:
     const std::string apiPath;

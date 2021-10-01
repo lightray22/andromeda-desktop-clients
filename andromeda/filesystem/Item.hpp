@@ -24,7 +24,6 @@ public:
 
     virtual ~Item(){};
 
-    typedef unsigned long long Size;
     typedef double Date;
 
     enum class Type { FILE, FOLDER };
@@ -45,7 +44,7 @@ public:
     virtual const std::string& GetName() const { return this->name; }
 
     /** Returns the total size */
-    virtual const Size GetSize() const { return this->size; }
+    virtual const size_t GetSize() const { return this->size; }
 
     /** Get the created time stamp */
     virtual const Date GetCreated() const { return this->created; } 
@@ -96,7 +95,7 @@ protected:
     std::string id;
     std::string name;
 
-    Size size = 0;
+    size_t size = 0;
 
     Date created = 0;
     Date modified = 0;

@@ -125,9 +125,3 @@ void Debug::Error(const std::string& str)
     }
     else std::cout << str << std::endl;
 }
-
-/*****************************************************/
-Debug& Debug::operator<<(const std::string& str)
-{ 
-    this->buffer << str; return *this; 
-}

@@ -29,7 +29,10 @@ static int fuse_unlink(const char* path);
 static int fuse_rmdir(const char* path);
 static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
+static int fuse_flush(const char* path, struct fuse_file_info* fi);
 static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+static int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
+static int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 
 #ifdef __APPLE__
 static int fuse_getattr(const char* path, struct stat* stbuf);
@@ -44,10 +47,8 @@ static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi
 #endif
 
 /* TODO
-flush??
 copy_file_range?
 fsyncdir?
-chmod/chown??? stub
 fallocate? (vs. truncate?)
 */
 
@@ -57,10 +58,13 @@ static struct fuse_operations fuse_ops = {
     .unlink = fuse_unlink,
     .rmdir = fuse_rmdir,
     .rename = fuse_rename,
+    .chmod = fuse_chmod,
+    .chown = fuse_chown,
     .truncate = fuse_truncate,
     .read = fuse_read,
     .write = fuse_write,
     .statfs = fuse_statfs,
+    .flush = fuse_flush,
     .fsync = fuse_fsync,
     .readdir = fuse_readdir,
     .create = fuse_create
@@ -79,8 +83,7 @@ void FuseWrapper::ShowHelpText()
 /*****************************************************/
 void FuseWrapper::ShowVersionText()
 {
-    std::cout << "libfuse version: "
-        << std::to_string(fuse_version())
+    std::cout << "libfuse version: " << fuse_version()
 #ifndef __APPLE__
         << " (" << fuse_pkgversion() << ")"
 #endif
@@ -248,7 +251,7 @@ struct FuseLoop
 
         int retval = fuse_loop(context.fuse);
 
-        debug << __func__ << "() fuse_loop() returned! retval:" << std::to_string(retval); debug.Info();
+        debug << __func__ << "() fuse_loop() returned! retval:" << retval; debug.Info();
     }
 };
 
@@ -286,7 +289,7 @@ void FuseWrapper::Start(Folder& root, const Options& options)
 /*****************************************************/
 
 /*****************************************************/
-int standardTry(std::function<int()> func)
+int standardTry(const std::string& fname, std::function<int()> func)
 {
     try
     {
@@ -294,35 +297,35 @@ int standardTry(std::function<int()> func)
     }
     catch (const Folder::NotFileException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -EISDIR;
+        debug << fname << "..." << e.what(); debug.Details(); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTDIR;
+        debug << fname << "..." << e.what(); debug.Details(); return -ENOTDIR;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -EEXIST;
+        debug << fname << "..." << e.what(); debug.Details(); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTSUP;
+        debug << fname << "..." << e.what(); debug.Details(); return -ENOTSUP;
     }
     catch (const Backend::UnsupportedException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOTSUP;
+        debug << fname << "..." << e.what(); debug.Details(); return -ENOTSUP;
     }
     catch (const Backend::DeniedException& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -EACCES;
+        debug << fname << "..." << e.what(); debug.Details(); return -EACCES;
     }
     catch (const Backend::NotFoundException& e)  
     {
-        debug << __func__ << "..." << e.what(); debug.Details(); return -ENOENT;
+        debug << fname << "..." << e.what(); debug.Details(); return -ENOENT;
     }
     catch (const Utilities::Exception& e)
     {
-        debug << __func__ << "..." << e.what(); debug.Error(); return -EIO;
+        debug << fname << "..." << e.what(); debug.Error(); return -EIO;
     }
 }
 
@@ -388,11 +391,9 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
-        item_stat(rootPtr->GetItemByPath(path), stbuf);
-
-        debug << __func__ << "... RETURN SUCCESS"; debug.Details(); return SUCCESS;
+        item_stat(rootPtr->GetItemByPath(path), stbuf); return SUCCESS;
     });
 }
 
@@ -405,11 +406,11 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         const Folder::ItemMap& items(rootPtr->GetFolderByPath(path).GetItems());
 
-        debug << __func__ << "... #items:" << std::to_string(items.size()); debug.Details();
+        debug << __func__ << "... #items:" << items.size(); debug.Details();
 
         for (const Folder::ItemMap::value_type& pair : items)
         {
@@ -427,12 +428,11 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
             else retval = filler(buf, item->GetName().c_str(), NULL, 0, (fuse_fill_dir_flags)0);
-#endif
-            
+#endif            
             if (retval != SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
 
-        debug << __func__ << "... RETURN SUCCESS"; debug.Details(); return SUCCESS;
+        return SUCCESS;
     });
 }
 
@@ -444,7 +444,7 @@ int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 
@@ -460,7 +460,7 @@ int fuse_mkdir(const char* fullpath, mode_t mode)
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         Folder& parent(rootPtr->GetFolderByPath(path));
 
@@ -473,7 +473,7 @@ int fuse_unlink(const char* path)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         rootPtr->GetFileByPath(path).Delete(); return SUCCESS;
     });
@@ -484,7 +484,7 @@ int fuse_rmdir(const char* path)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         rootPtr->GetFolderByPath(path).Delete(); return SUCCESS;
     });
@@ -505,7 +505,7 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 
     debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         Item& item(rootPtr->GetItemByPath(oldpath));
 
@@ -513,7 +513,7 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
         {
             Folder& parent(rootPtr->GetFolderByPath(path1));
 
-            return -EIO; // TODO
+            debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO
         }
         else if (path0 != path1)
         {
@@ -533,28 +533,39 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 /*****************************************************/
 int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) 
-        << " offset:" << std::to_string(off) << ")"; debug.Info();
+    path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         File& file(rootPtr->GetFileByPath(path));
 
-        return -EIO; // TODO
+        return file.ReadBytes(reinterpret_cast<std::byte*>(buf), off, size);
     });
 }
 
 /*****************************************************/
 int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) 
-        << " offset:" << std::to_string(off) << ")"; debug.Info();
+    path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         File& file(rootPtr->GetFileByPath(path));
 
-        return -EIO; // TODO
+        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), off, size); return size;
+    });
+}
+
+/*****************************************************/
+int fuse_flush(const char* path, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        File& file(rootPtr->GetFileByPath(path));
+
+        file.FlushCache(); return SUCCESS;
     });
 }
 
@@ -563,11 +574,11 @@ int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         File& file(rootPtr->GetFileByPath(path));
 
-        return -EIO; // TODO
+        file.FlushCache(); return SUCCESS;
     });
 }
 
@@ -578,12 +589,34 @@ int fuse_truncate(const char* path, off_t size)
 int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif
 {
-    path++; debug << __func__ << "(path:" << path << " size:" << std::to_string(size) << ")"; debug.Info();
+    path++; debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
 
-    return standardTry([&]()->int
+    return standardTry(__func__,[&]()->int
     {
         File& file(rootPtr->GetFileByPath(path));
 
-        return -EIO; // TODO
+        file.Truncate(size); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        rootPtr->GetFileByPath(path); return SUCCESS; // no-op
+    });
+}
+
+/*****************************************************/
+int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        rootPtr->GetFileByPath(path); return SUCCESS; // no-op
     });
 }

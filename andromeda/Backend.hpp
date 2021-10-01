@@ -14,24 +14,42 @@ class Backend
 {
 public:
 
-    typedef std::map<std::string, std::string> Params;
-
     /** Implements the actual external call to the API */
     class Runner
     {
     public:
+        struct InputFile
+        {
+            std::string name;
+            std::string data;
+        };
+
+        typedef std::map<std::string, std::string> Params;
+        typedef std::map<std::string, InputFile> Files;
+
+        struct Input
+        {
+            /** app name to run */
+            std::string app;
+
+            /** app action to run */
+            std::string action;
+
+            /** map of input parameters */
+            Params params;
+
+            /** map of input files */
+            Files files;
+        };
+
         virtual ~Runner(){ };
 
         /**
          * Runs an API call and returns the result
-         * @param app the app name to run
-         * @param action the app action to run
-         * @param params map of input parameters
+         * @param input input params struct
          * @return result string from API
          */
-        virtual std::string RunAction(
-            const std::string& app, const std::string& action, 
-            const Backend::Params& params = Backend::Params()) = 0;
+        virtual std::string RunAction(const Input& input) = 0;
     };
 
     /** Base Exception for all backend issues */
@@ -124,6 +142,13 @@ public:
 
     /** Loads items owned but in another user's parent */
     nlohmann::json GetAdopted();
+    
+    /**
+     * Creates a new file
+     * @param id parent folder ID
+     * @param name name of new file
+     */
+    nlohmann::json CreateFile(const std::string& parent, const std::string& name);
 
     /**
      * Creates a new folder
@@ -144,7 +169,7 @@ public:
      * @param name new name
      * @param overwrite whether to overwrite existing
      */
-    void RenameFile(const std::string& id, const std::string& name, bool overwrite = false);
+    nlohmann::json RenameFile(const std::string& id, const std::string& name, bool overwrite = false);
 
     /** 
      * Renames a folder
@@ -152,7 +177,7 @@ public:
      * @param name new name
      * @param overwrite whether to overwrite existing
      */
-    void RenameFolder(const std::string& id, const std::string& name, bool overwrite = false);
+    nlohmann::json RenameFolder(const std::string& id, const std::string& name, bool overwrite = false);
 
     /** 
      * Moves a file
@@ -160,7 +185,7 @@ public:
      * @param parent new parent ID
      * @param overwrite whether to overwrite existing
      */
-    void MoveFile(const std::string& id, const std::string& parent, bool overwrite = false);
+    nlohmann::json MoveFile(const std::string& id, const std::string& parent, bool overwrite = false);
 
     /** 
      * Moves a file
@@ -168,7 +193,30 @@ public:
      * @param parent new parent ID
      * @param overwrite whether to overwrite existing
      */
-    void MoveFolder(const std::string& id, const std::string& parent, bool overwrite = false);
+    nlohmann::json MoveFolder(const std::string& id, const std::string& parent, bool overwrite = false);
+
+    /**
+     * Reads data from a file
+     * @param id file ID
+     * @param offset offset to read from
+     * @param length number of bytes to read
+     */
+    std::string ReadFile(const std::string& id, const size_t offset, const size_t length);
+
+    /**
+     * Writes data to a file
+     * @param id file ID
+     * @param offset offset to write to
+     * @param data file data to write
+     */
+    nlohmann::json WriteFile(const std::string& id, const size_t offset, const std::string& data);
+
+    /**
+     * Truncates a file
+     * @param id file ID
+     * @param size new file size
+     */
+    nlohmann::json TruncateFile(const std::string& id, const size_t size);
 
 private:
     
@@ -177,13 +225,11 @@ private:
         APIException(int code, const std::string& message) : 
             Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
 
-    std::string RunAction(const std::string& app, const std::string& action);
-
     /**
      * Runs an action with authentication details 
      * @see Runner::RunAction()
      */
-    std::string RunAction(const std::string& app, const std::string& action, Params& params);
+    std::string RunAction(Runner::Input& input);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);

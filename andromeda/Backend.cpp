@@ -32,23 +32,17 @@ void Backend::Initialize()
 }
 
 /*****************************************************/
-std::string Backend::RunAction(const std::string& app, const std::string& action)
+std::string Backend::RunAction(Backend::Runner::Input& input)
 {
-    Params params; return RunAction(app, action, params);
-}
-
-/*****************************************************/
-std::string Backend::RunAction(const std::string& app, const std::string& action, Params& params)
-{
-    this->debug << __func__ << "(app:" << app << " action:" << action << ")"; this->debug.Info();
+    this->debug << __func__ << "(app:" << input.app << " action:" << input.action << ")"; this->debug.Info();
 
     if (!this->sessionID.empty())
     {
-        params["auth_sessionid"] = this->sessionID;
-        params["auth_sessionkey"] = this->sessionKey;
+        input.params["auth_sessionid"] = this->sessionID;
+        input.params["auth_sessionkey"] = this->sessionKey;
     }
 
-    return this->runner.RunAction(app, action, params);
+    return this->runner.RunAction(input);
 }
 
 /*****************************************************/
@@ -91,11 +85,11 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
 
     CloseSession();
 
-    Params params {{ "username", username }, { "auth_password", password }};
+    Runner::Input input { "accounts", "createsession", {{ "username", username }, { "auth_password", password }}};
 
-    if (!twofactor.empty()) params["auth_twofactor"] = twofactor;
+    if (!twofactor.empty()) input.params["auth_twofactor"] = twofactor;
 
-    nlohmann::json resp(GetJSON(RunAction("accounts", "createsession", params)));
+    nlohmann::json resp(GetJSON(RunAction(input)));
 
     try
     {
@@ -144,7 +138,9 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
     this->sessionID = sessionID;
     this->sessionKey = sessionKey;
 
-    nlohmann::json resp(GetJSON(RunAction("accounts", "getaccount")));
+    Runner::Input input {"accounts", "getaccount"};
+
+    nlohmann::json resp(GetJSON(RunAction(input)));
     if (!resp.contains("id")) throw AuthenticationFailedException();
 }
 
@@ -155,7 +151,9 @@ void Backend::CloseSession()
     
     if (this->createdSession)
     {
-        GetJSON(RunAction("accounts", "deleteclient"));
+        Runner::Input input {"accounts", "deleteclient"};
+
+        GetJSON(RunAction(input));
     }
 
     this->createdSession = false;
@@ -177,8 +175,15 @@ nlohmann::json Backend::GetConfig()
 
     nlohmann::json config;
 
-    config["server"] = GetJSON(RunAction("server","getconfig"));
-    config["files"] = GetJSON(RunAction("files","getconfig"));
+    {
+        Runner::Input input {"server", "getconfig"};
+        config["server"] = GetJSON(RunAction(input));
+    }
+
+    {
+        Runner::Input input {"files", "getconfig"};
+        config["files"] = GetJSON(RunAction(input));
+    }
 
     return config;
 }
@@ -188,9 +193,11 @@ nlohmann::json Backend::GetFolder(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Params params; if (!id.empty()) params["folder"] = id;
+    Runner::Input input {"files", "getfolder"}; 
+    
+    if (!id.empty()) input.params["folder"] = id;
 
-    return GetJSON(RunAction("files", "getfolder", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -198,11 +205,11 @@ nlohmann::json Backend::GetFSRoot(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Params params {{"files","false"},{"folders","false"}}; 
+    Runner::Input input {"files", "getfolder", {{"files","false"},{"folders","false"}}}; 
     
-    if (!id.empty()) params["filesystem"] = id;
+    if (!id.empty()) input.params["filesystem"] = id;
 
-    return GetJSON(RunAction("files", "getfolder", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -210,9 +217,11 @@ nlohmann::json Backend::GetFilesystem(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Params params; if (!id.empty()) params["filesystem"] = id;
+    Runner::Input input {"files", "getfilesystem"};
 
-    return GetJSON(RunAction("files", "getfilesystem", params));
+    if (!id.empty()) input.params["filesystem"] = id;
+
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -220,7 +229,9 @@ nlohmann::json Backend::GetFilesystems()
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    return GetJSON(RunAction("files", "getfilesystems"));
+    Runner::Input input {"files", "getfilesystems"};
+
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -228,7 +239,19 @@ nlohmann::json Backend::GetAdopted()
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    return GetJSON(RunAction("files", "listadopted"));
+    Runner::Input input {"files", "listadopted"};
+
+    return GetJSON(RunAction(input));
+}
+
+/*****************************************************/
+nlohmann::json Backend::CreateFile(const std::string& parent, const std::string& name)
+{
+    this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
+
+    Runner::Input input {"files", "upload", {{"parent", parent}}, {{"file", {name}}}};
+
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -236,9 +259,9 @@ nlohmann::json Backend::CreateFolder(const std::string& parent, const std::strin
 {
     this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
 
-    Params params {{"parent", parent},{"name", name}};
+    Runner::Input input {"files", "createfolder", {{"parent", parent},{"name", name}}};
 
-    return GetJSON(RunAction("files", "createfolder", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -246,9 +269,9 @@ void Backend::DeleteFile(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Params params {{"file", id}};
+    Runner::Input input {"files", "deletefile", {{"file", id}}};
     
-    GetJSON(RunAction("files", "deletefile", params));
+    GetJSON(RunAction(input));
 }
 
 /*****************************************************/
@@ -256,47 +279,80 @@ void Backend::DeleteFolder(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Params params {{"folder", id}}; 
+    Runner::Input input {"files", "deletefolder", {{"folder", id}}}; 
     
-    GetJSON(RunAction("files", "deletefolder", params));
+    GetJSON(RunAction(input));
 }
 
 /*****************************************************/
-void Backend::RenameFile(const std::string& id, const std::string& name, bool overwrite)
+nlohmann::json Backend::RenameFile(const std::string& id, const std::string& name, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
 
-    Params params {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}};
+    Runner::Input input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
-    GetJSON(RunAction("files", "renamefile", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
-void Backend::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
+nlohmann::json Backend::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
 
-    Params params {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}};
+    Runner::Input input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
-    GetJSON(RunAction("files", "renamefolder", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
-void Backend::MoveFile(const std::string& id, const std::string& parent, bool overwrite)
+nlohmann::json Backend::MoveFile(const std::string& id, const std::string& parent, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
 
-    Params params {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}};
+    Runner::Input input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
-    GetJSON(RunAction("files", "movefile", params));
+    return GetJSON(RunAction(input));
 }
 
 /*****************************************************/
-void Backend::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
+nlohmann::json Backend::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
 
-    Params params {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}};
+    Runner::Input input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
-    GetJSON(RunAction("files", "movefolder", params));
+    return GetJSON(RunAction(input));
+}
+
+/*****************************************************/
+std::string Backend::ReadFile(const std::string& id, const size_t offset, const size_t length)
+{
+    std::string fstart(std::to_string(offset));
+    std::string flast(std::to_string(offset+length-1));
+
+    this->debug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast; this->debug.Info();
+
+    Runner::Input input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
+
+    return RunAction(input);
+}
+
+/*****************************************************/
+nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, const std::string& data)
+{
+    this->debug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size(); this->debug.Info();
+
+    Runner::Input input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
+
+    return GetJSON(RunAction(input));
+}
+
+/*****************************************************/
+nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
+{
+    this->debug << __func__ << "(id:" << id << " size:" << size << ")"; this->debug.Info();
+
+    Runner::Input input {"files", "ftruncate", {{"size", std::to_string(size)}}};
+
+    return GetJSON(RunAction(input));
 }

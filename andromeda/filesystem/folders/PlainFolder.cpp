@@ -3,6 +3,7 @@
 
 #include "PlainFolder.hpp"
 #include "Backend.hpp"
+#include "../File.hpp"
 
 /*****************************************************/
 std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::string& id)
@@ -54,7 +55,11 @@ void PlainFolder::SubCreateFile(const std::string& name)
 {
     debug << __func__ << "(name:" << name << ")"; debug.Info();
 
-    throw Utilities::Exception("not implemented"); // TODO implement me
+    nlohmann::json data(backend.CreateFile(this->id, name));
+
+    std::unique_ptr<File> file(std::make_unique<File>(backend, *this, data));
+
+    this->itemMap[file->GetName()] = std::move(file);
 }
 
 /*****************************************************/
