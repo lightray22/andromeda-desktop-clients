@@ -31,19 +31,21 @@ static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct
 static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
 static int fuse_flush(const char* path, struct fuse_file_info* fi);
 static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
-static int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
-static int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 
 #ifdef __APPLE__
 static int fuse_getattr(const char* path, struct stat* stbuf);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
 static int fuse_rename(const char* oldpath, const char* newpath);
 static int fuse_truncate(const char* path, off_t size);
+static int fuse_chmod(const char* path, mode_t mode);
+static int fuse_chown(const char* path, uid_t uid, gid_t gid);
 #else
 static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
 static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
 static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
+static int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
+static int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 #endif
 
 /* TODO
@@ -600,7 +602,11 @@ int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_chmod(const char* path, mode_t mode)
+#else
 int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+#endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -611,7 +617,11 @@ int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
+#ifdef __APPLE__
+int fuse_chown(const char* path, uid_t uid, gid_t gid)
+#else
 int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
+#endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
