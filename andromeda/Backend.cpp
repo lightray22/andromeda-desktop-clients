@@ -353,7 +353,7 @@ nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
 {
     this->debug << __func__ << "(id:" << id << " size:" << size << ")"; this->debug.Info();
 
-    Runner::Input input {"files", "ftruncate", {{"size", std::to_string(size)}}};
+    Runner::Input input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
 
     return GetJSON(RunAction(input));
 }
