@@ -1,5 +1,5 @@
 
-This is a FUSE client for an Andromeda backend API (early development).
+This is a FUSE client for an Andromeda backend file storage API.
 
 # Prerequisites
 
