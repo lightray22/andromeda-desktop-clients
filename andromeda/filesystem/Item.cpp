@@ -25,11 +25,11 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
 
         data.at("dates").at("created").get_to(this->created);
 
-        if (data.at("dates").contains("modified"))
-            data.at("dates").at("modified").get_to(this->modified);
+        const nlohmann::json& modified(data.at("dates").at("modified"));
+        if (!modified.is_null()) modified.get_to(this->modified);
 
-        if (data.at("dates").contains("accessed"))
-            data.at("dates").at("accessed").get_to(this->accessed);
+        const nlohman::json& accessed(data.at("dates").at("accessed"));
+        if (!accessed.if_null()) accessed.get_to(this->accessed);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
