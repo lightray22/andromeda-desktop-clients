@@ -7,6 +7,7 @@
 #include <list>
 
 #include "Utilities.hpp"
+#include "Config.hpp"
 
 /** Manages command line options and config */
 class Options
@@ -54,7 +55,7 @@ public:
     static std::string HelpText();
 
     /** Parses command line arguments from main */
-    void Parse(int argc, char** argv);
+    void Parse(int argc, char** argv, Config::Options& opts);
 
     /** Returns the desired debug level */
     Debug::Level GetDebugLevel() const { return this->debugLevel; }
@@ -96,6 +97,7 @@ public:
     /** Returns the FUSE directory to mount */
     std::string GetMountPath() const { return this->mountPath; }
 
+    /** Returns the list of FUSE library options */
     const std::list<std::string>& GetFuseOptions() const { return this->fuseOptions; }
 
 private:

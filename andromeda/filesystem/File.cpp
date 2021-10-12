@@ -95,27 +95,33 @@ void File::WritePage(const std::byte* buffer, const size_t index, const size_t o
 }
 
 /*****************************************************/
-size_t File::ReadBytes(std::byte* buffer, const size_t offset, const size_t length)
+size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 {    
     debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info();
 
     if (offset >= this->size) return 0;
 
-    for (size_t byte = offset; byte < offset+length; )
+    length = std::min(this->size - offset, length);
+
+    if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
+    {
+        const std::string data(backend.ReadFile(this->id, offset, this->size));
+
+        std::copy(data.cbegin(), data.cend(), reinterpret_cast<char*>(buffer));
+    }
+    else for (size_t byte = offset; byte < offset+length; )
     {
         size_t index = byte / pageSize;
         size_t pOffset = byte - index*pageSize;
 
-        size_t pLength = std::min(std::min(length+offset-byte, pageSize-pOffset), size-byte);
+        size_t pLength = std::min(length+offset-byte, pageSize-pOffset);
 
-        debug << __func__ << "()... size:" << size << " byte:" << byte << " index:" << index 
+        debug << __func__ << "()... size:" << this->size << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; debug.Details();
 
         ReadPage(buffer, index, pOffset, pLength);
 
         buffer += pLength; byte += pLength;
-            
-        if (byte == this->size) return byte-offset;
     }
 
     return length;
@@ -126,7 +132,13 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 {
     debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info();
 
-    for (size_t byte = offset; byte < offset+length; )
+    if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
+    {
+        const std::string data(reinterpret_cast<const char*>(buffer), length);
+
+        backend.WriteFile(this->id, offset, data);
+    }
+    else for (size_t byte = offset; byte < offset+length; )
     {
         size_t index = byte / pageSize;
         size_t pOffset = byte - index*pageSize;

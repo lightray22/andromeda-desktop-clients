@@ -35,21 +35,42 @@ public:
     void Initialize(Backend& backend);
 
     /** Returns true if the backend is read-only */
-    bool isReadOnly() { return this->readOnly; }
+    bool isReadOnly() const { return this->readOnly; }
 
     /** Returns the max # of bytes allowed in an upload */
-    unsigned int getUploadMaxBytes() { return this->uploadMaxBytes; }
+    unsigned int GetUploadMaxBytes() const { return this->uploadMaxBytes; }
 
     /** Returns the max # of files allowed in an upload */
-    unsigned int getUploadMaxFiles() { return this->uploadMaxFiles; }
+    unsigned int GetUploadMaxFiles() const { return this->uploadMaxFiles; }
+
+    /** Client-based backend options */
+    struct Options
+    {
+        enum class CacheType
+        {
+            NONE,   // read/write directly to server
+            MEMORY, // never contact server (testing)
+            NORMAL  // normal read/write in pages
+        };
+
+        CacheType cacheType = CacheType::NORMAL;
+    };
+
+    /** Gets the configured backend options */
+    const Options& GetOptions() const { return this->options; }
+
+    /** Sets the configured backend options */
+    void SetOptions(const Options& options) { this->options = options; }
 
 private:
     Debug debug;
 
+    Options options;
+
     bool readOnly;
 
-    unsigned int uploadMaxBytes;
-    unsigned int uploadMaxFiles;
+    unsigned int uploadMaxBytes = 0;
+    unsigned int uploadMaxFiles = 0;
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "Options.hpp"
-#include "andromeda/Utilities.hpp"
+#include "Utilities.hpp"
 
 using namespace std;
 
@@ -15,15 +15,16 @@ string Options::HelpText()
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl
-           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl
-               << "\t[-d|--debug [int]] [-u|--username username] [-o fuseoption]+" << endl
-               << "\t[(-rf|--folder [id]) | (-ri|--filesystem [id]) | (-rs|--share [id])]" << endl;
+           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path))" << endl
+               << "\t-m|--mount path [-u|--username username] [-o fuseoption]+" << endl
+               << "\t[(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
+               << "\t[-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
 }
 
 /*****************************************************/
-void Options::Parse(int argc, char** argv)
+void Options::Parse(int argc, char** argv, Config::Options& opts)
 {
     list<string> flags;
     map<string,string> options;
@@ -73,7 +74,7 @@ void Options::Parse(int argc, char** argv)
                 Utilities::explode(value, "/", 2, 2);
 
             if (parts.size() != 2) 
-                throw BadValueException("apiurl");
+                throw BadValueException(option);
 
             this->apiPath = "/"+parts[1];
             this->apiHostname = parts[0];
@@ -105,6 +106,13 @@ void Options::Parse(int argc, char** argv)
         else if (option == "o" || option == "-option")
         {
             this->fuseOptions.push_back(value);
+        }
+        else if (option == "-cachemode")
+        {
+                 if (value == "none")   opts.cacheType = Config::Options::CacheType::NONE;
+            else if (value == "memory") opts.cacheType = Config::Options::CacheType::MEMORY;
+            else if (value == "normal") opts.cacheType = Config::Options::CacheType::NORMAL;
+            else throw BadValueException(option);
         }
         else throw BadOptionException(option);
     }

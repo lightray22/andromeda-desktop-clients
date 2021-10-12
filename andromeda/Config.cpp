@@ -13,7 +13,7 @@ void Config::Initialize(Backend& backend)
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    nlohmann::json config(backend.GetConfig());
+    nlohmann::json config(backend.GetConfigJ());
 
     try
     {

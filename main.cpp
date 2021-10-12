@@ -25,11 +25,14 @@ enum class ExitCode
 
 int main(int argc, char** argv)
 {
-    Debug debug("main"); Options options;
+    Debug debug("main"); 
+    
+    Options options;
+    Config::Options bOptions;
 
     try
     {
-        options.Parse(argc, argv);
+        options.Parse(argc, argv, bOptions);
     }
     catch (const Options::ShowHelpException& ex)
     {
@@ -73,7 +76,7 @@ int main(int argc, char** argv)
 
     try
     {
-        backend.Initialize();
+        backend.Initialize(bOptions);
 
         if (options.HasUsername())
             backend.AuthInteractive(options.GetUsername());

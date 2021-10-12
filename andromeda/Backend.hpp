@@ -29,17 +29,10 @@ public:
 
         struct Input
         {
-            /** app name to run */
-            std::string app;
-
-            /** app action to run */
-            std::string action;
-
-            /** map of input parameters */
-            Params params;
-
-            /** map of input files */
-            Files files;
+            std::string app;    // app name to run
+            std::string action; // app action to run
+            Params params;      // map of input parameters
+            Files files;        // map of input files
         };
 
         virtual ~Runner(){ };
@@ -96,7 +89,7 @@ public:
     virtual ~Backend();
 
     /** Initializes the backend by loading config */
-    void Initialize();
+    void Initialize(const Config::Options& options);
 
     /** Creates a new backend session and registers for use */
     void Authenticate(const std::string& username, const std::string& password, const std::string& twofactor = "");
@@ -117,7 +110,10 @@ public:
      * Loads server config
      * @return loaded config as JSON with "server" and "files" keys
      */
-    nlohmann::json GetConfig();
+    nlohmann::json GetConfigJ();
+
+    /** Gets the server config object */
+    const Config& GetConfig() { return this->config; }
 
     /**
      * Load folder metadata (with subitems)
@@ -233,6 +229,9 @@ private:
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
+
+    /** Returns true if doing memory only */
+    bool isMemory() const;
 
     /** True if we created the session in use */
     bool createdSession = false;

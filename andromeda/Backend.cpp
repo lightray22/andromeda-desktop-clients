@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <map>
 
 #include <nlohmann/json.hpp>
 
@@ -24,11 +25,13 @@ Backend::~Backend()
 }
 
 /*****************************************************/
-void Backend::Initialize()
+void Backend::Initialize(const Config::Options& options)
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
     this->config.Initialize(*this);
+
+    this->config.SetOptions(options);
 }
 
 /*****************************************************/
@@ -170,7 +173,13 @@ void Backend::RequireAuthentication() const
 }
 
 /*****************************************************/
-nlohmann::json Backend::GetConfig()
+bool Backend::isMemory() const
+{
+    return this->config.GetOptions().cacheType == Config::Options::CacheType::MEMORY;
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetConfigJ()
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
@@ -193,6 +202,16 @@ nlohmann::json Backend::GetConfig()
 nlohmann::json Backend::GetFolder(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    if (isMemory() && id.empty())
+    {
+        nlohmann::json retval;
+
+        retval["files"] = std::map<std::string,int>();
+        retval["folders"] = std::map<std::string,int>();
+
+        return retval;
+    }
 
     Runner::Input input {"files", "getfolder"}; 
     
@@ -250,6 +269,15 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
 {
     this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
 
+    if (isMemory())
+    {
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}};
+
+        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
+        
+        return retval;
+    }
+
     Runner::Input input {"files", "upload", {{"parent", parent}}, {{"file", {name}}}};
 
     return GetJSON(RunAction(input));
@@ -259,6 +287,18 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
 nlohmann::json Backend::CreateFolder(const std::string& parent, const std::string& name)
 {
     this->debug << __func__ << "(parent:" << parent << " name:" << name << ")"; this->debug.Info();
+
+    if (isMemory())
+    {
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"counters", {{"size", 0}}}};
+
+        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
+
+        retval["files"] = std::map<std::string,int>(); 
+        retval["folders"] = std::map<std::string,int>();
+
+        return retval;
+    }
 
     Runner::Input input {"files", "createfolder", {{"parent", parent},{"name", name}}};
 
@@ -270,6 +310,8 @@ void Backend::DeleteFile(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
+    if (isMemory()) return;
+
     Runner::Input input {"files", "deletefile", {{"file", id}}};
     
     GetJSON(RunAction(input));
@@ -279,6 +321,8 @@ void Backend::DeleteFile(const std::string& id)
 void Backend::DeleteFolder(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    if (isMemory()) return;
 
     Runner::Input input {"files", "deletefolder", {{"folder", id}}}; 
     
@@ -290,6 +334,8 @@ nlohmann::json Backend::RenameFile(const std::string& id, const std::string& nam
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
 
+    if (isMemory()) return nlohmann::json();
+
     Runner::Input input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
@@ -299,6 +345,8 @@ nlohmann::json Backend::RenameFile(const std::string& id, const std::string& nam
 nlohmann::json Backend::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
+
+    if (isMemory()) return nlohmann::json();
 
     Runner::Input input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -310,6 +358,8 @@ nlohmann::json Backend::MoveFile(const std::string& id, const std::string& paren
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
 
+    if (isMemory()) return nlohmann::json();
+
     Runner::Input input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
@@ -319,6 +369,8 @@ nlohmann::json Backend::MoveFile(const std::string& id, const std::string& paren
 nlohmann::json Backend::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
+
+    if (isMemory()) return nlohmann::json();
 
     Runner::Input input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -333,6 +385,8 @@ std::string Backend::ReadFile(const std::string& id, const size_t offset, const 
 
     this->debug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast; this->debug.Info();
 
+    if (isMemory()) return std::string(length,'\0');
+
     Runner::Input input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
 
     return RunAction(input);
@@ -343,6 +397,8 @@ nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, co
 {
     this->debug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size(); this->debug.Info();
 
+    if (isMemory()) return nlohmann::json();
+
     Runner::Input input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
 
     return GetJSON(RunAction(input));
@@ -352,6 +408,8 @@ nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, co
 nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
 {
     this->debug << __func__ << "(id:" << id << " size:" << size << ")"; this->debug.Info();
+
+    if (isMemory()) return nlohmann::json();
 
     Runner::Input input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
 

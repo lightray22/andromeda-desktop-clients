@@ -27,7 +27,7 @@ public:
      * @param offset byte offset in file to read
      * @param length number of bytes to read
      */
-    virtual size_t ReadBytes(std::byte* buffer, const size_t offset, const size_t length) final;
+    virtual size_t ReadBytes(std::byte* buffer, const size_t offset, size_t length) final;
 
     /**
      * Writes data to a file
