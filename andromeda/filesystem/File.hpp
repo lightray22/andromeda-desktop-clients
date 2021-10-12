@@ -17,7 +17,7 @@ public:
 
     virtual ~File(){};
 
-    virtual const Type GetType() const override { return Type::FILE; }
+    virtual Type GetType() const override { return Type::FILE; }
 
     File(Backend& backend, Folder& parent, const nlohmann::json& data);
 

@@ -14,6 +14,7 @@ This is a FUSE client for an Andromeda backend file storage API.
 - OpenSSL (1.1.1) (libssl, libcrypto)
 - libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://github.com/osxfuse/fuse
+    - If you need to use FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
 - nlohmann-json (3.x) https://github.com/nlohmann/json
 
 libssl, libcrypto, and libfuse are dynamically linked so they must be available at runtime.

@@ -29,10 +29,10 @@ public:
     enum class Type { FILE, FOLDER };
 
     /** Returns the FS type */
-    virtual const Type GetType() const = 0;
+    virtual Type GetType() const = 0;
 
     /** Returns true if this item has a parent */
-    virtual const bool HasParent() const { return this->parent != nullptr; }
+    virtual bool HasParent() const { return this->parent != nullptr; }
 
     /** Returns the parent folder */
     virtual Folder& GetParent() const;
@@ -44,16 +44,16 @@ public:
     virtual const std::string& GetName() const { return this->name; }
 
     /** Returns the total size */
-    virtual const size_t GetSize() const { return this->size; }
+    virtual size_t GetSize() const { return this->size; }
 
     /** Get the created time stamp */
-    virtual const Date GetCreated() const { return this->created; } 
+    virtual Date GetCreated() const { return this->created; } 
 
     /** Get the modified time stamp */
-    virtual const Date GetModified() const { return this->modified; } 
+    virtual Date GetModified() const { return this->modified; } 
 
     /** Get the accessed time stamp */
-    virtual const Date GetAccessed() const { return this->accessed; } 
+    virtual Date GetAccessed() const { return this->accessed; } 
 
     /** Remove this item from its parent */
     virtual void Delete(bool internal = false) final;

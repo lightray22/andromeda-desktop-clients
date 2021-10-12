@@ -278,7 +278,7 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
         return retval;
     }
 
-    Runner::Input input {"files", "upload", {{"parent", parent}}, {{"file", {name}}}};
+    Runner::Input input {"files", "upload", {{"parent", parent}}, {{"file", {name, ""}}}};
 
     return GetJSON(RunAction(input));
 }

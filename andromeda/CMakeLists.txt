@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(andromeda)
 
-target_compile_options(andromeda PRIVATE "-Wall")
+target_compile_options(andromeda PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
 set(SOURCE_FILES 
     Backend.cpp
@@ -18,9 +18,7 @@ set(SOURCE_FILES
 
 target_sources(andromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda
-    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(andromeda
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(HTTPLIB_COMPILE True)
 set(HTTPLIB_REQUIRE_OPENSSL True)
@@ -34,8 +32,7 @@ endif()
 add_subdirectory(thirdparty/cpp-httplib)
 target_include_directories(andromeda PRIVATE 
     "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
-target_link_libraries(andromeda PRIVATE httplib)
-target_link_libraries(andromeda INTERFACE httplib)
+target_link_libraries(andromeda PUBLIC httplib)
 
 set(JSON_ImplicitConversions "OFF")
 find_package(nlohmann_json 3 REQUIRED)

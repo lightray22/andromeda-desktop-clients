@@ -31,8 +31,8 @@ public:
         {
             std::string app;    // app name to run
             std::string action; // app action to run
-            Params params;      // map of input parameters
-            Files files;        // map of input files
+            Params params = {}; // map of input parameters
+            Files files = {};   // map of input files
         };
 
         virtual ~Runner(){ };

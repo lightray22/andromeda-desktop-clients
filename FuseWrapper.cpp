@@ -2,7 +2,7 @@
 #include <iostream>
 #include <functional>
 
-#ifdef __APPLE__
+#if USE_FUSE2
 #define FUSE_USE_VERSION 26
 #define _FILE_OFFSET_BITS 64
 #include <fuse/fuse.h>
@@ -32,7 +32,7 @@ static int fuse_write(const char* path, const char* buf, size_t size, off_t off,
 static int fuse_flush(const char* path, struct fuse_file_info* fi);
 static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
 
-#ifdef __APPLE__
+#if USE_FUSE2
 static int fuse_getattr(const char* path, struct stat* stbuf);
 static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
 static int fuse_rename(const char* oldpath, const char* newpath);
@@ -77,7 +77,7 @@ constexpr int SUCCESS = 0;
 /*****************************************************/
 void FuseWrapper::ShowHelpText()
 {
-#ifndef __APPLE__
+#if !USE_FUSE2
     std::cout << "fuse_lib_help()" << std::endl; fuse_lib_help(0); std::cout << std::endl;
 #endif
 }
@@ -86,12 +86,12 @@ void FuseWrapper::ShowHelpText()
 void FuseWrapper::ShowVersionText()
 {
     std::cout << "libfuse version: " << fuse_version()
-#ifndef __APPLE__
+#if !USE_FUSE2
         << " (" << fuse_pkgversion() << ")"
 #endif
         << std::endl;
 
-#ifndef __APPLE__
+#if !USE_FUSE2
     fuse_lowlevel_version();
 #endif
 }
@@ -101,7 +101,7 @@ void FuseWrapper::ShowVersionText()
 struct FuseOptions
 {
     FuseOptions():args(FUSE_ARGS_INIT(0,NULL))
-    { 
+    {
         if (fuse_opt_add_arg(&args, "andromeda-fuse"))
             throw FuseWrapper::Exception("fuse_opt_add_arg()1 failed");
     };
@@ -124,7 +124,7 @@ struct FuseOptions
     struct fuse_args args;
 };
 
-#ifdef __APPLE__
+#if USE_FUSE2
 
 /*****************************************************/
 /** Scope-managed fuse_mount/fuse_unmount */
@@ -140,11 +140,11 @@ struct FuseMount
     };
     void Unmount()
     {
-        if (!chan) return;
+        if (chan == nullptr) return;
 
         debug << __func__ << "() fuse_unmount()"; debug.Info();
         
-        fuse_unmount(path.c_str(), chan);
+        fuse_unmount(path.c_str(), chan); chan = nullptr;
     };
     ~FuseMount(){ Unmount(); };
     
@@ -270,7 +270,7 @@ void FuseWrapper::Start(Folder& root, const Options& options)
     
     FuseOptions opts; for (const std::string& opt : options.GetFuseOptions()) opts.AddArg(opt);
 
-#ifdef __APPLE__
+#if USE_FUSE2
     FuseMount mount(opts, mountPath.c_str());
     FuseContext context(mount, opts);
 #else
@@ -385,7 +385,7 @@ void item_stat(const Item& item, struct stat* stbuf)
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_getattr(const char* path, struct stat* stbuf)
 #else
 int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
@@ -400,7 +400,7 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
 int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
@@ -420,7 +420,7 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
 
             debug << __func__ << "... subitem: " << item->GetName(); debug.Details();
             
-#ifdef __APPLE__
+#if USE_FUSE2
             int retval = filler(buf, item->GetName().c_str(), NULL, 0);
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
@@ -493,7 +493,7 @@ int fuse_rmdir(const char* path)
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_rename(const char* oldpath, const char* newpath)
 #else
 int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
@@ -585,7 +585,7 @@ int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_truncate(const char* path, off_t size)
 #else
 int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
@@ -602,7 +602,7 @@ int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_chmod(const char* path, mode_t mode)
 #else
 int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
@@ -617,7 +617,7 @@ int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#ifdef __APPLE__
+#if USE_FUSE2
 int fuse_chown(const char* path, uid_t uid, gid_t gid)
 #else
 int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)

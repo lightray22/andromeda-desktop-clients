@@ -34,7 +34,7 @@ public:
     class ModifyException : public Exception { public:
         ModifyException() : Exception("Item cannot be modified") {}; };
 
-    virtual const Type GetType() const override final { return Type::FOLDER; }
+    virtual Type GetType() const override final { return Type::FOLDER; }
 
     /** Load the item with the given relative path */
     virtual Item& GetItemByPath(std::string path) final;
