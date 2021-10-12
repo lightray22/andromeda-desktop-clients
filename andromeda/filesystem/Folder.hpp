@@ -110,7 +110,7 @@ protected:
 private:
 
     /** true if itemMap is loaded */
-    bool haveItems;
+    bool haveItems = false;
 
     Debug debug;
 };
