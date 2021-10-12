@@ -237,6 +237,8 @@ nlohmann::json Backend::GetFilesystem(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
+    if (isMemory() && id.empty()) return nlohmann::json();
+
     Runner::Input input {"files", "getfilesystem"};
 
     if (!id.empty()) input.params["filesystem"] = id;
@@ -271,7 +273,7 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
 
     if (isMemory())
     {
-        nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}};
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}, {"filesystem", ""}};
 
         retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
         
@@ -290,7 +292,7 @@ nlohmann::json Backend::CreateFolder(const std::string& parent, const std::strin
 
     if (isMemory())
     {
-        nlohmann::json retval {{"id", ""}, {"name", name}, {"counters", {{"size", 0}}}};
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"counters", {{"size", 0}}}, {"filesystem", ""}};
 
         retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
 

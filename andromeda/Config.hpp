@@ -54,6 +54,8 @@ public:
         };
 
         CacheType cacheType = CacheType::NORMAL;
+
+        size_t pageSize = 1024*1024; // 1M
     };
 
     /** Gets the configured backend options */

@@ -11,6 +11,7 @@ target_compile_options(andromeda PRIVATE -Wall -Wextra -Wno-unused-parameter)
 set(SOURCE_FILES 
     Backend.cpp
     Config.cpp
+    FSConfig.cpp
     CLIRunner.cpp
     HTTPRunner.cpp
     Utilities.cpp

@@ -10,6 +10,7 @@
 
 class Backend;
 class Folder;
+class FSConfig;
 
 class File : public Item
 {
@@ -53,7 +54,9 @@ protected:
 
 private:
 
-    const size_t pageSize = 1024*1024;
+    const FSConfig* fsConfig;
+
+    size_t pageSize;
 
     struct Page
     {

@@ -5,6 +5,7 @@
 #include "File.hpp"
 #include "Backend.hpp"
 #include "Folder.hpp"
+#include "FSConfig.hpp"
 
 /*****************************************************/
 File::File(Backend& backend, Folder& parent, const nlohmann::json& data) : 
@@ -13,15 +14,26 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
     debug << __func__ << "()"; debug.Info();
 
     this->parent = &parent;
-    
-    try
+
+    std::string fsid; try
     {
         data.at("size").get_to(this->size);
-
         this->backendSize = this->size;
+
+        data.at("filesystem").get_to(fsid);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
+
+    this->fsConfig = &FSConfig::LoadByID(backend, fsid);
+
+    const size_t fsChunk = this->fsConfig->GetChunkSize();
+    const size_t cfChunk = backend.GetConfig().GetOptions().pageSize;
+
+    auto ceil = [](int x, int y) { return (x + y - 1) / y; };
+    this->pageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
+
+    debug << __func__ << "... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " pageSize:" << pageSize; debug.Details();
 }
 
 /*****************************************************/

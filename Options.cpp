@@ -15,10 +15,9 @@ string Options::HelpText()
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl
-           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path))" << endl
-               << "\t-m|--mount path [-u|--username username] [-o fuseoption]+" << endl
-               << "\t[(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
-               << "\t[-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
+           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl
+               << "\t[-u|--username username] [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
+               << "\t[-o fuseoption]+ [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize int]" << endl;
 
     return output.str();
 }
@@ -113,6 +112,14 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
             else if (value == "memory") opts.cacheType = Config::Options::CacheType::MEMORY;
             else if (value == "normal") opts.cacheType = Config::Options::CacheType::NORMAL;
             else throw BadValueException(option);
+        }
+        else if (option == "-pagesize")
+        {
+            try { opts.pageSize = stoi(value); }
+            catch (const logic_error& e) { 
+                throw BadValueException(option); }
+
+            if (!opts.pageSize) throw BadValueException(option);
         }
         else throw BadOptionException(option);
     }
