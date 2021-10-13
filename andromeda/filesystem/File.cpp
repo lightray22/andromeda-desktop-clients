@@ -87,6 +87,32 @@ File::Page& File::GetPage(const size_t index)
 }
 
 /*****************************************************/
+void File::FlushCache()
+{
+    debug << __func__ << "()"; debug.Info();
+
+    for (PageMap::iterator it = pages.begin(); it != pages.end(); it++)
+    {
+        const size_t index(it->first); 
+        Page& page(it->second);
+
+        if (page.dirty)
+        {
+            const size_t offset = index*this->pageSize;
+            const size_t size = std::min(this->size-offset, this->pageSize);
+
+            std::string data(reinterpret_cast<const char*>(page.data.data()), size);
+
+            debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Details();
+
+            backend.WriteFile(this->id, offset, data); page.dirty = false;
+            
+            this->backendSize = std::max(this->backendSize, offset+size);
+        }
+    }
+}
+
+/*****************************************************/
 void File::ReadPage(std::byte* buffer, const size_t index, const size_t offset, const size_t length)
 {
     debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info();
@@ -149,6 +175,8 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
         const std::string data(reinterpret_cast<const char*>(buffer), length);
 
         backend.WriteFile(this->id, offset, data);
+
+        this->size = std::max(this->size, offset+length);
     }
     else for (size_t byte = offset; byte < offset+length; )
     {
@@ -162,10 +190,10 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 
         WritePage(buffer, index, pOffset, pLength);   
     
+        this->size = std::max(this->size, byte+pLength);
+        
         buffer += pLength; byte += pLength;
     }
-
-    this->size = std::max(this->size, offset+length);
 }
 
 /*****************************************************/
@@ -186,30 +214,4 @@ void File::Truncate(const size_t size)
         }
         else it++;
     }
-}
-
-/*****************************************************/
-void File::FlushCache()
-{
-    debug << __func__ << "()"; debug.Info();
-
-    for (PageMap::iterator it = pages.begin(); it != pages.end(); it++)
-    {
-        const size_t index(it->first); 
-        Page& page(it->second);
-
-        if (page.dirty)
-        {
-            const size_t offset = index*this->pageSize;
-            const size_t size = std::min(this->size-offset, this->pageSize);
-
-            std::string data(reinterpret_cast<const char*>(page.data.data()), size);
-
-            debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Details();
-
-            backend.WriteFile(this->id, offset, data); page.dirty = false;
-        }
-    }
-
-    this->backendSize = size;
 }

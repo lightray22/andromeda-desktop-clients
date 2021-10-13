@@ -9,9 +9,11 @@
 Config::Config() : debug("Config",this){ }
 
 /*****************************************************/
-void Config::Initialize(Backend& backend)
+void Config::Initialize(Backend& backend, const Config::Options& options)
 {
     this->debug << __func__ << "()"; this->debug.Info();
+
+    this->options = options;
 
     nlohmann::json config(backend.GetConfigJ());
 

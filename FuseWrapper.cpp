@@ -48,12 +48,6 @@ static int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
 static int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 #endif
 
-/* TODO
-copy_file_range?
-fsyncdir?
-fallocate? (vs. truncate?)
-*/
-
 static struct fuse_operations fuse_ops = {
     .getattr = fuse_getattr,
     .mkdir = fuse_mkdir,

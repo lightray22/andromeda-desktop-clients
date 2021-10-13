@@ -31,18 +31,6 @@ public:
         AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
-    /** Loads config from the given backend */
-    void Initialize(Backend& backend);
-
-    /** Returns true if the backend is read-only */
-    bool isReadOnly() const { return this->readOnly; }
-
-    /** Returns the max # of bytes allowed in an upload */
-    unsigned int GetUploadMaxBytes() const { return this->uploadMaxBytes; }
-
-    /** Returns the max # of files allowed in an upload */
-    unsigned int GetUploadMaxFiles() const { return this->uploadMaxFiles; }
-
     /** Client-based backend options */
     struct Options
     {
@@ -58,11 +46,20 @@ public:
         size_t pageSize = 1024*1024; // 1M
     };
 
+    /** Sets config from the given backend and options */
+    void Initialize(Backend& backend, const Options& options);
+
     /** Gets the configured backend options */
     const Options& GetOptions() const { return this->options; }
 
-    /** Sets the configured backend options */
-    void SetOptions(const Options& options) { this->options = options; }
+    /** Returns true if the backend is read-only */
+    bool isReadOnly() const { return this->readOnly; }
+
+    /** Returns the max # of bytes allowed in an upload */
+    unsigned int GetUploadMaxBytes() const { return this->uploadMaxBytes; }
+
+    /** Returns the max # of files allowed in an upload */
+    unsigned int GetUploadMaxFiles() const { return this->uploadMaxFiles; }
 
 private:
     Debug debug;

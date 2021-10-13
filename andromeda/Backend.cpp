@@ -29,9 +29,7 @@ void Backend::Initialize(const Config::Options& options)
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    this->config.Initialize(*this);
-
-    this->config.SetOptions(options);
+    this->config.Initialize(*this, options);
 }
 
 /*****************************************************/
@@ -275,7 +273,7 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}, {"filesystem", ""}};
 
-        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
+        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",nullptr}};
         
         return retval;
     }
@@ -294,7 +292,7 @@ nlohmann::json Backend::CreateFolder(const std::string& parent, const std::strin
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"counters", {{"size", 0}}}, {"filesystem", ""}};
 
-        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",0}};
+        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",nullptr}};
 
         retval["files"] = std::map<std::string,int>(); 
         retval["folders"] = std::map<std::string,int>();
