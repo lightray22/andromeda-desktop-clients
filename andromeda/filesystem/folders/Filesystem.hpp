@@ -21,9 +21,9 @@ public:
     /**
      * Load a filesystem from the backend with the given ID
      * @param backend reference to backend
-     * @param id ID of filesystem to load
+     * @param fsid ID of filesystem to load
      */
-    static std::unique_ptr<Filesystem> LoadByID(Backend& backend, const std::string& id);
+    static std::unique_ptr<Filesystem> LoadByID(Backend& backend, const std::string& fsid);
 
     /**
      * Load a filesystem with the given backend data and parent
@@ -42,14 +42,6 @@ public:
     Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
 
 protected:
-
-    /**
-     * Load a filesystem with the given backend data
-     * @param backend reference to backend
-     * @param parent reference to parent
-     * @param data pre-loaded JSON data
-     */
-    static std::unique_ptr<Filesystem> LoadFromData(Backend& backend, const nlohmann::json& data);
 
     virtual void SubDelete() override { throw ModifyException(); }
 

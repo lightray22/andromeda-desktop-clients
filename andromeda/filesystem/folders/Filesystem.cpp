@@ -4,25 +4,10 @@
 #include "Backend.hpp"
 
 /*****************************************************/
-std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::string& id)
+std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::string& fsid)
 {
     backend.RequireAuthentication();
 
-    nlohmann::json data(backend.GetFilesystem(id));
-
-    return Filesystem::LoadFromData(backend, data);
-}
-
-/*****************************************************/
-std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, const nlohmann::json& data)
-{
-    std::string fsid; try
-    {
-        data.at("id").get_to(fsid);
-    }
-    catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
-  
     nlohmann::json rdata(backend.GetFSRoot(fsid));
 
     return std::make_unique<Filesystem>(backend, fsid, rdata);
@@ -31,7 +16,14 @@ std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, const nlo
 /*****************************************************/
 std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, Folder& parent, const nlohmann::json& data)
 {
-    std::unique_ptr<Filesystem> filesystem(Filesystem::LoadFromData(backend, data));
+    std::string fsid; try
+    {
+        data.at("id").get_to(fsid);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw Backend::JSONErrorException(ex.what()); }
+
+    std::unique_ptr<Filesystem> filesystem(Filesystem::LoadByID(backend, fsid));
 
     filesystem->parent = &parent; return filesystem;
 }
