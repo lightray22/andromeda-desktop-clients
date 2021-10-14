@@ -186,3 +186,11 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
 
     parent.itemMap.insert(this->itemMap.extract(it));
 }
+
+/*****************************************************/
+void Folder::FlushCache()
+{
+    ItemMap::const_iterator it = itemMap.begin(); 
+    
+    for (; it != itemMap.end(); it++) it->second->FlushCache();
+}

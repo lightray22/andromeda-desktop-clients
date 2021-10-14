@@ -35,7 +35,10 @@ void Backend::Initialize(const Config::Options& options)
 /*****************************************************/
 std::string Backend::RunAction(Backend::Runner::Input& input)
 {
-    this->debug << __func__ << "(app:" << input.app << " action:" << input.action << ")"; this->debug.Info();
+    this->reqCount++;
+
+    this->debug << __func__ << "(app:" << input.app << " action:" << input.action << ")"
+        << " count:" << this->reqCount; this->debug.Info();
 
     if (!this->sessionID.empty())
     {

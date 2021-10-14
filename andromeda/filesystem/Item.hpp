@@ -64,6 +64,9 @@ public:
     /** Move this item to the given parent folder, optionally overwrite */
     virtual void Move(Folder& parent, bool overwrite = false, bool internal = false) final;
 
+    /** Flushes all dirty pages to the backend */
+    virtual void FlushCache() = 0;
+
 protected:
 
     /** 

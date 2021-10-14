@@ -239,6 +239,8 @@ private:
     std::string sessionID;
     std::string sessionKey;
 
+    size_t reqCount = 0;
+
     Runner& runner;
     Config config;
     Debug debug;

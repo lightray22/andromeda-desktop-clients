@@ -11,10 +11,11 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) 
 {
     debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
 
-    this->httpClient.set_keep_alive(true);
+    //this->httpClient.set_keep_alive(true); - BUGGED
+    //https://github.com/yhirose/cpp-httplib/issues/1041
 
-    this->httpClient.set_read_timeout(60, 0);
-    this->httpClient.set_write_timeout(60, 0);
+    this->httpClient.set_read_timeout(60);
+    this->httpClient.set_write_timeout(60);
 }
 
 /*****************************************************/

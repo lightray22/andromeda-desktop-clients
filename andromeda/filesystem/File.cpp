@@ -37,11 +37,21 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
 }
 
 /*****************************************************/
+File::~File() 
+{
+    debug << __func__ << "()"; debug.Info();
+
+    if (!this->deleted) FlushCache();
+}
+
+/*****************************************************/
 void File::SubDelete()
 {
     debug << __func__ << "()"; debug.Info();
 
     backend.DeleteFile(this->id);
+
+    this->deleted = true;
 }
 
 /*****************************************************/
@@ -203,15 +213,10 @@ void File::Truncate(const size_t size)
 
     this->backend.TruncateFile(this->id, size); 
     
-    this->size = size; 
-    this->backendSize = size;
+    this->size = size; this->backendSize = size;
 
     for (PageMap::iterator it = pages.begin(); it != pages.end(); )
     {
-        if (it->first > size/pageSize)
-        {
-            it = pages.erase(it);
-        }
-        else it++;
+        if (it->first > size/pageSize) it = pages.erase(it); else it++;
     }
 }

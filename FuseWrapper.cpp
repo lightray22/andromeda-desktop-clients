@@ -22,48 +22,52 @@
 static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
 
-static int fuse_statfs(const char *path, struct statvfs* buf);
-static int fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
-static int fuse_mkdir(const char* path, mode_t mode);
-static int fuse_unlink(const char* path);
-static int fuse_rmdir(const char* path);
-static int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
-static int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
-static int fuse_flush(const char* path, struct fuse_file_info* fi);
-static int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+static int a2fuse_statfs(const char *path, struct statvfs* buf);
+static int a2fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
+static int a2fuse_mkdir(const char* path, mode_t mode);
+static int a2fuse_unlink(const char* path);
+static int a2fuse_rmdir(const char* path);
+static int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi);
+static int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi);
+static int a2fuse_flush(const char* path, struct fuse_file_info* fi);
+static int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
+static int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi);
+static void a2fuse_destroy(void* private_data);
 
 #if USE_FUSE2
-static int fuse_getattr(const char* path, struct stat* stbuf);
-static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
-static int fuse_rename(const char* oldpath, const char* newpath);
-static int fuse_truncate(const char* path, off_t size);
-static int fuse_chmod(const char* path, mode_t mode);
-static int fuse_chown(const char* path, uid_t uid, gid_t gid);
+static int a2fuse_getattr(const char* path, struct stat* stbuf);
+static int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
+static int a2fuse_rename(const char* oldpath, const char* newpath);
+static int a2fuse_truncate(const char* path, off_t size);
+static int a2fuse_chmod(const char* path, mode_t mode);
+static int a2fuse_chown(const char* path, uid_t uid, gid_t gid);
 #else
-static int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
-static int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
-static int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
-static int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
-static int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
-static int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
+static int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
+static int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
+static int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
+static int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi);
+static int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
+static int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 #endif
 
-static struct fuse_operations fuse_ops = {
-    .getattr = fuse_getattr,
-    .mkdir = fuse_mkdir,
-    .unlink = fuse_unlink,
-    .rmdir = fuse_rmdir,
-    .rename = fuse_rename,
-    .chmod = fuse_chmod,
-    .chown = fuse_chown,
-    .truncate = fuse_truncate,
-    .read = fuse_read,
-    .write = fuse_write,
-    .statfs = fuse_statfs,
-    .flush = fuse_flush,
-    .fsync = fuse_fsync,
-    .readdir = fuse_readdir,
-    .create = fuse_create
+static struct fuse_operations a2fuse_ops = {
+    .getattr = a2fuse_getattr,
+    .mkdir = a2fuse_mkdir,
+    .unlink = a2fuse_unlink,
+    .rmdir = a2fuse_rmdir,
+    .rename = a2fuse_rename,
+    .chmod = a2fuse_chmod,
+    .chown = a2fuse_chown,
+    .truncate = a2fuse_truncate,
+    .read = a2fuse_read,
+    .write = a2fuse_write,
+    .statfs = a2fuse_statfs,
+    .flush = a2fuse_flush,
+    .fsync = a2fuse_fsync,
+    .readdir = a2fuse_readdir,
+    .fsyncdir = a2fuse_fsyncdir,
+    .destroy = a2fuse_destroy,
+    .create = a2fuse_create
 };
 
 constexpr int SUCCESS = 0;
@@ -154,7 +158,7 @@ struct FuseContext
     { 
         debug << __func__ << "() fuse_new()"; debug.Info();
 
-        fuse = fuse_new(mount.chan, &(opts.args), &fuse_ops, sizeof(fuse_ops), (void*)nullptr);
+        fuse = fuse_new(mount.chan, &(opts.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
 
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
@@ -180,7 +184,7 @@ struct FuseContext
     {
         debug << __func__ << "() fuse_new()"; debug.Info();
         
-        fuse = fuse_new(&(opts.args), &fuse_ops, sizeof(fuse_ops), (void*)nullptr);
+        fuse = fuse_new(&(opts.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
         
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
@@ -326,7 +330,7 @@ int standardTry(const std::string& fname, std::function<int()> func)
 }
 
 /*****************************************************/
-int fuse_statfs(const char *path, struct statvfs* buf)
+int a2fuse_statfs(const char *path, struct statvfs* buf)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -380,9 +384,9 @@ void item_stat(const Item& item, struct stat* stbuf)
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_getattr(const char* path, struct stat* stbuf)
+int a2fuse_getattr(const char* path, struct stat* stbuf)
 #else
-int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
+int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
@@ -395,9 +399,9 @@ int fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
-int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
+int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
@@ -433,7 +437,7 @@ int fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offs
 }
 
 /*****************************************************/
-int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
+int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
     fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
     const std::string& path = pair.first; const std::string& name = pair.second;
@@ -449,7 +453,7 @@ int fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-int fuse_mkdir(const char* fullpath, mode_t mode)
+int a2fuse_mkdir(const char* fullpath, mode_t mode)
 {
     fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
     const std::string& path = pair.first; const std::string& name = pair.second;
@@ -465,7 +469,7 @@ int fuse_mkdir(const char* fullpath, mode_t mode)
 }
 
 /*****************************************************/
-int fuse_unlink(const char* path)
+int a2fuse_unlink(const char* path)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -476,7 +480,7 @@ int fuse_unlink(const char* path)
 }
 
 /*****************************************************/
-int fuse_rmdir(const char* path)
+int a2fuse_rmdir(const char* path)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -488,9 +492,9 @@ int fuse_rmdir(const char* path)
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_rename(const char* oldpath, const char* newpath)
+int a2fuse_rename(const char* oldpath, const char* newpath)
 #else
-int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
+int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif
 {
     oldpath++; const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
@@ -527,7 +531,7 @@ int fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 }
 
 /*****************************************************/
-int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
@@ -540,7 +544,7 @@ int fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_f
 }
 
 /*****************************************************/
-int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
@@ -553,7 +557,7 @@ int fuse_write(const char* path, const char* buf, size_t size, off_t off, struct
 }
 
 /*****************************************************/
-int fuse_flush(const char* path, struct fuse_file_info* fi)
+int a2fuse_flush(const char* path, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -566,7 +570,7 @@ int fuse_flush(const char* path, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
+int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -575,14 +579,38 @@ int fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
         File& file(rootPtr->GetFileByPath(path));
 
         file.FlushCache(); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        Folder& folder(rootPtr->GetFolderByPath(path));
+
+        folder.FlushCache(); return SUCCESS;
+    });
+}
+
+/*****************************************************/
+void a2fuse_destroy(void* private_data)
+{
+    debug << __func__ << "()"; debug.Info();
+
+    standardTry(__func__,[&]()->int
+    {
+        rootPtr->FlushCache(); return SUCCESS;
     });
 }
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_truncate(const char* path, off_t size)
+int a2fuse_truncate(const char* path, off_t size)
 #else
-int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
+int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif
 {
     path++; debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
@@ -597,9 +625,9 @@ int fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_chmod(const char* path, mode_t mode)
+int a2fuse_chmod(const char* path, mode_t mode)
 #else
-int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
@@ -612,9 +640,9 @@ int fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 
 /*****************************************************/
 #if USE_FUSE2
-int fuse_chown(const char* path, uid_t uid, gid_t gid)
+int a2fuse_chown(const char* path, uid_t uid, gid_t gid)
 #else
-int fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
+int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif
 {
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();

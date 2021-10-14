@@ -16,7 +16,7 @@ class File : public Item
 {
 public:
 
-    virtual ~File(){};
+    virtual ~File();
 
     virtual Type GetType() const override { return Type::FILE; }
 
@@ -41,8 +41,7 @@ public:
     /** Set the file size to the given value */
     virtual void Truncate(size_t size) final;
 
-    /** Flushes all dirty pages to the backend */
-    virtual void FlushCache() final;
+    virtual void FlushCache() override;
 
 protected:
 
@@ -78,6 +77,9 @@ private:
 
     /* file size as far as the backend knows */
     size_t backendSize;
+
+    /** true if the file was deleted */
+    bool deleted = false;
 
     Debug debug;
 };
