@@ -38,7 +38,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         postParams.push_back({it->first, it->second.data, it->second.name, {}});
     }
     
-    httplib::Result response = this->httpClient.Post(url.c_str(), postParams);
+    httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
 
     if (!response) throw LibErrorException(response.error());
 

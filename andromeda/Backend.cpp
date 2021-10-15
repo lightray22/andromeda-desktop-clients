@@ -392,7 +392,11 @@ std::string Backend::ReadFile(const std::string& id, const size_t offset, const 
 
     Runner::Input input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
 
-    return RunAction(input);
+    std::string data(RunAction(input));
+
+    if (data.size() != length) throw ReadSizeException(length, data.size());
+
+    return data;
 }
 
 /*****************************************************/

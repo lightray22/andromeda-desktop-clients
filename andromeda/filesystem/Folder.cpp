@@ -35,7 +35,7 @@ Item& Folder::GetItemByPath(std::string path)
     {
         const ItemMap& items = parent->GetItems();
         ItemMap::const_iterator it = items.find(parts[i]);
-        if (it == items.end()) throw Backend::NotFoundException();
+        if (it == items.end()) throw NotFoundException();
 
         Item& item = *(it->second);
 
@@ -46,7 +46,7 @@ Item& Folder::GetItemByPath(std::string path)
         parent = dynamic_cast<Folder*>(&item);
     }
 
-    throw Backend::NotFoundException(); // should never get here
+    throw NotFoundException(); // should never get here
 }
 
 /*****************************************************/
@@ -141,7 +141,7 @@ void Folder::DeleteItem(const std::string& name)
     debug << __func__ << "(name:" << name << ")"; debug.Info();
 
     GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
-    if (it == this->itemMap.end()) throw Backend::NotFoundException();
+    if (it == this->itemMap.end()) throw NotFoundException();
 
     SubDeleteItem(*(it->second)); this->itemMap.erase(it);
 }
@@ -152,7 +152,7 @@ void Folder::RenameItem(const std::string& name0, const std::string& name1, bool
     debug << __func__ << "(name0:" << name0 << " name1:" << name1 << ")"; debug.Info();
 
     GetItems(); ItemMap::const_iterator it = this->itemMap.find(name0);
-    if (it == this->itemMap.end()) throw Backend::NotFoundException();
+    if (it == this->itemMap.end()) throw NotFoundException();
 
     ItemMap::const_iterator dup = this->itemMap.find(name1);
     if (!overwrite && dup != this->itemMap.end())
@@ -172,7 +172,7 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
     debug << __func__ << "(name:" << name << " parent:" << parent.GetName() << ")"; debug.Info();
 
     GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
-    if (it == this->itemMap.end()) throw Backend::NotFoundException();
+    if (it == this->itemMap.end()) throw NotFoundException();
 
     parent.GetItems(); if (!parent.CanReceiveItems()) throw ModifyException();
 

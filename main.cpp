@@ -79,7 +79,9 @@ int main(int argc, char** argv)
         backend.Initialize(bOptions);
 
         if (options.HasUsername())
+        {
             backend.AuthInteractive(options.GetUsername());
+        }
 
         switch (options.GetMountItemType())
         {

@@ -32,7 +32,6 @@ static int a2fuse_write(const char* path, const char* buf, size_t size, off_t of
 static int a2fuse_flush(const char* path, struct fuse_file_info* fi);
 static int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
 static int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi);
-static void a2fuse_destroy(void* private_data);
 
 #if USE_FUSE2
 static int a2fuse_getattr(const char* path, struct stat* stbuf);
@@ -66,7 +65,6 @@ static struct fuse_operations a2fuse_ops = {
     .fsync = a2fuse_fsync,
     .readdir = a2fuse_readdir,
     .fsyncdir = a2fuse_fsyncdir,
-    .destroy = a2fuse_destroy,
     .create = a2fuse_create
 };
 
@@ -302,6 +300,10 @@ int standardTry(const std::string& fname, std::function<int()> func)
     catch (const Folder::NotFolderException& e)
     {
         debug << fname << "..." << e.what(); debug.Details(); return -ENOTDIR;
+    }
+    catch (const Folder::NotFoundException& e)
+    {
+        debug << fname << "..." << e.what(); debug.Details(); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
@@ -592,17 +594,6 @@ int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
         Folder& folder(rootPtr->GetFolderByPath(path));
 
         folder.FlushCache(); return SUCCESS;
-    });
-}
-
-/*****************************************************/
-void a2fuse_destroy(void* private_data)
-{
-    debug << __func__ << "()"; debug.Info();
-
-    standardTry(__func__,[&]()->int
-    {
-        rootPtr->FlushCache(); return SUCCESS;
     });
 }
 

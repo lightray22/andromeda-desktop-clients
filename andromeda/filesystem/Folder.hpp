@@ -19,6 +19,11 @@ public:
 
     virtual ~Folder(){};
 
+    /** Base Exception for all folder issues */
+    class Exception : public Utilities::Exception { public:
+        Exception(const std::string& message) :
+            Utilities::Exception("Folder Error: "+message) {}; };
+
     /** Exception indicating the item found is not a file */
     class NotFileException : public Exception { public:
         NotFileException() : Exception("Item is not a File") {}; };
@@ -26,6 +31,9 @@ public:
     /** Exception indicating the item found is not a folder */
     class NotFolderException : public Exception { public:
         NotFolderException() : Exception("Item is not a Folder") {}; };
+
+    class NotFoundException : public Exception { public:
+        NotFoundException() : Exception("Item does not exist") {}; };
 
     /** Exception indicating the requested item already exists */
     class DuplicateItemException : public Exception { public:

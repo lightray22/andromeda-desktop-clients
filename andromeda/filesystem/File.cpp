@@ -153,7 +153,7 @@ size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 
     if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
     {
-        const std::string data(backend.ReadFile(this->id, offset, this->size));
+        const std::string data(backend.ReadFile(this->id, offset, length));
 
         std::copy(data.cbegin(), data.cend(), reinterpret_cast<char*>(buffer));
     }

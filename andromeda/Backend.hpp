@@ -61,6 +61,15 @@ public:
         JSONErrorException(const std::string& error) : 
             Exception("JSON Error: "+error) {}; };
 
+    /** Exception indicating that the backend did not return the correct # of bytes */
+    class ReadSizeException : public Exception { public:
+        ReadSizeException(size_t wanted, size_t got) : Exception(
+            "Read "+std::to_string(got)+" bytes, wanted "+std::to_string(got)) {}; };
+
+    /** Andromeda exception indicating the requested operation is invalid */
+    class UnsupportedException : public Exception { public:
+        UnsupportedException() : Exception("Invalid Operation") {}; };
+
     /** Base exception for Andromeda-returned 403 errors */
     class DeniedException : public Exception { public:
         DeniedException() : Exception("Access Denied") {};
@@ -78,10 +87,6 @@ public:
     /** Andromeda exception indicating two factor is needed */
     class TwoFactorRequiredException : public DeniedException { public:
         TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
-
-    /** Andromeda exception indicating the requested operation is invalid */
-    class UnsupportedException : public Exception { public:
-        UnsupportedException() : Exception("Invalid Operation") {}; };
 
     /** @param runner the Runner to use */
     Backend(Runner& runner);
