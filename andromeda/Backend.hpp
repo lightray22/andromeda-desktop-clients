@@ -14,10 +14,23 @@ class Backend
 {
 public:
 
+    /** Base Exception for all backend issues */
+    class Exception : public Utilities::Exception { public:
+        Exception(int code) : 
+            Utilities::Exception("Backend Error: Code "+std::to_string(code)){};
+        Exception(const std::string& message) :
+            Utilities::Exception("Backend Error: "+message) {}; };
+
     /** Implements the actual external call to the API */
     class Runner
     {
     public:
+        class EndpointException : public Backend::Exception { public:
+        EndpointException(int code) : 
+            Backend::Exception("Endpoint: Code "+std::to_string(code)) {};
+        EndpointException(const std::string& message) :
+            Backend::Exception("Endpoint: "+message) {}; };
+
         struct InputFile
         {
             std::string name;
@@ -44,13 +57,6 @@ public:
          */
         virtual std::string RunAction(const Input& input) = 0;
     };
-
-    /** Base Exception for all backend issues */
-    class Exception : public Utilities::Exception { public:
-        Exception(int code) : 
-            Utilities::Exception("Backend Error: Code "+std::to_string(code)){};
-        Exception(const std::string& message) :
-            Utilities::Exception("Backend Error: "+message) {}; };
 
     /** Exception indicating that authentication is required */
     class AuthRequiredException : public Exception { public:

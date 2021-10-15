@@ -317,7 +317,8 @@ void Backend::DeleteFile(const std::string& id)
 
     Runner::Input input {"files", "deletefile", {{"file", id}}};
     
-    GetJSON(RunAction(input));
+    try { GetJSON(RunAction(input)); }
+    catch (const NotFoundException& ex) { }
 }
 
 /*****************************************************/
@@ -329,7 +330,8 @@ void Backend::DeleteFolder(const std::string& id)
 
     Runner::Input input {"files", "deletefolder", {{"folder", id}}}; 
     
-    GetJSON(RunAction(input));
+    try { GetJSON(RunAction(input)); }
+    catch (const NotFoundException& ex) { }
 }
 
 /*****************************************************/
