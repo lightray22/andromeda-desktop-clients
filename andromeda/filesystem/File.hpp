@@ -66,8 +66,12 @@ private:
 
     typedef std::map<size_t, Page> PageMap; PageMap pages;
 
-    /** Initializes and returns a reference to the page at the given index */
-    virtual Page& GetPage(const size_t index) final;
+    /** 
+     * Returns a reference to a data page
+     * @param index index of the page to load
+     * @param minsize minimum size of the page for writing
+     */
+    virtual Page& GetPage(const size_t index, const size_t minsize = 0) final;
 
     /** Reads data from the given page index */
     virtual void ReadPage(std::byte* buffer, const size_t index, const size_t offset, const size_t length) final;

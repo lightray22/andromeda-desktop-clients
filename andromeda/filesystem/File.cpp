@@ -71,29 +71,38 @@ void File::SubMove(Folder& parent, bool overwrite)
 }
 
 /*****************************************************/
-File::Page& File::GetPage(const size_t index)
+File::Page& File::GetPage(const size_t index, const size_t minsize)
 {
     PageMap::iterator it = pages.find(index);
 
     if (it == pages.end())
     {
         const size_t offset = index*this->pageSize;
-        const size_t size = std::min(this->size-offset, this->pageSize);
+        const size_t rsize = std::min(this->size-offset, this->pageSize);
         
-        debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Details();
+        debug << __func__ << "()... index:" << index << " offset:" << offset << " rsize:" << rsize; debug.Details();
 
-        bool hasData = size > 0 && offset < this->backendSize;
+        bool hasData = rsize > 0 && offset < this->backendSize;
 
-        const std::string data(hasData ? backend.ReadFile(this->id, offset, size) : "");
+        const std::string data(hasData ? backend.ReadFile(this->id, offset, rsize) : "");
 
-        it = pages.emplace(index, this->pageSize).first;
+        // for the first page we keep it minimal to save memory on small files
+        // for subsequent pages we allocate the full size ahead of time for speed
+        const size_t pageSize = (index == 0) ? rsize : this->pageSize;
 
-        Page& page(it->second); char* buf = reinterpret_cast<char*>(page.data.data());
+        it = pages.emplace(index, pageSize).first;
+
+        char* buf = reinterpret_cast<char*>(it->second.data.data());
 
         std::copy(data.cbegin(), data.cend(), buf);
     }
 
-    return it->second;
+    Page& page(it->second);
+
+    if (page.data.size() < minsize) 
+        page.data.resize(minsize);
+
+    return page;
 }
 
 /*****************************************************/
@@ -137,7 +146,7 @@ void File::WritePage(const std::byte* buffer, const size_t index, const size_t o
 {
     debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info();
 
-    Page& page(GetPage(index)); page.dirty = true;
+    Page& page(GetPage(index, offset+length)); page.dirty = true;
 
     std::copy(buffer, buffer+length, page.data.begin()+offset);
 }
@@ -216,7 +225,11 @@ void File::Truncate(const size_t size)
     this->size = size; this->backendSize = size;
 
     for (PageMap::iterator it = pages.begin(); it != pages.end(); )
-    {
-        if (it->first > size/pageSize) it = pages.erase(it); else it++;
+    {        
+        if (!size || it->first > (size-1)/pageSize)
+        {
+            it = pages.erase(it); // remove past end
+        }
+        else it++; // move to next page
     }
 }
