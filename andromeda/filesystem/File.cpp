@@ -33,7 +33,7 @@ File::File(Backend& backend, Folder& parent, const nlohmann::json& data) :
     auto ceil = [](int x, int y) { return (x + y - 1) / y; };
     this->pageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
 
-    debug << __func__ << "... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " pageSize:" << pageSize; debug.Details();
+    debug << __func__ << "... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " pageSize:" << pageSize; debug.Info();
 }
 
 /*****************************************************/
@@ -80,7 +80,7 @@ File::Page& File::GetPage(const size_t index, const size_t minsize)
         const size_t offset = index*this->pageSize;
         const size_t rsize = std::min(this->size-offset, this->pageSize);
         
-        debug << __func__ << "()... index:" << index << " offset:" << offset << " rsize:" << rsize; debug.Details();
+        debug << __func__ << "()... index:" << index << " offset:" << offset << " rsize:" << rsize; debug.Info();
 
         bool hasData = rsize > 0 && offset < this->backendSize;
 
@@ -122,7 +122,7 @@ void File::FlushCache()
 
             std::string data(reinterpret_cast<const char*>(page.data.data()), size);
 
-            debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Details();
+            if (debug) { debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Info(); }
 
             backend.WriteFile(this->id, offset, data); page.dirty = false;
             
@@ -134,7 +134,7 @@ void File::FlushCache()
 /*****************************************************/
 void File::ReadPage(std::byte* buffer, const size_t index, const size_t offset, const size_t length)
 {
-    debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info();
+    if (debug) { debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     const Page& page(GetPage(index));
 
@@ -144,7 +144,7 @@ void File::ReadPage(std::byte* buffer, const size_t index, const size_t offset, 
 /*****************************************************/
 void File::WritePage(const std::byte* buffer, const size_t index, const size_t offset, const size_t length)
 {
-    debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info();
+    if (debug) { debug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     Page& page(GetPage(index, offset+length)); page.dirty = true;
 
@@ -154,7 +154,7 @@ void File::WritePage(const std::byte* buffer, const size_t index, const size_t o
 /*****************************************************/
 size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 {    
-    debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info();
+    if (debug) { debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     if (offset >= this->size) return 0;
 
@@ -173,8 +173,8 @@ size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 
         size_t pLength = std::min(length+offset-byte, pageSize-pOffset);
 
-        debug << __func__ << "()... size:" << this->size << " byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; debug.Details();
+        if (debug) { debug << __func__ << "()... size:" << this->size << " byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength; debug.Info(); }
 
         ReadPage(buffer, index, pOffset, pLength);
 
@@ -187,7 +187,7 @@ size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 /*****************************************************/
 void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t length)
 {
-    debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info();
+    if (debug) { debug << __func__ << "(name:" << name << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
     {
@@ -204,8 +204,8 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 
         size_t pLength = std::min(length+offset-byte, pageSize-pOffset);
 
-        debug << __func__ << "()... size:" << size << " byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; debug.Details();
+        if (debug) { debug << __func__ << "()... size:" << size << " byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength; debug.Info(); }
 
         WritePage(buffer, index, pOffset, pLength);   
     

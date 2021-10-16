@@ -295,35 +295,35 @@ int standardTry(const std::string& fname, std::function<int()> func)
     }
     catch (const Folder::NotFileException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -EISDIR;
+        debug << fname << "..." << e.what(); debug.Info(); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -ENOTDIR;
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -ENOENT;
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -EEXIST;
+        debug << fname << "..." << e.what(); debug.Info(); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -ENOTSUP;
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
     }
     catch (const Backend::UnsupportedException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -ENOTSUP;
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
     }
     catch (const Backend::DeniedException& e)
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -EACCES;
+        debug << fname << "..." << e.what(); debug.Info(); return -EACCES;
     }
     catch (const Backend::NotFoundException& e)  
     {
-        debug << fname << "..." << e.what(); debug.Details(); return -ENOENT;
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOENT;
     }
     catch (const Utilities::Exception& e)
     {
@@ -412,13 +412,13 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
     {
         const Folder::ItemMap& items(rootPtr->GetFolderByPath(path).GetItems());
 
-        debug << __func__ << "... #items:" << items.size(); debug.Details();
+        debug << __func__ << "... #items:" << items.size(); debug.Info();
 
         for (const Folder::ItemMap::value_type& pair : items)
         {
             const std::unique_ptr<Item>& item = pair.second;
 
-            debug << __func__ << "... subitem: " << item->GetName(); debug.Details();
+            debug << __func__ << "... subitem: " << item->GetName(); debug.Info();
             
 #if USE_FUSE2
             int retval = filler(buf, item->GetName().c_str(), NULL, 0);

@@ -21,7 +21,7 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
         data.at("id").get_to(this->id);
         data.at("name").get_to(this->name);
 
-        debug << __func__ << "... name:" << this->name; debug.Details();
+        debug << __func__ << "... name:" << this->name; debug.Info();
 
         data.at("dates").at("created").get_to(this->created);
 

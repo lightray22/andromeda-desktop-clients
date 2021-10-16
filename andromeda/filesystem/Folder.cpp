@@ -91,7 +91,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
         {
             std::unique_ptr<File> file(std::make_unique<File>(backend, *this, el));
 
-            debug << __func__ << "... file:" << file->GetName(); debug.Details();
+            debug << __func__ << "... file:" << file->GetName(); debug.Info();
 
             this->itemMap[file->GetName()] = std::move(file);
         }
@@ -100,7 +100,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
         {
             std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, *this, el));
 
-            debug << __func__ << "... folder:" << folder->GetName(); debug.Details();
+            debug << __func__ << "... folder:" << folder->GetName(); debug.Info();
 
             this->itemMap[folder->GetName()] = std::move(folder);
         }

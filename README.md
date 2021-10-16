@@ -37,3 +37,18 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 2. Make build folder `mkdir build; cd build`
 3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 4. Run compile `cmake --build .`
+
+# Debug
+
+Using the `-d int` or `--debug int` option turns on debug.
+
+1. Runs the app in the foreground and reports errors
+2. Reports all calls to the backend
+3. Shows many function calls and extra info (a lot!)
+4. With each print shows the time, thread ID, and object ID
+
+The `--cachemode enum` option is also useful for debugging caching.
+
+- none - turns off caching and sends every read/write to the server (slow!)
+- memory - never reads/writes the server, only memory (data loss!)
+- normal - the normal mode of cache operation

@@ -83,17 +83,23 @@ Debug::Level Debug::level = Debug::Level::NONE;
 high_resolution_clock::time_point Debug::start = high_resolution_clock::now();
 
 /*****************************************************/
-void Debug::Details(const std::string& str)
+Debug::operator bool() const
 {
-    if (level >= Level::DETAILS) Error(str);
-
-    if (str.empty()) this->buffer.str(std::string());
+    return static_cast<bool>(level);
 }
 
 /*****************************************************/
 void Debug::Info(const std::string& str)
 {
-    if (level >= Level::CALLS) Error(str);
+    if (level >= Level::INFO) Error(str);
+
+    if (str.empty()) this->buffer.str(std::string());
+}
+
+/*****************************************************/
+void Debug::Backend(const std::string& str)
+{
+    if (level >= Level::BACKEND) Error(str);
 
     if (str.empty()) this->buffer.str(std::string());
 }

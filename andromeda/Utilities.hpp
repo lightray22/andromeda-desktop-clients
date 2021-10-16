@@ -71,10 +71,11 @@ public:
     /** Debug verbosity */
     enum class Level
     {
-        NONE,   /** Debug off */
-        ERRORS, /** Only show Error()s */
-        CALLS,  /** Also show Info()s */
-        DETAILS /** Show extra details */
+        NONE,    /** Debug off */
+        ERRORS,  /** Only show Error()s */
+        BACKEND, /** Also show Backend */
+        INFO,    /** Everything else */
+        DETAILS  /** Show extra details */
     };
 
     /**
@@ -91,16 +92,16 @@ public:
     static void SetLevel(Level level){ Debug::level = level; }
 
     /**
-     * Shows the given debug string with minlevel=DETAILS
-     * @param str the string to show, or "" to use the buffer
-     */
-    void Details(const std::string& str = "");
-
-    /**
-     * Shows the given debug string with minlevel=CALLS
+     * Shows the given debug string with minlevel=INFO
      * @param str the string to show, or "" to use the buffer
      */
     void Info(const std::string& str = "");
+
+    /**
+     * Shows the given debug string with minlevel=BACKEND
+     * @param str the string to show, or "" to use the buffer
+     */
+    void Backend(const std::string& str = "");
 
     /**
      * Shows the given debug string with minlevel=ERRORS
@@ -108,11 +109,16 @@ public:
      */
     void Error(const std::string& str = "");
 
-    /** Append to an internal buffer that can be shown with Info/Error */
+    /** Append to an internal buffer that can be shown with an empty Print */
     template <class T> Debug& operator<<(const T& dat)
     {
-        this->buffer << dat; return *this;
+        if (static_cast<bool>(level))
+            this->buffer << dat;
+        return *this;
     }
+
+    /** Returns true iff debug is enabled */
+    operator bool() const;
 
 private:
 

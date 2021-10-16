@@ -29,7 +29,7 @@ void Filesystems::LoadItems()
         {
             std::unique_ptr<Filesystem> filesystem(Filesystem::LoadFromData(backend, *this, el));
 
-            debug << __func__ << "... filesystem:" << filesystem->GetName(); debug.Details();
+            debug << __func__ << "... filesystem:" << filesystem->GetName(); debug.Info();
 
             this->itemMap[filesystem->GetName()] = std::move(filesystem);
         }

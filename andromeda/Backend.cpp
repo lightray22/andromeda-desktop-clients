@@ -37,8 +37,16 @@ std::string Backend::RunAction(Backend::Runner::Input& input)
 {
     this->reqCount++;
 
-    this->debug << __func__ << "(app:" << input.app << " action:" << input.action << ")"
-        << " count:" << this->reqCount; this->debug.Info();
+    if (this->debug)
+    {
+        this->debug << __func__ << "() " << this->reqCount
+            << " app:" << input.app << " action:" << input.action;
+
+        for (const auto [key,val] : input.params)
+            this->debug << " " << key << ":" << val;
+
+        this->debug.Backend();
+    }
 
     if (!this->sessionID.empty())
     {
@@ -55,7 +63,7 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
     try {
         nlohmann::json val(nlohmann::json::parse(resp));
 
-        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Details();
+        this->debug << __func__ << "... json:" << val.dump(4); this->debug.Info();
 
         if (val.at("ok").get<bool>())
             return val.at("appdata");
@@ -64,6 +72,8 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             const int code = val.at("code").get<int>();
             const auto [message, details] = Utilities::split(
                 val.at("message").get<std::string>(),":");
+            
+            this->debug << __func__ << "()... message:" << message; this->debug.Backend();
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
@@ -102,7 +112,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
         resp.at("client").at("session").at("id").get_to(this->sessionID);
         resp.at("client").at("session").at("authkey").get_to(this->sessionKey);
 
-        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Details();
+        this->debug << __func__ << "... sessionID:" << this->sessionID; this->debug.Info();
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

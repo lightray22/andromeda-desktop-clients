@@ -42,7 +42,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 
     if (!response) throw LibErrorException(response.error());
 
-    debug << __func__ << "... HTTP:" << response->status; debug.Details();
+    debug << __func__ << "... HTTP:" << response->status; debug.Info();
 
     switch (response->status)
     {
