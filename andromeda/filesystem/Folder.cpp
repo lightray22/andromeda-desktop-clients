@@ -79,7 +79,10 @@ const Folder::ItemMap& Folder::GetItems()
     bool expired = (steady_clock::now() - this->refreshed)
         > backend.GetConfig().GetOptions().folderRefresh;
 
-    if (!this->haveItems || expired) 
+    bool noCache = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE; // load always
+    bool memory  = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::MEMORY; // load once
+
+    if (!this->haveItems || (expired && !memory) || noCache) 
     {
         LoadItems(); this->refreshed = steady_clock::now();
     }
