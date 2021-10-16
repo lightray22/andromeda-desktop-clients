@@ -2,6 +2,7 @@
 #include <list>
 #include <vector>
 #include <sstream>
+#include <chrono>
 
 #include "Options.hpp"
 #include "Utilities.hpp"
@@ -13,11 +14,16 @@ string Options::HelpText()
 {
     ostringstream output;
 
+    Config::Options defOptions; // TODO show defaults?
+
     output << "Usage Syntax: " << endl
-           << "andromeda-fuse (-h|--help | -V|--version)" << endl
-           << "andromeda-fuse ((-s|--apiurl url) | (-p|--apipath path)) -m|--mount path" << endl
-               << "\t[-u|--username username] [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
-               << "\t[-o fuseoption]+ [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize int]" << endl;
+           << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
+           
+           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl
+           << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
+           << "Remote Options:  [-u|--username username]" << endl
+           << "Local Mount:     -m|--mount path [-o fuseoption]+" << endl
+           << "Advanced: [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds]" << endl;
 
     return output.str();
 }
@@ -120,6 +126,11 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
                 throw BadValueException(option); }
 
             if (!opts.pageSize) throw BadValueException(option);
+        }
+        else if (option == "-folder-refresh")
+        {
+            try { opts.folderRefresh = std::chrono::seconds(stoi(value)); }
+            catch (const logic_error& e) { throw BadValueException(option); }
         }
         else throw BadOptionException(option);
     }

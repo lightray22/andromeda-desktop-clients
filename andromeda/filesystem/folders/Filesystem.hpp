@@ -41,6 +41,8 @@ public:
      */
     Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
 
+    virtual void Refresh(const nlohmann::json& data) override { }
+
 protected:
 
     virtual void SubDelete() override { throw ModifyException(); }

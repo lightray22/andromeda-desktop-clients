@@ -1,6 +1,7 @@
 #ifndef LIBA2_CONFIG_H_
 #define LIBA2_CONFIG_H_
 
+#include <chrono>
 #include <nlohmann/json_fwd.hpp>
 
 #include "Utilities.hpp"
@@ -44,6 +45,8 @@ public:
         CacheType cacheType = CacheType::NORMAL;
 
         size_t pageSize = 1024*1024; // 1M
+
+        std::chrono::seconds folderRefresh = std::chrono::seconds(15);
     };
 
     /** Sets config from the given backend and options */

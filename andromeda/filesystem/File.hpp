@@ -16,7 +16,9 @@ class File : public Item
 {
 public:
 
-    virtual ~File();
+    virtual ~File() { }
+
+    virtual void Refresh(const nlohmann::json& data) override;
 
     virtual Type GetType() const override { return Type::FILE; }
 

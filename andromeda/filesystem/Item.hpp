@@ -55,6 +55,9 @@ public:
     /** Get the accessed time stamp */
     virtual Date GetAccessed() const { return this->accessed; } 
 
+    /** Refresh the item given updated server JSON data */
+    virtual void Refresh(const nlohmann::json& data);
+
     /** Remove this item from its parent */
     virtual void Delete(bool internal = false) final;
 

@@ -1,3 +1,5 @@
+#include <nlohmann/json.hpp>
+
 #include "SuperRoot.hpp"
 #include "Backend.hpp"
 #include "Adopted.hpp"
@@ -17,6 +19,8 @@ SuperRoot::SuperRoot(Backend& backend) :
 /*****************************************************/
 void SuperRoot::LoadItems()
 {
+    if (HaveItems()) return; // never refresh
+
     debug << __func__ << "()"; debug.Info();
 
     std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(backend, *this));

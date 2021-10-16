@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <chrono>
+#include <functional>
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
@@ -93,8 +95,17 @@ protected:
     /** populate itemMap from the backend */
     virtual void LoadItems() = 0;
 
-    /** Populate itemMap using the given JSON */
+    /** Populate/merge itemMap using the given JSON */
     virtual void LoadItemsFrom(const nlohmann::json& data);
+
+    /** Function that returns a new Item given its JSON data */
+    typedef std::function<std::unique_ptr<Item>(const nlohmann::json&)> NewItemFunc;
+
+    /** Map consisting of an item name -> a pair of its JSON data and construct function */
+    typedef std::map<std::string, std::pair<const nlohmann::json&, NewItemFunc>> NewItemMap;
+
+    /** Synchronizes in-memory content using the given map with JSON from the backend */
+    virtual void SyncContents(const NewItemMap& newItems);
 
     /** The folder-type-specific create subfile */
     virtual void SubCreateFile(const std::string& name) = 0;
@@ -117,10 +128,16 @@ protected:
     /** map of subitems */
     ItemMap itemMap;
 
+    /** Returns true iff the itemMap is loaded */
+    virtual bool HaveItems() const { return this->haveItems; }
+
 private:
 
     /** true if itemMap is loaded */
     bool haveItems = false;
+
+    /** time point when contents were loaded */
+    std::chrono::steady_clock::time_point refreshed;
 
     Debug debug;
 };

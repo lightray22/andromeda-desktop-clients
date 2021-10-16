@@ -19,11 +19,23 @@ Item::Item(Backend& backend, const nlohmann::json& data) :
     try
     {
         data.at("id").get_to(this->id);
+
+        data.at("dates").at("created").get_to(this->created);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw Backend::JSONErrorException(ex.what()); }
+
+    Refresh(data);
+}
+
+/*****************************************************/
+void Item::Refresh(const nlohmann::json& data)
+{
+    try
+    {
         data.at("name").get_to(this->name);
 
         debug << __func__ << "... name:" << this->name; debug.Info();
-
-        data.at("dates").at("created").get_to(this->created);
 
         const nlohmann::json& modified(data.at("dates").at("modified"));
         if (!modified.is_null()) modified.get_to(this->modified);

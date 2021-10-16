@@ -42,8 +42,11 @@ std::string Backend::RunAction(Backend::Runner::Input& input)
         this->debug << __func__ << "() " << this->reqCount
             << " app:" << input.app << " action:" << input.action;
 
-        for (const auto [key,val] : input.params)
+        for (const auto& [key,val] : input.params)
             this->debug << " " << key << ":" << val;
+
+        for (const auto& [key,file] : input.files)
+            this->debug << " " << key << ":" << file.name << ":" << file.data.size();
 
         this->debug.Backend();
     }

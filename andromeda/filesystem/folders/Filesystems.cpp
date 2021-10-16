@@ -1,3 +1,4 @@
+#include <functional>
 #include <nlohmann/json.hpp>
 
 #include "Filesystems.hpp"
@@ -21,21 +22,26 @@ void Filesystems::LoadItems()
 {
     debug << __func__ << "()"; debug.Info();
 
+    nlohmann::json data(backend.GetFilesystems());
+
+    Folder::NewItemMap newItems;
+
+    NewItemFunc newFilesystem = [&](const nlohmann::json& fsJ)->std::unique_ptr<Item> {
+        return Filesystem::LoadFromData(backend, *this, fsJ); };
+
     try
     {
-        nlohmann::json data(backend.GetFilesystems());
-
-        for (const nlohmann::json& el : data)
+        for (const nlohmann::json& fsJ : data)
         {
-            std::unique_ptr<Filesystem> filesystem(Filesystem::LoadFromData(backend, *this, el));
-
-            debug << __func__ << "... filesystem:" << filesystem->GetName(); debug.Info();
-
-            this->itemMap[filesystem->GetName()] = std::move(filesystem);
+            newItems.emplace(std::piecewise_construct,
+                std::forward_as_tuple(fsJ.at("name")),
+                std::forward_as_tuple(fsJ, newFilesystem));
         }
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
+
+    SyncContents(newItems);
 }
 
 /*****************************************************/
