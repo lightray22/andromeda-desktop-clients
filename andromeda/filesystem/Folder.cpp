@@ -136,7 +136,7 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 
         if (existIt == this->itemMap.end()) // insert new item
         {
-            this->itemMap[name] = std::move(newFunc(data));
+            this->itemMap[name] = newFunc(data);
         }
         else existIt->second->Refresh(data); // update existing
     }
