@@ -30,8 +30,6 @@ PlainFolder::PlainFolder(Backend& backend, const nlohmann::json& data, bool have
     
     try
     {
-        data.at("counters").at("size").get_to(this->size);
-
         if (haveItems) Folder::LoadItemsFrom(data);
     }
     catch (const nlohmann::json::exception& ex) {

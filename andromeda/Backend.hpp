@@ -25,11 +25,11 @@ public:
     class Runner
     {
     public:
-        class EndpointException : public Backend::Exception { public:
+        class EndpointException : public Exception { public:
         EndpointException(int code) : 
-            Backend::Exception("Endpoint: Code "+std::to_string(code)) {};
+            Exception("Endpoint: Code "+std::to_string(code)) {};
         EndpointException(const std::string& message) :
-            Backend::Exception("Endpoint: "+message) {}; };
+            Exception("Endpoint: "+message) {}; };
 
         struct InputFile
         {

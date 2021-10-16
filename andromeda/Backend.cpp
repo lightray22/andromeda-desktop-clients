@@ -293,7 +293,7 @@ nlohmann::json Backend::CreateFolder(const std::string& parent, const std::strin
 
     if (isMemory())
     {
-        nlohmann::json retval {{"id", ""}, {"name", name}, {"counters", {{"size", 0}}}, {"filesystem", ""}};
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"filesystem", ""}};
 
         retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",nullptr}};
 
