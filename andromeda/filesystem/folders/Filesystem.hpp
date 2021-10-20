@@ -28,10 +28,10 @@ public:
     /**
      * Load a filesystem with the given backend data and parent
      * @param backend reference to backend
-     * @param parent reference to parent
      * @param data pre-loaded JSON data
+     * @param parent reference to parent
      */
-    static std::unique_ptr<Filesystem> LoadFromData(Backend& backend, Folder& parent, const nlohmann::json& data);
+    static std::unique_ptr<Filesystem> LoadFromData(Backend& backend, const nlohmann::json& data, Folder& parent);
 
     /** 
      * Construct with root folder JSON data

@@ -22,27 +22,27 @@ public:
     virtual ~Folder(){};
 
     /** Base Exception for all folder issues */
-    class Exception : public Utilities::Exception { public:
+    class Exception : public Item::Exception { public:
         Exception(const std::string& message) :
-            Utilities::Exception("Folder Error: "+message) {}; };
+            Item::Exception("Folder Error: "+message) {}; };
 
     /** Exception indicating the item found is not a file */
     class NotFileException : public Exception { public:
-        NotFileException() : Exception("Item is not a File") {}; };
+        NotFileException() : Exception("Not a File") {}; };
 
     /** Exception indicating the item found is not a folder */
     class NotFolderException : public Exception { public:
-        NotFolderException() : Exception("Item is not a Folder") {}; };
+        NotFolderException() : Exception("Not a Folder") {}; };
 
     class NotFoundException : public Exception { public:
-        NotFoundException() : Exception("Item does not exist") {}; };
+        NotFoundException() : Exception("Not Found") {}; };
 
     /** Exception indicating the requested item already exists */
     class DuplicateItemException : public Exception { public:
-        DuplicateItemException() : Exception("Item already exists") {}; };
+        DuplicateItemException() : Exception("Already Exists") {}; };
 
     class ModifyException : public Exception { public:
-        ModifyException() : Exception("Item cannot be modified") {}; };
+        ModifyException() : Exception("Immutable Item") {}; };
 
     virtual Type GetType() const override final { return Type::FOLDER; }
 
@@ -80,17 +80,11 @@ public:
 protected:
 
     /** 
-     * Construct without initializing
-     * @param backend reference to backend
-     */
-    Folder(Backend& backend);
-
-    /** 
-     * Construct with JSON data
+     * Construct a new abstract folder
      * @param backend reference to backend
      * @param data json data from backend
      */
-    Folder(Backend& backend, const nlohmann::json& data);
+    Folder(Backend& backend, const nlohmann::json* data = nullptr);
 
     /** populate itemMap from the backend */
     virtual void LoadItems() = 0;
@@ -121,9 +115,6 @@ protected:
 
     /** The folder-type-specific move subitem */
     virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) = 0;
-
-    /** Whether or not this folder can have items moved into it */
-    virtual bool CanReceiveItems() = 0;
 
     /** map of subitems */
     ItemMap itemMap;

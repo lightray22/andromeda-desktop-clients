@@ -36,3 +36,18 @@ void Config::Initialize(Backend& backend, const Config::Options& options)
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 }
+
+/*****************************************************/
+void Config::LoadAccountLimits(Backend& backend)
+{
+    this->debug << __func__ << "()"; this->debug.Info();
+
+    nlohmann::json limits(backend.GetAccountLimits());
+
+    try
+    {
+        limits.at("features").at("randomwrite").get_to(this->randWrite);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw Backend::JSONErrorException(ex.what()); }
+}

@@ -295,6 +295,8 @@ int standardTry(const std::string& fname, std::function<int()> func)
     {
         return func();
     }
+
+    // Item exceptions
     catch (const Folder::NotFileException& e)
     {
         debug << fname << "..." << e.what(); debug.Info(); return -EISDIR;
@@ -315,9 +317,23 @@ int standardTry(const std::string& fname, std::function<int()> func)
     {
         debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
     }
+    catch (const File::WriteTypeException& e)
+    {
+        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
+    }
+    catch (const Item::ReadOnlyException& e)
+    {
+        debug << fname << "..." << e.what(); debug.Info(); return -EROFS;
+    }
+
+    // Backend exceptions
     catch (const Backend::UnsupportedException& e)
     {
         debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
+    }
+    catch (const Backend::ReadOnlyException& e)
+    {
+        debug << fname << "..." << e.what(); debug.Info(); return -EROFS;
     }
     catch (const Backend::DeniedException& e)
     {

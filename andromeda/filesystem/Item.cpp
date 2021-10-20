@@ -4,28 +4,27 @@
 #include "Item.hpp"
 #include "Folder.hpp"
 #include "Backend.hpp"
+#include "FSConfig.hpp"
 
 /*****************************************************/
-Item::Item(Backend& backend) : 
+Item::Item(Backend& backend, const nlohmann::json* data) : 
     backend(backend), debug("Item",this)
 {
     debug << __func__ << "()"; debug.Info();
-}
 
-/*****************************************************/
-Item::Item(Backend& backend, const nlohmann::json& data) : 
-    Item(backend)
-{
-    try
+    if (data != nullptr)
     {
-        data.at("id").get_to(this->id);
+        try
+        {
+            data->at("id").get_to(this->id);
 
-        data.at("dates").at("created").get_to(this->created);
+            data->at("dates").at("created").get_to(this->created);
+        }
+        catch (const nlohmann::json::exception& ex) {
+            throw Backend::JSONErrorException(ex.what()); }
+
+        Refresh(*data);
     }
-    catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
-
-    Refresh(data);
 }
 
 /*****************************************************/
@@ -49,11 +48,32 @@ void Item::Refresh(const nlohmann::json& data)
 
 /*****************************************************/
 Folder& Item::GetParent() const     
-{ 
+{
     if (this->parent == nullptr) 
         throw NullParentException();
             
     return *this->parent; 
+}
+
+/*****************************************************/
+const FSConfig& Item::GetFSConfig() const
+{
+    if (this->fsConfig == nullptr)
+        throw NullFSConfigException();
+
+    return *this->fsConfig;
+}
+
+/*****************************************************/
+bool Item::isReadOnly() const
+{
+    const Config& config(backend.GetConfig());
+
+    bool retval = config.isReadOnly() || config.GetOptions().readOnly;
+
+    if (HasFSConfig()) retval |= GetFSConfig().isReadOnly();
+
+    return retval;
 }
 
 /*****************************************************/
@@ -67,7 +87,7 @@ void Item::Delete(bool internal)
 void Item::Rename(const std::string& name, bool overwrite, bool internal)
 {
     if (internal || !HasParent())
-    { 
+    {
         SubRename(name, overwrite); 
         this->name = name;
     }

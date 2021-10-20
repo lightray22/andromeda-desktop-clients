@@ -9,6 +9,7 @@
 
 class Backend;
 class Folder;
+class FSConfig;
 
 /** An abstract item in a filesystem */
 class Item
@@ -20,7 +21,15 @@ public:
     
     /** Exception indicating this item has no parent */
     class NullParentException : public Exception { public:
-        NullParentException() : Exception("Item parent is null") {}; };
+        NullParentException() : Exception("Null Parent") {}; };
+
+    /** Exception indicating the item has no filesystem */
+    class NullFSConfigException : public Exception { public:
+        NullFSConfigException() : Exception("Null FSConfig") {}; };
+
+    /** Exception indicating the item is read-only */
+    class ReadOnlyException : public Exception { public:
+        ReadOnlyException() : Exception("Read Only Backend") {}; };
 
     virtual ~Item(){};
 
@@ -30,12 +39,6 @@ public:
 
     /** Returns the FS type */
     virtual Type GetType() const = 0;
-
-    /** Returns true if this item has a parent */
-    virtual bool HasParent() const { return this->parent != nullptr; }
-
-    /** Returns the parent folder */
-    virtual Folder& GetParent() const;
 
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() const { return this->id; }
@@ -55,6 +58,9 @@ public:
     /** Get the accessed time stamp */
     virtual Date GetAccessed() const { return this->accessed; } 
 
+    /** Returns true if the item is read-only */
+    virtual bool isReadOnly() const;
+
     /** Refresh the item given updated server JSON data */
     virtual void Refresh(const nlohmann::json& data);
 
@@ -73,17 +79,23 @@ public:
 protected:
 
     /** 
-     * Construct without initializing
+     * Construct a new item
      * @param backend reference to backend
+     * @param data pointer to JSON data
      */
-    Item(Backend& backend);
+    Item(Backend& backend, const nlohmann::json* data = nullptr);
 
-    /** 
-     * Construct with JSON data
-     * @param backend reference to backend
-     * @param data json data from backend
-     */
-    Item(Backend& backend, const nlohmann::json& data);
+    /** Returns true if this item has a parent */
+    virtual bool HasParent() const { return this->parent != nullptr; }
+
+    /** Returns the parent folder */
+    virtual Folder& GetParent() const;
+
+    /** Returns true if this item has FSconfig */
+    virtual bool HasFSConfig() const { return this->fsConfig != nullptr; }
+
+    /** Returns the filesystem config */
+    virtual const FSConfig& GetFSConfig() const;
 
     /** Item type-specific delete */
     virtual void SubDelete() = 0;
@@ -97,6 +109,8 @@ protected:
     Backend& backend;
 
     Folder* parent = nullptr;
+
+    const FSConfig* fsConfig = nullptr;
 
     std::string id;
     std::string name;

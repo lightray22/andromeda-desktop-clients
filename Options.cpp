@@ -19,11 +19,11 @@ string Options::HelpText()
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
+           << "Local Mount:     -m|--mount path [-o fuseoption]+" << endl
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl
            << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
-           << "Remote Options:  [-u|--username username]" << endl
-           << "Local Mount:     -m|--mount path [-o fuseoption]+" << endl
-           << "Advanced: [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds]" << endl;
+           << "Remote Options:  [-u|--username username] [-ro|--read-only]" << endl
+           << "Advanced:        [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds]" << endl;
 
     return output.str();
 }
@@ -58,6 +58,9 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
             this->mountItemType = ItemType::FILESYSTEM;
         else if (flag == "rf" || flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
+
+        else if (flag == "ro")
+            opts.readOnly = true;
 
         else throw BadFlagException(flag);
     }

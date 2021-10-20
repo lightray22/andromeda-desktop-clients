@@ -25,15 +25,28 @@ public:
      * Construct with JSON data
      * @param backend reference to backend
      * @param data json data from backend
+     * @param lims json limit data from backend
      */
-    FSConfig(Backend& backend, const nlohmann::json& data);
+    FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann::json& lims);
 
     /** Returns the filesystem chunk size or 0 for none */
     size_t GetChunkSize() const { return this->chunksize; }
 
+    /** Returns true if the filesystem is read-only */
+    bool isReadOnly() const { return this->readOnly; }
+
+    enum class WriteMode { NONE, APPEND, RANDOM };
+
+    /** Returns whether append/random write is allowed */
+    WriteMode GetWriteMode() const { return this->writeMode; }
+
 private:
 
     size_t chunksize = 0;
+
+    bool readOnly = false;
+
+    WriteMode writeMode = WriteMode::RANDOM;
 
     Debug debug;
 };

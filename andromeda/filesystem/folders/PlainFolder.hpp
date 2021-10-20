@@ -25,29 +25,15 @@ public:
     static std::unique_ptr<PlainFolder> LoadByID(Backend& backend, const std::string& id);
     
     /** 
-     * Construct with JSON data and no parent
+     * Construct with JSON data
      * @param backend reference to backend
      * @param data json data from backend
-     * @param haveItems true if JSON has subitems
-     */
-    PlainFolder(Backend& backend, const nlohmann::json& data, bool haveItems = false);
-
-    /** 
-     * Construct with JSON data
-     * @param backend reference to backend 
      * @param parent pointer to parent
-     * @param data json data from backend
      * @param haveItems true if JSON has subitems
      */
-    PlainFolder(Backend& backend, Folder& parent, const nlohmann::json& data, bool haveItems = false);
+    PlainFolder(Backend& backend, const nlohmann::json* data = nullptr, Folder* parent = nullptr, bool haveItems = false);
 
 protected:
-
-    /** 
-     * Construct without initializing
-     * @param backend reference to backend
-     */
-    PlainFolder(Backend& backend);
 
     /** populate itemMap from the backend */
     virtual void LoadItems() override;
@@ -61,8 +47,6 @@ protected:
     virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override;
 
     virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) override;
-
-    virtual bool CanReceiveItems() override { return true; }
 
     virtual void SubDelete() override;
 

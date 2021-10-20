@@ -6,12 +6,11 @@
 
 /*****************************************************/
 Adopted::Adopted(Backend& backend, Folder& parent) :
-    PlainFolder(backend), debug("Adopted",this)
+    PlainFolder(backend, nullptr, &parent), debug("Adopted",this)
 {
     debug << __func__ << "()"; debug.Info();
 
     this->name = "Adopted by others";
-    this->parent = &parent;
 }
 
 /*****************************************************/

@@ -7,14 +7,18 @@
 
 #include "Item.hpp"
 #include "Utilities.hpp"
+#include "FSConfig.hpp"
 
 class Backend;
 class Folder;
-class FSConfig;
 
 class File : public Item
 {
 public:
+
+    /** Exception indicating that the filesystem does not support writing */
+    class WriteTypeException : public Exception { public:
+        WriteTypeException() : Exception("Write Type Unsupported") {}; };
 
     virtual ~File() { }
 
@@ -22,7 +26,7 @@ public:
 
     virtual Type GetType() const override { return Type::FILE; }
 
-    File(Backend& backend, Folder& parent, const nlohmann::json& data);
+    File(Backend& backend, const nlohmann::json& data, Folder& parent);
 
     /**
      * Read data from the file
@@ -55,7 +59,8 @@ protected:
 
 private:
 
-    const FSConfig* fsConfig;
+    /** Checks the FS and account limits for the allowed write mode */
+    virtual FSConfig::WriteMode GetWriteMode() const;
 
     size_t pageSize;
 

@@ -26,7 +26,7 @@ protected:
     /** populate itemMap from the backend */
     virtual void LoadItems() override;
         
-    virtual bool CanReceiveItems() override { return false; }
+    virtual bool isReadOnly() const override { return true; }
 
     virtual void SubDelete() override { throw ModifyException(); }
 

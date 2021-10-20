@@ -8,8 +8,8 @@
 #include "FSConfig.hpp"
 
 /*****************************************************/
-File::File(Backend& backend, Folder& parent, const nlohmann::json& data) : 
-    Item(backend, data), debug("File",this)
+File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
+    Item(backend, &data), debug("File",this)
 {
     debug << this->name << ":" << __func__ << "()"; debug.Info();
 
@@ -79,6 +79,8 @@ void File::SubDelete()
 {
     debug << this->name << ":" << __func__ << "()"; debug.Info();
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     backend.DeleteFile(this->id);
 
     this->deleted = true;
@@ -89,6 +91,8 @@ void File::SubRename(const std::string& name, bool overwrite)
 {
     debug << this->name << ":" << __func__ << "(name:" << name << ")"; debug.Info();
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     backend.RenameFile(this->id, name, overwrite);
 }
 
@@ -97,7 +101,23 @@ void File::SubMove(Folder& parent, bool overwrite)
 {
     debug << this->name << ":" << __func__ << "(parent:" << parent.GetName() << ")"; debug.Info();
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     backend.MoveFile(this->id, parent.GetID(), overwrite);
+}
+
+/*****************************************************/
+FSConfig::WriteMode File::GetWriteMode() const
+{
+    FSConfig::WriteMode writeMode(GetFSConfig().GetWriteMode());
+
+    if (writeMode >= FSConfig::WriteMode::RANDOM && 
+        !backend.GetConfig().canRandWrite())
+    {
+        writeMode = FSConfig::WriteMode::APPEND;
+    }
+
+    return writeMode;
 }
 
 /*****************************************************/
@@ -220,16 +240,32 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 {
     if (debug) { debug << this->name << ":" << __func__ << "offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
+    if (isReadOnly()) throw ReadOnlyException();
+
+    const FSConfig::WriteMode writeMode(GetWriteMode());
+    if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
+
     if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
     {
+        if (writeMode == FSConfig::WriteMode::APPEND 
+            && offset != this->backendSize) throw WriteTypeException();
+
         const std::string data(reinterpret_cast<const char*>(buffer), length);
 
         backend.WriteFile(this->id, offset, data);
 
-        this->size = std::max(this->size, offset+length);
+        this->size = std::max(this->size, offset+length); 
+        this->backendSize = this->size;
     }
     else for (size_t byte = offset; byte < offset+length; )
     {
+        if (writeMode == FSConfig::WriteMode::APPEND)
+        {
+            // allowed if (==fileSize and startOfPage) OR (within dirty page)
+            if (!(offset == this->size && offset % pageSize == 0) && 
+                !(GetPage(offset/pageSize).dirty)) throw WriteTypeException();
+        }
+
         size_t index = byte / pageSize;
         size_t pOffset = byte - index*pageSize;
 
@@ -251,6 +287,10 @@ void File::Truncate(const size_t size)
 {    
     debug << this->name << ":" << __func__ << "(size:" << size << ")"; debug.Info();
 
+    if (isReadOnly()) throw ReadOnlyException();
+
+    if (GetWriteMode() == FSConfig::WriteMode::NONE) throw WriteTypeException();
+    
     this->backend.TruncateFile(this->id, size); 
 
     this->size = size; this->backendSize = size;

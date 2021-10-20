@@ -94,6 +94,10 @@ public:
     class TwoFactorRequiredException : public DeniedException { public:
         TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
 
+    /** Andromeda exception indicating the server or FS are read only */
+    class ReadOnlyException : public DeniedException { public:
+        ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
+
     /** @param runner the Runner to use */
     Backend(Runner& runner);
 
@@ -126,6 +130,9 @@ public:
     /** Gets the server config object */
     const Config& GetConfig() { return this->config; }
 
+    /** Load limits for the current account */
+    nlohmann::json GetAccountLimits();
+
     /**
      * Load folder metadata (with subitems)
      * @param id folder ID (or blank for default)
@@ -143,6 +150,12 @@ public:
      * @param id filesystem ID (or blank for default)
      */
     nlohmann::json GetFilesystem(const std::string& id = "");
+
+    /**
+     * Load limits for a filesystem
+     * @param id filesystem ID
+     */
+    nlohmann::json GetFSLimits(const std::string& id);
 
     /** Loads filesystem list metadata */
     nlohmann::json GetFilesystems();
@@ -247,6 +260,7 @@ private:
     /** True if we created the session in use */
     bool createdSession = false;
 
+    std::string accountID;
     std::string sessionID;
     std::string sessionKey;
 

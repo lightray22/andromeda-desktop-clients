@@ -27,7 +27,7 @@ protected:
 
     virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) override { throw ModifyException(); }
     
-    virtual bool CanReceiveItems() override { return false; }
+    virtual bool isReadOnly() const override { return true; }
 
     virtual void SubDelete() override { throw ModifyException(); }
 

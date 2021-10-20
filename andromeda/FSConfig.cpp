@@ -15,20 +15,38 @@ const FSConfig& FSConfig::LoadByID(Backend& backend, const std::string& id)
     if (it == cache.end())
     {
         it = cache.emplace(std::piecewise_construct, std::forward_as_tuple(id), 
-            std::forward_as_tuple(backend, backend.GetFilesystem(id))).first;
+            std::forward_as_tuple(backend, backend.GetFilesystem(id), backend.GetFSLimits(id))).first;
     }
 
     return it->second;
 }
 
 /*****************************************************/
-FSConfig::FSConfig(Backend& backend, const nlohmann::json& data) :
+FSConfig::FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann::json& lims) :
     debug("FSConfig", this)
 {
     try
     {
         if (data.contains("chunksize"))
             data.at("chunksize").get_to(this->chunksize);
+
+        data.at("readonly").get_to(this->readOnly);
+
+        const std::string& sttype(data.at("sttype"));
+
+        if (sttype == "S3")  this->writeMode = WriteMode::NONE;
+        if (sttype == "FTP") this->writeMode = WriteMode::APPEND;
+
+        if (this->writeMode >= WriteMode::RANDOM)
+        {
+            if (lims.contains("features"))
+            {
+                const nlohmann::json& rw(lims.at("features").at("randomwrite"));
+
+                if (!rw.is_null() && !rw.get<bool>())
+                    this->writeMode = WriteMode::APPEND;
+            }
+        }
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

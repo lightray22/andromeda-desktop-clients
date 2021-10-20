@@ -43,20 +43,26 @@ public:
         };
 
         CacheType cacheType = CacheType::NORMAL;
-
         size_t pageSize = 1024*1024; // 1M
-
+        bool readOnly = false;
+        
         std::chrono::seconds folderRefresh = std::chrono::seconds(15);
     };
 
     /** Sets config from the given backend and options */
     void Initialize(Backend& backend, const Options& options);
 
+    /** Adds account-specific limits */
+    void LoadAccountLimits(Backend& backend);
+
     /** Gets the configured backend options */
     const Options& GetOptions() const { return this->options; }
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const { return this->readOnly; }
+
+    /** Returns true if random write is allowed */
+    bool canRandWrite() const { return this->randWrite; }
 
     /** Returns the max # of bytes allowed in an upload */
     unsigned int GetUploadMaxBytes() const { return this->uploadMaxBytes; }
@@ -70,6 +76,7 @@ private:
     Options options;
 
     bool readOnly;
+    bool randWrite;
 
     unsigned int uploadMaxBytes = 0;
     unsigned int uploadMaxFiles = 0;

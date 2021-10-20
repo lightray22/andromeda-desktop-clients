@@ -82,6 +82,8 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
+            else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyException("Database");
+            else if (code == 403 && message == "READ_ONLY_FILESYSTEM") throw ReadOnlyException("Filesystem");
 
             else if (code == 403) throw DeniedException(message); 
             else if (code == 404) throw NotFoundException(message);
@@ -112,6 +114,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     try
     {
         this->createdSession = true;
+        resp.at("account").at("id").get_to(this->accountID);
         resp.at("client").at("session").at("id").get_to(this->sessionID);
         resp.at("client").at("session").at("authkey").get_to(this->sessionKey);
 
@@ -119,6 +122,8 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
+
+    config.LoadAccountLimits(*this);
 }
 
 /*****************************************************/
@@ -213,6 +218,17 @@ nlohmann::json Backend::GetConfigJ()
 }
 
 /*****************************************************/
+nlohmann::json Backend::GetAccountLimits()
+{
+    if (this->accountID.empty())
+        return nlohmann::json();
+
+    Runner::Input input {"files", "getlimits", {{"account", this->accountID}}};
+
+    return GetJSON(RunAction(input));
+}
+
+/*****************************************************/
 nlohmann::json Backend::GetFolder(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
@@ -256,6 +272,18 @@ nlohmann::json Backend::GetFilesystem(const std::string& id)
     Runner::Input input {"files", "getfilesystem"};
 
     if (!id.empty()) input.params["filesystem"] = id;
+
+    return GetJSON(RunAction(input));
+}
+
+/*****************************************************/
+nlohmann::json Backend::GetFSLimits(const std::string& id)
+{
+    this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
+
+    if (isMemory() && id.empty()) return nlohmann::json();
+
+    Runner::Input input {"files", "getlimits", {{"filesystem", id}}};
 
     return GetJSON(RunAction(input));
 }

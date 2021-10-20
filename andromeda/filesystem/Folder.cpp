@@ -9,17 +9,10 @@
 using namespace std::chrono;
 
 /*****************************************************/
-Folder::Folder(Backend& backend) : 
-    Item(backend), debug("Folder",this)
-{
-    debug << this->name << ":" << __func__ << "()"; debug.Info();
-}
-
-/*****************************************************/
-Folder::Folder(Backend& backend, const nlohmann::json& data) : 
+Folder::Folder(Backend& backend, const nlohmann::json* data) : 
     Item(backend, data), debug("Folder",this)
 {
-    debug << this->name << ":" << __func__ << "()"; debug.Info();
+    debug << __func__ << "()"; debug.Info();
 }
 
 /*****************************************************/
@@ -33,6 +26,7 @@ Item& Folder::GetItemByPath(std::string path)
 
     Utilities::StringList parts = Utilities::explode(path,"/");
 
+    // iteratively (not recursively) find the correct parent/subitem
     Folder* parent = this; for (size_t i = 0; i < parts.size(); i++)
     {
         const ItemMap& items = parent->GetItems();
@@ -41,7 +35,7 @@ Item& Folder::GetItemByPath(std::string path)
 
         Item& item = *(it->second);
 
-        if (i + 1 == parts.size()) return item;
+        if (i + 1 == parts.size()) return item; // last part of path
 
         if (item.GetType() != Type::FOLDER) throw NotFolderException();
 
@@ -99,10 +93,10 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
     Folder::NewItemMap newItems;
 
     NewItemFunc newFile = [&](const nlohmann::json& fileJ)->std::unique_ptr<Item> {
-        return std::make_unique<File>(backend, *this, fileJ); };
+        return std::make_unique<File>(backend, fileJ, *this); };
 
     NewItemFunc newFolder = [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
-        return std::make_unique<PlainFolder>(backend, *this, folderJ); };
+        return std::make_unique<PlainFolder>(backend, &folderJ, this); };
 
     try
     {
@@ -218,7 +212,7 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
     GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
     if (it == this->itemMap.end()) throw NotFoundException();
 
-    parent.GetItems(); if (!parent.CanReceiveItems()) throw ModifyException();
+    parent.GetItems(); if (parent.isReadOnly()) throw ModifyException();
 
     ItemMap::const_iterator dup = parent.itemMap.find(name);    
     if (!overwrite && dup != parent.itemMap.end())

@@ -14,7 +14,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::st
 }
 
 /*****************************************************/
-std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, Folder& parent, const nlohmann::json& data)
+std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, const nlohmann::json& data, Folder& parent)
 {
     std::string fsid; try
     {
@@ -30,7 +30,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, Folder& p
 
 /*****************************************************/
 Filesystem::Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata) :
-    PlainFolder(backend, rdata), fsid(fsid), debug("Filesystem",this) 
+    PlainFolder(backend, &rdata), fsid(fsid), debug("Filesystem",this) 
 {
     debug << __func__ << "()"; debug.Info();
 }
