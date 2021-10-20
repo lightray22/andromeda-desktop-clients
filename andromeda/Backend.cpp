@@ -135,7 +135,6 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
     {
         std::cout << "Password? ";
         Utilities::SilentReadConsole(password);
-        //password = "password";
     }
 
     try
@@ -164,7 +163,13 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
     Runner::Input input {"accounts", "getaccount"};
 
     nlohmann::json resp(GetJSON(RunAction(input)));
-    if (!resp.contains("id")) throw AuthenticationFailedException();
+
+    try
+    {
+        resp.at("id").get_to(this->accountID);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw Backend::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/

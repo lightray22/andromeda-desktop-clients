@@ -122,12 +122,11 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 {
     debug << this->name << ":" << __func__ << "()"; debug.Info();
 
-    NewItemMap::const_iterator newIt = newItems.begin();
-    for (; newIt != newItems.end(); newIt++)
+    for (const NewItemMap::value_type& newIt : newItems)
     {
-        const std::string& name(newIt->first);
-        const nlohmann::json& data(newIt->second.first);
-        NewItemFunc newFunc(newIt->second.second);
+        const std::string& name(newIt.first);
+        const nlohmann::json& data(newIt.second.first);
+        NewItemFunc newFunc(newIt.second.second);
 
         ItemMap::const_iterator existIt(this->itemMap.find(name));
 

@@ -1,6 +1,8 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
+#include <map>
+#include <list>
 #include <vector>
 #include <string>
 #include <mutex>
@@ -55,6 +57,15 @@ public:
      */
     static StringPair split(const std::string& str, 
         const std::string& delim, const bool last = false);
+
+    typedef std::list<std::string> Flags;
+    typedef std::map<std::string, std::string> Options;
+
+    /** 
+     * Parses argc/argv C arguments into a flag list and option map 
+     * @return bool false if invalid arguments were given
+     */
+    static bool parseArgs(int argc, char** argv, Flags& flags, Options& options);
 
     /**
      * Silently read a line of input from stdin

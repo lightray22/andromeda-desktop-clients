@@ -61,6 +61,23 @@ Utilities::StringPair Utilities::split(
 }
 
 /*****************************************************/
+bool Utilities::parseArgs(int argc, char** argv, 
+    Utilities::Flags& flags, Utilities::Options& options)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (argv[i][0] != '-') return false;
+
+        const char* flag = argv[i]+1;
+        if (argc-1 > i && argv[i+1][0] != '-')
+            options[flag] = argv[++i];
+        else flags.push_back(flag);
+    }
+
+    return true;
+}
+
+/*****************************************************/
 void Utilities::SilentReadConsole(std::string& retval)
 {
     struct termios oflags, nflags;

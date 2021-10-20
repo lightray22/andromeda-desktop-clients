@@ -31,19 +31,11 @@ string Options::HelpText()
 /*****************************************************/
 void Options::Parse(int argc, char** argv, Config::Options& opts)
 {
-    list<string> flags;
-    map<string,string> options;
+    Utilities::Flags flags;
+    Utilities::Options options;
 
-    for (int i = 1; i < argc; i++)
-    {
-        if (argv[i][0] != '-')
-            throw BadUsageException();
-
-        const char* flag = argv[i]+1;
-        if (argc-1 > i && argv[i+1][0] != '-')
-            options[flag] = argv[++i];
-        else flags.push_back(flag);
-    }
+    if (!Utilities::parseArgs(argc, argv, flags, options))
+        throw BadUsageException();
 
     for (const string& flag : flags)
     {
@@ -65,7 +57,7 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
         else throw BadFlagException(flag);
     }
 
-    for (const map<string,string>::value_type& pair : options) 
+    for (const decltype(options)::value_type& pair : options) 
     {
         const string& option = pair.first;
         const string& value = pair.second;

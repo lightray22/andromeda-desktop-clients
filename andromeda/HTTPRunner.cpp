@@ -23,19 +23,21 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 {
     httplib::Params urlParams {{"app",input.app},{"action",input.action}};
 
-    std::string url(this->baseURL + "?" + 
+    std::string sep(this->baseURL.find("?") != std::string::npos ? "&" : "?");
+
+    std::string url(this->baseURL + sep + 
         httplib::detail::params_to_query_str(urlParams));
 
     httplib::MultipartFormDataItems postParams;
 
-    for (Params::const_iterator it = input.params.cbegin(); it != input.params.cend(); it++)
+    for (const Params::value_type& it : input.params)
     {
-        postParams.push_back({it->first, it->second, {}, {}});
+        postParams.push_back({it.first, it.second, {}, {}});
     }
 
-    for (Files::const_iterator it = input.files.cbegin(); it != input.files.cend(); it++)
+    for (const Files::value_type& it : input.files)
     {
-        postParams.push_back({it->first, it->second.data, it->second.name, {}});
+        postParams.push_back({it.first, it.second.data, it.second.name, {}});
     }
     
     httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
