@@ -75,8 +75,8 @@ private:
 
     Options options;
 
-    bool readOnly;
-    bool randWrite;
+    bool readOnly = false;
+    bool randWrite = true;
 
     unsigned int uploadMaxBytes = 0;
     unsigned int uploadMaxFiles = 0;

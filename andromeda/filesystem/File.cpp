@@ -89,7 +89,7 @@ void File::SubDelete()
 /*****************************************************/
 void File::SubRename(const std::string& name, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (name:" << name << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -99,7 +99,7 @@ void File::SubRename(const std::string& name, bool overwrite)
 /*****************************************************/
 void File::SubMove(Folder& parent, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << "(parent:" << parent.GetName() << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (parent:" << parent.GetName() << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -185,7 +185,7 @@ void File::FlushCache()
 /*****************************************************/
 void File::ReadPage(std::byte* buffer, const size_t index, const size_t offset, const size_t length)
 {
-    if (debug) { debug << this->name << ":" << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
+    if (debug) { debug << this->name << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     const Page& page(GetPage(index));
 
@@ -195,7 +195,7 @@ void File::ReadPage(std::byte* buffer, const size_t index, const size_t offset, 
 /*****************************************************/
 void File::WritePage(const std::byte* buffer, const size_t index, const size_t offset, const size_t length)
 {
-    if (debug) { debug << this->name << ":" << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
+    if (debug) { debug << this->name << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     Page& page(GetPage(index, offset+length)); page.dirty = true;
 
@@ -205,7 +205,7 @@ void File::WritePage(const std::byte* buffer, const size_t index, const size_t o
 /*****************************************************/
 size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 {    
-    if (debug) { debug << this->name << ":" << __func__ << "(offset:" << offset << " length:" << length << ")"; debug.Info(); }
+    if (debug) { debug << this->name << ":" << __func__ << " (offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     if (offset >= this->size) return 0;
 
@@ -238,7 +238,7 @@ size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 /*****************************************************/
 void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t length)
 {
-    if (debug) { debug << this->name << ":" << __func__ << "offset:" << offset << " length:" << length << ")"; debug.Info(); }
+    if (debug) { debug << this->name << ":" << __func__ << " (offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -285,12 +285,12 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 /*****************************************************/
 void File::Truncate(const size_t size)
 {    
-    debug << this->name << ":" << __func__ << "(size:" << size << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (size:" << size << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (GetWriteMode() == FSConfig::WriteMode::NONE) throw WriteTypeException();
-    
+    if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
+
     this->backend.TruncateFile(this->id, size); 
 
     this->size = size; this->backendSize = size;
