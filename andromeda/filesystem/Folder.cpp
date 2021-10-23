@@ -126,12 +126,12 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
     {
         const std::string& name(newIt.first);
         const nlohmann::json& data(newIt.second.first);
-        NewItemFunc newFunc(newIt.second.second);
 
         ItemMap::const_iterator existIt(this->itemMap.find(name));
 
         if (existIt == this->itemMap.end()) // insert new item
         {
+            NewItemFunc newFunc(newIt.second.second);
             this->itemMap[name] = newFunc(data);
         }
         else existIt->second->Refresh(data); // update existing
@@ -227,7 +227,6 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
 /*****************************************************/
 void Folder::FlushCache()
 {
-    ItemMap::const_iterator it = itemMap.begin(); 
-    
-    for (; it != itemMap.end(); it++) it->second->FlushCache();
+    for (ItemMap::value_type& it : itemMap)
+        it.second->FlushCache();
 }

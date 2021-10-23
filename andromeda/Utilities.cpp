@@ -128,23 +128,25 @@ void Debug::Error(const std::string& str)
 
     const std::lock_guard<std::mutex> lock(mutex);
 
+    std::ostream& out(level == Level::ERRORS ? std::cout : std::cerr);
+
     if (level >= Level::DETAILS)
     {
         duration<double> time = high_resolution_clock::now() - start;
-        std::cout << "time:" << time.count() << " ";
+        out << "time:" << time.count() << " ";
 
-        std::cout << "tid:" << std::this_thread::get_id() << " ";
+        out << "tid:" << std::this_thread::get_id() << " ";
 
-        if (this->addr != nullptr) std::cout << "obj:" << this->addr << " ";
+        if (this->addr != nullptr) out << "obj:" << this->addr << " ";
     }
 
-    std::cout << this->prefix << ": ";
+    out << this->prefix << ": ";
 
     if (str.empty())
     {
-        std::cout << this->buffer.str() << std::endl; 
+        out << this->buffer.str() << std::endl; 
         
         this->buffer.str(std::string()); // reset buffer
     }
-    else std::cout << str << std::endl;
+    else out << str << std::endl;
 }

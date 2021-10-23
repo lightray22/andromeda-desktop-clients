@@ -38,7 +38,6 @@ public:
     }
 
     typedef std::vector<std::string> StringList;
-    typedef std::pair<std::string,std::string> StringPair;
 
     /**
      * Split a string into an array
@@ -50,6 +49,8 @@ public:
     static StringList explode(
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
+
+    typedef std::pair<std::string,std::string> StringPair;
 
     /** 
      * Special case of explode with max=1,skip=0 and returns a pair 
