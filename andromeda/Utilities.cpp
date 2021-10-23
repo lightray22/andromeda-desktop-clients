@@ -61,6 +61,12 @@ Utilities::StringPair Utilities::split(
 }
 
 /*****************************************************/
+bool Utilities::stringToBool(const std::string& str)
+{
+    return (str != "0" && str != "false" && str != "off" && str != "no");
+}
+
+/*****************************************************/
 bool Utilities::parseArgs(int argc, char** argv, 
     Utilities::Flags& flags, Utilities::Options& options)
 {

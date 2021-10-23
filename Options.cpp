@@ -23,7 +23,7 @@ string Options::HelpText()
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl
            << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
            << "Remote Options:  [-u|--username username] [-ro|--read-only]" << endl
-           << "Advanced:        [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds]" << endl;
+           << "Advanced:        [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds] [--fake-chmod bool] [--fake-chown bool]" << endl;
 
     return output.str();
 }
@@ -53,6 +53,10 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
 
         else if (flag == "ro")
             opts.readOnly = true;
+        else if (flag == "-fake-chmod")
+            this->fakeChmod = true;
+        else if (flag == "-fake-chown")
+            this->fakeChown = true;
 
         else throw BadFlagException(flag);
     }
@@ -126,6 +130,14 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
         {
             try { opts.folderRefresh = std::chrono::seconds(stoi(value)); }
             catch (const logic_error& e) { throw BadValueException(option); }
+        }
+        else if (option == "-fake-chmod")
+        {
+            this->fakeChmod = Utilities::stringToBool(value);
+        }
+        else if (option == "-fake-chown")
+        {
+            this->fakeChown = Utilities::stringToBool(value);
         }
         else throw BadOptionException(option);
     }

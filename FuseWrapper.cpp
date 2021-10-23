@@ -21,6 +21,7 @@
 
 static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
+static Options const* optionsPtr = nullptr;
 
 static int a2fuse_statfs(const char *path, struct statvfs* buf);
 static int a2fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
@@ -258,7 +259,9 @@ struct FuseLoop
 /*****************************************************/
 void FuseWrapper::Start(Folder& root, const Options& options)
 {
-    rootPtr = &root; std::string mountPath(options.GetMountPath());    
+    rootPtr = &root; optionsPtr = &options;
+    
+    std::string mountPath(options.GetMountPath());
     
     debug << __func__ << "(path:" << mountPath << ")"; debug.Info();
 
@@ -277,7 +280,7 @@ void FuseWrapper::Start(Folder& root, const Options& options)
 #endif
     
     debug << __func__ << "... fuse_daemonize()"; debug.Info();
-    if (fuse_daemonize(static_cast<int>(Debug::GetLevel())) != SUCCESS)
+    if (fuse_daemonize(static_cast<bool>(Debug::GetLevel())) != SUCCESS)
         throw FuseWrapper::Exception("fuse_daemonize() failed");
     
     FuseSignals signals(context); 
@@ -461,7 +464,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 #endif
             if (retval != SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
-        
+
         return SUCCESS;
     });
 }
@@ -660,6 +663,8 @@ int a2fuse_chmod(const char* path, mode_t mode)
 int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif
 {
+    if (!optionsPtr->canFakeChmod()) return -ENOTSUP;
+
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
@@ -675,6 +680,8 @@ int a2fuse_chown(const char* path, uid_t uid, gid_t gid)
 int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif
 {
+    if (!optionsPtr->canFakeChown()) return -ENOTSUP;
+
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int

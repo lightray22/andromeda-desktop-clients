@@ -68,6 +68,9 @@ public:
      */
     static bool parseArgs(int argc, char** argv, Flags& flags, Options& options);
 
+    /** Returns false if the given string is a false-like value */
+    static bool stringToBool(const std::string& str);
+
     /**
      * Silently read a line of input from stdin
      * @param retval reference to string to fill

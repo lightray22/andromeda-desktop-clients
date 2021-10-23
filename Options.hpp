@@ -97,6 +97,12 @@ public:
     /** Returns the FUSE directory to mount */
     std::string GetMountPath() const { return this->mountPath; }
 
+    /** Returns whether fake chmod (no-op) is allowed */
+    bool canFakeChmod() const { return this->fakeChmod; }
+
+    /** Returns whether fake chown (no-op) is allowed */
+    bool canFakeChown() const { return this->fakeChown; }
+
     /** Returns the list of FUSE library options */
     const std::list<std::string>& GetFuseOptions() const { return this->fuseOptions; }
 
@@ -115,6 +121,8 @@ private:
 
     std::string mountPath;
 
+    bool fakeChmod = true;
+    bool fakeChown = true;
     std::list<std::string> fuseOptions;
 };
 
