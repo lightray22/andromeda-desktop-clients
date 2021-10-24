@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <functional>
+#include <bitset>
 
 #if USE_FUSE2
 #define FUSE_USE_VERSION 26
@@ -24,6 +25,9 @@ static Folder* rootPtr = nullptr;
 static Options const* optionsPtr = nullptr;
 
 static int a2fuse_statfs(const char *path, struct statvfs* buf);
+static int a2fuse_access(const char* path, int mask);
+static int a2fuse_open(const char* path, struct fuse_file_info* fi);
+static int a2fuse_opendir(const char* path, struct fuse_file_info* fi);
 static int a2fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi);
 static int a2fuse_mkdir(const char* path, mode_t mode);
 static int a2fuse_unlink(const char* path);
@@ -36,6 +40,7 @@ static int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info
 static void a2fuse_destroy(void* private_data);
 
 #if USE_FUSE2
+static void* a2fuse_init(struct fuse_conn_info* conn);
 static int a2fuse_getattr(const char* path, struct stat* stbuf);
 static int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
 static int a2fuse_rename(const char* oldpath, const char* newpath);
@@ -43,6 +48,7 @@ static int a2fuse_truncate(const char* path, off_t size);
 static int a2fuse_chmod(const char* path, mode_t mode);
 static int a2fuse_chown(const char* path, uid_t uid, gid_t gid);
 #else
+static void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg);
 static int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
 static int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
 static int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags);
@@ -60,26 +66,22 @@ static struct fuse_operations a2fuse_ops = {
     .chmod = a2fuse_chmod,
     .chown = a2fuse_chown,
     .truncate = a2fuse_truncate,
+    .open = a2fuse_open,
     .read = a2fuse_read,
     .write = a2fuse_write,
     .statfs = a2fuse_statfs,
     .flush = a2fuse_flush,
     .fsync = a2fuse_fsync,
+    .opendir = a2fuse_opendir,
     .readdir = a2fuse_readdir,
     .fsyncdir = a2fuse_fsyncdir,
+    .init = a2fuse_init,
     .destroy = a2fuse_destroy,
+    .access = a2fuse_access,
     .create = a2fuse_create
 };
 
 constexpr int SUCCESS = 0;
-
-/*****************************************************/
-void FuseWrapper::ShowHelpText()
-{
-#if !USE_FUSE2
-    std::cout << "fuse_lib_help()" << std::endl; fuse_lib_help(0); std::cout << std::endl;
-#endif
-}
 
 /*****************************************************/
 void FuseWrapper::ShowVersionText()
@@ -265,10 +267,6 @@ void FuseWrapper::Start(Folder& root, const Options& options)
     
     debug << __func__ << "(path:" << mountPath << ")"; debug.Info();
 
-    // TODO see fuse_conn_info ... capability flags?
-    // fuse_apply_conn_info_opts() : fuse_common.h
-    // fuse_parse_conn_info_opts() from command line
-    
     FuseOptions opts; for (const std::string& opt : options.GetFuseOptions()) opts.AddArg(opt);
 
 #if USE_FUSE2
@@ -292,12 +290,26 @@ void FuseWrapper::Start(Folder& root, const Options& options)
 /*****************************************************/
 
 /*****************************************************/
+#if USE_FUSE2
+void* a2fuse_init(struct fuse_conn_info* conn)
+#else
+void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
+#endif
+{
+    debug << __func__ << "()"; debug.Info();
+
+#if !USE_FUSE2
+    conn->time_gran = 1000; // PHP microseconds
+    cfg->negative_timeout = 1;
+#endif
+
+    return NULL;
+}
+
+/*****************************************************/
 int standardTry(const std::string& fname, std::function<int()> func)
 {
-    try
-    {
-        return func();
-    }
+    try { return func(); }
 
     // Item exceptions
     catch (const Folder::NotFileException& e)
@@ -394,6 +406,8 @@ void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
 
+    if (item.isReadOnly()) stbuf->st_mode &= ~S_IWUSR & ~S_IWGRP & ~S_IWOTH;
+
     stbuf->st_size = static_cast<off_t>(item.GetSize());
 
     stbuf->st_ctime = static_cast<time_t>(item.GetCreated());
@@ -403,6 +417,43 @@ void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
     if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
+}
+
+/*****************************************************/
+int a2fuse_access(const char* path, int mask)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        Item& item(rootPtr->GetItemByPath(path));
+
+        if (mask & W_OK && item.isReadOnly()) return -EROFS;
+
+        return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int a2fuse_open(const char* path, struct fuse_file_info* fi)
+{
+    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    return standardTry(__func__,[&]()->int
+    {
+        Item& item(rootPtr->GetItemByPath(path));
+
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR)
+            && item.isReadOnly()) return -EROFS;
+
+        return SUCCESS;
+    });
+}
+
+/*****************************************************/
+int a2fuse_opendir(const char* path, struct fuse_file_info* fi)
+{
+    return a2fuse_open(path, fi);
 }
 
 /*****************************************************/

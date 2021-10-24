@@ -37,7 +37,6 @@ int main(int argc, char** argv)
     catch (const Options::ShowHelpException& ex)
     {
         std::cout << Options::HelpText() << std::endl;
-        FuseWrapper::ShowHelpText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::ShowVersionException& ex)

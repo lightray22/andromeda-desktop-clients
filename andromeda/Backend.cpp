@@ -80,6 +80,7 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
+            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message);
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
             else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyException("Database");
@@ -226,7 +227,7 @@ nlohmann::json Backend::GetConfigJ()
 nlohmann::json Backend::GetAccountLimits()
 {
     if (this->accountID.empty())
-        return nlohmann::json();
+        return nullptr;
 
     Runner::Input input {"files", "getlimits", {{"account", this->accountID}}};
 
@@ -272,7 +273,7 @@ nlohmann::json Backend::GetFilesystem(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    if (isMemory() && id.empty()) return nlohmann::json();
+    if (isMemory() && id.empty()) return nullptr;
 
     Runner::Input input {"files", "getfilesystem"};
 
@@ -286,7 +287,7 @@ nlohmann::json Backend::GetFSLimits(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    if (isMemory() && id.empty()) return nlohmann::json();
+    if (isMemory() && id.empty()) return nullptr;
 
     Runner::Input input {"files", "getlimits", {{"filesystem", id}}};
 
@@ -385,7 +386,7 @@ nlohmann::json Backend::RenameFile(const std::string& id, const std::string& nam
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -397,7 +398,7 @@ nlohmann::json Backend::RenameFolder(const std::string& id, const std::string& n
 {
     this->debug << __func__ << "(id:" << id << " name:" << name << ")"; this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -409,7 +410,7 @@ nlohmann::json Backend::MoveFile(const std::string& id, const std::string& paren
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -421,7 +422,7 @@ nlohmann::json Backend::MoveFolder(const std::string& id, const std::string& par
 {
     this->debug << __func__ << "(id:" << id << " parent:" << parent << ")"; this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
@@ -452,7 +453,7 @@ nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, co
 {
     this->debug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size(); this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
 
@@ -464,7 +465,7 @@ nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
 {
     this->debug << __func__ << "(id:" << id << " size:" << size << ")"; this->debug.Info();
 
-    if (isMemory()) return nlohmann::json();
+    if (isMemory()) return nullptr;
 
     Runner::Input input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
 

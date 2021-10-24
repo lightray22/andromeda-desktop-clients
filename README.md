@@ -24,7 +24,6 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 ### OS Examples
 
 - Ubuntu: `apt install make cmake g++ fuse3 libfuse3-dev nlohmann-json3-dev libssl-dev libcrypt-dev`
-- Fedora: TODO
 - Manjaro: `pacman -S make cmake gcc fuse3 nlohmann-json3`
 - Alpine: `apk add make cmake g++ fuse3 fuse3-dev nlohmann-json openssl-dev`
 - FreeBSD: `pkg install cmake fusefs-libs3 nlohmann-json`

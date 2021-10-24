@@ -71,7 +71,7 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 const Folder::ItemMap& Folder::GetItems()
 {
     bool expired = (steady_clock::now() - this->refreshed)
-        > backend.GetConfig().GetOptions().folderRefresh;
+        > backend.GetConfig().GetOptions().refreshTime;
 
     bool noCache = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE; // load always
     bool memory  = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::MEMORY; // load once

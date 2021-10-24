@@ -14,16 +14,20 @@ string Options::HelpText()
 {
     ostringstream output;
 
-    Config::Options defOptions; // TODO show defaults?
+    Config::Options defOptions;
+
+    const int defRefresh(std::chrono::seconds(defOptions.refreshTime).count());
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
-           << "Local Mount:     -m|--mount path [-o fuseoption]+" << endl
+           << "Local Mount:     -m|--mount path" << endl
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl
            << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
            << "Remote Options:  [-u|--username username] [-ro|--read-only]" << endl
-           << "Advanced:        [-d|--debug [int]] [--cachemode none|memory|normal] [--pagesize bytes] [--folder-refresh seconds] [--fake-chmod bool] [--fake-chown bool]" << endl;
+           << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions]" << endl
+           << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << defOptions.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
+           << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
 }
@@ -46,6 +50,7 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
 
         else if (flag == "d" || flag == "-debug")
             this->debugLevel = Debug::Level::ERRORS;
+
         else if (flag == "ri" || flag == "-filesystem")
             this->mountItemType = ItemType::FILESYSTEM;
         else if (flag == "rf" || flag == "-folder")
@@ -53,10 +58,10 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
 
         else if (flag == "ro")
             opts.readOnly = true;
-        else if (flag == "-fake-chmod")
-            this->fakeChmod = true;
-        else if (flag == "-fake-chown")
-            this->fakeChown = true;
+        else if (flag == "-no-chmod")
+            this->fakeChmod = false;
+        else if (flag == "-no-chown")
+            this->fakeChown = false;
 
         else throw BadFlagException(flag);
     }
@@ -126,18 +131,10 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
 
             if (!opts.pageSize) throw BadValueException(option);
         }
-        else if (option == "-folder-refresh")
+        else if (option == "-refresh")
         {
-            try { opts.folderRefresh = std::chrono::seconds(stoi(value)); }
+            try { opts.refreshTime = std::chrono::seconds(stoi(value)); }
             catch (const logic_error& e) { throw BadValueException(option); }
-        }
-        else if (option == "-fake-chmod")
-        {
-            this->fakeChmod = Utilities::stringToBool(value);
-        }
-        else if (option == "-fake-chown")
-        {
-            this->fakeChown = Utilities::stringToBool(value);
         }
         else throw BadOptionException(option);
     }

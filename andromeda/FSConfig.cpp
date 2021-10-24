@@ -25,6 +25,8 @@ const FSConfig& FSConfig::LoadByID(Backend& backend, const std::string& id)
 FSConfig::FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann::json& lims) :
     debug("FSConfig", this)
 {
+    if (data.is_null() && lims.is_null()) return;
+
     try
     {
         if (data.contains("chunksize"))

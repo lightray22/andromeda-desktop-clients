@@ -60,7 +60,7 @@ public:
         const std::string& delim, const bool last = false);
 
     typedef std::list<std::string> Flags;
-    typedef std::map<std::string, std::string> Options;
+    typedef std::multimap<std::string, std::string> Options;
 
     /** 
      * Parses argc/argv C arguments into a flag list and option map 

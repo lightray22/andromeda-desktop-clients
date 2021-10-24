@@ -76,7 +76,7 @@ bool Utilities::parseArgs(int argc, char** argv,
 
         const char* flag = argv[i]+1;
         if (argc-1 > i && argv[i+1][0] != '-')
-            options[flag] = argv[++i];
+            options.emplace(flag, argv[++i]);
         else flags.push_back(flag);
     }
 
