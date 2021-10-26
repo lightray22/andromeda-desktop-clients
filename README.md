@@ -3,7 +3,9 @@ This is a FUSE client for an Andromeda backend file storage API.
 # Usage
 
 Run `./andromeda-fuse --help` to see the available options.
-Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. Example:
+The password/two factor code will be prompted for interactively as required.
+Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. 
+Example:
 ```
 # Example config file
 apiurl=http://myserv.tld/index.php
