@@ -85,7 +85,8 @@ bool Utilities::parseArgs(int argc, char** argv,
 }
 
 /*****************************************************/
-void Utilities::parseFile(const std::filesystem::path& path, Flags& flags, Options& options)
+void Utilities::parseFile(const std::filesystem::path& path, 
+    Utilities::Flags& flags, Utilities::Options& options)
 {
     std::ifstream file(path, std::ios::in | std::ios::binary);
 
@@ -102,6 +103,27 @@ void Utilities::parseFile(const std::filesystem::path& path, Flags& flags, Optio
         if (pair.second.size()) 
              options.emplace(pair);
         else flags.push_back(pair.first);
+    }
+}
+
+/*****************************************************/
+void Utilities::parseUrl(const std::string& url, 
+    Utilities::Flags& flags, Utilities::Options& options)
+{
+    const size_t sep(url.find("?"));
+
+    if (sep != std::string::npos)
+    {
+        const std::string& substr(url.substr(sep+1));
+
+        for (const std::string& param : explode(substr,"&"))
+        {
+            StringPair pair(split(param,"="));
+            
+            if (pair.second.size()) 
+                 options.emplace(pair);
+            else flags.push_back(pair.first);
+        }
     }
 }
 

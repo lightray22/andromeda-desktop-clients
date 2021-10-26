@@ -72,6 +72,9 @@ public:
     /** Parses a config file into a flag list and option map */
     static void parseFile(const std::filesystem::path& path, Flags& flags, Options& options);
 
+    /** Parses URL variables from a URL into flags and options */
+    static void parseUrl(const std::string& url, Flags& flags, Options& options);
+
     /** Returns false if the given string is a false-like value */
     static bool stringToBool(const std::string& str);
 

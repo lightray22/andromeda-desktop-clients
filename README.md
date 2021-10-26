@@ -9,6 +9,7 @@ Any option or flag can also be listed in a config file named `andromeda-fuse.con
 apiurl=http://myserv.tld/index.php
 read-only
 ```
+The ID of a folder to mount can also be specified in the `-s` URL.
 
 # Building
 

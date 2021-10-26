@@ -109,6 +109,20 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->apiPath = "/"+parts[1];
             this->apiHostname = parts[0];
             this->apiType = ApiType::API_URL;
+
+            Utilities::Flags urlFlags; 
+            Utilities::Options urlOptions;
+
+            Utilities::parseUrl(this->apiPath, urlFlags, urlOptions);
+
+            for (decltype(urlOptions)::value_type pair : urlOptions)
+            {
+                if (pair.first == "folder")
+                {
+                    this->mountItemID = pair.second;
+                    this->mountItemType = ItemType::FOLDER;
+                }
+            }
         }
         else if (option == "p" || option == "-apipath")
         {
