@@ -1,7 +1,21 @@
-
 This is a FUSE client for an Andromeda backend file storage API.
 
-# Prerequisites
+# Usage
+
+Run `./andromeda-fuse --help` to see the available options.
+Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. Example:
+```
+# Example config file
+apiurl=http://myserv.tld/index.php
+read-only
+```
+
+# Building
+
+1. Get submodules `git submodule update --init`
+2. Make build folder `mkdir build; cd build`
+3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
+4. Run compile `cmake --build .`
 
 ### Build System
 
@@ -29,13 +43,6 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 - FreeBSD: `pkg install cmake fusefs-libs3 nlohmann-json`
 - macOS: `brew install make cmake nlohmann-json openssl@1.1`
     - Install macFUSE from https://osxfuse.github.io/
-
-# Building
-
-1. Get submodules `git submodule update --init`
-2. Make build folder `mkdir build; cd build`
-3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
-4. Run compile `cmake --build .`
 
 # Debug
 

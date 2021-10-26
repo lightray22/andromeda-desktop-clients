@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <chrono>
 #include <utility>
+#include <filesystem>
 
 #define A2LIBVERSION "0.1-alpha"
 
@@ -67,6 +68,9 @@ public:
      * @return bool false if invalid arguments were given
      */
     static bool parseArgs(int argc, char** argv, Flags& flags, Options& options);
+
+    /** Parses a config file into a flag list and option map */
+    static void parseFile(const std::filesystem::path& path, Flags& flags, Options& options);
 
     /** Returns false if the given string is a false-like value */
     static bool stringToBool(const std::string& str);

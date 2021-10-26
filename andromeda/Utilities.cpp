@@ -2,6 +2,7 @@
 #include <thread>
 #include <chrono>
 #include <termios.h>
+#include <fstream>
 
 #include "Utilities.hpp"
 
@@ -81,6 +82,27 @@ bool Utilities::parseArgs(int argc, char** argv,
     }
 
     return true;
+}
+
+/*****************************************************/
+void Utilities::parseFile(const std::filesystem::path& path, Flags& flags, Options& options)
+{
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+
+    while (file.good())
+    {
+        std::string line; std::getline(file,line);
+
+        if (!line.size() || line.at(0) == '#') continue;
+
+        StringPair pair(split(line, "="));
+
+        pair.first = "-"+pair.first;
+
+        if (pair.second.size()) 
+             options.emplace(pair);
+        else flags.push_back(pair.first);
+    }
 }
 
 /*****************************************************/

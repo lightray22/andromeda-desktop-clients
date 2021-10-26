@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <list>
+#include <filesystem>
 
 #include "Utilities.hpp"
 #include "Config.hpp"
@@ -54,8 +55,16 @@ public:
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
+    Options(Config::Options& opts);
+
     /** Parses command line arguments from main */
-    void Parse(int argc, char** argv, Config::Options& opts);
+    void ParseArgs(int argc, char** argv);
+
+    /** Parses arguments from a config file */
+    void ParseFile(const std::filesystem::path& path);
+
+    /** Makes sure all required args were provided */
+    void CheckMissing();
 
     /** Returns the desired debug level */
     Debug::Level GetDebugLevel() const { return this->debugLevel; }
@@ -75,11 +84,15 @@ public:
     /** Returns the API hostname if using API_URL */
     std::string GetApiHostname() const { return this->apiHostname; }
 
-    /** True if a username was specified */
     bool HasUsername() const { return !this->username.empty(); }
-
-    /** Returns the specified username */
     std::string GetUsername() const { return this->username; }
+
+    bool HasPassword() const { return !this->password.empty(); }
+    std::string GetPassword() const { return this->password; }
+
+    bool HasSession() const { return !this->sessionid.empty(); }
+    std::string GetSessionID() const { return this->sessionid; }
+    std::string GetSessionKey() const { return this->sessionkey; }
 
     enum class ItemType
     {
@@ -108,6 +121,11 @@ public:
 
 private:
 
+    /** Load config from the given flags and options */
+    void LoadFrom(const Utilities::Flags& flags, const Utilities::Options options);
+
+    Config::Options& cOptions;
+
     Debug::Level debugLevel = Debug::Level::NONE;
 
     ApiType apiType;
@@ -115,6 +133,10 @@ private:
     std::string apiHostname;
 
     std::string username;
+    std::string password;
+
+    std::string sessionid;
+    std::string sessionkey;
     
     ItemType mountItemType = ItemType::SUPERROOT;
     std::string mountItemID;

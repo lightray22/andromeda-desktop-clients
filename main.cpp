@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <filesystem>
 
 #include "Options.hpp"
 #include "FuseWrapper.hpp"
@@ -27,12 +28,24 @@ int main(int argc, char** argv)
 {
     Debug debug("main"); 
     
-    Options options;
-    Config::Options bOptions;
+    Config::Options cOptions;
+    Options options(cOptions);
 
     try
     {
-        options.Parse(argc, argv, bOptions);
+        for (std::string path : { 
+            "/etc/andromeda-fuse", 
+            "~/.config/andromeda-fuse", "." })
+        {
+            path += "/andromeda-fuse.conf";
+
+            if (std::filesystem::is_regular_file(path))
+                options.ParseFile(path);
+        }
+
+        options.ParseArgs(argc, argv);
+
+        options.CheckMissing();
     }
     catch (const Options::ShowHelpException& ex)
     {
@@ -75,11 +88,15 @@ int main(int argc, char** argv)
 
     try
     {
-        backend.Initialize(bOptions);
+        backend.Initialize(cOptions);
 
-        if (options.HasUsername())
+        if (options.HasSession())
         {
-            backend.AuthInteractive(options.GetUsername());
+            backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
+        }
+        else if (options.HasUsername())
+        {
+            backend.AuthInteractive(options.GetUsername(), options.GetPassword());
         }
 
         switch (options.GetMountItemType())

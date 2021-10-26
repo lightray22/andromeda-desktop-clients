@@ -16,16 +16,17 @@ string Options::HelpText()
 
     Config::Options defOptions;
 
-    const int defRefresh(std::chrono::seconds(defOptions.refreshTime).count());
+    const int defRefresh(chrono::seconds(defOptions.refreshTime).count());
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
            << "Local Mount:     -m|--mount path" << endl
-           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl
+           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl << endl
+
            << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
-           << "Remote Options:  [-u|--username username] [-ro|--read-only]" << endl
-           << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions]" << endl
+           << "Remote Auth:     [-u|--username string] [--password string] | [--sessionid string] [--sessionkey string]" << endl
+           << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-ro|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << defOptions.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
            << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
@@ -33,7 +34,10 @@ string Options::HelpText()
 }
 
 /*****************************************************/
-void Options::Parse(int argc, char** argv, Config::Options& opts)
+Options::Options(Config::Options& opts) : cOptions(opts) { }
+
+/*****************************************************/
+void Options::ParseArgs(int argc, char** argv)
 {
     Utilities::Flags flags;
     Utilities::Options options;
@@ -41,6 +45,23 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
     if (!Utilities::parseArgs(argc, argv, flags, options))
         throw BadUsageException();
 
+    LoadFrom(flags, options);
+}
+
+/*****************************************************/
+void Options::ParseFile(const filesystem::path& path)
+{
+    Utilities::Flags flags;
+    Utilities::Options options;
+
+    Utilities::parseFile(path, flags, options);
+
+    LoadFrom(flags, options);
+}
+
+/*****************************************************/
+void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options options)
+{
     for (const string& flag : flags)
     {
         if (flag == "h" || flag == "-help")
@@ -56,8 +77,8 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
         else if (flag == "rf" || flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
 
-        else if (flag == "ro")
-            opts.readOnly = true;
+        else if (flag == "ro" || flag == "-read-only")
+            this->cOptions.readOnly = true;
         else if (flag == "-no-chmod")
             this->fakeChmod = false;
         else if (flag == "-no-chown")
@@ -98,6 +119,13 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
         {
             this->username = value;
         }
+        else if (option == "-password")
+            this->password = value;
+        else if (option == "-sessionid")
+            this->sessionid = value;
+        else if (option == "-sessionkey")
+            this->sessionkey = value;
+
         else if (option == "ri" || option == "-filesystem")
         {
             this->mountItemID = value;
@@ -118,27 +146,31 @@ void Options::Parse(int argc, char** argv, Config::Options& opts)
         }
         else if (option == "-cachemode")
         {
-                 if (value == "none")   opts.cacheType = Config::Options::CacheType::NONE;
-            else if (value == "memory") opts.cacheType = Config::Options::CacheType::MEMORY;
-            else if (value == "normal") opts.cacheType = Config::Options::CacheType::NORMAL;
+                 if (value == "none")   this->cOptions.cacheType = Config::Options::CacheType::NONE;
+            else if (value == "memory") this->cOptions.cacheType = Config::Options::CacheType::MEMORY;
+            else if (value == "normal") this->cOptions.cacheType = Config::Options::CacheType::NORMAL;
             else throw BadValueException(option);
         }
         else if (option == "-pagesize")
         {
-            try { opts.pageSize = stoi(value); }
+            try { this->cOptions.pageSize = stoi(value); }
             catch (const logic_error& e) { 
                 throw BadValueException(option); }
 
-            if (!opts.pageSize) throw BadValueException(option);
+            if (!this->cOptions.pageSize) throw BadValueException(option);
         }
         else if (option == "-refresh")
         {
-            try { opts.refreshTime = std::chrono::seconds(stoi(value)); }
+            try { this->cOptions.refreshTime = chrono::seconds(stoi(value)); }
             catch (const logic_error& e) { throw BadValueException(option); }
         }
         else throw BadOptionException(option);
     }
+}
 
+/*****************************************************/
+void Options::CheckMissing()
+{
     if (this->apiPath.empty())
         throw MissingOptionException("apiurl/apipath");
     if (this->mountPath.empty())
