@@ -24,9 +24,10 @@ string Options::HelpText()
            << "Local Mount:     -m|--mount path" << endl
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl << endl
 
-           << "Remote Object:   [(-rf|--folder [id]) | (-ri|--filesystem [id])]" << endl
-           << "Remote Auth:     [-u|--username string] [--password string] | [--sessionid string] [--sessionkey string]" << endl
-           << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-ro|--read-only]" << endl
+           << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
+           << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key]" << endl
+           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
+           << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << defOptions.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
            << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
@@ -34,8 +35,8 @@ string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& cOpts, FuseWrapper::Options& fOpts) : 
-    cOptions(cOpts), fOptions(fOpts) { }
+Options::Options(Config::Options& cOpts, FuseWrapper::Options& fOpts, HTTPRunner::Options& hOpts) : 
+    cOptions(cOpts), fOptions(fOpts), hOptions(hOpts) { }
 
 /*****************************************************/
 void Options::ParseArgs(int argc, char** argv)
@@ -73,12 +74,12 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         else if (flag == "d" || flag == "-debug")
             this->debugLevel = Debug::Level::ERRORS;
 
-        else if (flag == "ri" || flag == "-filesystem")
+        else if (flag == "-filesystem")
             this->mountItemType = ItemType::FILESYSTEM;
-        else if (flag == "rf" || flag == "-folder")
+        else if (flag == "-folder")
             this->mountItemType = ItemType::FOLDER;
 
-        else if (flag == "ro" || flag == "-read-only")
+        else if (flag == "r" || flag == "-read-only")
             this->cOptions.readOnly = true;
         
         else if (flag == "-no-chmod")
@@ -188,6 +189,25 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             try { this->cOptions.refreshTime = chrono::seconds(stoi(value)); }
             catch (const logic_error& e) { throw BadValueException(option); }
         }
+
+        /** HTTP runner options */
+        else if (option == "-http-user")
+            this->hOptions.username = value;
+        else if (option == "-http-pass")
+            this->hOptions.password = value;
+        else if (option == "-proxy-host")
+            this->hOptions.proxyHost = value;
+        else if (option == "-proxy-port")
+        {
+            try { this->hOptions.proxyPort = stoi(value); }
+            catch (const logic_error& e) {
+                throw BadValueException(option); }
+        }
+        else if (option == "-hproxy-user")
+            this->hOptions.proxyUsername = value;
+        else if (option == "-hproxy-pass")
+            this->hOptions.proxyPassword = value;
+        
         else throw BadOptionException(option);
     }
 }

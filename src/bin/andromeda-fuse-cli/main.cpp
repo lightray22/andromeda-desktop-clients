@@ -1,6 +1,10 @@
+
+#include <list>
+#include <string>
 #include <iostream>
 #include <memory>
 #include <filesystem>
+#include <cstdlib>
 
 #include "Options.hpp"
 #include "FuseWrapper.hpp"
@@ -30,14 +34,20 @@ int main(int argc, char** argv)
     
     Config::Options cOptions;
     FuseWrapper::Options fOptions;
+    HTTPRunner::Options hOptions;
 
-    Options options(cOptions, fOptions);
+    Options options(cOptions, fOptions, hOptions);
 
     try
     {
-        for (std::string path : { 
-            "/etc/andromeda-fuse", 
-            "~/.config/andromeda-fuse", "." })
+        std::list<std::string> paths { 
+            "/etc/andromeda", "/usr/local/etc/andromeda" };
+
+        const char* homeDir = std::getenv("HOME");
+        if (homeDir != nullptr) paths.push_back(
+            std::string(homeDir)+"/.config/andromeda");
+
+        paths.push_back("."); for (std::string path : paths)
         {
             path += "/andromeda-fuse.conf";
 
@@ -76,13 +86,13 @@ int main(int argc, char** argv)
         case Options::ApiType::API_URL:
         {
             runner = std::make_unique<HTTPRunner>(
-                options.GetApiHostname(), options.GetApiPath()); break;
-        }
+                options.GetApiHostname(), options.GetApiPath(), hOptions);
+        }; break;
         case Options::ApiType::API_PATH:
         {
             runner = std::make_unique<CLIRunner>(
                 options.GetApiPath()); break;
-        }
+        }; break;
     }
 
     Backend backend(*runner);

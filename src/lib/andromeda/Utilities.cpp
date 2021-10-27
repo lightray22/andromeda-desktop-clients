@@ -3,6 +3,7 @@
 #include <chrono>
 #include <termios.h>
 #include <fstream>
+#include <cstring>
 
 #include "Utilities.hpp"
 
@@ -73,12 +74,17 @@ bool Utilities::parseArgs(int argc, char** argv,
 {
     for (int i = 1; i < argc; i++)
     {
-        if (argv[i][0] != '-') return false;
+        if (strlen(argv[i]) < 2 || argv[i][0] != '-') return false;
 
         const char* flag = argv[i]+1;
-        if (argc-1 > i && argv[i+1][0] != '-')
-            options.emplace(flag, argv[++i]);
-        else flags.push_back(flag);
+
+        if (flag[0] != '-' && strlen(flag) > 1)
+            options.emplace(std::string(1,flag[0]), flag+1); // -x3
+
+        else if (argc-1 > i && argv[i+1][0] != '-')
+            options.emplace(flag, argv[++i]);  // -x 3
+
+        else flags.push_back(flag); // -x
     }
 
     return true;

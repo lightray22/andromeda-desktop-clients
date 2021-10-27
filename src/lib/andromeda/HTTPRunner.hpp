@@ -19,16 +19,30 @@ public:
         public: LibErrorException(httplib::Error error) : 
             Exception(httplib::to_string(error)) {} };
 
+    /** HTTP config options */
+    struct Options
+    {
+        std::string username;
+        std::string password;
+        std::string proxyHost;
+        short proxyPort = 0;
+        std::string proxyUsername;
+        std::string proxyPassword;
+    };
+
     /**
      * @param hostname to use with HTTP
      * @param baseURL URL of the endpoint
+     * @param options HTTP config options
      */
-    HTTPRunner(const std::string& hostname, const std::string& baseURL);
-    
+    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& options);
+
     virtual std::string RunAction(const Input& input) override;
 
 private:
+
     Debug debug;
+
     const std::string baseURL;
     httplib::Client httpClient;
 };

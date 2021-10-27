@@ -10,6 +10,7 @@
 #include "Utilities.hpp"
 #include "FuseWrapper.hpp"
 #include "Config.hpp"
+#include "HTTPRunner.hpp"
 
 /** Manages command line options and config */
 class Options
@@ -56,7 +57,7 @@ public:
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
-    Options(Config::Options& cOpts, FuseWrapper::Options& fOpts);
+    Options(Config::Options& cOpts, FuseWrapper::Options& fOpts, HTTPRunner::Options& hOpts);
 
     /** Parses command line arguments from main */
     void ParseArgs(int argc, char** argv);
@@ -115,6 +116,7 @@ private:
 
     Config::Options& cOptions;
     FuseWrapper::Options& fOptions;
+    HTTPRunner::Options& hOptions;
 
     Debug::Level debugLevel = Debug::Level::NONE;
 

@@ -6,7 +6,7 @@
 #include "Utilities.hpp"
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) : 
+HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& options) : 
     debug("HTTPRunner",this), baseURL(baseURL), httpClient(hostname)
 {
     debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
@@ -16,6 +16,24 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL) 
 
     this->httpClient.set_read_timeout(60);
     this->httpClient.set_write_timeout(60);
+
+    if (!options.username.empty())
+    {
+        httpClient.set_basic_auth(
+            options.username.c_str(), options.password.c_str());
+    }
+
+    if (!options.proxyHost.empty())
+    {
+        httpClient.set_proxy(
+            options.proxyHost.c_str(), options.proxyPort);
+    }
+
+    if (!options.proxyUsername.empty())
+    {
+        httpClient.set_proxy_basic_auth(
+            options.proxyUsername.c_str(), options.proxyPassword.c_str());
+    }
 }
 
 /*****************************************************/
