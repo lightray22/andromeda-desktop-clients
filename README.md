@@ -55,6 +55,8 @@ apiurl=http://myserv.tld/index.php
 read-only
 ```
 The ID of a folder to mount can also be specified in the `-s` URL.
+If no folder/filesystem ID is provided, the "SuperRoot" will be mounted
+containing all filesystems and other special folders.
 
 ### Debug
 
