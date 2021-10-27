@@ -3,7 +3,7 @@ This is a FUSE client for an Andromeda backend file storage API.
 # Usage
 
 Run `./andromeda-fuse --help` to see the available options.
-Authentication details code will be prompted for interactively as required.
+Authentication details (password, twofactor) will be prompted for interactively as required.
 Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. 
 Example:
 ```
