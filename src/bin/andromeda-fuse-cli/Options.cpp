@@ -34,7 +34,8 @@ string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& opts) : cOptions(opts) { }
+Options::Options(Config::Options& cOpts, FuseWrapper::Options& fOpts) : 
+    cOptions(cOpts), fOptions(fOpts) { }
 
 /*****************************************************/
 void Options::ParseArgs(int argc, char** argv)
@@ -79,10 +80,11 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
         else if (flag == "ro" || flag == "-read-only")
             this->cOptions.readOnly = true;
+        
         else if (flag == "-no-chmod")
-            this->fakeChmod = false;
+            this->fOptions.fakeChmod = false;
         else if (flag == "-no-chown")
-            this->fakeChown = false;
+            this->fOptions.fakeChown = false;
 
         else throw BadFlagException(flag);
     }
@@ -98,6 +100,8 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             catch (const logic_error& e) { 
                 throw BadValueException(option); }
         }
+
+        /** Backend endpoint selection */
         else if (option == "s" || option == "-apiurl")
         {
             vector<string> parts = 
@@ -115,6 +119,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
             Utilities::parseUrl(this->apiPath, urlFlags, urlOptions);
 
+            /** Certain mount details can be parsed from the URL */
             for (decltype(urlOptions)::value_type pair : urlOptions)
             {
                 if (pair.first == "folder")
@@ -129,10 +134,10 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->apiPath = value;
             this->apiType = ApiType::API_PATH;
         }
+
+        /** Backend authentication details */
         else if (option == "u" || option == "-username")
-        {
             this->username = value;
-        }
         else if (option == "-password")
             this->password = value;
         else if (option == "-sessionid")
@@ -140,6 +145,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         else if (option == "-sessionkey")
             this->sessionkey = value;
 
+        /** Backend mount object selection */
         else if (option == "ri" || option == "-filesystem")
         {
             this->mountItemID = value;
@@ -150,14 +156,18 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->mountItemID = value;
             this->mountItemType = ItemType::FOLDER;
         }
+
+        /** FUSE wrapper options */
         else if (option == "m" || option == "-mountpath")
         {
-            this->mountPath = value;
+            this->fOptions.mountPath = value;
         }
         else if (option == "o" || option == "-option")
         {
-            this->fuseOptions.push_back(value);
+            this->fOptions.fuseArgs.push_back(value);
         }
+
+        /** libandromeda Config options */
         else if (option == "-cachemode")
         {
                  if (value == "none")   this->cOptions.cacheType = Config::Options::CacheType::NONE;
@@ -187,6 +197,6 @@ void Options::CheckMissing()
 {
     if (this->apiPath.empty())
         throw MissingOptionException("apiurl/apipath");
-    if (this->mountPath.empty())
+    if (this->fOptions.mountPath.empty())
         throw MissingOptionException("mountpath");
 }

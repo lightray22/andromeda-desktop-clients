@@ -1,17 +1,7 @@
-This is a FUSE client for an Andromeda backend file storage API.
 
-# Usage
+This repo contains the desktop applications for Andromeda's file storage API.
+Currently there is only a CLI FUSE client for Linux/BSD.
 
-Run `./andromeda-fuse --help` to see the available options.
-Authentication details (password, twofactor) will be prompted for interactively as required.
-Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. 
-Example:
-```
-# Example config file
-apiurl=http://myserv.tld/index.php
-read-only
-```
-The ID of a folder to mount can also be specified in the `-s` URL.
 
 # Building
 
@@ -19,6 +9,8 @@ The ID of a folder to mount can also be specified in the `-s` URL.
 2. Make build folder `mkdir build; cd build`
 3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 4. Run compile `cmake --build .`
+
+To build only a specific app, go to src/bin/(app), then create the build folder and run the build from there.
 
 ### Build System
 
@@ -47,7 +39,21 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 - macOS: `brew install make cmake nlohmann-json openssl@1.1`
     - Install macFUSE from https://osxfuse.github.io/
 
-# Debug
+
+# FUSE Usage
+
+Run `./andromeda-fuse --help` to see the available options.
+Authentication details (password, twofactor) will be prompted for interactively as required.
+Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. 
+Example:
+```
+# Example config file
+apiurl=http://myserv.tld/index.php
+read-only
+```
+The ID of a folder to mount can also be specified in the `-s` URL.
+
+### Debug
 
 Using the `-d int` or `--debug int` option turns on debug.
 

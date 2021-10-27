@@ -22,7 +22,8 @@
 
 static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
-static Options const* optionsPtr = nullptr;
+
+static FuseWrapper::Options const* optionsPtr = nullptr;
 
 static int a2fuse_statfs(const char *path, struct statvfs* buf);
 static int a2fuse_access(const char* path, int mask);
@@ -99,14 +100,14 @@ void FuseWrapper::ShowVersionText()
 
 /*****************************************************/
 /** Scope-managed fuse_args */
-struct FuseOptions
+struct FuseArguments
 {
-    FuseOptions():args(FUSE_ARGS_INIT(0,NULL))
+    FuseArguments():args(FUSE_ARGS_INIT(0,NULL))
     {
         if (fuse_opt_add_arg(&args, "andromeda-fuse"))
             throw FuseWrapper::Exception("fuse_opt_add_arg()1 failed");
     };
-    ~FuseOptions()
+    ~FuseArguments()
     { 
         debug << __func__ << "() fuse_opt_free_args()"; debug.Info();
 
@@ -131,11 +132,11 @@ struct FuseOptions
 /** Scope-managed fuse_mount/fuse_unmount */
 struct FuseMount
 {
-    FuseMount(FuseOptions& options, const char* path):path(path)
+    FuseMount(FuseArguments& fargs, const char* path):path(path)
     {
         debug << __func__ << "() fuse_mount()"; debug.Info();
         
-        chan = fuse_mount(path, &options.args);
+        chan = fuse_mount(path, &fargs.args);
         
         if (!chan) throw FuseWrapper::Exception("fuse_mount() failed");
     };
@@ -157,11 +158,11 @@ struct FuseMount
 /** Scope-managed fuse_new/fuse_destroy */
 struct FuseContext
 {
-    FuseContext(FuseMount& mount, FuseOptions& opts):mount(mount)
+    FuseContext(FuseMount& mount, FuseArguments& fargs):mount(mount)
     { 
         debug << __func__ << "() fuse_new()"; debug.Info();
 
-        fuse = fuse_new(mount.chan, &(opts.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
+        fuse = fuse_new(mount.chan, &(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
 
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
@@ -183,11 +184,11 @@ struct FuseContext
 /** Scope-managed fuse_new/fuse_destroy */
 struct FuseContext
 {
-    FuseContext(FuseOptions& opts)
+    FuseContext(FuseArguments& fargs)
     {
         debug << __func__ << "() fuse_new()"; debug.Info();
         
-        fuse = fuse_new(&(opts.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
+        fuse = fuse_new(&(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)nullptr);
         
         if (!fuse) throw FuseWrapper::Exception("fuse_new() failed");
     };
@@ -259,22 +260,20 @@ struct FuseLoop
 };
 
 /*****************************************************/
-void FuseWrapper::Start(Folder& root, const Options& options)
+void FuseWrapper::Start(Folder& root, const FuseWrapper::Options& options)
 {
     rootPtr = &root; optionsPtr = &options;
-    
-    std::string mountPath(options.GetMountPath());
-    
-    debug << __func__ << "(path:" << mountPath << ")"; debug.Info();
 
-    FuseOptions opts; for (const std::string& opt : options.GetFuseOptions()) opts.AddArg(opt);
+    debug << __func__ << "(path:" << options.mountPath << ")"; debug.Info();
+
+    FuseArguments opts; for (const std::string& opt : options.fuseArgs) opts.AddArg(opt);
 
 #if USE_FUSE2
-    FuseMount mount(opts, mountPath.c_str());
+    FuseMount mount(opts, options.mountPath.c_str());
     FuseContext context(mount, opts);
 #else
     FuseContext context(opts); 
-    FuseMount mount(context, mountPath.c_str());
+    FuseMount mount(context, options.mountPath.c_str());
 #endif
     
     debug << __func__ << "... fuse_daemonize()"; debug.Info();
@@ -714,7 +713,7 @@ int a2fuse_chmod(const char* path, mode_t mode)
 int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif
 {
-    if (!optionsPtr->canFakeChmod()) return -ENOTSUP;
+    if (!optionsPtr->fakeChmod) return -ENOTSUP;
 
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
@@ -731,7 +730,7 @@ int a2fuse_chown(const char* path, uid_t uid, gid_t gid)
 int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif
 {
-    if (!optionsPtr->canFakeChown()) return -ENOTSUP;
+    if (!optionsPtr->fakeChown) return -ENOTSUP;
 
     path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 

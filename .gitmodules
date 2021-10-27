@@ -1,3 +1,3 @@
 [submodule "andromeda/thirdparty/cpp-httplib"]
-	path = andromeda/thirdparty/cpp-httplib
+	path = src/lib/andromeda/thirdparty/cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib.git

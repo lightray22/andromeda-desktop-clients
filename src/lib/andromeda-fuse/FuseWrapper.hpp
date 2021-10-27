@@ -2,9 +2,9 @@
 #define FUSEWRAPPER_H_
 
 #include <string>
+#include <list>
 
 #include "Utilities.hpp"
-#include "Options.hpp"
 
 class Folder;
 
@@ -17,6 +17,22 @@ public:
     class Exception : public Utilities::Exception { public:
         Exception(const std::string& message) :
             Utilities::Exception("FUSE Error: "+message) {}; };
+
+    /** FUSE wrapper options */
+    struct Options
+    {
+        /** The FUSE directory to mount */
+        std::string mountPath;
+
+        /** List of FUSE library options */
+        std::list<std::string> fuseArgs;
+
+        /** Whether fake chmod (no-op) is allowed */
+        bool fakeChmod = true;
+
+        /** Whether fake chown (no-op) is allowed */
+        bool fakeChown = true;
+    };
 
     /**
      * Starts FUSE

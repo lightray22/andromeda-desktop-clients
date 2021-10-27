@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "Utilities.hpp"
+#include "FuseWrapper.hpp"
 #include "Config.hpp"
 
 /** Manages command line options and config */
@@ -55,7 +56,7 @@ public:
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
-    Options(Config::Options& opts);
+    Options(Config::Options& cOpts, FuseWrapper::Options& fOpts);
 
     /** Parses command line arguments from main */
     void ParseArgs(int argc, char** argv);
@@ -107,24 +108,13 @@ public:
     /** Returns the specified mount item ID */
     std::string GetMountItemID() const { return this->mountItemID; }
 
-    /** Returns the FUSE directory to mount */
-    std::string GetMountPath() const { return this->mountPath; }
-
-    /** Returns whether fake chmod (no-op) is allowed */
-    bool canFakeChmod() const { return this->fakeChmod; }
-
-    /** Returns whether fake chown (no-op) is allowed */
-    bool canFakeChown() const { return this->fakeChown; }
-
-    /** Returns the list of FUSE library options */
-    const std::list<std::string>& GetFuseOptions() const { return this->fuseOptions; }
-
 private:
 
     /** Load config from the given flags and options */
     void LoadFrom(const Utilities::Flags& flags, const Utilities::Options options);
 
     Config::Options& cOptions;
+    FuseWrapper::Options& fOptions;
 
     Debug::Level debugLevel = Debug::Level::NONE;
 
@@ -140,12 +130,6 @@ private:
     
     ItemType mountItemType = ItemType::SUPERROOT;
     std::string mountItemID;
-
-    std::string mountPath;
-
-    bool fakeChmod = true;
-    bool fakeChown = true;
-    std::list<std::string> fuseOptions;
 };
 
 #endif

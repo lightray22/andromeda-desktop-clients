@@ -29,7 +29,9 @@ int main(int argc, char** argv)
     Debug debug("main"); 
     
     Config::Options cOptions;
-    Options options(cOptions);
+    FuseWrapper::Options fOptions;
+
+    Options options(cOptions, fOptions);
 
     try
     {
@@ -123,7 +125,7 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseWrapper::Start(*folder, options);
+        FuseWrapper::Start(*folder, fOptions);
     }
     catch (const FuseWrapper::Exception& ex)
     {
