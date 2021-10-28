@@ -26,9 +26,10 @@ string Options::HelpText()
 
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key]" << endl
-           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << defOptions.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
+           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
+           << "HTTP Advanced:   [--max-retries int] [--retry-time secs]" << endl
            << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
@@ -66,25 +67,25 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 {
     for (const string& flag : flags)
     {
-        if (flag == "h" || flag == "-help")
+        if (flag == "h" || flag == "help")
             throw ShowHelpException();
-        else if (flag == "V" || flag == "-version")
+        else if (flag == "V" || flag == "version")
             throw ShowVersionException();
 
-        else if (flag == "d" || flag == "-debug")
+        else if (flag == "d" || flag == "debug")
             this->debugLevel = Debug::Level::ERRORS;
 
-        else if (flag == "-filesystem")
+        else if (flag == "filesystem")
             this->mountItemType = ItemType::FILESYSTEM;
-        else if (flag == "-folder")
+        else if (flag == "folder")
             this->mountItemType = ItemType::FOLDER;
 
-        else if (flag == "r" || flag == "-read-only")
+        else if (flag == "r" || flag == "read-only")
             this->cOptions.readOnly = true;
         
-        else if (flag == "-no-chmod")
+        else if (flag == "no-chmod")
             this->fOptions.fakeChmod = false;
-        else if (flag == "-no-chown")
+        else if (flag == "no-chown")
             this->fOptions.fakeChown = false;
 
         else throw BadFlagException(flag);
@@ -95,7 +96,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         const string& option = pair.first;
         const string& value = pair.second;
 
-        if (option == "d" || option == "-debug")
+        if (option == "d" || option == "debug")
         {
             try { this->debugLevel = static_cast<Debug::Level>(stoi(value)); }
             catch (const logic_error& e) { 
@@ -103,7 +104,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
 
         /** Backend endpoint selection */
-        else if (option == "s" || option == "-apiurl")
+        else if (option == "s" || option == "apiurl")
         {
             vector<string> parts = 
                 Utilities::explode(value, "/", 2, 2);
@@ -130,53 +131,53 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
                 }
             }
         }
-        else if (option == "p" || option == "-apipath")
+        else if (option == "p" || option == "apipath")
         {
             this->apiPath = value;
             this->apiType = ApiType::API_PATH;
         }
 
         /** Backend authentication details */
-        else if (option == "u" || option == "-username")
+        else if (option == "u" || option == "username")
             this->username = value;
-        else if (option == "-password")
+        else if (option == "password")
             this->password = value;
-        else if (option == "-sessionid")
+        else if (option == "sessionid")
             this->sessionid = value;
-        else if (option == "-sessionkey")
+        else if (option == "sessionkey")
             this->sessionkey = value;
 
         /** Backend mount object selection */
-        else if (option == "ri" || option == "-filesystem")
+        else if (option == "ri" || option == "filesystem")
         {
             this->mountItemID = value;
             this->mountItemType = ItemType::FILESYSTEM;
         }
-        else if (option == "rf" || option == "-folder")
+        else if (option == "rf" || option == "folder")
         {
             this->mountItemID = value;
             this->mountItemType = ItemType::FOLDER;
         }
 
         /** FUSE wrapper options */
-        else if (option == "m" || option == "-mountpath")
+        else if (option == "m" || option == "mountpath")
         {
             this->fOptions.mountPath = value;
         }
-        else if (option == "o" || option == "-option")
+        else if (option == "o" || option == "option")
         {
             this->fOptions.fuseArgs.push_back(value);
         }
 
         /** libandromeda Config options */
-        else if (option == "-cachemode")
+        else if (option == "cachemode")
         {
                  if (value == "none")   this->cOptions.cacheType = Config::Options::CacheType::NONE;
             else if (value == "memory") this->cOptions.cacheType = Config::Options::CacheType::MEMORY;
             else if (value == "normal") this->cOptions.cacheType = Config::Options::CacheType::NORMAL;
             else throw BadValueException(option);
         }
-        else if (option == "-pagesize")
+        else if (option == "pagesize")
         {
             try { this->cOptions.pageSize = stoi(value); }
             catch (const logic_error& e) { 
@@ -184,30 +185,41 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
             if (!this->cOptions.pageSize) throw BadValueException(option);
         }
-        else if (option == "-refresh")
+        else if (option == "refresh")
         {
             try { this->cOptions.refreshTime = chrono::seconds(stoi(value)); }
             catch (const logic_error& e) { throw BadValueException(option); }
         }
 
         /** HTTP runner options */
-        else if (option == "-http-user")
+        else if (option == "http-user")
             this->hOptions.username = value;
-        else if (option == "-http-pass")
+        else if (option == "http-pass")
             this->hOptions.password = value;
-        else if (option == "-proxy-host")
+        else if (option == "proxy-host")
             this->hOptions.proxyHost = value;
-        else if (option == "-proxy-port")
+        else if (option == "proxy-port")
         {
             try { this->hOptions.proxyPort = stoi(value); }
             catch (const logic_error& e) {
                 throw BadValueException(option); }
         }
-        else if (option == "-hproxy-user")
+        else if (option == "hproxy-user")
             this->hOptions.proxyUsername = value;
-        else if (option == "-hproxy-pass")
+        else if (option == "hproxy-pass")
             this->hOptions.proxyPassword = value;
-        
+        else if (option == "max-retries")
+        {
+            try { this->hOptions.maxRetries = stoi(value); }
+            catch (const logic_error& e) {
+                throw BadValueException(option); }
+        }
+        else if (option == "retry-time")
+        {
+            try { this->hOptions.retryTime = chrono::seconds(stoi(value)); }
+            catch (const logic_error& e) { throw BadValueException(option); }
+        }
+
         else throw BadOptionException(option);
     }
 }

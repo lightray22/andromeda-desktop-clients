@@ -75,7 +75,7 @@ public:
     /** Move the subitem name to parent folder, optionally overwrite */
     virtual void MoveItem(const std::string& name, Folder& parent, bool overwrite = false) final;
 
-    virtual void FlushCache() override;
+    virtual void FlushCache(bool nothrow = false) override;
 
 protected:
 

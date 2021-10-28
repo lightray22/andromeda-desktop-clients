@@ -15,6 +15,7 @@
 #endif
 
 #include "FuseWrapper.hpp"
+#include "HTTPRunner.hpp"
 #include "Backend.hpp"
 #include "filesystem/Item.hpp"
 #include "filesystem/File.hpp"
@@ -357,6 +358,12 @@ int standardTry(const std::string& fname, std::function<int()> func)
     {
         debug << fname << "..." << e.what(); debug.Info(); return -ENOENT;
     }
+
+    // Error exceptions
+    catch (const HTTPRunner::ConnectionException& e)
+    {
+        debug << fname << "..." << e.what(); debug.Error(); return -EHOSTDOWN;
+    }
     catch (const Utilities::Exception& e)
     {
         debug << fname << "..." << e.what(); debug.Error(); return -EIO;
@@ -685,7 +692,7 @@ void a2fuse_destroy(void* private_data)
 
     standardTry(__func__,[&]()->int
     {
-        rootPtr->FlushCache(); return SUCCESS;
+        rootPtr->FlushCache(true); return SUCCESS;
     });
 }
 

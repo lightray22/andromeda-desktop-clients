@@ -1,13 +1,14 @@
 #include <sstream>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& options) : 
-    debug("HTTPRunner",this), baseURL(baseURL), httpClient(hostname)
+HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& opts) : 
+    debug("HTTPRunner",this), options(opts), baseURL(baseURL), httpClient(hostname)
 {
     debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
 
@@ -57,18 +58,33 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
     {
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
     }
-    
-    httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
 
-    if (!response) throw LibErrorException(response.error());
-
-    debug << __func__ << "... HTTP:" << response->status; debug.Info();
-
-    switch (response->status)
+    for (size_t attempt = 0;; attempt++)
     {
-        case 200: return std::move(response->body);
-        case 403: throw EndpointException("Access Denied");
-        case 404: throw EndpointException("Not Found");
-        default:  throw EndpointException(response->status);
+        httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
+
+        if (!response) 
+        {
+            if (attempt <= options.maxRetries && this->canRetry)
+            {
+                debug << __func__ << "... " << httplib::to_string(response.error()) 
+                    << " error, attempt " << attempt+1 << " of " << options.maxRetries+1; debug.Error();
+
+                std::this_thread::sleep_for(options.retryTime); continue;
+            }
+            else if (response.error() == httplib::Error::Connection)
+                 throw ConnectionException();
+            else throw LibErrorException(response.error());
+        }
+
+        debug << __func__ << "... HTTP:" << response->status; debug.Info();
+
+        switch (response->status)
+        {
+            case 200: return std::move(response->body);
+            case 403: throw EndpointException("Access Denied");
+            case 404: throw EndpointException("Not Found");
+            default:  throw EndpointException(response->status);
+        }
     }
 }

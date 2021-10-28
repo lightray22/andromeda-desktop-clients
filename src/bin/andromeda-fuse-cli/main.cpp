@@ -133,6 +133,9 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BACKEND_INIT);
     }
 
+    try { (dynamic_cast<HTTPRunner&>(*runner)).EnableRetry(); }
+    catch (const std::bad_cast& ex) { } // no retries during init
+
     try
     {
         FuseWrapper::Start(*folder, fOptions);

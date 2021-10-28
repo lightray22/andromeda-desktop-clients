@@ -156,7 +156,7 @@ File::Page& File::GetPage(const size_t index, const size_t minsize)
 }
 
 /*****************************************************/
-void File::FlushCache()
+void File::FlushCache(bool nothrow)
 {
     if (this->deleted) return;
 
@@ -175,9 +175,12 @@ void File::FlushCache()
 
             if (debug) { debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Info(); }
 
-            backend.WriteFile(this->id, offset, data); page.dirty = false;
-            
-            this->backendSize = std::max(this->backendSize, offset+size);
+            auto writeFunc = [&]()->void { backend.WriteFile(this->id, offset, data); }; 
+
+            if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
+                debug << __func__ << " Ignoring Error: " << e.what(); debug.Error(); }
+
+            page.dirty = false; this->backendSize = std::max(this->backendSize, offset+size);
         }
     }
 }

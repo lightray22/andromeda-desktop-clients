@@ -225,8 +225,8 @@ void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
 }
 
 /*****************************************************/
-void Folder::FlushCache()
+void Folder::FlushCache(bool nothrow)
 {
     for (ItemMap::value_type& it : itemMap)
-        it.second->FlushCache();
+        it.second->FlushCache(nothrow);
 }

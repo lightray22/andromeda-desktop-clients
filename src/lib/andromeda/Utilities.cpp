@@ -77,12 +77,14 @@ bool Utilities::parseArgs(int argc, char** argv,
         if (strlen(argv[i]) < 2 || argv[i][0] != '-') return false;
 
         const char* flag = argv[i]+1;
+        bool ext = (flag[0] == '-');
+        if (ext) flag++; // --opt
 
-        if (flag[0] != '-' && strlen(flag) > 1)
+        if (!ext && strlen(flag) > 1)
             options.emplace(std::string(1,flag[0]), flag+1); // -x3
 
         else if (argc-1 > i && argv[i+1][0] != '-')
-            options.emplace(flag, argv[++i]);  // -x 3
+            options.emplace(flag, argv[++i]); // -x 3
 
         else flags.push_back(flag); // -x
     }
@@ -100,11 +102,9 @@ void Utilities::parseFile(const std::filesystem::path& path,
     {
         std::string line; std::getline(file,line);
 
-        if (!line.size() || line.at(0) == '#') continue;
+        if (!line.size() || line.at(0) == '#' || line.at(0) == ' ') continue;
 
         StringPair pair(split(line, "="));
-
-        pair.first = "-"+pair.first;
 
         if (pair.second.size()) 
              options.emplace(pair);

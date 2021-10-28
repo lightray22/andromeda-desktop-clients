@@ -47,7 +47,7 @@ public:
     /** Set the file size to the given value */
     virtual void Truncate(size_t size) final;
 
-    virtual void FlushCache() override;
+    virtual void FlushCache(bool nothrow = false) override;
 
 protected:
 

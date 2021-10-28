@@ -2,6 +2,7 @@
 #define LIBA2_HTTPRUNNER_H_
 
 #include <string>
+#include <chrono>
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
@@ -19,13 +20,21 @@ public:
         public: LibErrorException(httplib::Error error) : 
             Exception(httplib::to_string(error)) {} };
 
+    /** Exception indicating that the connection to the server failed */
+    class ConnectionException : public LibErrorException {
+        public: ConnectionException() : 
+            LibErrorException(httplib::Error::Connection) {} };
+
     /** HTTP config options */
     struct Options
     {
+        size_t maxRetries = 12;
+        std::chrono::seconds retryTime = std::chrono::seconds(5);
+
         std::string username;
         std::string password;
         std::string proxyHost;
-        short proxyPort = 0;
+        short proxyPort = 443;
         std::string proxyUsername;
         std::string proxyPassword;
     };
@@ -33,18 +42,25 @@ public:
     /**
      * @param hostname to use with HTTP
      * @param baseURL URL of the endpoint
-     * @param options HTTP config options
+     * @param opts HTTP config options
      */
-    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& options);
+    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& opts);
 
     virtual std::string RunAction(const Input& input) override;
+
+    /** Allows automatic retry on HTTP failure */
+    virtual void EnableRetry(bool enable = true) { this->canRetry = enable; }
 
 private:
 
     Debug debug;
 
+    Options options;
+
     const std::string baseURL;
     httplib::Client httpClient;
+
+    bool canRetry = false;
 };
 
 #endif
