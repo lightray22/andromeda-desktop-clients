@@ -16,14 +16,14 @@ class HTTPRunner : public Backend::Runner
 public:
 
     /** Exception indicating the HTTP library had an error */
-    class LibErrorException : public Backend::Exception { 
-        public: LibErrorException(httplib::Error error) : 
-            Exception(httplib::to_string(error)) {} };
+    class Exception : public Backend::Exception { 
+        public: Exception(httplib::Error error) : 
+            Backend::Exception(httplib::to_string(error)) {} };
 
     /** Exception indicating that the connection to the server failed */
-    class ConnectionException : public LibErrorException {
+    class ConnectionException : public Exception {
         public: ConnectionException() : 
-            LibErrorException(httplib::Error::Connection) {} };
+            Exception(httplib::Error::Connection) {} };
 
     /** HTTP config options */
     struct Options

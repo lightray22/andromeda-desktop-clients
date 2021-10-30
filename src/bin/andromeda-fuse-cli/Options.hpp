@@ -120,7 +120,7 @@ private:
 
     Debug::Level debugLevel = Debug::Level::NONE;
 
-    ApiType apiType;
+    ApiType apiType = (ApiType)(-1);
     std::string apiPath;
     std::string apiHostname;
 

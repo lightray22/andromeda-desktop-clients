@@ -41,8 +41,14 @@ target_include_directories(andromeda PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
 target_link_libraries(andromeda INTERFACE httplib)
 
+# include/link reproc++
+
+set(REPROC++ ON)
+add_subdirectory(thirdparty/reproc)
+target_include_directories(andromeda PRIVATE thirdparty/reproc/reproc++/include)
+target_link_libraries(andromeda INTERFACE reproc++)
+
 # include nlohmann (header-only)
 
 set(JSON_ImplicitConversions "OFF")
 find_package(nlohmann_json 3 REQUIRED)
-target_link_libraries(andromeda PRIVATE nlohmann_json)

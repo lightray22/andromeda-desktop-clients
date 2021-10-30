@@ -15,8 +15,8 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, 
     //this->httpClient.set_keep_alive(true); - BUGGED
     //https://github.com/yhirose/cpp-httplib/issues/1041
 
-    this->httpClient.set_read_timeout(60);
-    this->httpClient.set_write_timeout(60);
+    this->httpClient.set_read_timeout(this->timeout);
+    this->httpClient.set_write_timeout(this->timeout);
 
     if (!options.username.empty())
     {
@@ -67,17 +67,17 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         {
             if (attempt <= options.maxRetries && this->canRetry)
             {
-                debug << __func__ << "... " << httplib::to_string(response.error()) 
+                debug << __func__ << "()... " << httplib::to_string(response.error()) 
                     << " error, attempt " << attempt+1 << " of " << options.maxRetries+1; debug.Error();
 
                 std::this_thread::sleep_for(options.retryTime); continue;
             }
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
-            else throw LibErrorException(response.error());
+            else throw Exception(response.error());
         }
 
-        debug << __func__ << "... HTTP:" << response->status; debug.Info();
+        debug << __func__ << "()... HTTP:" << response->status; debug.Info();
 
         switch (response->status)
         {

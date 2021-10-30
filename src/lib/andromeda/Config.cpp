@@ -46,7 +46,10 @@ void Config::LoadAccountLimits(Backend& backend)
 
     try
     {
-        limits.at("features").at("randomwrite").get_to(this->randWrite);
+        if (limits != nullptr)
+        {
+            limits.at("features").at("randomwrite").get_to(this->randWrite);
+        }
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

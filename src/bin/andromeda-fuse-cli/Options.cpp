@@ -22,7 +22,7 @@ string Options::HelpText()
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
            << "Local Mount:     -m|--mount path" << endl
-           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath path)" << endl << endl
+           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath [path])" << endl << endl
 
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key]" << endl
@@ -74,6 +74,8 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
         else if (flag == "d" || flag == "debug")
             this->debugLevel = Debug::Level::ERRORS;
+        else if (flag == "p" || flag == "apipath")
+            this->apiType = ApiType::API_PATH;
 
         else if (flag == "filesystem")
             this->mountItemType = ItemType::FILESYSTEM;
@@ -227,7 +229,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 /*****************************************************/
 void Options::CheckMissing()
 {
-    if (this->apiPath.empty())
+    if (this->apiType == (ApiType)(-1))
         throw MissingOptionException("apiurl/apipath");
     if (this->fOptions.mountPath.empty())
         throw MissingOptionException("mountpath");

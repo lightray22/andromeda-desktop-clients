@@ -178,7 +178,7 @@ void File::FlushCache(bool nothrow)
             auto writeFunc = [&]()->void { backend.WriteFile(this->id, offset, data); }; 
 
             if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
-                debug << __func__ << " Ignoring Error: " << e.what(); debug.Error(); }
+                debug << __func__ << "()... Ignoring Error: " << e.what(); debug.Error(); }
 
             page.dirty = false; this->backendSize = std::max(this->backendSize, offset+size);
         }

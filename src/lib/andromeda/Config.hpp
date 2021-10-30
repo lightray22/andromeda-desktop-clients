@@ -46,7 +46,7 @@ public:
         size_t pageSize = 1024*1024; // 1M
         bool readOnly = false;
         
-        std::chrono::seconds refreshTime = std::chrono::seconds(15);
+        std::chrono::seconds refreshTime = std::chrono::seconds(10);
     };
 
     /** Sets config from the given backend and options */
