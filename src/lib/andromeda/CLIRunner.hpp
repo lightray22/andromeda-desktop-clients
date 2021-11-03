@@ -1,6 +1,7 @@
 #ifndef LIBA2_CLIRUNNER_H_
 #define LIBA2_CLIRUNNER_H_
 
+#include <chrono>
 #include <string>
 #include <system_error>
 
@@ -29,6 +30,8 @@ private:
     Debug debug;
 
     std::string apiPath;
+
+    const std::chrono::seconds timeout = std::chrono::seconds(120);
 };
 
 #endif

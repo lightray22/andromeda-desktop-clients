@@ -15,8 +15,11 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, 
     //this->httpClient.set_keep_alive(true); - BUGGED
     //https://github.com/yhirose/cpp-httplib/issues/1041
 
-    this->httpClient.set_read_timeout(this->timeout);
-    this->httpClient.set_write_timeout(this->timeout);
+    this->httpClient.set_read_timeout(options.timeout);
+    this->httpClient.set_write_timeout(options.timeout);
+
+    if (!Utilities::endsWith(this->baseURL, "/index.php"))
+        this->baseURL += "/index.php";
 
     if (!options.username.empty())
     {

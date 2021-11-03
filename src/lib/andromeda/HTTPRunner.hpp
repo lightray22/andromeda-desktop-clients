@@ -30,6 +30,7 @@ public:
     {
         size_t maxRetries = 12;
         std::chrono::seconds retryTime = std::chrono::seconds(5);
+        std::chrono::seconds timeout = std::chrono::seconds(120);
 
         std::string username;
         std::string password;
@@ -57,7 +58,7 @@ private:
 
     Options options;
 
-    const std::string baseURL;
+    std::string baseURL;
     httplib::Client httpClient;
 
     bool canRetry = false;

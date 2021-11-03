@@ -3,7 +3,6 @@
 
 #include <map>
 #include <string>
-#include <chrono>
 
 #include <nlohmann/json_fwd.hpp>
 
@@ -57,8 +56,6 @@ public:
          * @return result string from API
          */
         virtual std::string RunAction(const Input& input) = 0;
-
-        const std::chrono::seconds timeout = std::chrono::seconds(120);
     };
 
     /** Exception indicating that authentication is required */

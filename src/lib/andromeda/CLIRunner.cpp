@@ -3,7 +3,8 @@
 #include <list>
 #include <utility>
 
-#include "reproc++/run.hpp"
+#include "reproc++/reproc.hpp"
+#include "reproc++/drain.hpp"
 
 #include "CLIRunner.hpp"
 
@@ -13,8 +14,8 @@ CLIRunner::CLIRunner(const std::string& apiPath) :
 {
     if (apiPath.empty()) this->apiPath = "andromeda";
 
-    else if (!Utilities::endsWith(this->apiPath, "index.php") &&
-             !Utilities::endsWith(this->apiPath, "andromeda")) 
+    else if (!Utilities::endsWith(this->apiPath, "/index.php") &&
+             !Utilities::endsWith(this->apiPath, "/andromeda")) 
         this->apiPath += "/andromeda";
 
     debug << __func__ << "(apiPath:" << this->apiPath << ")"; debug.Info();
@@ -57,29 +58,22 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 
     if (inputPtr != nullptr)
     {
-        size_t written = 0; size_t size = inputPtr->size();
-        
-        std::tie(written,error) =
-            process.write((const uint8_t*)(inputPtr->c_str()), size);
-        
-        if (error) throw Exception(error);
-        else if (written != size)
-        {
-            std::ostringstream err; err << "Wrote " << written << " of " << size;
-            throw Exception(err.str());
-        }
+        const uint8_t* inputData = reinterpret_cast<const uint8_t*>(inputPtr->c_str());
 
-        error = process.close(reproc::stream::in);
-        if (error) throw Exception(error);
+        reproc::input procIn(inputData, inputPtr->size());
+        error = reproc::fill(process, procIn);
+
+        if (error) { process.terminate(); throw Exception(error); }
     }
 
     std::string output; reproc::sink::string sink(output);
     error = reproc::drain(process, sink, reproc::sink::null);
-    if (error) throw Exception(error);
 
-    int status = 0; std::tie(status,error) = 
-        process.wait(this->timeout);
-    if (error) throw Exception(error);
+    if (error) { process.terminate(); throw Exception(error); }
+
+    int status = 0; std::tie(status,error) = process.wait(this->timeout);
+
+    if (error) { process.terminate(); throw Exception(error); }
 
     return output;
 }

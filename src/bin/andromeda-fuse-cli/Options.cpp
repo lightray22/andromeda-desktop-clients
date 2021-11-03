@@ -19,6 +19,7 @@ string Options::HelpText()
 
     const int defRefresh(chrono::seconds(cfgDefault.refreshTime).count());
     const int defRetry(chrono::seconds(httpDefault.retryTime).count());
+    const int defTimeout(chrono::seconds(httpDefault.timeout).count());
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
@@ -31,7 +32,7 @@ string Options::HelpText()
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << cfgDefault.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
            << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
-           << "HTTP Advanced:   [--max-retries int(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
+           << "HTTP Advanced:   [--http-timeout int(" << defTimeout << ")] [--max-retries int(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
            << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
@@ -212,6 +213,11 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->hOptions.proxyUsername = value;
         else if (option == "hproxy-pass")
             this->hOptions.proxyPassword = value;
+        else if (option == "http-timeout")
+        {
+            try { this->hOptions.timeout = chrono::seconds(stoi(value)); }
+            catch (const logic_error& e) { throw BadValueException(option); }
+        }
         else if (option == "max-retries")
         {
             try { this->hOptions.maxRetries = stoi(value); }
