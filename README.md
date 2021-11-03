@@ -58,6 +58,10 @@ The ID of a folder to mount can also be specified in the `-s` URL.
 If no folder/filesystem ID is provided, the "SuperRoot" will be mounted
 containing all filesystems and other special folders.
 
+The FUSE client can either connect to a remote server via HTTP by specifying a URL with `-s`,
+or it can run the server as a local program by specifying the path with `-p`.  Using `-p` as a 
+flag rather than an option will attempt to use $PATH to find the server.
+
 ### Debug
 
 Using the `-d int` or `--debug int` option turns on debug.

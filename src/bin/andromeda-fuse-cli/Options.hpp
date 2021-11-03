@@ -1,16 +1,16 @@
 #ifndef LIBA2_OPTIONS_H_
 #define LIBA2_OPTIONS_H_
 
-#include <utility>
+#include <filesystem>
+#include <list>
 #include <stdexcept>
 #include <string>
-#include <list>
-#include <filesystem>
+#include <utility>
 
-#include "Utilities.hpp"
-#include "FuseWrapper.hpp"
 #include "Config.hpp"
+#include "FuseWrapper.hpp"
 #include "HTTPRunner.hpp"
+#include "Utilities.hpp"
 
 /** Manages command line options and config */
 class Options

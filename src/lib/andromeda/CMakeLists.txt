@@ -34,6 +34,7 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
 if (APPLE)
    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
+   target_include_directories(andromeda PRIVATE ${OPENSSL_ROOT_DIR}/include)
 endif()
 
 add_subdirectory(thirdparty/cpp-httplib)

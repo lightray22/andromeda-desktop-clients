@@ -1,8 +1,8 @@
-#include <map>
-#include <list>
-#include <vector>
-#include <sstream>
 #include <chrono>
+#include <list>
+#include <map>
+#include <sstream>
+#include <vector>
 
 #include "Options.hpp"
 #include "Utilities.hpp"
@@ -14,9 +14,11 @@ string Options::HelpText()
 {
     ostringstream output;
 
-    Config::Options defOptions;
+    Config::Options cfgDefault;
+    HTTPRunner::Options httpDefault;
 
-    const int defRefresh(chrono::seconds(defOptions.refreshTime).count());
+    const int defRefresh(chrono::seconds(cfgDefault.refreshTime).count());
+    const int defRetry(chrono::seconds(httpDefault.retryTime).count());
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
@@ -27,9 +29,9 @@ string Options::HelpText()
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key]" << endl
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
-           << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << defOptions.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
+           << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << cfgDefault.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
            << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
-           << "HTTP Advanced:   [--max-retries int] [--retry-time secs]" << endl
+           << "HTTP Advanced:   [--max-retries int(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
            << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();

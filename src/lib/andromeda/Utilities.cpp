@@ -1,9 +1,9 @@
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <termios.h>
-#include <fstream>
+#include <algorithm>
 #include <cstring>
+#include <fstream>
+#include <iostream>
+#include <termios.h>
+#include <thread>
 
 #include "Utilities.hpp"
 
@@ -63,9 +63,11 @@ Utilities::StringPair Utilities::split(
 }
 
 /*****************************************************/
-bool Utilities::stringToBool(const std::string& str)
+bool Utilities::endsWith(const std::string& str, const std::string& end)
 {
-    return (str != "0" && str != "false" && str != "off" && str != "no");
+    if (end.size() > str.size()) return false;
+
+    return std::equal(end.rbegin(), end.rend(), str.rbegin());
 }
 
 /*****************************************************/
@@ -131,6 +133,12 @@ void Utilities::parseUrl(const std::string& url,
             else flags.push_back(pair.first);
         }
     }
+}
+
+/*****************************************************/
+bool Utilities::stringToBool(const std::string& str)
+{
+    return (str != "0" && str != "false" && str != "off" && str != "no");
 }
 
 /*****************************************************/

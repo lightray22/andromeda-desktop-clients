@@ -1,16 +1,16 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
-#include <map>
+#include <chrono>
+#include <filesystem>
 #include <list>
-#include <vector>
-#include <string>
+#include <map>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
-#include <chrono>
+#include <string>
+#include <vector>
 #include <utility>
-#include <filesystem>
 
 #define A2LIBVERSION "0.1-alpha"
 
@@ -59,6 +59,9 @@ public:
      */
     static StringPair split(const std::string& str, 
         const std::string& delim, const bool last = false);
+
+    /** Returns true iff str ends with end */
+    static bool endsWith(const std::string& str, const std::string& end);
 
     typedef std::list<std::string> Flags;
     typedef std::multimap<std::string, std::string> Options;

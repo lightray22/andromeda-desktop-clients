@@ -1,7 +1,7 @@
 
-#include <vector>
-#include <utility>
 #include <iostream>
+#include <list>
+#include <utility>
 
 #include "reproc++/run.hpp"
 
@@ -11,13 +11,22 @@
 CLIRunner::CLIRunner(const std::string& apiPath) :
     debug("CLIRunner",this), apiPath(apiPath)
 {
+    if (apiPath.empty()) this->apiPath = "andromeda";
+
+    else if (!Utilities::endsWith(this->apiPath, "index.php") &&
+             !Utilities::endsWith(this->apiPath, "andromeda")) 
+        this->apiPath += "/andromeda";
+
     debug << __func__ << "(apiPath:" << this->apiPath << ")"; debug.Info();
 }
 
 /*****************************************************/
 std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 {
-    std::vector<std::string> arguments { this->apiPath, "--json", input.app, input.action };
+    std::list<std::string> arguments { this->apiPath, "--json", input.app, input.action };
+
+    if (Utilities::endsWith(this->apiPath, "index.php"))
+        arguments.emplace_front("php");
 
     for (const Params::value_type& param : input.params)
     {
@@ -68,9 +77,9 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
     error = reproc::drain(process, sink, reproc::sink::null);
     if (error) throw Exception(error);
 
-    int status = 0; std::tie(status,error) = process.wait(this->timeout);
-    if (error) throw Exception(error); 
-    if (status) throw Exception(std::to_string(status));
+    int status = 0; std::tie(status,error) = 
+        process.wait(this->timeout);
+    if (error) throw Exception(error);
 
     return output;
 }

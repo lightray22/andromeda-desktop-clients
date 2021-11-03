@@ -17,7 +17,7 @@ public:
         Exception(std::error_code code) :
             Backend::Exception("Subprocess Error: "+code.message()) {}
         Exception(const std::string& msg) : 
-            Backend::Exception("Subprocess Error: "+msg) {} };
+            Backend::Exception("Subprocess Code: "+msg) {} };
 
     /** @param apiPath path to the API index.php */
     CLIRunner(const std::string& apiPath);
