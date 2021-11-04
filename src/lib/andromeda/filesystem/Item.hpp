@@ -88,6 +88,9 @@ protected:
      */
     Item(Backend& backend, const nlohmann::json* data = nullptr);
 
+    /** Initialize from the given JSON data */
+    virtual void Initialize(const nlohmann::json& data);
+
     /** Returns true if this item has a parent */
     virtual bool HasParent() const { return this->parent != nullptr; }
 

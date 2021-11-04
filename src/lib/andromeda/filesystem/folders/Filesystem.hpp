@@ -25,25 +25,19 @@ public:
      */
     static std::unique_ptr<Filesystem> LoadByID(Backend& backend, const std::string& fsid);
 
-    /**
-     * Load a filesystem with the given backend data and parent
-     * @param backend reference to backend
-     * @param data pre-loaded JSON data
-     * @param parent reference to parent
-     */
-    static std::unique_ptr<Filesystem> LoadFromData(Backend& backend, const nlohmann::json& data, Folder& parent);
-
     /** 
      * Construct with root folder JSON data
      * @param backend reference to backend
-     * @param fsid filesystem ID
-     * @param data root folder json data
+     * @param data pre-loaded JSON data
+     * @param parent optional pointer to parent
      */
-    Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata);
+    Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent = nullptr);
 
     virtual void Refresh(const nlohmann::json& data) override { }
 
 protected:
+
+    virtual void LoadItems() override;
 
     virtual void SubDelete() override { throw ModifyException(); }
 

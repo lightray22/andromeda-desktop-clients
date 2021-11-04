@@ -54,6 +54,7 @@ Example:
 apiurl=http://myserv.tld/index.php
 read-only
 ```
+
 The ID of a folder to mount can also be specified in the `-s` URL.
 If no folder/filesystem ID is provided, the "SuperRoot" will be mounted
 containing all filesystems and other special folders.
@@ -61,6 +62,12 @@ containing all filesystems and other special folders.
 The FUSE client can either connect to a remote server via HTTP by specifying a URL with `-s`,
 or it can run the server as a local program by specifying the path with `-p`.  Using `-p` as a 
 flag rather than an option will attempt to use $PATH to find the server.
+
+When running via CLI by default it will just use the `auth_username` option with the server
+rather than creating and using a session.  This will make storages with encrypted credentials
+inaccessible.  You can force the use of a session with `--force-session`.  This option has the
+downside of potentially exposing authentication details to other processes as they are placed
+on the command line in cleartext.
 
 ### Debug
 

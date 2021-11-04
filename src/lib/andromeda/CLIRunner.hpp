@@ -25,6 +25,8 @@ public:
 
     virtual std::string RunAction(const Input& input) override;
 
+    virtual bool RequiresSession() override { return false; }
+
 private:
 
     Debug debug;

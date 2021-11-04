@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         }
         else if (options.HasUsername())
         {
-            backend.AuthInteractive(options.GetUsername(), options.GetPassword());
+            backend.AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
         }
 
         switch (options.GetMountItemType())

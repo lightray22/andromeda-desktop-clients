@@ -28,7 +28,7 @@ string Options::HelpText()
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath [path])" << endl << endl
 
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
-           << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key]" << endl
+           << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << cfgDefault.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
            << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
@@ -79,6 +79,9 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->debugLevel = Debug::Level::ERRORS;
         else if (flag == "p" || flag == "apipath")
             this->apiType = ApiType::API_PATH;
+
+        else if (flag == "force-session")
+            this->forceSession = true;
 
         else if (flag == "filesystem")
             this->mountItemType = ItemType::FILESYSTEM;

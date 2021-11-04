@@ -96,6 +96,8 @@ public:
     std::string GetSessionID() const { return this->sessionid; }
     std::string GetSessionKey() const { return this->sessionkey; }
 
+    bool GetForceSession() const { return this->forceSession; }
+
     enum class ItemType
     {
         SUPERROOT,
@@ -126,6 +128,7 @@ private:
 
     std::string username;
     std::string password;
+    bool forceSession = false;
 
     std::string sessionid;
     std::string sessionkey;

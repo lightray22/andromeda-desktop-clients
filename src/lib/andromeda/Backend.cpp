@@ -56,6 +56,10 @@ std::string Backend::RunAction(Backend::Runner::Input& input)
         input.params["auth_sessionid"] = this->sessionID;
         input.params["auth_sessionkey"] = this->sessionKey;
     }
+    else if (!this->username.empty())
+    {
+        input.params["auth_username"] = this->username;
+    }
 
     return this->runner.RunAction(input);
 }
@@ -115,6 +119,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     try
     {
         this->createdSession = true;
+
         resp.at("account").at("id").get_to(this->accountID);
         resp.at("client").at("session").at("id").get_to(this->sessionID);
         resp.at("client").at("session").at("authkey").get_to(this->sessionKey);
@@ -124,31 +129,36 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 
+    SetUsername(username);
     config.LoadAccountLimits(*this);
 }
 
 /*****************************************************/
-void Backend::AuthInteractive(const std::string& username, std::string password, std::string twofactor)
+void Backend::AuthInteractive(const std::string& username, std::string password, bool forceSession)
 {
     this->debug << __func__ << "(username:" << username << ")"; this->debug.Info();
 
-    if (password.empty())
+    if (this->runner.RequiresSession() || forceSession)
     {
-        std::cout << "Password? ";
-        Utilities::SilentReadConsole(password);
-    }
+        if (password.empty())
+        {
+            std::cout << "Password? ";
+            Utilities::SilentReadConsole(password);
+        }
 
-    try
-    {
-        Authenticate(username, password, twofactor);
-    }
-    catch (const TwoFactorRequiredException& e)
-    {
-        std::cout << "Two Factor? ";
-        Utilities::SilentReadConsole(twofactor);
+        try
+        {
+            Authenticate(username, password);
+        }
+        catch (const TwoFactorRequiredException& e)
+        {
+            std::string twofactor; std::cout << "Two Factor? ";
+            Utilities::SilentReadConsole(twofactor);
 
-        Authenticate(username, password, twofactor);
+            Authenticate(username, password, twofactor);
+        }
     }
+    else SetUsername(username);
 }
 
 /*****************************************************/
@@ -193,8 +203,16 @@ void Backend::CloseSession()
 /*****************************************************/
 void Backend::RequireAuthentication() const
 {
-    if (this->sessionID.empty())
-        throw AuthRequiredException();
+    if (this->runner.RequiresSession())
+    {
+        if (this->sessionID.empty())
+            throw AuthRequiredException();
+    }
+    else
+    {
+        if (this->sessionID.empty() && this->username.empty())
+            throw AuthRequiredException();
+    }
 }
 
 /*****************************************************/
@@ -261,7 +279,7 @@ nlohmann::json Backend::GetFSRoot(const std::string& id)
 {
     this->debug << __func__ << "(id:" << id << ")"; this->debug.Info();
 
-    Runner::Input input {"files", "getfolder", {{"files","false"},{"folders","false"}}}; 
+    Runner::Input input {"files", "getfolder"}; 
     
     if (!id.empty()) input.params["filesystem"] = id;
 

@@ -58,7 +58,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 
     if (inputPtr != nullptr)
     {
-        const uint8_t* inputData = reinterpret_cast<const uint8_t*>(inputPtr->c_str());
+        const auto* inputData = reinterpret_cast<const uint8_t*>(inputPtr->c_str());
 
         reproc::input procIn(inputData, inputPtr->size());
         error = reproc::fill(process, procIn);

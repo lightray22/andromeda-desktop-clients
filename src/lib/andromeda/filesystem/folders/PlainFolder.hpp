@@ -35,7 +35,6 @@ public:
 
 protected:
 
-    /** populate itemMap from the backend */
     virtual void LoadItems() override;
 
     virtual void SubCreateFile(const std::string& name) override;

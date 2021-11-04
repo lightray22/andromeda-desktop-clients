@@ -12,19 +12,26 @@ Item::Item(Backend& backend, const nlohmann::json* data) :
 {
     debug << __func__ << "()"; debug.Info();
 
-    if (data != nullptr)
+    if (data != nullptr) Initialize(*data);
+}
+
+/*****************************************************/
+void Item::Initialize(const nlohmann::json& data)
+{
+    try
     {
-        try
+        data.at("id").get_to(this->id);
+        data.at("name").get_to(this->name);
+
+        if (data.contains("dates"))
         {
-            data->at("id").get_to(this->id);
-
-            data->at("dates").at("created").get_to(this->created);
+            data.at("dates").at("created").get_to(this->created);
         }
-        catch (const nlohmann::json::exception& ex) {
-            throw Backend::JSONErrorException(ex.what()); }
-
-        Refresh(*data);
     }
+    catch (const nlohmann::json::exception& ex) {
+        throw Backend::JSONErrorException(ex.what()); }
+
+    Refresh(data);
 }
 
 /*****************************************************/

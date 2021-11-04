@@ -1,6 +1,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Filesystem.hpp"
+#include "FSConfig.hpp"
 #include "Backend.hpp"
 
 /*****************************************************/
@@ -8,29 +9,37 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::st
 {
     backend.RequireAuthentication();
 
-    nlohmann::json rdata(backend.GetFSRoot(fsid));
+    const nlohmann::json data(backend.GetFilesystem(fsid));
 
-    return std::make_unique<Filesystem>(backend, fsid, rdata);
+    return std::make_unique<Filesystem>(backend, data);
 }
 
 /*****************************************************/
-std::unique_ptr<Filesystem> Filesystem::LoadFromData(Backend& backend, const nlohmann::json& data, Folder& parent)
+Filesystem::Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent) :
+    PlainFolder(backend), debug("Filesystem",this) 
 {
-    std::string fsid; try
+    debug << __func__ << "()"; debug.Info();
+
+    Item::Initialize(data); this->parent = parent;
+    
+    this->fsid = this->id; this->id = "";
+
+    this->fsConfig = &FSConfig::LoadByID(backend, this->fsid);
+}
+
+/*****************************************************/
+void Filesystem::LoadItems()
+{
+    debug << __func__ << "()"; debug.Info();
+
+    const nlohmann::json data(backend.GetFSRoot(this->fsid));
+
+    try
     {
-        data.at("id").get_to(fsid);
+        data.at("id").get_to(this->id); // late load
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 
-    std::unique_ptr<Filesystem> filesystem(Filesystem::LoadByID(backend, fsid));
-
-    filesystem->parent = &parent; return filesystem;
-}
-
-/*****************************************************/
-Filesystem::Filesystem(Backend& backend, std::string fsid, const nlohmann::json& rdata) :
-    PlainFolder(backend, &rdata), fsid(fsid), debug("Filesystem",this) 
-{
-    debug << __func__ << "()"; debug.Info();
+    Folder::LoadItemsFrom(data);
 }

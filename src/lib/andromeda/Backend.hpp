@@ -56,6 +56,9 @@ public:
          * @return result string from API
          */
         virtual std::string RunAction(const Input& input) = 0;
+
+        /** Returns true if the backend requires sessions */
+        virtual bool RequiresSession() = 0;
     };
 
     /** Exception indicating that authentication is required */
@@ -106,14 +109,20 @@ public:
     /** Initializes the backend by loading config */
     void Initialize(const Config::Options& options);
 
+    /** Sets the backend to use the given username w/o a session */
+    void SetUsername(const std::string& username) { this->username = username; }
+
+    /** Registers a pre-existing session ID/key for use */
+    void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
+
     /** Creates a new backend session and registers for use */
     void Authenticate(const std::string& username, const std::string& password, const std::string& twofactor = "");
 
-    /** Creates a new backend session, interactively prompting for input as required */
-    void AuthInteractive(const std::string& username, std::string password = "", std::string twofactor = "");
-
-    /** Registers a pre-existing session for use */
-    void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
+    /** 
+     * Creates a new backend session if needed, interactively prompting for input as required 
+     * @param bool forceSession if true, force creating a session even if not needed
+     */
+    void AuthInteractive(const std::string& username, std::string password = "", bool forceSession = false);
 
     /** Closes the existing session */
     void CloseSession();
@@ -260,6 +269,7 @@ private:
     /** True if we created the session in use */
     bool createdSession = false;
 
+    std::string username;
     std::string accountID;
     std::string sessionID;
     std::string sessionKey;

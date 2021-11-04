@@ -27,7 +27,7 @@ void Filesystems::LoadItems()
     Folder::NewItemMap newItems;
 
     NewItemFunc newFilesystem = [&](const nlohmann::json& fsJ)->std::unique_ptr<Item> {
-        return Filesystem::LoadFromData(backend, fsJ, *this); };
+        return std::make_unique<Filesystem>(backend, fsJ, this); };
 
     try
     {

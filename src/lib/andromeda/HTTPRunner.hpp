@@ -52,6 +52,8 @@ public:
     /** Allows automatic retry on HTTP failure */
     virtual void EnableRetry(bool enable = true) { this->canRetry = enable; }
 
+    virtual bool RequiresSession() override { return true; }
+
 private:
 
     Debug debug;
