@@ -20,11 +20,19 @@ Filesystem::Filesystem(Backend& backend, const nlohmann::json& data, Folder* par
 {
     debug << __func__ << "()"; debug.Info();
 
-    Item::Initialize(data); this->parent = parent;
-    
+    Initialize(data); this->parent = parent;
+
     this->fsid = this->id; this->id = "";
 
     this->fsConfig = &FSConfig::LoadByID(backend, this->fsid);
+}
+
+/*****************************************************/
+const std::string& Filesystem::GetID()
+{
+    if (this->id.empty()) LoadItems(); // populates ID
+
+    return this->id;
 }
 
 /*****************************************************/

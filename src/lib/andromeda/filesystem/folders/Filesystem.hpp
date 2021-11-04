@@ -33,6 +33,8 @@ public:
      */
     Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent = nullptr);
 
+    virtual const std::string& GetID() override;
+
     virtual void Refresh(const nlohmann::json& data) override { }
 
 protected:

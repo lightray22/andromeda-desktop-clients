@@ -18,7 +18,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::
 
 /*****************************************************/
 PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
-    Folder(backend, data), debug("PlainFolder",this)
+    Folder(backend), debug("PlainFolder",this)
 {
     debug << __func__ << "()"; debug.Info();
 
@@ -26,6 +26,8 @@ PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* p
     
     if (data != nullptr)
     {
+        Initialize(*data);
+
         std::string fsid; try
         {
             if (haveItems) Folder::LoadItemsFrom(*data);
@@ -44,7 +46,7 @@ void PlainFolder::LoadItems()
 {
     debug << __func__ << "()"; debug.Info();
 
-    Folder::LoadItemsFrom(backend.GetFolder(this->id));
+    Folder::LoadItemsFrom(backend.GetFolder(GetID()));
 }
 
 /*****************************************************/
@@ -54,7 +56,7 @@ void PlainFolder::SubCreateFile(const std::string& name)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFile(this->id, name));
+    nlohmann::json data(backend.CreateFile(GetID(), name));
 
     std::unique_ptr<File> file(std::make_unique<File>(backend, data, *this));
 
@@ -68,7 +70,7 @@ void PlainFolder::SubCreateFolder(const std::string& name)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFolder(this->id, name));
+    nlohmann::json data(backend.CreateFolder(GetID(), name));
 
     std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, &data, this));
 
@@ -100,7 +102,7 @@ void PlainFolder::SubDelete()
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.DeleteFolder(this->id);
+    backend.DeleteFolder(GetID());
 }
 
 /*****************************************************/
@@ -110,7 +112,7 @@ void PlainFolder::SubRename(const std::string& name, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.RenameFolder(this->id, name, overwrite);
+    backend.RenameFolder(GetID(), name, overwrite);
 }
 
 /*****************************************************/
@@ -120,5 +122,5 @@ void PlainFolder::SubMove(Folder& parent, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.MoveFolder(this->id, parent.GetID(), overwrite);
+    backend.MoveFolder(GetID(), parent.GetID(), overwrite);
 }

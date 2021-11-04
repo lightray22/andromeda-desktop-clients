@@ -9,11 +9,11 @@
 
 /*****************************************************/
 File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
-    Item(backend, &data), debug("File",this)
+    Item(backend), debug("File",this)
 {
     debug << this->name << ":" << __func__ << "()"; debug.Info();
 
-    this->parent = &parent;
+    Initialize(data); this->parent = &parent;
 
     std::string fsid; try
     {
@@ -81,7 +81,7 @@ void File::SubDelete()
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.DeleteFile(this->id);
+    backend.DeleteFile(GetID());
 
     this->deleted = true;
 }
@@ -93,7 +93,7 @@ void File::SubRename(const std::string& name, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.RenameFile(this->id, name, overwrite);
+    backend.RenameFile(GetID(), name, overwrite);
 }
 
 /*****************************************************/
@@ -103,7 +103,7 @@ void File::SubMove(Folder& parent, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.MoveFile(this->id, parent.GetID(), overwrite);
+    backend.MoveFile(GetID(), parent.GetID(), overwrite);
 }
 
 /*****************************************************/
@@ -134,7 +134,7 @@ File::Page& File::GetPage(const size_t index, const size_t minsize)
 
         bool hasData = rsize > 0 && offset < this->backendSize;
 
-        const std::string data(hasData ? backend.ReadFile(this->id, offset, rsize) : "");
+        const std::string data(hasData ? backend.ReadFile(GetID(), offset, rsize) : "");
 
         // for the first page we keep it minimal to save memory on small files
         // for subsequent pages we allocate the full size ahead of time for speed
@@ -175,7 +175,7 @@ void File::FlushCache(bool nothrow)
 
             if (debug) { debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Info(); }
 
-            auto writeFunc = [&]()->void { backend.WriteFile(this->id, offset, data); }; 
+            auto writeFunc = [&]()->void { backend.WriteFile(GetID(), offset, data); }; 
 
             if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
                 debug << __func__ << "()... Ignoring Error: " << e.what(); debug.Error(); }
@@ -216,7 +216,7 @@ size_t File::ReadBytes(std::byte* buffer, const size_t offset, size_t length)
 
     if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
     {
-        const std::string data(backend.ReadFile(this->id, offset, length));
+        const std::string data(backend.ReadFile(GetID(), offset, length));
 
         std::copy(data.cbegin(), data.cend(), reinterpret_cast<char*>(buffer));
     }
@@ -255,7 +255,7 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 
         const std::string data(reinterpret_cast<const char*>(buffer), length);
 
-        backend.WriteFile(this->id, offset, data);
+        backend.WriteFile(GetID(), offset, data);
 
         this->size = std::max(this->size, offset+length); 
         this->backendSize = this->size;
@@ -294,7 +294,7 @@ void File::Truncate(const size_t size)
 
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 
-    this->backend.TruncateFile(this->id, size); 
+    this->backend.TruncateFile(GetID(), size); 
 
     this->size = size; this->backendSize = size;
 

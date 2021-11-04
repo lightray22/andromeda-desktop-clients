@@ -82,9 +82,8 @@ protected:
     /** 
      * Construct a new abstract folder
      * @param backend reference to backend
-     * @param data json data from backend
      */
-    Folder(Backend& backend, const nlohmann::json* data = nullptr);
+    Folder(Backend& backend);
 
     /** populate itemMap from the backend */
     virtual void LoadItems() = 0;

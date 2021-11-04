@@ -7,17 +7,17 @@
 #include "FSConfig.hpp"
 
 /*****************************************************/
-Item::Item(Backend& backend, const nlohmann::json* data) : 
+Item::Item(Backend& backend) : 
     backend(backend), debug("Item",this)
 {
     debug << __func__ << "()"; debug.Info();
-
-    if (data != nullptr) Initialize(*data);
 }
 
 /*****************************************************/
 void Item::Initialize(const nlohmann::json& data)
 {
+    debug << __func__ << "()"; debug.Info();
+
     try
     {
         data.at("id").get_to(this->id);
@@ -37,6 +37,8 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
+    debug << __func__ << "()"; debug.Info();
+
     try
     {
         data.at("name").get_to(this->name);

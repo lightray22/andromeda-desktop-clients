@@ -9,8 +9,8 @@
 using namespace std::chrono;
 
 /*****************************************************/
-Folder::Folder(Backend& backend, const nlohmann::json* data) : 
-    Item(backend, data), debug("Folder",this)
+Folder::Folder(Backend& backend) : 
+    Item(backend), debug("Folder",this)
 {
     debug << __func__ << "()"; debug.Info();
 }

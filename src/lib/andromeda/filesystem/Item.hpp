@@ -41,22 +41,22 @@ public:
     virtual Type GetType() const = 0;
 
     /** Returns the Andromeda object ID */
-    virtual const std::string& GetID() const { return this->id; }
+    virtual const std::string& GetID() { return this->id; }
 
     /** Returns the FS name */
-    virtual const std::string& GetName() const { return this->name; }
+    virtual const std::string& GetName() const final { return this->name; }
 
     /** Returns the total size */
-    virtual size_t GetSize() const { return this->size; }
+    virtual size_t GetSize() const final { return this->size; }
 
     /** Get the created time stamp */
-    virtual Date GetCreated() const { return this->created; } 
+    virtual Date GetCreated() const final { return this->created; } 
 
     /** Get the modified time stamp */
-    virtual Date GetModified() const { return this->modified; } 
+    virtual Date GetModified() const final { return this->modified; } 
 
     /** Get the accessed time stamp */
-    virtual Date GetAccessed() const { return this->accessed; } 
+    virtual Date GetAccessed() const final { return this->accessed; } 
 
     /** Returns true if the item is read-only */
     virtual bool isReadOnly() const;
@@ -84,9 +84,8 @@ protected:
     /** 
      * Construct a new item
      * @param backend reference to backend
-     * @param data pointer to JSON data
      */
-    Item(Backend& backend, const nlohmann::json* data = nullptr);
+    Item(Backend& backend);
 
     /** Initialize from the given JSON data */
     virtual void Initialize(const nlohmann::json& data);
