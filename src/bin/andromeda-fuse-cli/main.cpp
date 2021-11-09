@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     }
     catch (const Options::Exception& ex)
     {
-        std::cout << ex.what() << std::endl;
+        std::cout << ex.what() << std::endl << std::endl;
         std::cout << Options::HelpText() << std::endl;
         return static_cast<int>(ExitCode::BAD_USAGE);
     }

@@ -132,7 +132,7 @@ public:
 
     /**
      * Loads server config
-     * @return loaded config as JSON with "server" and "files" keys
+     * @return loaded config as JSON with "core" and "files" keys
      */
     nlohmann::json GetConfigJ();
 

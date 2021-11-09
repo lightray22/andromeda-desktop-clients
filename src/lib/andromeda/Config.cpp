@@ -19,19 +19,19 @@ void Config::Initialize(Backend& backend, const Config::Options& options)
 
     try
     {
-        int api = config.at("server").at("api").get<int>();
+        int api = config.at("core").at("api").get<int>();
 
         if (API_VERSION != api) 
             throw APIVersionException(api);
 
-        const nlohmann::json& apps1 = config.at("server").at("apps");
-        std::vector<const char*> apps2 { "server", "accounts", "files" };
+        const nlohmann::json& apps1 = config.at("core").at("apps");
+        std::vector<const char*> apps2 { "core", "accounts", "files" };
 
         for (const std::string app : apps2)
             if (apps1.find(app) == apps1.end())
                 throw AppMissingException(app);
 
-        this->readOnly = (config.at("server").at("features").at("read_only").get<std::string>() != "off");
+        config.at("core").at("features").at("read_only").get_to(this->readOnly);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

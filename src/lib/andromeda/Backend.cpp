@@ -58,7 +58,7 @@ std::string Backend::RunAction(Backend::Runner::Input& input)
     }
     else if (!this->username.empty())
     {
-        input.params["auth_username"] = this->username;
+        input.params["auth_sudouser"] = this->username;
     }
 
     return this->runner.RunAction(input);
@@ -229,8 +229,8 @@ nlohmann::json Backend::GetConfigJ()
     nlohmann::json config;
 
     {
-        Runner::Input input {"server", "getconfig"};
-        config["server"] = GetJSON(RunAction(input));
+        Runner::Input input {"core", "getconfig"};
+        config["core"] = GetJSON(RunAction(input));
     }
 
     {
