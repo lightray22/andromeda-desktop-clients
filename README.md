@@ -22,28 +22,24 @@ To build only a specific app, go to src/bin/(app), then create the build folder 
 ### Libraries
 
 - OpenSSL (1.1.1) (libssl, libcrypto)
-- libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
-    - for macOS, use OSXFUSE https://github.com/osxfuse/fuse
-    - If you need to use FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
 - nlohmann-json (3.x) https://github.com/nlohmann/json
 
-libssl, libcrypto, and libfuse are dynamically linked so they must be available at runtime.
+libssl, libcrypto are dynamically linked so they must be available at runtime.
 
 Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### OS Examples
 
-- Ubuntu: `apt install make cmake g++ fuse3 libfuse3-dev nlohmann-json3-dev libssl-dev libcrypt-dev`
-- Manjaro: `pacman -S make cmake gcc fuse3 nlohmann-json3`
-- Alpine: `apk add make cmake g++ fuse3 fuse3-dev nlohmann-json openssl-dev`
-- FreeBSD: `pkg install cmake fusefs-libs3 nlohmann-json`
+- Ubuntu: `apt install make cmake g++ nlohmann-json3-dev libssl-dev libcrypt-dev`
+- Manjaro: `pacman -S make cmake gcc nlohmann-json3`
+- Alpine: `apk add make cmake g++ nlohmann-json openssl-dev`
+- FreeBSD: `pkg install cmake nlohmann-json`
 - macOS: `brew install make cmake nlohmann-json openssl@1.1`
-    - Install macFUSE from https://osxfuse.github.io/
-
+- 
 
 # FUSE Client
 
-Located in `src/bin/andromeda-fuse-cli`.
+Supports Linux, FreeBSD, macOS.  Located in `src/bin/andromeda-fuse-cli`.
 
 Run `./andromeda-fuse-cli --help` to see the available options.
 Authentication details (password, twofactor) will be prompted for interactively as required.
@@ -68,6 +64,22 @@ rather than creating and using a session.  This will make storages with encrypte
 inaccessible.  You can force the use of a session with `--force-session`.  This option has the
 downside of potentially exposing authentication details to other processes as they are placed
 on the command line in cleartext.
+
+### Libraries
+
+- libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
+    - If you need to use FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
+    - for macOS, use OSXFUSE https://github.com/osxfuse/fuse
+        - Install from https://osxfuse.github.io/
+
+libfuse is dynamically linked so it must be available at runtime.
+
+### OS Examples
+
+- Ubuntu: `apt install fuse3 libfuse3-dev`
+- Manjaro: `pacman -S fuse3`
+- Alpine: `apk add make fuse3 fuse3-dev`
+- FreeBSD: `pkg install fusefs-libs3`
 
 ### Debug
 
