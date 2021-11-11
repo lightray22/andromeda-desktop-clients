@@ -12,11 +12,11 @@
 CLIRunner::CLIRunner(const std::string& apiPath) :
     debug("CLIRunner",this), apiPath(apiPath)
 {
-    if (apiPath.empty()) this->apiPath = "andromeda";
+    if (apiPath.empty()) this->apiPath = "andromeda-server";
 
     else if (!Utilities::endsWith(this->apiPath, "/index.php") &&
-             !Utilities::endsWith(this->apiPath, "/andromeda")) 
-        this->apiPath += "/andromeda";
+             !Utilities::endsWith(this->apiPath, "/andromeda-server")) 
+        this->apiPath += "/andromeda-server";
 
     debug << __func__ << "(apiPath:" << this->apiPath << ")"; debug.Info();
 }
