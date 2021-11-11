@@ -2,7 +2,7 @@
 This repo contains the desktop applications for Andromeda's file storage API.
 
 
-# Building (all)
+# General Building
 
 1. Get submodules `git submodule update --init`
 2. Make build folder `mkdir build; cd build`
