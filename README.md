@@ -1,10 +1,8 @@
 
 This repo contains the desktop applications for Andromeda's file storage API.
 
-Currently there is only a CLI FUSE client for Linux/BSD.
 
-
-# Building
+# Building (all)
 
 1. Get submodules `git submodule update --init`
 2. Make build folder `mkdir build; cd build`
