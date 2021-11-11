@@ -35,7 +35,7 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 - Alpine: `apk add make cmake g++ nlohmann-json openssl-dev`
 - FreeBSD: `pkg install cmake nlohmann-json`
 - macOS: `brew install make cmake nlohmann-json openssl@1.1`
-- 
+
 
 # FUSE Client
 
