@@ -1,8 +1,10 @@
 
-This repo contains the desktop applications for Andromeda's file storage API.
+This repo contains the desktop applications and common libraries for Andromeda's file storage API. 
 
 
-# General Building
+# Common Libraries
+
+## Building
 
 1. Get submodules `git submodule update --init`
 2. Make build folder `mkdir build; cd build`
@@ -63,6 +65,8 @@ inaccessible.  You can force the use of a session with `--force-session`.  This 
 downside of potentially exposing authentication details to other processes as they are placed
 on the command line in cleartext.
 
+## Building
+
 ### Libraries
 
 - libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
@@ -79,7 +83,7 @@ libfuse is dynamically linked so it must be available at runtime.
 - Alpine: `apk add make fuse3 fuse3-dev`
 - FreeBSD: `pkg install fusefs-libs3`
 
-### Debug
+## Debug
 
 Using the `-d int` or `--debug int` option turns on debug.
 
