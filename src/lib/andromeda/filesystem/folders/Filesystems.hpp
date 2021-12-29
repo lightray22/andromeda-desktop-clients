@@ -4,11 +4,15 @@
 
 #include "../Folder.hpp"
 
-/** A folder that lists filesystems */
+/** A special folder that lists filesystems */
 class Filesystems : public Folder
 {
 public:
 
+    /**
+     * @param backend backend reference
+     * @param parent parent folder reference
+     */
     Filesystems(Backend& backend, Folder& parent);
     
     virtual ~Filesystems(){};

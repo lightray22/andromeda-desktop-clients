@@ -84,9 +84,9 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->forceSession = true;
 
         else if (flag == "filesystem")
-            this->mountItemType = ItemType::FILESYSTEM;
+            this->mountRootType = RootType::FILESYSTEM;
         else if (flag == "folder")
-            this->mountItemType = ItemType::FOLDER;
+            this->mountRootType = RootType::FOLDER;
 
         else if (flag == "r" || flag == "read-only")
             this->cOptions.readOnly = true;
@@ -135,7 +135,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
                 if (pair.first == "folder")
                 {
                     this->mountItemID = pair.second;
-                    this->mountItemType = ItemType::FOLDER;
+                    this->mountRootType = RootType::FOLDER;
                 }
             }
         }
@@ -159,12 +159,12 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         else if (option == "ri" || option == "filesystem")
         {
             this->mountItemID = value;
-            this->mountItemType = ItemType::FILESYSTEM;
+            this->mountRootType = RootType::FILESYSTEM;
         }
         else if (option == "rf" || option == "folder")
         {
             this->mountItemID = value;
-            this->mountItemType = ItemType::FOLDER;
+            this->mountRootType = RootType::FOLDER;
         }
 
         /** FUSE wrapper options */

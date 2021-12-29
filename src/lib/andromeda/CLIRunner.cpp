@@ -54,7 +54,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
     
     std::error_code error; reproc::process process;
     error = process.start(arguments);
-    if (error) throw Exception(error);
+    if (error) throw Exception(error.message());
 
     if (inputPtr != nullptr)
     {
@@ -63,17 +63,17 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
         reproc::input procIn(inputData, inputPtr->size());
         error = reproc::fill(process, procIn);
 
-        if (error) { process.terminate(); throw Exception(error); }
+        if (error) { process.terminate(); throw Exception(error.message()); }
     }
 
     std::string output; reproc::sink::string sink(output);
     error = reproc::drain(process, sink, reproc::sink::null);
 
-    if (error) { process.terminate(); throw Exception(error); }
+    if (error) { process.terminate(); throw Exception(error.message()); }
 
     int status = 0; std::tie(status,error) = process.wait(this->timeout);
 
-    if (error) { process.terminate(); throw Exception(error); }
+    if (error) { process.terminate(); throw Exception(error.message()); }
 
     return output;
 }

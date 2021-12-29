@@ -2,9 +2,10 @@
 #ifndef LIBA2_SHARED_H_
 #define LIBA2_SHARED_H_
 
-#include "../Folder.hpp"
+#include "PlainFolder.hpp"
 
-class Shared : public Folder
+/** A special folder showing the user's shared items */
+class Shared : public PlainFolder
 {
 public:
     

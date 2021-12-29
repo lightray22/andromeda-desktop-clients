@@ -14,11 +14,10 @@ class CLIRunner : public Backend::Runner
 public:
 
     /** Exception indicating the CLI runner had an error */
-    class Exception : public Backend::Exception { public: 
-        Exception(std::error_code code) :
-            Backend::Exception("Subprocess Error: "+code.message()) {}
+    class Exception : public EndpointException { public: 
+        /** @param msg error message string */
         Exception(const std::string& msg) : 
-            Backend::Exception("Subprocess Code: "+msg) {} };
+            EndpointException("Subprocess Error: "+msg) {} };
 
     /** @param apiPath path to the API index.php */
     CLIRunner(const std::string& apiPath);

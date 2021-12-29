@@ -27,15 +27,17 @@ Item& Folder::GetItemByPath(std::string path)
     Utilities::StringList parts = Utilities::explode(path,"/");
 
     // iteratively (not recursively) find the correct parent/subitem
-    Folder* parent = this; for (size_t i = 0; i < parts.size(); i++)
+    Folder* parent = this; 
+    for (Utilities::StringList::iterator pIt = parts.begin(); 
+        pIt != parts.end(); pIt++ )
     {
         const ItemMap& items = parent->GetItems();
-        ItemMap::const_iterator it = items.find(parts[i]);
+        ItemMap::const_iterator it = items.find(*pIt);
         if (it == items.end()) throw NotFoundException();
 
         Item& item = *(it->second);
 
-        if (i + 1 == parts.size()) return item; // last part of path
+        if (std::next(pIt) == parts.end()) return item; // last part of path
 
         if (item.GetType() != Type::FOLDER) throw NotFolderException();
 

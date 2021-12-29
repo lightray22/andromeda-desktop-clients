@@ -5,11 +5,12 @@
 #include "../Folder.hpp"
 #include "Utilities.hpp"
 
-/** A folder that lists filesystems, shared files, etc. */
+/** A special folder that lists filesystems, shared files, etc. */
 class SuperRoot : public Folder
 {
 public:
 
+    /** @param backend backend reference */
     SuperRoot(Backend& backend);
     
     virtual ~SuperRoot(){};

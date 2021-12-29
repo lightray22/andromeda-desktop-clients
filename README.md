@@ -1,8 +1,7 @@
 
 This repo contains the desktop applications and common libraries for Andromeda's file storage API. 
 
-
-# Common Libraries
+# Libraries
 
 ## Building
 
@@ -97,3 +96,13 @@ The `--cachemode enum` option is also useful for debugging caching.
 - none - turns off caching and sends every read/write to the server (slow!)
 - memory - never reads/writes the server, only memory (data loss!)
 - normal - the normal mode of cache operation
+
+# Development
+
+## License
+
+Andromeda including all source code and any documentation are copyrighted by the author. Use of this repository and source code is licensed under the AGPLv3. Contributors agree that any contributions made to the repository are issued under this license. Commercial licenses can be obtained separately.
+
+## Doxygen
+
+Use the `tools/mkdocs` script from the repo root to generate documentation using Doxygen.  It will output separately for each bin/lib subdirectory.  This requires `doxygen` and `graphviz`.  Use `tools/mkdocs latex` to generate LaTEX PDFs - requires `doxygen-latex`.  

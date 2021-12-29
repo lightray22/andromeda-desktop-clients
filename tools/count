@@ -1,0 +1,3 @@
+#!/bin/sh
+(find . -iname "*.cpp"; find . -iname "*.hpp"; find . -iname "CMakeLists.txt") | 
+	grep -v "/build" | grep -v "/thirdparty" | xargs -d '\n' wc -l | sort -gr

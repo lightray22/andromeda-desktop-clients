@@ -1,0 +1,4 @@
+INPUT = src/lib/andromeda
+OUTPUT_DIRECTORY = docs/lib/andromeda
+PROJECT_NAME = libandromeda
+@INCLUDE = tools/Doxyfile.inc

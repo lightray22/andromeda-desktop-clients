@@ -35,6 +35,7 @@ public:
     /** Returns true if the filesystem is read-only */
     bool isReadOnly() const { return this->readOnly; }
 
+    /** The overwrite mode supported by the filesystem */
     enum class WriteMode { NONE, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */

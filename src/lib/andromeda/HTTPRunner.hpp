@@ -16,9 +16,10 @@ class HTTPRunner : public Backend::Runner
 public:
 
     /** Exception indicating the HTTP library had an error */
-    class Exception : public Backend::Exception { 
+    class Exception : public EndpointException { 
+        /** @param error the library error code */
         public: Exception(httplib::Error error) : 
-            Backend::Exception(httplib::to_string(error)) {} };
+            EndpointException(httplib::to_string(error)) {} };
 
     /** Exception indicating that the connection to the server failed */
     class ConnectionException : public Exception {
@@ -28,15 +29,23 @@ public:
     /** HTTP config options */
     struct Options
     {
+        /** maximum retries before throwing */
         size_t maxRetries = 12;
+        /** The time to wait between each retry */
         std::chrono::seconds retryTime = std::chrono::seconds(5);
+        /** The connection read/write timeout */
         std::chrono::seconds timeout = std::chrono::seconds(120);
-
+        /** HTTP basic-auth username */
         std::string username;
+        /** HTTP basic-auth password */
         std::string password;
+        /** HTTP proxy server hostname */
         std::string proxyHost;
+        /** HTTP proxy server port */
         short proxyPort = 443;
+        /** HTTP proxy server basic-auth username */
         std::string proxyUsername;
+        /** HTTP proxy server basic-auth password */
         std::string proxyPassword;
     };
 

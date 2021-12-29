@@ -16,8 +16,7 @@ public:
 
     /** Base Exception for all backend issues */
     class Exception : public Utilities::Exception { public:
-        Exception(int code) : 
-            Utilities::Exception("Backend Error: Code "+std::to_string(code)){};
+        /** @param message API error message */
         Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message) {}; };
 
@@ -25,27 +24,35 @@ public:
     class Runner
     {
     public:
+        /** Indicates an inability to reach the API endpoint */
         class EndpointException : public Exception { public:
-        EndpointException(int code) : 
-            Exception("Endpoint: Code "+std::to_string(code)) {};
-        EndpointException(const std::string& message) :
-            Exception("Endpoint: "+message) {}; };
+            /** @param code HTTP code returned by the server */
+            EndpointException(int code) : 
+                Exception("Endpoint: Code "+std::to_string(code)) {};
+            /** @param message formatted error message if known */
+            EndpointException(const std::string& message) :
+                Exception("Endpoint: "+message) {}; };
 
+        /** An API file input param */
         struct InputFile
         {
-            std::string name;
-            std::string data;
+            /** File name */ std::string name;
+            /** File data */ std::string data;
         };
 
+        /** A map of input parameter key to string value */
         typedef std::map<std::string, std::string> Params;
+
+        /** A map of input parameter key to input file */
         typedef std::map<std::string, InputFile> Files;
 
+        /** API app-action call parameters */
         struct Input
         {
-            std::string app;    // app name to run
-            std::string action; // app action to run
-            Params params = {}; // map of input parameters
-            Files files = {};   // map of input files
+            /** app name to run */     std::string app;
+            /** app action to run */   std::string action;
+            /** map of input params */ Params params = {};
+            /** map of input files */  Files files = {};
         };
 
         virtual ~Runner(){ };
@@ -67,13 +74,16 @@ public:
 
     /** Exception indicating there was a JSON format error */
     class JSONErrorException : public Exception { public:
+        /** @param error the JSON error message */
         JSONErrorException(const std::string& error) : 
             Exception("JSON Error: "+error) {}; };
 
     /** Exception indicating that the backend did not return the correct # of bytes */
     class ReadSizeException : public Exception { public:
+        /** @param wanted number of bytes expected
+         * @param got number of bytes received */
         ReadSizeException(size_t wanted, size_t got) : Exception(
-            "Read "+std::to_string(got)+" bytes, wanted "+std::to_string(got)) {}; };
+            "Wanted "+std::to_string(wanted)+" bytes, got "+std::to_string(got)) {}; };
 
     /** Andromeda exception indicating the requested operation is invalid */
     class UnsupportedException : public Exception { public:
@@ -82,11 +92,13 @@ public:
     /** Base exception for Andromeda-returned 403 errors */
     class DeniedException : public Exception { public:
         DeniedException() : Exception("Access Denied") {};
+        /** @param message message from backend */
         DeniedException(const std::string& message) : Exception(message) {}; };
 
     /** Base exception for Andromeda-returned 404 errors */
     class NotFoundException : public Exception { public:
         NotFoundException() : Exception("Not Found") {};
+        /** @param message message from backend */
         NotFoundException(const std::string& message) : Exception(message) {}; };
 
     /** Andromeda exception indicating authentication failed */
@@ -99,6 +111,7 @@ public:
 
     /** Andromeda exception indicating the server or FS are read only */
     class ReadOnlyException : public DeniedException { public:
+        /** @param which string describing what is read-only */
         ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
     /** @param runner the Runner to use */
@@ -120,7 +133,9 @@ public:
 
     /** 
      * Creates a new backend session if needed, interactively prompting for input as required 
-     * @param bool forceSession if true, force creating a session even if not needed
+     * @param username username for authentication
+     * @param password optional password for authentication, prompt user if blank
+     * @param forceSession if true, force creating a session even if not needed
      */
     void AuthInteractive(const std::string& username, std::string password = "", bool forceSession = false);
 
@@ -174,14 +189,14 @@ public:
     
     /**
      * Creates a new file
-     * @param id parent folder ID
+     * @param parent parent folder ID
      * @param name name of new file
      */
     nlohmann::json CreateFile(const std::string& parent, const std::string& name);
 
     /**
      * Creates a new folder
-     * @param id parent folder ID
+     * @param parent parent folder ID
      * @param name name of new folder
      */
     nlohmann::json CreateFolder(const std::string& parent, const std::string& name);

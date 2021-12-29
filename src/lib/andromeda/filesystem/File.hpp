@@ -12,6 +12,7 @@
 class Backend;
 class Folder;
 
+/** An Andromeda file */
 class File : public Item
 {
 public:
@@ -26,6 +27,12 @@ public:
 
     virtual Type GetType() const override { return Type::FILE; }
 
+    /**
+     * @brief Construct a File using backend data
+     * @param backend backend reference
+     * @param data JSON data from backend
+     * @param parent reference to parent folder
+     */
     File(Backend& backend, const nlohmann::json& data, Folder& parent);
 
     /**

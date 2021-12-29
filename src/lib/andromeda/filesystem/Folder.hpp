@@ -23,6 +23,7 @@ public:
 
     /** Base Exception for all folder issues */
     class Exception : public Item::Exception { public:
+        /** @param message Folder error string */
         Exception(const std::string& message) :
             Item::Exception("Folder Error: "+message) {}; };
 
@@ -34,6 +35,7 @@ public:
     class NotFolderException : public Exception { public:
         NotFolderException() : Exception("Not a Folder") {}; };
 
+    /** Exception indicating the item was not found */
     class NotFoundException : public Exception { public:
         NotFoundException() : Exception("Not Found") {}; };
 
@@ -41,6 +43,7 @@ public:
     class DuplicateItemException : public Exception { public:
         DuplicateItemException() : Exception("Already Exists") {}; };
 
+    /** Exception indicating the item cannot be modified */
     class ModifyException : public Exception { public:
         ModifyException() : Exception("Immutable Item") {}; };
 
@@ -55,6 +58,7 @@ public:
     /** Load the folder with the given relative path */
     virtual Folder& GetFolderByPath(const std::string& path) final;
 
+    /** Map of sub-item name to Item objects */
     typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;
 
     /** Load the map of child items */

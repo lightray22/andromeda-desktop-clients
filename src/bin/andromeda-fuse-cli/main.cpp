@@ -111,17 +111,17 @@ int main(int argc, char** argv)
             backend.AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
         }
 
-        switch (options.GetMountItemType())
+        switch (options.GetMountRootType())
         {
-            case Options::ItemType::SUPERROOT:
+            case Options::RootType::SUPERROOT:
             {
                 folder = std::make_unique<SuperRoot>(backend); break;
             }
-            case Options::ItemType::FILESYSTEM:
+            case Options::RootType::FILESYSTEM:
             {
                 folder = Filesystem::LoadByID(backend, options.GetMountItemID()); break;
             }
-            case Options::ItemType::FOLDER:
+            case Options::RootType::FOLDER:
             {
                 folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
             }

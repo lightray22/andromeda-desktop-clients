@@ -114,6 +114,7 @@ struct FuseArguments
 
         fuse_opt_free_args(&args); 
     };
+    /** @param arg -o fuse argument */
     void AddArg(const std::string& arg)
     { 
         debug << __func__ << "(arg:" << arg << ")"; debug.Info();
@@ -124,6 +125,7 @@ struct FuseArguments
         if (fuse_opt_add_arg(&args, arg.c_str()) != SUCCESS)
             throw FuseWrapper::Exception("fuse_opt_add_arg()3 failed");
     };
+    /** fuse_args struct */
     struct fuse_args args;
 };
 
@@ -133,6 +135,8 @@ struct FuseArguments
 /** Scope-managed fuse_mount/fuse_unmount */
 struct FuseMount
 {
+    /** @param fargs FuseArguments reference
+     * @param path filesystem path to mount */
     FuseMount(FuseArguments& fargs, const char* path):path(path)
     {
         debug << __func__ << "() fuse_mount()"; debug.Info();
@@ -151,7 +155,9 @@ struct FuseMount
     };
     ~FuseMount(){ Unmount(); };
     
+    /** mounted path */
     const std::string path;
+    /** fuse_chan pointer */
     struct fuse_chan* chan;
 };
 
@@ -159,6 +165,8 @@ struct FuseMount
 /** Scope-managed fuse_new/fuse_destroy */
 struct FuseContext
 {
+    /** @param mount FuseMount reference 
+     * @param fargs FuseArguments reference */
     FuseContext(FuseMount& mount, FuseArguments& fargs):mount(mount)
     { 
         debug << __func__ << "() fuse_new()"; debug.Info();
@@ -175,7 +183,9 @@ struct FuseContext
 
         fuse_destroy(fuse);
     };
+    /** Fuse context pointer */
     struct fuse* fuse;
+    /** Fuse mount reference */
     FuseMount& mount;
 };
 
@@ -185,6 +195,7 @@ struct FuseContext
 /** Scope-managed fuse_new/fuse_destroy */
 struct FuseContext
 {
+    /** @param fargs FuseArguments reference */
     FuseContext(FuseArguments& fargs)
     {
         debug << __func__ << "() fuse_new()"; debug.Info();
@@ -199,6 +210,7 @@ struct FuseContext
         
         fuse_destroy(fuse);
     };
+    /** Fuse context pointer */
     struct fuse* fuse;
 };
 
@@ -206,6 +218,8 @@ struct FuseContext
 /** Scope-managed fuse_mount/fuse_unmount */
 struct FuseMount
 {
+    /** @param context FuseContext reference
+     * @param path filesystem path to mount */
     FuseMount(FuseContext& context, const char* path):fuse(context.fuse)
     {
         debug << __func__ << "() fuse_mount()"; debug.Info();
@@ -219,6 +233,7 @@ struct FuseMount
         
         fuse_unmount(fuse);
     }
+    /** Fuse context pointer */
     struct fuse* fuse;
 };
 
@@ -228,6 +243,7 @@ struct FuseMount
 /** Scope-managed fuse_set/remove_signal_handlers */
 struct FuseSignals
 {
+    /** @param context FuseContext reference */
     FuseSignals(FuseContext& context)
     { 
         debug << __func__ << "() fuse_set_signal_handlers()"; debug.Info();
@@ -243,13 +259,15 @@ struct FuseSignals
 
         fuse_remove_signal_handlers(session); 
     }
+    /** fuse_session pointer */
     struct fuse_session* session;
 };
 
 /*****************************************************/
-/** Scope-managed fuse_loop (print on return) */
+/** Scope-managed fuse event loop - blocks */
 struct FuseLoop
 {
+    /** @param context FUSE context reference */
     FuseLoop(FuseContext& context)
     {
         debug << __func__ << "() fuse_loop()"; debug.Info();

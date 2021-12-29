@@ -8,7 +8,7 @@
 class Backend;
 class Folder;
 
-/** Lists items owned but residing in other users' folders */
+/** A special folder listing items owned but residing in other users' folders */
 class Adopted : public PlainFolder
 {
 public:

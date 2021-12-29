@@ -38,6 +38,7 @@ public:
         return retval;
     }
 
+    /** A vector of strings */
     typedef std::vector<std::string> StringList;
 
     /**
@@ -51,10 +52,13 @@ public:
         std::string str, const std::string& delim, 
         const int max = -1, const size_t skip = 0);
 
+    /** A pair of two strings */
     typedef std::pair<std::string,std::string> StringPair;
 
     /** 
      * Special case of explode with max=1,skip=0 and returns a pair 
+     * @param str string to split
+     * @param delim string separating pieces
      * @param last if true, find last delim else first
      */
     static StringPair split(const std::string& str, 
@@ -63,7 +67,10 @@ public:
     /** Returns true iff str ends with end */
     static bool endsWith(const std::string& str, const std::string& end);
 
+    /** A list of option flags */
     typedef std::list<std::string> Flags;
+
+    /** A map of option key/values */
     typedef std::multimap<std::string, std::string> Options;
 
     /** 
@@ -96,11 +103,11 @@ public:
     /** Debug verbosity */
     enum class Level
     {
-        NONE,    /** Debug off */
-        ERRORS,  /** Only show Error()s */
-        BACKEND, /** Also show Backend */
-        INFO,    /** Everything else */
-        DETAILS  /** Show extra details */
+        /** Debug off */          NONE,    
+        /** Only show Error()s */ ERRORS,  
+        /** Also show Backend */  BACKEND, 
+        /** Everything else */    INFO,    
+        /** Show extra details */ DETAILS  
     };
 
     /**

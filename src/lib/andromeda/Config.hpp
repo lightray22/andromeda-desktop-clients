@@ -14,38 +14,46 @@ class Config
 public:
     Config();
     
+    /** The Major API version this client works with */
     static constexpr int API_VERSION = 2;
 
     /** Base exception for Config exceptions */
     class Exception : public Utilities::Exception { public:
+        /** @param message error message string */
         Exception(const std::string& message) :
             Utilities::Exception("Config Error: "+message){}; };
 
     /** Exception indicating the API version is not supported */
     class APIVersionException : public Exception { public:
+        /** @param version the backend's version */
         APIVersionException(int version) : 
             Exception("API Version is "+std::to_string(version)+
                     ", require "+std::to_string(API_VERSION)){}; };
 
     /** Exception indicating a required app is missing */
     class AppMissingException : public Exception { public:
+        /** @param appname name of the app that is missing */
         AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
     /** Client-based backend options */
     struct Options
     {
+        /** Client cache modes (debug) */
         enum class CacheType
         {
-            NONE,   // read/write directly to server
-            MEMORY, // never contact server (testing)
-            NORMAL  // normal read/write in pages
+            /** read/write directly to server */  NONE,
+            /** never contact server (testing) */ MEMORY,
+            /** normal read/write in pages */     NORMAL
         };
 
+        /** The client cache type (debug) */
         CacheType cacheType = CacheType::NORMAL;
+        /** The file data page size */
         size_t pageSize = 1024*1024; // 1M
+        /** Whether we are in read-only mode */
         bool readOnly = false;
-        
+        /** The time period to use for refreshing API data */
         std::chrono::seconds refreshTime = std::chrono::seconds(15);
     };
 

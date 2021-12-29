@@ -33,8 +33,10 @@ public:
 
     virtual ~Item(){};
 
+    /** API date format */
     typedef double Date;
 
+    /** Concrete item types */
     enum class Type { FILE, FOLDER };
 
     /** Returns the FS type */
@@ -111,19 +113,31 @@ protected:
     /** Item type-specific move */
     virtual void SubMove(Folder& parent, bool overwrite) = 0;
     
+    /** Reference to the API backend */
     Backend& backend;
 
+    /** Pointer to parent folder */
     Folder* parent = nullptr;
 
+    /** Pointer to filesystem config */
     const FSConfig* fsConfig = nullptr;
 
+    /** Backend object ID */
     std::string id;
+
+    /** Name of the item */
     std::string name;
 
+    /** Size of the item in bytes */
     size_t size = 0;
 
+    /** Item creation timestamp */
     Date created = 0;
+
+    /** Item modified timestamp */
     Date modified = 0;
+
+    /** Item accessed timestamp */
     Date accessed = 0;
 
 private:

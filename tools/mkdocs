@@ -1,0 +1,12 @@
+#!/bin/bash
+
+(cd src; find . -maxdepth 2 -mindepth 2 -type d) | while read -r d; do
+   mkdir -p docs/$d
+   doxygen src/$d/Doxyfile || exit $?
+done
+
+if [ "$1" == latex ]; then
+   (find . -iname latex) | while read -r d; do
+      (cd $d; make)
+   done
+fi
