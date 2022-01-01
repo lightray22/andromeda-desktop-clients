@@ -13,7 +13,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::
 
     nlohmann::json data(backend.GetFolder(id));
 
-    return std::make_unique<PlainFolder>(backend, &data);
+    return std::make_unique<PlainFolder>(backend, &data, nullptr, true);
 }
 
 /*****************************************************/
