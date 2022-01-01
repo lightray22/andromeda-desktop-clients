@@ -101,7 +101,7 @@ The `--cachemode enum` option is also useful for debugging caching.
 
 ## License
 
-Andromeda including all source code and any documentation are copyrighted by the author. Use of this repository and source code is licensed under the AGPLv3. Contributors agree that any contributions made to the repository are issued under this license. Commercial licenses can be obtained separately.
+Andromeda including all source code, documentation, and APIs are copyrighted by the author.  Use of any code is licensed under the GNU GPL Version 3.  Use of any documentation (wiki, readme, etc.) is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 (CC BY-NC-SA 3.0) license.  Alternative commercial licenses for either can be obtained separately.  Contributors agree that all contributions are made under the existing license.
 
 ## Doxygen
 
