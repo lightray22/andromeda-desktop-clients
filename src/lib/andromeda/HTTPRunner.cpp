@@ -65,17 +65,22 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
     {
         httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
 
-        if (!response) 
+        if (!response || response->status >= 500) 
         {
             if (attempt <= options.maxRetries && this->canRetry)
             {
-                debug << __func__ << "()... " << httplib::to_string(response.error()) 
-                    << " error, attempt " << attempt+1 << " of " << options.maxRetries+1; debug.Error();
+                debug << __func__ << "()... ";
+                
+                if (response) debug << "HTTP " << response->status;
+                else debug << httplib::to_string(response.error());
+
+                debug << " error, attempt " << attempt+1 << " of " << options.maxRetries+1; debug.Error();
 
                 std::this_thread::sleep_for(options.retryTime); continue;
             }
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
+            else if (response) throw EndpointException(response->status);
             else throw Exception(response.error());
         }
 
