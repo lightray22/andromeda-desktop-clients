@@ -3,4 +3,5 @@
 	url = https://github.com/yhirose/cpp-httplib.git
 [submodule "src/lib/andromeda/thirdparty/reproc"]
 	path = src/lib/andromeda/thirdparty/reproc
-	url = https://github.com/DaanDeMeyer/reproc
+#	url = https://github.com/DaanDeMeyer/reproc
+	url = https://github.com/lightray22/reproc
