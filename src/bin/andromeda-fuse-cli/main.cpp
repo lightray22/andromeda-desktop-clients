@@ -13,10 +13,10 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
-#include "filesystem/Folder.hpp"
-#include "filesystem/folders/PlainFolder.hpp"
-#include "filesystem/folders/Filesystem.hpp"
-#include "filesystem/folders/SuperRoot.hpp"
+#include "fsitems/Folder.hpp"
+#include "fsitems/folders/PlainFolder.hpp"
+#include "fsitems/folders/Filesystem.hpp"
+#include "fsitems/folders/SuperRoot.hpp"
 
 #define VERSION "0.1-alpha"
 

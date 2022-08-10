@@ -23,7 +23,7 @@ target_include_directories(andromeda
 
 target_compile_options(andromeda PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
-add_subdirectory(filesystem)
+add_subdirectory(fsitems)
 
 # include/link libhttplib
 

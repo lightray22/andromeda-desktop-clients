@@ -17,9 +17,9 @@
 #include "FuseWrapper.hpp"
 #include "HTTPRunner.hpp"
 #include "Backend.hpp"
-#include "filesystem/Item.hpp"
-#include "filesystem/File.hpp"
-#include "filesystem/Folder.hpp"
+#include "fsitems/Item.hpp"
+#include "fsitems/File.hpp"
+#include "fsitems/Folder.hpp"
 
 static Debug debug("FuseWrapper");
 static Folder* rootPtr = nullptr;
