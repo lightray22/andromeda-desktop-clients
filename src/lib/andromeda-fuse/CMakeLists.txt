@@ -20,7 +20,6 @@ target_compile_options(andromeda-fuse PRIVATE -Wall -Wextra
 
 # include/link libandromeda
 
-add_subdirectory(../andromeda andromeda)
 target_link_libraries(andromeda-fuse PRIVATE andromeda)
 
 # include/link libfuse

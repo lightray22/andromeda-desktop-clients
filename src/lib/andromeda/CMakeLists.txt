@@ -58,4 +58,4 @@ target_link_libraries(andromeda INTERFACE reproc++)
 
 set(JSON_ImplicitConversions "OFF")
 find_package(nlohmann_json 3 REQUIRED)
-target_link_libraries(andromeda PUBLIC nlohmann_json)
+target_link_libraries(andromeda INTERFACE nlohmann_json)

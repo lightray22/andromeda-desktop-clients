@@ -14,6 +14,5 @@ target_compile_options(andromeda-fuse-cli PRIVATE -Wall -Wextra
 
 # include/link libandromeda-fuse
 
-add_subdirectory(../../lib/andromeda-fuse andromeda-fuse)
 target_link_libraries(andromeda-fuse-cli PRIVATE andromeda-fuse)
 target_link_libraries(andromeda-fuse-cli PRIVATE andromeda)
