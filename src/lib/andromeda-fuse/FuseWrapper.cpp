@@ -5,7 +5,6 @@
 
 #if USE_FUSE2
 #define FUSE_USE_VERSION 26
-#define _FILE_OFFSET_BITS 64
 #include <fuse/fuse.h>
 #include <fuse/fuse_lowlevel.h>
 #else

@@ -24,7 +24,7 @@ string Options::HelpText()
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
-           << "Local Mount:     -m|--mount path" << endl
+           << "Local Mount:     -m|--mountpath path" << endl
            << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath [path])" << endl << endl
 
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 project(libandromeda)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -21,7 +21,12 @@ target_sources(andromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_compile_options(andromeda PRIVATE -Wall -Wextra -Wno-unused-parameter)
+target_compile_options(andromeda PRIVATE -Wall -Wextra
+    -Wno-unused-parameter)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(andromeda PRIVATE -Wno-psabi)
+endif()
 
 add_subdirectory(fsitems)
 

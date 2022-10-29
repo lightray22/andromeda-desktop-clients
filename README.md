@@ -15,7 +15,7 @@ To build only a specific app, go to src/bin/(app), then create the build folder 
 ### Build System
 
 - C++17 compiler (GCC 8+ or Clang 5+)
-- cmake (>= 3.18)
+- cmake (>= 3.16)
 - Python3
 
 ### Libraries

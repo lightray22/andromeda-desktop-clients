@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 project(libandromeda-fuse)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -15,7 +15,8 @@ target_include_directories(andromeda-fuse
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_options(andromeda-fuse PRIVATE -Wall -Wextra 
-    -Wno-unused-parameter -Wno-missing-field-initializers)
+    -Wno-unused-parameter -Wno-missing-field-initializers 
+    -D_FILE_OFFSET_BITS=64)
 
 # include/link libandromeda
 
