@@ -1,16 +1,28 @@
 
-This repo contains the desktop applications and common libraries for Andromeda's file storage API. 
+* [Overview](#overview)
+* [libandromeda](#libandromeda)
+* [FUSE Client](#fuse-client)
+* [Development](#development)
 
-# Libraries
+# Overview
 
-## Building
+This repo contains the desktop applications and common libraries for Andromeda's web-based file storage API.  All require that the server have the core, accounts, and files apps active.  
+
+### Targets
+
+There are several binaries and libraries in the full suite.  To build one individually, go to its build subdirectory after running cmake, before building.  By default, all targets will be built (see the preqrequisites sections for each!).  
+
+- `src/lib/andromeda` the core library that implements communication with the server`
+- `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
+- FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
+- FUTURE `src/bin/andromeda-gui` a Qt-based client for FUSE and directory sync, depends on all 3 libraries
+
+### Building
 
 1. Get submodules `git submodule update --init`
 2. Make build folder `mkdir build; cd build`
 3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 4. Run compile `cmake --build .`
-
-To build only a specific app, go to src/bin/(app), then create the build folder and run the build from there.
 
 ### Build System
 
@@ -18,9 +30,25 @@ To build only a specific app, go to src/bin/(app), then create the build folder 
 - cmake (>= 3.16)
 - Python3
 
+### Supported Platforms
+
+The following platforms are targeted for support and known to work
+- Ubuntu 20.04 amd64: `apt install make cmake g++ python3` (cmake 3.16, GCC 9.4, python 3.8)
+- Ubuntu 22.10 amd64: `apt install make cmake g++ python3` (cmake 3.24, GCC 12.2, python 3.10)
+- Debian 11 armhf: `apt install make cmake g++ python3` (cmake 3.18, GCC 10.2, python 3.9)
+- Arch Linux amd64: `pacman -S make cmake gcc python` (cmake 3.24, GCC 12.2, python 3.10)
+- Alpine Linux amd64: `apk add make cmake g++ python3` (cmake 3.23, GCC 11.2, python 3.10)
+- FreeBSD amd64: `pkg install cmake python`
+  - FreeBSD 12.3 (cmake 3.23, Clang 10.0, python 3.9)
+  - FreeBSD 13.1 (cmake 3.23, Clang 13.0, python 3.9)
+- (FUTURE) macOS amd64: `brew install make cmake python?`
+
+
+# libandromeda
+
 ### Libraries
 
-- OpenSSL (1.1.1) (libssl, libcrypto)
+- OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
 - nlohmann-json (3.x) https://github.com/nlohmann/json
 
 libssl, libcrypto are dynamically linked so they must be available at runtime.
@@ -29,16 +57,18 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### OS Examples
 
-- Ubuntu: `apt install make cmake g++ nlohmann-json3-dev libssl-dev libcrypt-dev`
-- Manjaro: `pacman -S make cmake gcc nlohmann-json3`
-- Alpine: `apk add make cmake g++ nlohmann-json openssl-dev`
-- FreeBSD: `pkg install cmake nlohmann-json`
-- macOS: `brew install make cmake nlohmann-json openssl@1.1`
+- Debian/Ubuntu: `apt install nlohmann-json3-dev libssl-dev libcrypt-dev` 
+  - Ubuntu 20.04 (nlohmann 3.7, openssl 1.1.1f)
+  - Ubuntu 22.10 (nlohmann 3.11, openssl 3.0.5)
+- Arch/Manjaro: `pacman -S nlohmann-json openssl` (nlohmann 3.11, openssl 1.1.1q)
+- Alpine: `apk add nlohmann-json openssl-dev` (nlohmann 3.10, openssl 1.1.1q)
+- FreeBSD: `pkg install nlohmann-json`
+  - FreeBSD 12: (nlohmann 3.10, openssl 1.1.1l)
+  - FreeBSD 13: (nlohmann 3.10, openssl 1.1.1o)
+- (FUTURE) macOS: `brew install nlohmann-json openssl@1.1`
 
 
 # FUSE Client
-
-Supports Linux, FreeBSD, macOS.  Located in `src/bin/andromeda-fuse-cli`.
 
 Run `./andromeda-fuse-cli --help` to see the available options.
 Authentication details (password, twofactor) will be prompted for interactively as required.
@@ -68,19 +98,19 @@ on the command line in cleartext.
 
 ### Libraries
 
-- libfuse (3.x >= 3.10) https://github.com/libfuse/libfuse
-    - If you need to use FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
-    - for macOS, use OSXFUSE https://github.com/osxfuse/fuse
-        - Install from https://osxfuse.github.io/
+- libfuse (3.x >= 3.9 or 2.x >= 2.9) https://github.com/libfuse/libfuse
+    - To compile with FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
+    - for macOS, use OSXFUSE https://osxfuse.github.io/
 
 libfuse is dynamically linked so it must be available at runtime.
 
 ### OS Examples
 
-- Ubuntu: `apt install fuse3 libfuse3-dev`
-- Manjaro: `pacman -S fuse3`
-- Alpine: `apk add make fuse3 fuse3-dev`
-- FreeBSD: `pkg install fusefs-libs3`
+- Ubuntu 20.04: `apt install fuse libfuse-dev` (fuse 2.9)
+- Ubuntu 22.10: `apt install fuse3 libfuse3-dev` (fuse 3.11)
+- Arch/Manjaro: `pacman -S fuse3` (fuse 3.12)
+- Alpine: `apk add fuse3 fuse3-dev` (fuse 3.11)
+- FreeBSD: `pkg install fusefs-libs3` (fuse 3.11)
 
 Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m myuser`, and enable user mounting with `sysctl vfs.usermount=1`.  
 
@@ -98,6 +128,7 @@ The `--cachemode enum` option is also useful for debugging caching.
 - none - turns off caching and sends every read/write to the server (slow!)
 - memory - never reads/writes the server, only memory (data loss!)
 - normal - the normal mode of cache operation
+
 
 # Development
 
