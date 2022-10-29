@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #target_compile_options(andromeda-fuse-cli PRIVATE -Wall -Wextra
 #    -Wno-unused-parameter)
 
-# include/link libandromeda-sync
+# include/link libandromeda
 
 #target_link_libraries(andromeda-gui PRIVATE andromeda-fuse)
 #target_link_libraries(andromeda-gui PRIVATE andromeda-sync)
