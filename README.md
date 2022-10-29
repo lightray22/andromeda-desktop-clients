@@ -12,10 +12,10 @@ This repo contains the desktop applications and common libraries for Andromeda's
 
 There are several binaries and libraries in the full suite.  To build one individually, go to its build subdirectory after running cmake, before building.  By default, all targets will be built (see the preqrequisites sections for each!).  
 
-- `src/lib/andromeda` the core library that implements communication with the server`
+- `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
 - FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
-- FUTURE `src/bin/andromeda-gui` a Qt-based client for FUSE and directory sync, depends on all 3 libraries
+- FUTURE `src/bin/andromeda-gui` a Qt-based client for FUSE and directory sync (depends on all libraries)
 
 ### Building
 
@@ -32,16 +32,17 @@ There are several binaries and libraries in the full suite.  To build one indivi
 
 ### Supported Platforms
 
-The following platforms are targeted for support and known to work
-- Ubuntu 20.04 amd64: `apt install make cmake g++ python3` (cmake 3.16, GCC 9.4, python 3.8)
-- Ubuntu 22.10 amd64: `apt install make cmake g++ python3` (cmake 3.24, GCC 12.2, python 3.10)
-- Debian 11 armhf: `apt install make cmake g++ python3` (cmake 3.18, GCC 10.2, python 3.9)
+The following platforms are targeted for support and should work:
+- Debian/Ubuntu: `apt install make cmake g++ python3`
+  - Ubuntu 20.04 amd64 (cmake 3.16, GCC 9.4, python 3.8)
+  - Ubuntu 22.10 amd64 (cmake 3.24, GCC 12.2, python 3.10)
+  - Debian 11 armhf (cmake 3.18, GCC 10.2, python 3.9)
 - Arch Linux amd64: `pacman -S make cmake gcc python` (cmake 3.24, GCC 12.2, python 3.10)
 - Alpine Linux amd64: `apk add make cmake g++ python3` (cmake 3.23, GCC 11.2, python 3.10)
 - FreeBSD amd64: `pkg install cmake python`
   - FreeBSD 12.3 (cmake 3.23, Clang 10.0, python 3.9)
   - FreeBSD 13.1 (cmake 3.23, Clang 13.0, python 3.9)
-- (FUTURE) macOS amd64: `brew install make cmake python?`
+- (FUTURE) macOS amd64: `brew install make cmake python`?
 
 
 # libandromeda
