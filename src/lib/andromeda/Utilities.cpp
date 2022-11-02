@@ -214,3 +214,24 @@ void Debug::Error(const std::string& str)
     }
     else out << str << std::endl;
 }
+
+/*****************************************************/
+void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
+{
+    this->buffer << "printing " << bytes << " bytes at " 
+        << std::hex << ptr << std::endl;
+
+    for (size_t i = 0; i < bytes; i++)
+    {
+        unsigned char* byte = (unsigned char*)ptr+i;
+        
+        if (i % width == 0) this->buffer << (void*)byte << ": ";
+        
+        this->buffer << std::setw(2) << std::setfill('0') 
+            << (unsigned)(*byte) << " ";
+
+        if (i % width == width-1) this->buffer << std::endl;
+    }
+
+    this->buffer << std::endl;
+}

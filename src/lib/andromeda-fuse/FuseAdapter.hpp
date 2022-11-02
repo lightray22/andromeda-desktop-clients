@@ -9,7 +9,7 @@
 class Folder;
 
 /** Static class for FUSE operations */
-class FuseWrapper
+class FuseAdapter
 {
 public:
 
@@ -36,11 +36,18 @@ public:
     };
 
     /**
-     * Starts FUSE
+     * Starts and mounts libfuse
      * @param root andromeda folder as root
      * @param options command line options
+     * @param daemonize if true, fuse_daemonize
      */
-    static void Start(Folder& root, const Options& options);
+    FuseAdapter(Folder& root, const Options& options, bool daemonize);
+
+    /** Returns the root folder */
+    Folder& GetRootFolder(){ return rootFolder; }
+
+    /** Returns the FUSE options */
+    const Options& GetOptions(){ return options; }
 
     /** Print help text to stdout */
     static void ShowHelpText();
@@ -50,7 +57,8 @@ public:
 
 private:
 
-    FuseWrapper() = delete; // static only
+    Folder& rootFolder;
+    const Options& options;
 };
 
 #endif

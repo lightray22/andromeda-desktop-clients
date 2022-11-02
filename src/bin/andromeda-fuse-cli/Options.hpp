@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "Config.hpp"
-#include "FuseWrapper.hpp"
+#include "FuseAdapter.hpp"
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
@@ -66,7 +66,7 @@ public:
      * @param fOpts FUSE options ref to fill
      * @param hOpts HTTPRunner options ref to fill (if applicable)
      */
-    Options(Config::Options& cOpts, FuseWrapper::Options& fOpts, HTTPRunner::Options& hOpts);
+    Options(Config::Options& cOpts, FuseAdapter::Options& fOpts, HTTPRunner::Options& hOpts);
 
     /** Parses command line arguments from main */
     void ParseArgs(int argc, char** argv);
@@ -140,7 +140,7 @@ private:
     void LoadFrom(const Utilities::Flags& flags, const Utilities::Options options);
 
     Config::Options& cOptions;
-    FuseWrapper::Options& fOptions;
+    FuseAdapter::Options& fOptions;
     HTTPRunner::Options& hOptions;
 
     Debug::Level debugLevel = Debug::Level::NONE;

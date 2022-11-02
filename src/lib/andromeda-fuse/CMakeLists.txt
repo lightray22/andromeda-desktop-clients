@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(andromeda-fuse)
 
-set(SOURCE_FILES FuseWrapper.cpp)
+set(SOURCE_FILES FuseAdapter.cpp)
 
 target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse

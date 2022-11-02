@@ -141,6 +141,14 @@ public:
      */
     void Error(const std::string& str = "");
 
+    /**
+     * Adds a struct as hex bytes to the buffer
+     * @param ptr address of struct to print
+     * @param bytes number of bytes to print
+     * @param width number of bytes per line
+     */
+    void DumpBytes(const void* ptr, size_t bytes, size_t width = 16);
+
     /** Append to an internal buffer that can be shown with an empty Print */
     template <class T> Debug& operator<<(const T& dat)
     {

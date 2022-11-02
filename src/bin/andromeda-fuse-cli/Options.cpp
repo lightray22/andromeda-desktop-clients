@@ -39,7 +39,7 @@ string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& cOpts, FuseWrapper::Options& fOpts, HTTPRunner::Options& hOpts) : 
+Options::Options(Config::Options& cOpts, FuseAdapter::Options& fOpts, HTTPRunner::Options& hOpts) : 
     cOptions(cOpts), fOptions(fOpts), hOptions(hOpts) { }
 
 /*****************************************************/

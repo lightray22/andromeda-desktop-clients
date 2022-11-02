@@ -7,7 +7,7 @@
 #include <cstdlib>
 
 #include "Options.hpp"
-#include "FuseWrapper.hpp"
+#include "FuseAdapter.hpp"
 
 #include "CLIRunner.hpp"
 #include "HTTPRunner.hpp"
@@ -33,7 +33,7 @@ int main(int argc, char** argv)
     Debug debug("main"); 
     
     Config::Options cOptions;
-    FuseWrapper::Options fOptions;
+    FuseAdapter::Options fOptions;
     HTTPRunner::Options hOptions;
 
     Options options(cOptions, fOptions, hOptions);
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     {
         std::cout << "version: " << VERSION << std::endl;
         std::cout << "a2lib-version: " << A2LIBVERSION << std::endl;
-        FuseWrapper::ShowVersionText();
+        FuseAdapter::ShowVersionText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::Exception& ex)
@@ -138,14 +138,14 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseWrapper::Start(*folder, fOptions);
+        FuseAdapter fuseAdapter(*folder, fOptions, true);
     }
-    catch (const FuseWrapper::Exception& ex)
+    catch (const FuseAdapter::Exception& ex)
     {
         std::cout << ex.what() << std::endl;
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
-    debug.Info("returning...");
+    debug.Info("returning success...");
     return static_cast<int>(ExitCode::SUCCESS);
 }
