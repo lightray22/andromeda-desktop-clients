@@ -1,5 +1,5 @@
-#ifndef FUSEWRAPPER_H_
-#define FUSEWRAPPER_H_
+#ifndef FUSEADAPTER_H_
+#define FUSEADAPTER_H_
 
 #include <string>
 #include <list>
@@ -61,4 +61,4 @@ private:
     const Options& options;
 };
 
-#endif
+#endif // FUSEADAPTER_H

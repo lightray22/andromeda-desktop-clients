@@ -1,21 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
-project(libandromeda-fuse)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # build the andromeda-fuse library
 
 add_library(andromeda-fuse)
 
-set(SOURCE_FILES FuseAdapter.cpp)
+set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp a2fuse_ops.c)
 
 target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_compile_options(andromeda-fuse PRIVATE -Wall -Wextra 
-    -Wno-unused-parameter -Wno-missing-field-initializers 
+target_compile_options(andromeda-fuse PRIVATE ${ANDROMEDA_COMPILE_OPTS}
     -D_FILE_OFFSET_BITS=64)
 
 # include/link libandromeda
