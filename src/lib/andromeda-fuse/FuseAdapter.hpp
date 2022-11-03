@@ -16,7 +16,7 @@ public:
     /** Base Exception for all FUSE issues */
     class Exception : public Utilities::Exception { public:
         /** @param message FUSE error message */
-        Exception(const std::string& message) :
+        explicit Exception(const std::string& message) :
             Utilities::Exception("FUSE Error: "+message) {}; };
 
     /** FUSE wrapper options */

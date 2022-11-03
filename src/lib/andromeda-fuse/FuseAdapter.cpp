@@ -153,7 +153,7 @@ struct FuseMount
 struct FuseSignals
 {
     /** @param context FuseContext reference */
-    FuseSignals(FuseContext& context)
+    explicit FuseSignals(FuseContext& context)
     { 
         debug << __func__ << "() fuse_set_signal_handlers()"; debug.Info();
 
@@ -177,7 +177,7 @@ struct FuseSignals
 struct FuseLoop
 {
     /** @param context FUSE context reference */
-    FuseLoop(FuseContext& context)
+    explicit FuseLoop(FuseContext& context)
     {
         debug << __func__ << "() fuse_loop()"; debug.Info();
 

@@ -8,4 +8,6 @@ cppcheck --project=compile_commands.json \
     -i thirdparty --quiet --std=c++17 \
     --suppress="*:*/thirdparty/*" \
     --suppress=missingIncludeSystem \
+    --suppress=unreadVariable \
+    --suppress=unusedFunction \
     --enable=style,performance,portability,information $@
