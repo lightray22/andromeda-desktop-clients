@@ -73,7 +73,7 @@ private:
 
     struct Page
     {
-        Page(size_t pageSize) : data(pageSize){}
+        explicit Page(size_t pageSize) : data(pageSize){}
         typedef std::vector<std::byte> Data; Data data;
         bool dirty = false;
     };

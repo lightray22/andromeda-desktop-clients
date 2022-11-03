@@ -45,11 +45,11 @@ void Item::Refresh(const nlohmann::json& data)
 
         debug << __func__ << "... name:" << this->name; debug.Info();
 
-        const nlohmann::json& modified(data.at("dates").at("modified"));
-        if (!modified.is_null()) modified.get_to(this->modified);
+        const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
+        if (!modifiedJ.is_null()) modifiedJ.get_to(this->modified);
 
-        const nlohmann::json& accessed(data.at("dates").at("accessed"));
-        if (!accessed.is_null()) accessed.get_to(this->accessed);
+        const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
+        if (!accessedJ.is_null()) accessedJ.get_to(this->accessed);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

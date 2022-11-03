@@ -226,19 +226,19 @@ nlohmann::json Backend::GetConfigJ()
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    nlohmann::json config;
+    nlohmann::json configJ;
 
     {
         Runner::Input input {"core", "getconfig"};
-        config["core"] = GetJSON(RunAction(input));
+        configJ["core"] = GetJSON(RunAction(input));
     }
 
     {
         Runner::Input input {"files", "getconfig"};
-        config["files"] = GetJSON(RunAction(input));
+        configJ["files"] = GetJSON(RunAction(input));
     }
 
-    return config;
+    return configJ;
 }
 
 /*****************************************************/

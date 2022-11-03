@@ -140,3 +140,7 @@ Andromeda including all source code, documentation, and APIs are copyrighted by 
 ## Doxygen
 
 Use the `tools/mkdocs` script from the repo root to generate documentation using Doxygen.  It will output separately for each bin/lib subdirectory.  This requires `doxygen` and `graphviz`.  Use `tools/mkdocs latex` to generate LaTEX PDFs - requires `doxygen-latex`.  
+
+## CppCheck
+
+Static analysis is done with the `tools/analyze` script which runs cmake and cppcheck.

@@ -17,7 +17,7 @@ public:
     /** Base Exception for all backend issues */
     class Exception : public Utilities::Exception { public:
         /** @param message API error message */
-        Exception(const std::string& message) :
+        explicit Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message) {}; };
 
     /** Implements the actual external call to the API */
@@ -27,10 +27,10 @@ public:
         /** Indicates an inability to reach the API endpoint */
         class EndpointException : public Exception { public:
             /** @param code HTTP code returned by the server */
-            EndpointException(int code) : 
+            explicit EndpointException(int code) : 
                 Exception("Endpoint: Code "+std::to_string(code)) {};
             /** @param message formatted error message if known */
-            EndpointException(const std::string& message) :
+            explicit EndpointException(const std::string& message) :
                 Exception("Endpoint: "+message) {}; };
 
         /** An API file input param */
@@ -75,14 +75,14 @@ public:
     /** Exception indicating there was a JSON format error */
     class JSONErrorException : public Exception { public:
         /** @param error the JSON error message */
-        JSONErrorException(const std::string& error) : 
+        explicit JSONErrorException(const std::string& error) : 
             Exception("JSON Error: "+error) {}; };
 
     /** Exception indicating that the backend did not return the correct # of bytes */
     class ReadSizeException : public Exception { public:
         /** @param wanted number of bytes expected
          * @param got number of bytes received */
-        ReadSizeException(size_t wanted, size_t got) : Exception(
+        explicit ReadSizeException(size_t wanted, size_t got) : Exception(
             "Wanted "+std::to_string(wanted)+" bytes, got "+std::to_string(got)) {}; };
 
     /** Andromeda exception indicating the requested operation is invalid */
@@ -93,13 +93,13 @@ public:
     class DeniedException : public Exception { public:
         DeniedException() : Exception("Access Denied") {};
         /** @param message message from backend */
-        DeniedException(const std::string& message) : Exception(message) {}; };
+        explicit DeniedException(const std::string& message) : Exception(message) {}; };
 
     /** Base exception for Andromeda-returned 404 errors */
     class NotFoundException : public Exception { public:
         NotFoundException() : Exception("Not Found") {};
         /** @param message message from backend */
-        NotFoundException(const std::string& message) : Exception(message) {}; };
+        explicit NotFoundException(const std::string& message) : Exception(message) {}; };
 
     /** Andromeda exception indicating authentication failed */
     class AuthenticationFailedException : public DeniedException { public:
@@ -112,10 +112,10 @@ public:
     /** Andromeda exception indicating the server or FS are read only */
     class ReadOnlyException : public DeniedException { public:
         /** @param which string describing what is read-only */
-        ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
+        explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
     /** @param runner the Runner to use */
-    Backend(Runner& runner);
+    explicit Backend(Runner& runner);
 
     virtual ~Backend();
 

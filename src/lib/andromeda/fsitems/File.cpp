@@ -58,10 +58,12 @@ void File::Refresh(const nlohmann::json& data)
     // get new max size = max(server size, dirty byte) and purge extra pages
     for (PageMap::reverse_iterator it = pages.rbegin(); it != pages.rend(); )
     {
-        size_t pageStart = it->first * pageSize; Page& page(it->second);
+        size_t pageStart = it->first * pageSize;
 
         if (pageStart >= this->backendSize)
         {
+            Page& page(it->second);
+
             // dirty pages will extend the file again when written
             if (page.dirty) { maxDirty = std::min(this->size, pageStart + pageSize); break; }
 
@@ -128,19 +130,19 @@ File::Page& File::GetPage(const size_t index, const size_t minsize)
     if (it == pages.end())
     {
         const size_t offset = index*this->pageSize;
-        const size_t rsize = std::min(this->size-offset, this->pageSize);
+        const size_t readsize = std::min(this->size-offset, this->pageSize);
         
-        debug << __func__ << "()... index:" << index << " offset:" << offset << " rsize:" << rsize; debug.Info();
+        debug << __func__ << "()... index:" << index << " offset:" << offset << " readsize:" << readsize; debug.Info();
 
-        bool hasData = rsize > 0 && offset < this->backendSize;
+        bool hasData = readsize > 0 && offset < this->backendSize;
 
-        const std::string data(hasData ? backend.ReadFile(GetID(), offset, rsize) : "");
+        const std::string data(hasData ? backend.ReadFile(GetID(), offset, readsize) : "");
 
         // for the first page we keep it minimal to save memory on small files
         // for subsequent pages we allocate the full size ahead of time for speed
-        const size_t pageSize = (index == 0) ? rsize : this->pageSize;
+        const size_t pageSizeI = (index == 0) ? readsize : this->pageSize;
 
-        it = pages.emplace(index, pageSize).first;
+        it = pages.emplace(index, pageSizeI).first;
 
         char* buf = reinterpret_cast<char*>(it->second.data.data());
 
@@ -162,7 +164,7 @@ void File::FlushCache(bool nothrow)
 
     debug << this->name << ":" << __func__ << "()"; debug.Info();
 
-    for (PageMap::iterator it = pages.begin(); it != pages.end(); it++)
+    for (PageMap::iterator it = pages.begin(); it != pages.end(); ++it)
     {
         const size_t index(it->first); Page& page(it->second);
 
@@ -304,6 +306,6 @@ void File::Truncate(const size_t size)
         {
             it = pages.erase(it); // remove past end
         }
-        else it++; // move to next page
+        else ++it; // move to next page
     }
 }

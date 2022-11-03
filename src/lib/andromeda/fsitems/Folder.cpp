@@ -29,7 +29,7 @@ Item& Folder::GetItemByPath(std::string path)
     // iteratively (not recursively) find the correct parent/subitem
     Folder* parent = this; 
     for (Utilities::StringList::iterator pIt = parts.begin(); 
-        pIt != parts.end(); pIt++ )
+        pIt != parts.end(); ++pIt )
     {
         const ItemMap& items = parent->GetItems();
         ItemMap::const_iterator it = items.find(*pIt);
@@ -146,7 +146,7 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
         {
             oldIt = this->itemMap.erase(oldIt); // deleted on server
         }
-        else oldIt++;
+        else ++oldIt;
     }
 }
 

@@ -23,21 +23,6 @@ public:
     class Exception : public std::runtime_error { 
         using std::runtime_error::runtime_error; };
 
-    /**
-     * Collapse an array into a string
-     * @param arr container with strings
-     * @param delim character to put between entries
-     * @return imploded string
-     */ 
-    template <class T>
-    static std::string implode(T arr, const std::string& delim)
-    {
-        std::string retval;
-        for (const std::string& piece : arr) 
-            retval += piece;
-        return retval;
-    }
-
     /** A vector of strings */
     typedef std::vector<std::string> StringList;
 
@@ -114,7 +99,7 @@ public:
      * @param prefix to use for all prints
      * @param addr address to print with details
      */
-    Debug(const std::string& prefix, void* addr = nullptr) : 
+    explicit Debug(const std::string& prefix, void* addr = nullptr) : 
         addr(addr), prefix(prefix) { }
 
     /** Returns the configured global debug level */

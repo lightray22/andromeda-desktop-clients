@@ -223,12 +223,12 @@ void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
 
     for (size_t i = 0; i < bytes; i++)
     {
-        unsigned char* byte = (unsigned char*)ptr+i;
+        const uint8_t* byte = static_cast<const uint8_t*>(ptr)+i;
         
-        if (i % width == 0) this->buffer << (void*)byte << ": ";
+        if (i % width == 0) this->buffer << static_cast<const void*>(byte) << ": ";
         
-        this->buffer << std::setw(2) << std::setfill('0') 
-            << (unsigned)(*byte) << " ";
+        // need to cast to a 16-bit integer so it gets printed as a number not a character
+        this->buffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
 
         if (i % width == width-1) this->buffer << std::endl;
     }

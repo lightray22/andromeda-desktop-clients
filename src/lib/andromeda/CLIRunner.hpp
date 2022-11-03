@@ -16,11 +16,11 @@ public:
     /** Exception indicating the CLI runner had an error */
     class Exception : public EndpointException { public: 
         /** @param msg error message string */
-        Exception(const std::string& msg) : 
+        explicit Exception(const std::string& msg) : 
             EndpointException("Subprocess Error: "+msg) {} };
 
     /** @param apiPath path to the API index.php */
-    CLIRunner(const std::string& apiPath);
+    explicit CLIRunner(const std::string& apiPath);
 
     virtual std::string RunAction(const Input& input) override;
 

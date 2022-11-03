@@ -24,7 +24,7 @@ public:
     /** Base Exception for all folder issues */
     class Exception : public Item::Exception { public:
         /** @param message Folder error string */
-        Exception(const std::string& message) :
+        explicit Exception(const std::string& message) :
             Item::Exception("Folder Error: "+message) {}; };
 
     /** Exception indicating the item found is not a file */

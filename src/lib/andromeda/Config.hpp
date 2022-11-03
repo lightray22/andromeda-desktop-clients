@@ -20,20 +20,20 @@ public:
     /** Base exception for Config exceptions */
     class Exception : public Utilities::Exception { public:
         /** @param message error message string */
-        Exception(const std::string& message) :
+        explicit Exception(const std::string& message) :
             Utilities::Exception("Config Error: "+message){}; };
 
     /** Exception indicating the API version is not supported */
     class APIVersionException : public Exception { public:
         /** @param version the backend's version */
-        APIVersionException(int version) : 
+        explicit APIVersionException(int version) : 
             Exception("API Version is "+std::to_string(version)+
                     ", require "+std::to_string(API_VERSION)){}; };
 
     /** Exception indicating a required app is missing */
     class AppMissingException : public Exception { public:
         /** @param appname name of the app that is missing */
-        AppMissingException(const std::string& appname) :
+        explicit AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
     /** Client-based backend options */

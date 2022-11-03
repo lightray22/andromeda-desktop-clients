@@ -325,7 +325,7 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     cfg->negative_timeout = 1;
 #endif
 
-    return fuse_get_context()->private_data;
+    return (void*)GetFuseAdapter();
 }
 
 /*****************************************************/
