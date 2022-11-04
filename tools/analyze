@@ -1,13 +1,24 @@
-#!/bin/bash
+#!/bin/bash -e
 
-mkdir build; cd build
+mkdir build 2> /dev/null || true; cd build
 
-cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. || exit $?
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+PLATFORMS="native unix32 unix64 win32A win32W win64"
+LOGFILE=analyze_stderr.log
 
-cppcheck --project=compile_commands.json \
-    -i thirdparty --quiet --std=c++17 \
-    --suppress="*:*/thirdparty/*" \
-    --suppress=missingIncludeSystem \
-    --suppress=unreadVariable \
-    --suppress=unusedFunction \
-    --enable=style,performance,portability,information $@
+for PLAT in $PLATFORMS; do
+    rm $LOGFILE; echo "scanning platform $PLAT..."
+    cppcheck --project=compile_commands.json \
+        --quiet --std=c++17 --platform=$PLAT \
+        -i thirdparty --suppress="*:*/thirdparty/*" \
+        --suppress=missingIncludeSystem \
+        --suppress=unreadVariable \
+        --suppress=unusedFunction \
+        --enable=style,performance,portability,information $@ 2> $LOGFILE
+
+    if [ -s $LOGFILE ]; then
+        echo "found errors with target $PLAT!"
+        cat $LOGFILE
+        exit 1
+    fi
+done
