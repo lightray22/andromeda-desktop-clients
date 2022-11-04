@@ -10,7 +10,9 @@ This repo contains the desktop applications and common libraries for Andromeda's
 
 ### Targets
 
-There are several binaries and libraries in the full suite.  To build one individually, go to its build subdirectory after running cmake, before building.  By default, all targets will be built (see the preqrequisites sections for each!).  
+There are several binaries and libraries in the full suite.  By default, all targets will be built (see the preqrequisites sections for each!).  
+
+To build one individually, run cmake normally then build with the directory of the target.  E.g. `cmake ..; cmake --build bin/cli-fuse`.  Alternatively, run cmake targeted at the directory you desire to build, then make normally.  This has the benefit of only checking dependencies for the target you want to build.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.
 
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
@@ -42,7 +44,7 @@ The following platforms are targeted for support and should work:
 - FreeBSD amd64: `pkg install cmake python`
   - FreeBSD 12.3 (cmake 3.23, Clang 10.0, python 3.9)
   - FreeBSD 13.1 (cmake 3.23, Clang 13.0, python 3.9)
-- (FUTURE) macOS amd64: `brew install make cmake python`?
+- macOS amd64: `brew install make cmake python`
 
 
 # libandromeda
@@ -66,7 +68,7 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 - FreeBSD: `pkg install nlohmann-json`
   - FreeBSD 12: (nlohmann 3.10, openssl 1.1.1l)
   - FreeBSD 13: (nlohmann 3.10, openssl 1.1.1o)
-- (FUTURE) macOS: `brew install nlohmann-json openssl@1.1`
+- macOS: `brew install nlohmann-json openssl@1.1`
 
 
 # FUSE Client
