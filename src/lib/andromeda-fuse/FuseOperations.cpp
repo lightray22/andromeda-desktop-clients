@@ -331,7 +331,7 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 
         if (path0 != path1 && name0 != name1)
         {
-            Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path1));
+            //Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path1));
 
             debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO
         }
