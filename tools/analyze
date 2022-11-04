@@ -4,16 +4,21 @@ mkdir build 2> /dev/null || true; cd build
 
 cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 PLATFORMS="native unix32 unix64 win32A win32W win64"
-LOGFILE=analyze_stderr.log
+LOGFILE=cppcheck/analyze_stderr.log
 
 for PLAT in $PLATFORMS; do
-    rm $LOGFILE; echo "scanning platform $PLAT..."
+    rm $LOGFILE 2> /dev/null || true
+    echo "scanning platform $PLAT..."
+    mkdir -p cppcheck/$PLAT 2> /dev/null || true
+
     cppcheck --project=compile_commands.json \
+        --cppcheck-build-dir=cppcheck/$PLAT \
         --quiet --std=c++17 --platform=$PLAT \
         -i thirdparty --suppress="*:*/thirdparty/*" \
         --suppress=missingIncludeSystem \
         --suppress=unreadVariable \
         --suppress=unusedFunction \
+        --suppress=unmatchedSuppression \
         --enable=style,performance,portability,information $@ 2> $LOGFILE
 
     if [ -s $LOGFILE ]; then
@@ -21,4 +26,4 @@ for PLAT in $PLATFORMS; do
         cat $LOGFILE
         exit 1
     fi
-done
+done; rm $LOGFILE

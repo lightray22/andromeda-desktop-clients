@@ -3,10 +3,9 @@
 .vs
 .DS_Store
 
-build*
-docs
+build/
+docs/
 tools/Doxyfile.bak
-docs/*/latex
 
 combined.txt
 errors.txt
