@@ -3,10 +3,15 @@
 #define LIBA2_ADOPTED_H_
 
 #include "PlainFolder.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
+namespace Andromeda {
 class Backend;
+
+namespace FSItems {
 class Folder;
+
+namespace Folders {
 
 /** A special folder listing items owned but residing in other users' folders */
 class Adopted : public PlainFolder
@@ -38,5 +43,9 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders
 
 #endif

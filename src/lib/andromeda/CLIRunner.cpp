@@ -8,6 +8,8 @@
 
 #include "CLIRunner.hpp"
 
+namespace Andromeda {
+
 /*****************************************************/
 CLIRunner::CLIRunner(const std::string& apiPath) :
     debug("CLIRunner",this), apiPath(apiPath)
@@ -77,3 +79,5 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 
     return output;
 }
+
+} // namespace Andromeda

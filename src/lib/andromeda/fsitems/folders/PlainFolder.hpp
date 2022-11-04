@@ -5,10 +5,14 @@
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 
-#include "../Folder.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
+#include "andromeda/fsitems/Folder.hpp"
 
+namespace Andromeda {
 class Backend;
+
+namespace FSItems {
+namespace Folders {
 
 /** A regular Andromeda folder */
 class PlainFolder : public Folder
@@ -57,5 +61,9 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders
 
 #endif

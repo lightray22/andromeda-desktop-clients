@@ -9,6 +9,8 @@
 #include "Config.hpp"
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 /** Manages communication with the backend API */
 class Backend
 {
@@ -295,5 +297,7 @@ private:
     Config config;
     Debug debug;
 };
+
+} // namespace Andromeda
 
 #endif

@@ -3,20 +3,28 @@
 #include <bitset>
 
 #include "FuseAdapter.hpp"
+using AndromedaFuse::FuseAdapter;
 #include "FuseOperations.h"
 
-#include "HTTPRunner.hpp"
-#include "Backend.hpp"
-#include "fsitems/Item.hpp"
-#include "fsitems/File.hpp"
-#include "fsitems/Folder.hpp"
+#include "andromeda/Backend.hpp"
+using Andromeda::Backend;
+#include "andromeda/HTTPRunner.hpp"
+using Andromeda::HTTPRunner;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
+#include "andromeda/fsitems/Item.hpp"
+using Andromeda::FSItems::Item;
+#include "andromeda/fsitems/File.hpp"
+using Andromeda::FSItems::File;
+#include "andromeda/fsitems/Folder.hpp"
+using Andromeda::FSItems::Folder;
 
-static Debug debug("FuseOperations");
+static Andromeda::Debug debug("FuseOperations");
 
 /*****************************************************/
 static FuseAdapter* GetFuseAdapter()
 {
-    return (FuseAdapter*)(fuse_get_context()->private_data);
+    return static_cast<FuseAdapter*>(fuse_get_context()->private_data);
 }
 
 /*****************************************************/

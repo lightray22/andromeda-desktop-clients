@@ -9,6 +9,8 @@
 
 using namespace std::chrono;
 
+namespace Andromeda {
+
 /*****************************************************/
 Utilities::StringList Utilities::explode(
     std::string str, const std::string& delim, 
@@ -235,3 +237,5 @@ void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
 
     this->buffer << std::endl;
 }
+
+} // namespace Andromeda

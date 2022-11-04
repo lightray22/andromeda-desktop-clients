@@ -1,8 +1,12 @@
 #include <nlohmann/json.hpp>
 
 #include "Filesystem.hpp"
-#include "FSConfig.hpp"
-#include "Backend.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/FSConfig.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /*****************************************************/
 std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::string& fsid)
@@ -51,3 +55,7 @@ void Filesystem::LoadItems()
 
     Folder::LoadItemsFrom(data);
 }
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders

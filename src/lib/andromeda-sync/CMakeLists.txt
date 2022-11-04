@@ -12,7 +12,7 @@ add_library(andromeda-sync)
 
 target_sources(andromeda-sync PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-sync
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(andromeda-sync PRIVATE -Wall -Wextra -Werror
     -Wno-unused-parameter -pedantic -pedantic-errors)

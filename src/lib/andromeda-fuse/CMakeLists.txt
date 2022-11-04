@@ -12,7 +12,7 @@ set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp a2fuse_ops.c)
 
 target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(andromeda-fuse PRIVATE -Wall -Wextra -Werror
     -Wno-unused-parameter -pedantic -pedantic-errors

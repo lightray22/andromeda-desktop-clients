@@ -6,6 +6,8 @@
 
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 class Backend;
 
 /** Checks and stores backend config */
@@ -89,5 +91,7 @@ private:
     unsigned int uploadMaxBytes = 0;
     unsigned int uploadMaxFiles = 0;
 };
+
+} // namespace Andromeda
 
 #endif

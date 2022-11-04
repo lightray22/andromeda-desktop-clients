@@ -4,9 +4,16 @@
 #include "libfuse_Includes.h"
 #include "FuseAdapter.hpp"
 
+#include "andromeda/Utilities.hpp"
+using Andromeda::Debug;
+#include "andromeda/fsitems/Folder.hpp"
+using Andromeda::FSItems::Folder;
+
+extern const struct fuse_operations a2fuse_ops;
+
 static Debug debug("FuseAdapter");
 
-extern struct fuse_operations a2fuse_ops;
+namespace AndromedaFuse {
 
 /*****************************************************/
 /** Scope-managed fuse_args */
@@ -80,7 +87,7 @@ struct FuseContext
     { 
         debug << __func__ << "() fuse_new()"; debug.Info();
 
-        fuse = fuse_new(mount.chan, &(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)&adapter);
+        fuse = fuse_new(mount.chan, &(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
 
         if (!fuse) throw FuseAdapter::Exception("fuse_new() failed");
     };
@@ -109,7 +116,7 @@ struct FuseContext
     {
         debug << __func__ << "() fuse_new()"; debug.Info();
         
-        fuse = fuse_new(&(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), (void*)&adapter);
+        fuse = fuse_new(&(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
         
         if (!fuse) throw FuseAdapter::Exception("fuse_new() failed");
     };
@@ -227,3 +234,5 @@ void FuseAdapter::ShowVersionText()
     fuse_lowlevel_version();
 #endif
 }
+
+} // namespace AndromedaFuse

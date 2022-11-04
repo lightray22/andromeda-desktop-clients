@@ -7,9 +7,13 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "PlainFolder.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
+namespace Andromeda {
 class Backend;
+
+namespace FSItems {
+namespace Folders {
 
 /** A root folder accessed by its filesystem ID */
 class Filesystem : public PlainFolder
@@ -51,5 +55,9 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders
 
 #endif

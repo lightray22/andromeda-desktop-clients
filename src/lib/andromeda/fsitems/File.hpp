@@ -6,10 +6,13 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
-#include "Utilities.hpp"
-#include "FSConfig.hpp"
+#include "andromeda/Utilities.hpp"
+#include "andromeda/FSConfig.hpp"
 
+namespace Andromeda {
 class Backend;
+
+namespace FSItems {
 class Folder;
 
 /** An Andromeda file */
@@ -101,5 +104,8 @@ private:
 
     Debug debug;
 };
+
+} // namespace FSItems
+} // namespace Andromeda
 
 #endif

@@ -5,11 +5,15 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
+namespace Andromeda {
 class Backend;
-class Folder;
 class FSConfig;
+
+namespace FSItems {
+
+class Folder;
 
 /** An abstract item in a filesystem */
 class Item
@@ -144,5 +148,8 @@ private:
 
     Debug debug;
 };
+
+} // namespace FSItems
+} // namespace Andromeda
 
 #endif

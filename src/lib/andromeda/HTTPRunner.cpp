@@ -6,6 +6,8 @@
 #include "HTTPRunner.hpp"
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& opts) : 
     debug("HTTPRunner",this), options(opts), baseURL(baseURL), httpClient(hostname)
@@ -95,3 +97,5 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         }
     }
 }
+
+} // namespace Andromeda

@@ -2,9 +2,13 @@
 #include <nlohmann/json.hpp>
 
 #include "PlainFolder.hpp"
-#include "Backend.hpp"
-#include "../File.hpp"
-#include "FSConfig.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/FSConfig.hpp"
+#include "andromeda/fsitems/File.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /*****************************************************/
 std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::string& id)
@@ -124,3 +128,7 @@ void PlainFolder::SubMove(Folder& parent, bool overwrite)
 
     backend.MoveFolder(GetID(), parent.GetID(), overwrite);
 }
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders

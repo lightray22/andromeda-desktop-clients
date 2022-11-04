@@ -14,6 +14,8 @@
 
 #define A2LIBVERSION "0.1-alpha"
 
+namespace Andromeda {
+
 /** Misc Utilities */
 class Utilities
 {
@@ -156,5 +158,7 @@ private:
 
     static std::chrono::high_resolution_clock::time_point start;
 };
+
+} // namespace Andromeda
 
 #endif

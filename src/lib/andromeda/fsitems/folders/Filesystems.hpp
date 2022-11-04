@@ -2,7 +2,11 @@
 #ifndef LIBA2_FILESYSTEMS_H_
 #define LIBA2_FILESYSTEMS_H_
 
-#include "../Folder.hpp"
+#include "andromeda/fsitems/Folder.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /** A special folder that lists filesystems */
 class Filesystems : public Folder
@@ -43,5 +47,9 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders
 
 #endif

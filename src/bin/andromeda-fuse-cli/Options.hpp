@@ -7,10 +7,11 @@
 #include <string>
 #include <utility>
 
-#include "Config.hpp"
-#include "FuseAdapter.hpp"
-#include "HTTPRunner.hpp"
-#include "Utilities.hpp"
+#include "andromeda-fuse/FuseAdapter.hpp"
+
+#include "andromeda/Config.hpp"
+#include "andromeda/HTTPRunner.hpp"
+#include "andromeda/Utilities.hpp"
 
 /** Manages command line options and config */
 class Options
@@ -18,8 +19,8 @@ class Options
 public:
 
     /** Base class for all Options errors */
-    class Exception : public Utilities::Exception { 
-        using Utilities::Exception::Exception; };
+    class Exception : public Andromeda::Utilities::Exception { 
+        using Andromeda::Utilities::Exception::Exception; };
 
     /** Exception indicating help text should be shown */
     class ShowHelpException : public Exception {
@@ -66,7 +67,9 @@ public:
      * @param fOpts FUSE options ref to fill
      * @param hOpts HTTPRunner options ref to fill (if applicable)
      */
-    Options(Config::Options& cOpts, FuseAdapter::Options& fOpts, HTTPRunner::Options& hOpts);
+    Options(Andromeda::Config::Options& cOpts, 
+            Andromeda::HTTPRunner::Options& hOpts, 
+            AndromedaFuse::FuseAdapter::Options& fOpts);
 
     /** Parses command line arguments from main */
     void ParseArgs(int argc, char** argv);
@@ -78,7 +81,7 @@ public:
     void CheckMissing();
 
     /** Returns the desired debug level */
-    Debug::Level GetDebugLevel() const { return this->debugLevel; }
+    Andromeda::Debug::Level GetDebugLevel() const { return this->debugLevel; }
 
     /** Backend connection type */
     enum class ApiType
@@ -137,13 +140,13 @@ public:
 private:
 
     /** Load config from the given flags and options */
-    void LoadFrom(const Utilities::Flags& flags, const Utilities::Options options);
+    void LoadFrom(const Andromeda::Utilities::Flags& flags, const Andromeda::Utilities::Options options);
 
-    Config::Options& cOptions;
-    FuseAdapter::Options& fOptions;
-    HTTPRunner::Options& hOptions;
+    Andromeda::Config::Options& cOptions;
+    Andromeda::HTTPRunner::Options& hOptions;
+    AndromedaFuse::FuseAdapter::Options& fOptions;
 
-    Debug::Level debugLevel = Debug::Level::NONE;
+    Andromeda::Debug::Level debugLevel = Andromeda::Debug::Level::NONE;
 
     ApiType apiType = (ApiType)(-1);
     std::string apiPath;

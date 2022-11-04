@@ -7,18 +7,33 @@
 #include <cstdlib>
 
 #include "Options.hpp"
-#include "FuseAdapter.hpp"
+#include "andromeda-fuse/FuseAdapter.hpp"
+using AndromedaFuse::FuseAdapter;
 
-#include "CLIRunner.hpp"
-#include "HTTPRunner.hpp"
-#include "Utilities.hpp"
+#include "andromeda/CLIRunner.hpp"
+using Andromeda::CLIRunner;
+#include "andromeda/HTTPRunner.hpp"
+using Andromeda::HTTPRunner;
+#include "andromeda/Backend.hpp"
+using Andromeda::Backend;
+#include "andromeda/Config.hpp"
+using Andromeda::Config;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Debug;
+using Andromeda::Utilities;
 
-#include "fsitems/Folder.hpp"
-#include "fsitems/folders/PlainFolder.hpp"
-#include "fsitems/folders/Filesystem.hpp"
-#include "fsitems/folders/SuperRoot.hpp"
+#include "andromeda/fsitems/Folder.hpp"
+using Andromeda::FSItems::Folder;
+#include "andromeda/fsitems/folders/PlainFolder.hpp"
+using Andromeda::FSItems::Folders::PlainFolder;
+#include "andromeda/fsitems/folders/Filesystem.hpp"
+using Andromeda::FSItems::Folders::Filesystem;
+#include "andromeda/fsitems/folders/SuperRoot.hpp"
+using Andromeda::FSItems::Folders::SuperRoot;
 
 #define VERSION "0.1-alpha"
+
+using AndromedaFuse::FuseAdapter;
 
 enum class ExitCode
 {
@@ -33,10 +48,10 @@ int main(int argc, char** argv)
     Debug debug("main"); 
     
     Config::Options cOptions;
-    FuseAdapter::Options fOptions;
     HTTPRunner::Options hOptions;
+    FuseAdapter::Options fOptions;
 
-    Options options(cOptions, fOptions, hOptions);
+    Options options(cOptions, hOptions, fOptions);
 
     try
     {

@@ -6,6 +6,8 @@
 
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 class Backend;
 
 /** Contains filesystem config */
@@ -51,5 +53,7 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
 
 #endif

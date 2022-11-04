@@ -10,6 +10,8 @@
 #include "Backend.hpp"
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 /** Runs the API remotely over HTTP */
 class HTTPRunner : public Backend::Runner
 {
@@ -74,5 +76,7 @@ private:
 
     bool canRetry = false;
 };
+
+} // namespace Andromeda
 
 #endif

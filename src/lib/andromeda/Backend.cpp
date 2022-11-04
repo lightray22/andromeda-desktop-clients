@@ -8,6 +8,8 @@
 #include "Backend.hpp"
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 /*****************************************************/
 Backend::Backend(Runner& runner) : 
     runner(runner), debug("Backend",this) { }
@@ -489,3 +491,5 @@ nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
 
     return GetJSON(RunAction(input));
 }
+
+} // namespace Andromeda

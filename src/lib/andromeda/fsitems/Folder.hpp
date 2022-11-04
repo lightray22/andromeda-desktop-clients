@@ -9,9 +9,12 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
+namespace Andromeda {
 class Backend;
+
+namespace FSItems {
 class File;
 
 /** A common folder interface */
@@ -135,5 +138,8 @@ private:
 
     Debug debug;
 };
+
+} // namespace FSItems
+} // namespace Andromeda
 
 #endif

@@ -1,8 +1,12 @@
 #include <nlohmann/json.hpp>
 
 #include "Adopted.hpp"
-#include "Backend.hpp"
-#include "../Folder.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/fsitems/Folder.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /*****************************************************/
 Adopted::Adopted(Backend& backend, Folder& parent) :
@@ -20,3 +24,7 @@ void Adopted::LoadItems()
 
     Folder::LoadItemsFrom(backend.GetAdopted());
 }
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders

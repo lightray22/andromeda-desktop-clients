@@ -5,6 +5,8 @@
 #include "FSConfig.hpp"
 #include "Backend.hpp"
 
+namespace Andromeda {
+
 typedef std::map<std::string, FSConfig> CacheMap; static CacheMap cache;
 
 /*****************************************************/
@@ -53,3 +55,5 @@ FSConfig::FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann:
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 }
+
+} // namespace Andromeda

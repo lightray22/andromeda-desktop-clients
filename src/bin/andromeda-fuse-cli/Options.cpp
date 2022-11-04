@@ -5,21 +5,33 @@
 #include <vector>
 
 #include "Options.hpp"
-#include "Utilities.hpp"
 
-using namespace std;
+#include "andromeda-fuse/FuseAdapter.hpp"
+using AndromedaFuse::FuseAdapter;
+
+#include "andromeda/Config.hpp"
+using Andromeda::Config;
+#include "andromeda/HTTPRunner.hpp"
+using Andromeda::HTTPRunner;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Debug;
+using Andromeda::Utilities;
+
+using namespace std::chrono;
 
 /*****************************************************/
-string Options::HelpText()
+std::string Options::HelpText()
 {
-    ostringstream output;
+    std::ostringstream output;
 
     Config::Options cfgDefault;
     HTTPRunner::Options httpDefault;
 
-    const int defRefresh(chrono::seconds(cfgDefault.refreshTime).count());
-    const int defRetry(chrono::seconds(httpDefault.retryTime).count());
-    const int defTimeout(chrono::seconds(httpDefault.timeout).count());
+    const int defRefresh(seconds(cfgDefault.refreshTime).count());
+    const int defRetry(seconds(httpDefault.retryTime).count());
+    const int defTimeout(seconds(httpDefault.timeout).count());
+
+    using std::endl;
 
     output << "Usage Syntax: " << endl
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
@@ -39,8 +51,10 @@ string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& cOpts, FuseAdapter::Options& fOpts, HTTPRunner::Options& hOpts) : 
-    cOptions(cOpts), fOptions(fOpts), hOptions(hOpts) { }
+Options::Options(Config::Options& cOpts, 
+                HTTPRunner::Options& hOpts, 
+                FuseAdapter::Options& fOpts) : 
+    cOptions(cOpts), hOptions(hOpts), fOptions(fOpts) { }
 
 /*****************************************************/
 void Options::ParseArgs(int argc, char** argv)
@@ -55,7 +69,7 @@ void Options::ParseArgs(int argc, char** argv)
 }
 
 /*****************************************************/
-void Options::ParseFile(const filesystem::path& path)
+void Options::ParseFile(const std::filesystem::path& path)
 {
     Utilities::Flags flags;
     Utilities::Options options;
@@ -68,7 +82,7 @@ void Options::ParseFile(const filesystem::path& path)
 /*****************************************************/
 void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options options)
 {
-    for (const string& flag : flags)
+    for (const std::string& flag : flags)
     {
         if (flag == "h" || flag == "help")
             throw ShowHelpException();
@@ -101,20 +115,20 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
     for (const decltype(options)::value_type& pair : options) 
     {
-        const string& option = pair.first;
-        const string& value = pair.second;
+        const std::string& option = pair.first;
+        const std::string& value = pair.second;
 
         if (option == "d" || option == "debug")
         {
             try { this->debugLevel = static_cast<Debug::Level>(stoi(value)); }
-            catch (const logic_error& e) { 
+            catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
         }
 
         /** Backend endpoint selection */
         else if (option == "s" || option == "apiurl")
         {
-            vector<string> parts = 
+            std::vector<std::string> parts = 
                 Utilities::explode(value, "/", 2, 2);
 
             if (parts.size() != 2) 
@@ -188,15 +202,15 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         else if (option == "pagesize")
         {
             try { this->cOptions.pageSize = stoi(value); }
-            catch (const logic_error& e) { 
+            catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
 
             if (!this->cOptions.pageSize) throw BadValueException(option);
         }
         else if (option == "refresh")
         {
-            try { this->cOptions.refreshTime = chrono::seconds(stoi(value)); }
-            catch (const logic_error& e) { throw BadValueException(option); }
+            try { this->cOptions.refreshTime = seconds(stoi(value)); }
+            catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 
         /** HTTP runner options */
@@ -209,7 +223,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         else if (option == "proxy-port")
         {
             try { this->hOptions.proxyPort = stoi(value); }
-            catch (const logic_error& e) {
+            catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }
         else if (option == "hproxy-user")
@@ -218,19 +232,19 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->hOptions.proxyPassword = value;
         else if (option == "http-timeout")
         {
-            try { this->hOptions.timeout = chrono::seconds(stoi(value)); }
-            catch (const logic_error& e) { throw BadValueException(option); }
+            try { this->hOptions.timeout = seconds(stoi(value)); }
+            catch (const std::logic_error& e) { throw BadValueException(option); }
         }
         else if (option == "max-retries")
         {
             try { this->hOptions.maxRetries = stoi(value); }
-            catch (const logic_error& e) {
+            catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }
         else if (option == "retry-time")
         {
-            try { this->hOptions.retryTime = chrono::seconds(stoi(value)); }
-            catch (const logic_error& e) { throw BadValueException(option); }
+            try { this->hOptions.retryTime = seconds(stoi(value)); }
+            catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 
         else throw BadOptionException(option);

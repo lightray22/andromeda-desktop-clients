@@ -2,8 +2,12 @@
 #ifndef LIBA2_SUPERROOT_H_
 #define LIBA2_SUPERROOT_H_
 
-#include "../Folder.hpp"
-#include "Utilities.hpp"
+#include "andromeda/fsitems/Folder.hpp"
+#include "andromeda/Utilities.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /** A special folder that lists filesystems, shared files, etc. */
 class SuperRoot : public Folder
@@ -41,5 +45,9 @@ private:
 
     Debug debug;
 };
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders
 
 #endif

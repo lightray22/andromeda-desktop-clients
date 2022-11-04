@@ -3,9 +3,12 @@
 #include <nlohmann/json.hpp>
 
 #include "File.hpp"
-#include "Backend.hpp"
 #include "Folder.hpp"
-#include "FSConfig.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/FSConfig.hpp"
+
+namespace Andromeda {
+namespace FSItems {
 
 /*****************************************************/
 File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
@@ -309,3 +312,6 @@ void File::Truncate(const size_t size)
         else ++it; // move to next page
     }
 }
+
+} // namespace FSItems
+} // namespace Andromeda

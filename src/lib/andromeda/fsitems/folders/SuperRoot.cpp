@@ -1,9 +1,13 @@
 #include <nlohmann/json.hpp>
 
-#include "SuperRoot.hpp"
-#include "Backend.hpp"
+#include "andromeda/Backend.hpp"
 #include "Adopted.hpp"
 #include "Filesystems.hpp"
+#include "SuperRoot.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /*****************************************************/
 SuperRoot::SuperRoot(Backend& backend) : 
@@ -29,3 +33,7 @@ void SuperRoot::LoadItems()
     std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(backend, *this));
     this->itemMap[filesystems->GetName()] = std::move(filesystems);
 }
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders

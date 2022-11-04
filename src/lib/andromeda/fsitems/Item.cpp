@@ -3,8 +3,11 @@
 
 #include "Item.hpp"
 #include "Folder.hpp"
-#include "Backend.hpp"
-#include "FSConfig.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/FSConfig.hpp"
+
+namespace Andromeda {
+namespace FSItems {
 
 /*****************************************************/
 Item::Item(Backend& backend) : 
@@ -113,3 +116,6 @@ void Item::Move(Folder& parent, bool overwrite, bool internal)
     }
     else GetParent().MoveItem(this->name, parent, overwrite);
 }
+
+} // namespace FSItems
+} // namespace Andromeda

@@ -19,7 +19,7 @@ set(SOURCE_FILES
 
 target_sources(andromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(andromeda PRIVATE -Wall -Wextra -Werror
     -Wno-unused-parameter -pedantic -pedantic-errors)
@@ -44,7 +44,7 @@ endif()
 
 add_subdirectory(thirdparty/cpp-httplib)
 target_include_directories(andromeda PRIVATE 
-    "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out")
+    ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out)
 target_link_libraries(andromeda INTERFACE httplib)
 
 # include/link reproc++

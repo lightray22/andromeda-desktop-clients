@@ -3,7 +3,11 @@
 
 #include "Filesystems.hpp"
 #include "Filesystem.hpp"
-#include "Backend.hpp"
+#include "andromeda/Backend.hpp"
+
+namespace Andromeda {
+namespace FSItems {
+namespace Folders {
 
 /*****************************************************/
 Filesystems::Filesystems(Backend& backend, Folder& parent) : 
@@ -55,3 +59,7 @@ void Filesystems::SubRenameItem(Item& item, const std::string& name, bool overwr
 {
     item.Rename(name, overwrite, true);
 }
+
+} // namespace Andromeda
+} // namespace FSItems
+} // namespace Folders

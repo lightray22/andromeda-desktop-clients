@@ -4,9 +4,15 @@
 #include <string>
 #include <list>
 
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
-class Folder;
+namespace Andromeda {
+namespace FSItems { 
+    class Folder;
+} // nanespace FSItems
+} // namespace Andromeda
+
+namespace AndromedaFuse {
 
 /** Static class for FUSE operations */
 class FuseAdapter
@@ -14,10 +20,10 @@ class FuseAdapter
 public:
 
     /** Base Exception for all FUSE issues */
-    class Exception : public Utilities::Exception { public:
+    class Exception : public Andromeda::Utilities::Exception { public:
         /** @param message FUSE error message */
         explicit Exception(const std::string& message) :
-            Utilities::Exception("FUSE Error: "+message) {}; };
+            Andromeda::Utilities::Exception("FUSE Error: "+message) {}; };
 
     /** FUSE wrapper options */
     struct Options
@@ -41,10 +47,10 @@ public:
      * @param options command line options
      * @param daemonize if true, fuse_daemonize
      */
-    FuseAdapter(Folder& root, const Options& options, bool daemonize);
+    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, bool daemonize);
 
     /** Returns the root folder */
-    Folder& GetRootFolder(){ return rootFolder; }
+    Andromeda::FSItems::Folder& GetRootFolder(){ return rootFolder; }
 
     /** Returns the FUSE options */
     const Options& GetOptions(){ return options; }
@@ -57,8 +63,10 @@ public:
 
 private:
 
-    Folder& rootFolder;
+    Andromeda::FSItems::Folder& rootFolder;
     const Options& options;
 };
+
+} // namespace AndromedaFuse
 
 #endif // FUSEADAPTER_H

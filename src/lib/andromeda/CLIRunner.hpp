@@ -8,6 +8,8 @@
 #include "Backend.hpp"
 #include "Utilities.hpp"
 
+namespace Andromeda {
+
 /** Runs the API locally by invoking it as a process */
 class CLIRunner : public Backend::Runner
 {
@@ -34,5 +36,7 @@ private:
 
     const std::chrono::seconds timeout = std::chrono::seconds(120);
 };
+
+} // namespace Andromeda
 
 #endif

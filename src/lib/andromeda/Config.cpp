@@ -5,6 +5,8 @@
 #include "Config.hpp"
 #include "Backend.hpp"
 
+namespace Andromeda {
+
 /*****************************************************/
 Config::Config() : debug("Config",this){ }
 
@@ -54,3 +56,5 @@ void Config::LoadAccountLimits(Backend& backend)
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 }
+
+} // namespace Andromeda

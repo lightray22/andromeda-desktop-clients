@@ -3,10 +3,13 @@
 
 #include "Folder.hpp"
 #include "File.hpp"
-#include "Backend.hpp"
-#include "folders/PlainFolder.hpp"
+#include "andromeda/Backend.hpp"
+#include "andromeda/fsitems/folders/PlainFolder.hpp"
 
 using namespace std::chrono;
+
+namespace Andromeda {
+namespace FSItems {
 
 /*****************************************************/
 Folder::Folder(Backend& backend) : 
@@ -98,7 +101,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
         return std::make_unique<File>(backend, fileJ, *this); };
 
     NewItemFunc newFolder = [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
-        return std::make_unique<PlainFolder>(backend, &folderJ, this); };
+        return std::make_unique<Folders::PlainFolder>(backend, &folderJ, this); };
 
     try
     {
@@ -232,3 +235,6 @@ void Folder::FlushCache(bool nothrow)
     for (ItemMap::value_type& it : itemMap)
         it.second->FlushCache(nothrow);
 }
+
+} // namespace FSItems
+} // namespace Andromeda
