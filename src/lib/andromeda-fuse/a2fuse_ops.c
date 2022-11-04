@@ -1,7 +1,7 @@
 
 #include "FuseOperations.h"
 
-struct fuse_operations a2fuse_ops = {
+const struct fuse_operations a2fuse_ops = {
     .getattr = a2fuse_getattr,
     .mkdir = a2fuse_mkdir,
     .unlink = a2fuse_unlink,
