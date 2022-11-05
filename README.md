@@ -30,22 +30,22 @@ To build one individually, run cmake normally then build with the directory of t
 
 - C++17 compiler
 - cmake (>= 3.16)
-- Python3
+- Python3 (>= 3.8?)
 
 ### Supported Platforms
 
 The following platforms are targeted for support and should work:
 - Debian/Ubuntu: `apt install make cmake g++ python3`
-  - Ubuntu 20.04 amd64 (cmake 3.16, GCC 9.4, python 3.8)
-  - Ubuntu 22.10 amd64 (cmake 3.24, GCC 12.2, python 3.10)
-  - Debian 11 armhf (cmake 3.18, GCC 10.2, python 3.9)
-- Arch Linux amd64: `pacman -S make cmake gcc python` (cmake 3.24, GCC 12.2, python 3.10)
-- Alpine Linux amd64: `apk add make cmake g++ python3` (cmake 3.23, GCC 11.2, python 3.10)
+  - Ubuntu 20.04 amd64 (GCC 9.4)
+  - Ubuntu 22.10 amd64 (GCC 12.2)
+  - Debian 11 armhf (GCC 10.2)
+- Arch Linux amd64: `pacman -S make cmake gcc python` (GCC 12.2)
+- Alpine Linux amd64: `apk add make cmake g++ python3` (GCC 11.2)
 - FreeBSD amd64: `pkg install cmake python`
-  - FreeBSD 12.3 (cmake 3.23, Clang 10.0, python 3.9)
-  - FreeBSD 13.1 (cmake 3.23, Clang 13.0, python 3.9)
+  - FreeBSD 12.3 (Clang 10.0)
+  - FreeBSD 13.1 (Clang 13.0)
 - macOS amd64: `brew install make cmake python`
-- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/) 3.24, [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/) 3.9)
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/))
 
 
 # libandromeda
@@ -61,16 +61,12 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 ### OS Examples
 
 - Debian/Ubuntu: `apt install libssl-dev libcrypt-dev` 
-  - Ubuntu 20.04 (openssl 1.1.1f)
-  - Ubuntu 22.10 (openssl 3.0.5)
-- Arch/Manjaro: `pacman -S openssl` (openssl 1.1.1q)
-- Alpine: `apk add openssl-dev` (openssl 1.1.1q)
-- FreeBSD: nothing?
-  - FreeBSD 12: (openssl 1.1.1l)
-  - FreeBSD 13: (openssl 1.1.1o)
+- Arch/Manjaro: `pacman -S openssl`
+- Alpine: `apk add openssl-dev`
+- FreeBSD: openSSL already installed?
 - macOS: `brew install openssl@1.1`
 - Windows: [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html)
-  - You will need to add OPENSSL_ROOT_DIR to your system environment
+  - You will need to add `OPENSSL_ROOT_DIR` to your system environment
 
 
 # FUSE Client
@@ -103,20 +99,20 @@ on the command line in cleartext.
 
 ### Libraries
 
-- libfuse (3.x >= 3.9 or 2.x >= 2.9) https://github.com/libfuse/libfuse
+- libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
     - To compile with FUSE 2.x, run cmake with `-DLIBFUSE2=1`
     - for macOS, use OSXFUSE https://osxfuse.github.io/
-    - For Windows, install WinFSP (install Developer) https://winfsp.dev/rel/
+    - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 
 libfuse is dynamically linked so it must be available at runtime.
 
 ### OS Examples
 
-- Ubuntu 20.04: `apt install fuse libfuse-dev` (fuse 2.9)
-- Ubuntu 22.10: `apt install fuse3 libfuse3-dev` (fuse 3.11)
-- Arch/Manjaro: `pacman -S fuse3` (fuse 3.12)
-- Alpine: `apk add fuse3 fuse3-dev` (fuse 3.11)
-- FreeBSD: `pkg install fusefs-libs3` (fuse 3.11)
+- Ubuntu 20.04: `apt install fuse libfuse-dev`
+- Ubuntu 22.10: `apt install fuse3 libfuse3-dev`
+- Arch/Manjaro: `pacman -S fuse3`
+- Alpine: `apk add fuse3 fuse3-dev`
+- FreeBSD: `pkg install fusefs-libs3`
 
 Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m myuser`, and enable user mounting with `sysctl vfs.usermount=1`.  
 
