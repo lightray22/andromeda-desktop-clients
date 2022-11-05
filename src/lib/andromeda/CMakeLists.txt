@@ -30,9 +30,8 @@ add_subdirectory(fsitems)
 
 # include/link openssl
 
-if (APPLE) # TODO needed?
-#    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
-#    target_include_directories(andromeda PRIVATE ${OPENSSL_ROOT_DIR}/include)
+if (APPLE)
+    set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
 endif()
 
 find_package(OpenSSL REQUIRED)
