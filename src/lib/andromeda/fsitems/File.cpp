@@ -33,7 +33,7 @@ File::File(Backend& backend, const nlohmann::json& data, Folder& parent) :
     const size_t fsChunk = this->fsConfig->GetChunkSize();
     const size_t cfChunk = backend.GetConfig().GetOptions().pageSize;
 
-    auto ceil = [](int x, int y) { return (x + y - 1) / y; };
+    auto ceil = [](size_t x, size_t y) { return (x + y - 1) / y; };
     this->pageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
 
     debug << this->name << ":" << __func__ << "... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " pageSize:" << pageSize; debug.Info();

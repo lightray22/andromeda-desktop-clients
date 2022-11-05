@@ -152,7 +152,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
         {
             Authenticate(username, password);
         }
-        catch (const TwoFactorRequiredException& e)
+        catch (const TwoFactorRequiredException&)
         {
             std::string twofactor; std::cout << "Two Factor? ";
             Utilities::SilentReadConsole(twofactor);
@@ -385,7 +385,7 @@ void Backend::DeleteFile(const std::string& id)
     Runner::Input input {"files", "deletefile", {{"file", id}}};
     
     try { GetJSON(RunAction(input)); }
-    catch (const NotFoundException& ex) { }
+    catch (const NotFoundException&) { }
 }
 
 /*****************************************************/
@@ -398,7 +398,7 @@ void Backend::DeleteFolder(const std::string& id)
     Runner::Input input {"files", "deletefolder", {{"folder", id}}}; 
     
     try { GetJSON(RunAction(input)); }
-    catch (const NotFoundException& ex) { }
+    catch (const NotFoundException&) { }
 }
 
 /*****************************************************/

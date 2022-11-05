@@ -416,7 +416,7 @@ int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse
     {
         File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
 
-        return file.ReadBytes(reinterpret_cast<std::byte*>(buf), off, size);
+        return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), off, size));
     });
 }
 
@@ -430,7 +430,9 @@ int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, stru
     {
         File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
 
-        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), off, size); return size;
+        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), off, size); 
+        
+        return static_cast<int>(size);
     });
 }
 
