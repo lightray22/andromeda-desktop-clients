@@ -30,10 +30,10 @@ target_link_libraries(andromeda-fuse PUBLIC andromeda)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
-option(USE_FUSE2 "Use FUSE 2.x" OFF)
+option(LIBFUSE2 "Use FUSE 2.x" OFF)
 
 if (APPLE)
-    SET(USE_FUSE2 ON)
+    SET(LIBFUSE2 ON)
 endif()
 
 find_package(FUSE REQUIRED)
@@ -41,4 +41,4 @@ find_package(FUSE REQUIRED)
 target_include_directories(andromeda-fuse PRIVATE ${FUSE_INCLUDE_DIR})
 target_link_libraries(andromeda-fuse INTERFACE ${FUSE_LIBRARIES})
 
-target_compile_definitions(andromeda-fuse PRIVATE USE_FUSE2=$<BOOL:${USE_FUSE2}>)
+target_compile_definitions(andromeda-fuse PRIVATE LIBFUSE2=$<BOOL:${LIBFUSE2}>)

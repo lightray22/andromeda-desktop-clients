@@ -1,5 +1,5 @@
 
-if (USE_FUSE2)
+if (LIBFUSE2)
     SET(FUSE_HEADER_NAMES fuse/fuse.h)
     SET(FUSE_LIBRARY_NAMES fuse)
 else()

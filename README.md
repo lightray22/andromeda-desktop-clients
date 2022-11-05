@@ -102,7 +102,7 @@ on the command line in cleartext.
 ### Libraries
 
 - libfuse (3.x >= 3.9 or 2.x >= 2.9) https://github.com/libfuse/libfuse
-    - To compile with FUSE 2.x, run cmake with `-DUSE_FUSE2=1`
+    - To compile with FUSE 2.x, run cmake with `-DLIBFUSE2=1`
     - for macOS, use OSXFUSE https://osxfuse.github.io/
 
 libfuse is dynamically linked so it must be available at runtime.

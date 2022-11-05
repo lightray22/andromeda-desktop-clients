@@ -9,7 +9,9 @@ using Andromeda::Debug;
 #include "andromeda/fsitems/Folder.hpp"
 using Andromeda::FSItems::Folder;
 
+extern "C" {
 extern const struct fuse_operations a2fuse_ops;
+} // extern "C"
 
 static Debug debug("FuseAdapter");
 
@@ -45,7 +47,7 @@ struct FuseArguments
     struct fuse_args args;
 };
 
-#if USE_FUSE2
+#if LIBFUSE2
 
 /*****************************************************/
 /** Scope-managed fuse_mount/fuse_unmount */
@@ -202,7 +204,7 @@ FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize):
 
     FuseArguments opts; for (const std::string& opt : options.fuseArgs) opts.AddArg(opt);
 
-#if USE_FUSE2
+#if LIBFUSE2
     FuseMount mount(opts, options.mountPath.c_str());
     FuseContext context(mount, opts, *this);
 #else
@@ -225,12 +227,12 @@ FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize):
 void FuseAdapter::ShowVersionText()
 {
     std::cout << "libfuse version: " << fuse_version()
-#if !USE_FUSE2
+#if !LIBFUSE2
         << " (" << fuse_pkgversion() << ")"
 #endif
         << std::endl;
 
-#if !USE_FUSE2
+#if !LIBFUSE2
     fuse_lowlevel_version();
 #endif
 }

@@ -22,7 +22,7 @@ int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi);
 int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi);
 void a2fuse_destroy(void* private_data);
 
-#if USE_FUSE2
+#if LIBFUSE2
 void* a2fuse_init(struct fuse_conn_info* conn);
 int a2fuse_getattr(const char* path, struct stat* stbuf);
 int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);

@@ -92,7 +92,7 @@ int standardTry(const std::string& fname, std::function<int()> func)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 void* a2fuse_init(struct fuse_conn_info* conn)
 #else
 void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
@@ -100,7 +100,7 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 {
     debug << __func__ << "()"; debug.Info();
 
-#if !USE_FUSE2
+#if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
     cfg->negative_timeout = 1;
 #endif
@@ -201,7 +201,7 @@ int a2fuse_opendir(const char* path, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_getattr(const char* path, struct stat* stbuf)
 #else
 int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
@@ -216,7 +216,7 @@ int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* 
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
 int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
@@ -236,7 +236,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 
             debug << __func__ << "... subitem: " << item->GetName(); debug.Info();
             
-#if USE_FUSE2
+#if LIBFUSE2
             int retval = filler(buf, item->GetName().c_str(), NULL, 0);
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
@@ -252,7 +252,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 
         for (const char* name : {".",".."})
         {
-#if USE_FUSE2
+#if LIBFUSE2
             int retval = filler(buf, name, NULL, 0);
 #else
             int retval = filler(buf, name, NULL, 0, (fuse_fill_dir_flags)0);
@@ -319,7 +319,7 @@ int a2fuse_rmdir(const char* path)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_rename(const char* oldpath, const char* newpath)
 #else
 int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
@@ -435,7 +435,7 @@ void a2fuse_destroy(void* private_data)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_truncate(const char* path, off_t size)
 #else
 int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
@@ -452,7 +452,7 @@ int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_chmod(const char* path, mode_t mode)
 #else
 int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
@@ -469,7 +469,7 @@ int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-#if USE_FUSE2
+#if LIBFUSE2
 int a2fuse_chown(const char* path, uid_t uid, gid_t gid)
 #else
 int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
