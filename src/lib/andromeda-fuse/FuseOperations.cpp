@@ -116,7 +116,8 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 /*****************************************************/
 int a2fuse_statfs(const char *path, struct statvfs* buf)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     buf->f_namemax = 255;
     
@@ -190,7 +191,7 @@ static void item_stat(const Item& item, struct stat* stbuf)
         if (!accessed) stbuf->st_atim = stbuf->st_ctim;
     #else
         stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
-        stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)(item.GetModified());
+        stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(item.GetModified());
         stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
         
         if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
@@ -201,7 +202,8 @@ static void item_stat(const Item& item, struct stat* stbuf)
 /*****************************************************/
 int a2fuse_access(const char* path, int mask) // TODO does this actually get called? WinFSP does not
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -218,7 +220,8 @@ int a2fuse_access(const char* path, int mask) // TODO does this actually get cal
 /*****************************************************/
 int a2fuse_open(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -244,7 +247,8 @@ int a2fuse_getattr(const char* path, struct stat* stbuf)
 int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -259,7 +263,8 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -338,7 +343,8 @@ int a2fuse_mkdir(const char* fullpath, mode_t mode)
 /*****************************************************/
 int a2fuse_unlink(const char* path)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -349,7 +355,8 @@ int a2fuse_unlink(const char* path)
 /*****************************************************/
 int a2fuse_rmdir(const char* path)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -364,10 +371,12 @@ int a2fuse_rename(const char* oldpath, const char* newpath)
 int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif
 {
-    while (oldpath[0] == '/') oldpath++; const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
+    while (oldpath[0] == '/') oldpath++; 
+    const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
     const std::string& path0 = pair0.first; const std::string& name0 = pair0.second;
 
-    while (newpath[0] == '/') newpath++; const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
+    while (newpath[0] == '/') newpath++; 
+    const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
     const std::string& path1 = pair1.first; const std::string& name1 = pair1.second;
 
     debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
@@ -400,7 +409,8 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 /*****************************************************/
 int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -413,7 +423,8 @@ int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse
 /*****************************************************/
 int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -426,7 +437,8 @@ int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, stru
 /*****************************************************/
 int a2fuse_flush(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -439,7 +451,8 @@ int a2fuse_flush(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -452,7 +465,8 @@ int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 /*****************************************************/
 int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -480,7 +494,8 @@ int a2fuse_truncate(const char* path, off_t size)
 int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif
 {
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -499,7 +514,8 @@ int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 {
     if (!GetFuseAdapter()->GetOptions().fakeChmod) return -ENOTSUP;
 
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -516,7 +532,8 @@ int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* 
 {
     if (!GetFuseAdapter()->GetOptions().fakeChown) return -ENOTSUP;
 
-    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++;
+    debug<<__func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
