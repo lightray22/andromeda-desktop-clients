@@ -44,7 +44,7 @@ The following platforms are targeted for support and should work:
 - FreeBSD amd64: `pkg install cmake python`
   - FreeBSD 12.3 (Clang 10.0)
   - FreeBSD 13.1 (Clang 13.0)
-- macOS amd64: `brew install make cmake python`
+- macOS amd64: `brew install make cmake`
 - Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/))
 
 
