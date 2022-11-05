@@ -1,4 +1,9 @@
 
+#include <errno.h>
+#if WIN32
+#define EHOSTDOWN EIO
+#endif // WIN32
+
 #include <functional>
 #include <bitset>
 
@@ -96,14 +101,14 @@ int standardTry(const std::string& fname, std::function<int()> func)
 void* a2fuse_init(struct fuse_conn_info* conn)
 #else
 void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
-#endif
+#endif // LIBFUSE2
 {
     debug << __func__ << "()"; debug.Info();
 
 #if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
     cfg->negative_timeout = 1;
-#endif
+#endif // !LIBFUSE2
 
     return (void*)GetFuseAdapter();
 }
@@ -111,11 +116,20 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 /*****************************************************/
 int a2fuse_statfs(const char *path, struct statvfs* buf)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     buf->f_namemax = 255;
     
-    // The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored 
+    // TODO temporary garbage so writing works...
+    #if WIN32
+        buf->f_bsize = 4096;
+        buf->f_frsize = 4096;
+        buf->f_blocks = 1024*1024*1024;
+        buf->f_bfree = 1024*1024*1024;
+        buf->f_bavail = 1024*1024*1024;
+    #endif
+        
+    // The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored   // TODO implement me
 //           struct statvfs {
 //           unsigned long  f_bsize;    /* Filesystem block size */
 //           unsigned long  f_frsize;   /* Fragment size */
@@ -136,11 +150,19 @@ int a2fuse_statfs(const char *path, struct statvfs* buf)
 // DO actually need the path as the answer would be different for each SuperRoot filesystem
 // this could be a call into a filesystem object... superRoot would need to extend Filesystem
 
-    return -EIO; // TODO
+    return FUSE_SUCCESS;
 }
 
+#if WIN32
+static void get_timespec(double time, fuse_timespec& spec)
+{
+    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time);
+    spec.tv_nsec = static_cast<decltype(spec.tv_sec)>((time-spec.tv_sec)*1e9);
+}
+#endif // WIN32
+
 /*****************************************************/
-void item_stat(const Item& item, struct stat* stbuf)
+static void item_stat(const Item& item, struct stat* stbuf)
 {
     switch (item.GetType())
     {
@@ -149,31 +171,46 @@ void item_stat(const Item& item, struct stat* stbuf)
     }
 
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
-
+    
     if (item.isReadOnly()) stbuf->st_mode &= ~S_IWUSR & ~S_IWGRP & ~S_IWOTH;
 
-    stbuf->st_size = static_cast<off_t>(item.GetSize());
+    stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
 
-    stbuf->st_ctime = static_cast<time_t>(item.GetCreated());
+    #if WIN32
+        auto created = item.GetCreated();
+        auto modified = item.GetModified();
+        auto accessed = item.GetAccessed();
 
-    stbuf->st_mtime = static_cast<time_t>(item.GetModified());
-    if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
-
-    stbuf->st_atime = static_cast<time_t>(item.GetAccessed());
-    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
+        get_timespec(created, stbuf->st_birthtim);
+        get_timespec(created, stbuf->st_ctim);
+        get_timespec(modified, stbuf->st_mtim);
+        get_timespec(accessed, stbuf->st_atim);
+        
+        if (!modified) stbuf->st_mtim = stbuf->st_ctim;
+        if (!accessed) stbuf->st_atim = stbuf->st_ctim;
+    #else
+        stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
+        stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)(item.GetModified());
+        stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
+        
+        if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
+        if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
+    #endif
 }
 
 /*****************************************************/
-int a2fuse_access(const char* path, int mask)
+int a2fuse_access(const char* path, int mask) // TODO does this actually get called? WinFSP does not
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
         Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
 
-        if (mask & W_OK && item.isReadOnly()) return -EROFS;
-
+        #if defined(W_OK)
+            if ((mask & W_OK) && item.isReadOnly()) return -EROFS;
+        #endif // W_OK
+            
         return FUSE_SUCCESS;
     });
 }
@@ -181,7 +218,7 @@ int a2fuse_access(const char* path, int mask)
 /*****************************************************/
 int a2fuse_open(const char* path, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -207,7 +244,7 @@ int a2fuse_getattr(const char* path, struct stat* stbuf)
 int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -222,7 +259,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -267,7 +304,8 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 /*****************************************************/
 int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
-    fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    while (fullpath[0] == '/') fullpath++; 
+    const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
     const std::string& path = pair.first; const std::string& name = pair.second;
 
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
@@ -283,7 +321,8 @@ int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 /*****************************************************/
 int a2fuse_mkdir(const char* fullpath, mode_t mode)
 {
-    fullpath++; const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    while (fullpath[0] == '/') fullpath++; 
+    const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
     const std::string& path = pair.first; const std::string& name = pair.second;
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
@@ -299,7 +338,7 @@ int a2fuse_mkdir(const char* fullpath, mode_t mode)
 /*****************************************************/
 int a2fuse_unlink(const char* path)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -310,7 +349,7 @@ int a2fuse_unlink(const char* path)
 /*****************************************************/
 int a2fuse_rmdir(const char* path)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -325,10 +364,10 @@ int a2fuse_rename(const char* oldpath, const char* newpath)
 int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif
 {
-    oldpath++; const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
+    while (oldpath[0] == '/') oldpath++; const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
     const std::string& path0 = pair0.first; const std::string& name0 = pair0.second;
 
-    newpath++; const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
+    while (newpath[0] == '/') newpath++; const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
     const std::string& path1 = pair1.first; const std::string& name1 = pair1.second;
 
     debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
@@ -361,7 +400,7 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 /*****************************************************/
 int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -374,7 +413,7 @@ int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse
 /*****************************************************/
 int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -387,7 +426,7 @@ int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, stru
 /*****************************************************/
 int a2fuse_flush(const char* path, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -400,7 +439,7 @@ int a2fuse_flush(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -413,7 +452,7 @@ int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
 /*****************************************************/
 int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -441,7 +480,7 @@ int a2fuse_truncate(const char* path, off_t size)
 int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif
 {
-    path++; debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -460,7 +499,7 @@ int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 {
     if (!GetFuseAdapter()->GetOptions().fakeChmod) return -ENOTSUP;
 
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
@@ -477,7 +516,7 @@ int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* 
 {
     if (!GetFuseAdapter()->GetOptions().fakeChown) return -ENOTSUP;
 
-    path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
+    while (path[0] == '/') path++; debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {

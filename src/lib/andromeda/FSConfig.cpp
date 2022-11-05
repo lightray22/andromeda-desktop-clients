@@ -36,7 +36,7 @@ FSConfig::FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann:
 
         data.at("readonly").get_to(this->readOnly);
 
-        const std::string& sttype(data.at("sttype"));
+        std::string sttype; data.at("sttype").get_to(sttype);
 
         if (sttype == "S3")  this->writeMode = WriteMode::NONE;
         if (sttype == "FTP") this->writeMode = WriteMode::APPEND;

@@ -107,7 +107,7 @@ struct FuseContext
     FuseMount& mount;
 };
 
-#else
+#else // !LIBFUSE2
 
 /*****************************************************/
 /** Scope-managed fuse_new/fuse_destroy */
@@ -155,7 +155,7 @@ struct FuseMount
     struct fuse* fuse;
 };
 
-#endif
+#endif // LIBFUSE2
 
 /*****************************************************/
 /** Scope-managed fuse_set/remove_signal_handlers */
@@ -207,10 +207,10 @@ FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize):
 #if LIBFUSE2
     FuseMount mount(opts, options.mountPath.c_str());
     FuseContext context(mount, opts, *this);
-#else
+#else // !LIBFUSE2
     FuseContext context(opts, *this);
     FuseMount mount(context, options.mountPath.c_str());
-#endif
+#endif // LIBFUSE2
     
     if (daemonize)
     {
@@ -229,12 +229,12 @@ void FuseAdapter::ShowVersionText()
     std::cout << "libfuse version: " << fuse_version()
 #if !LIBFUSE2
         << " (" << fuse_pkgversion() << ")"
-#endif
+#endif // !LIBFUSE2
         << std::endl;
 
-#if !LIBFUSE2
+#if !LIBFUSE2 && !WIN32
     fuse_lowlevel_version();
-#endif
+#endif // !LIBFUSE2
 }
 
 } // namespace AndromedaFuse

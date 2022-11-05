@@ -11,6 +11,11 @@
 #include "Item.hpp"
 #include "andromeda/Utilities.hpp"
 
+#if WIN32 && defined(CreateFile)
+// thanks for nothing, Windows >:(
+#undef CreateFile
+#endif
+
 namespace Andromeda {
 class Backend;
 

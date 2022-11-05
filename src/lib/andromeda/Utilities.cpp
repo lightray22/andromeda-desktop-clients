@@ -2,8 +2,13 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <termios.h>
 #include <thread>
+
+#if WIN32
+#include <windows.h>
+#else // !WIN32
+#include <termios.h>
+#endif // WIN32
 
 #include "Utilities.hpp"
 
@@ -146,19 +151,27 @@ bool Utilities::stringToBool(const std::string& str)
 /*****************************************************/
 void Utilities::SilentReadConsole(std::string& retval)
 {
-    struct termios oflags, nflags;
-    
-    tcgetattr(fileno(stdin), &oflags);
+    #if WIN32
+        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
+        DWORD mode = 0; GetConsoleMode(hStdin, &mode);
+        SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
+    #else // !WIN32
+        struct termios oflags, nflags;
+        tcgetattr(fileno(stdin), &oflags);
 
-    nflags = oflags;
-    nflags.c_lflag &= ~ECHO;
-    nflags.c_lflag |= ECHONL;
-
-    tcsetattr(fileno(stdin), TCSANOW, &nflags);
+        nflags = oflags;
+        nflags.c_lflag &= ~ECHO;
+        nflags.c_lflag |= ECHONL;
+        tcsetattr(fileno(stdin), TCSANOW, &nflags);
+    #endif
 
     std::getline(std::cin, retval);
-
-    tcsetattr(fileno(stdin), TCSANOW, &oflags);
+    
+    #if WIN32
+        SetConsoleMode(hStdin, mode);
+    #else // !WIN32
+        tcsetattr(fileno(stdin), TCSANOW, &oflags);
+    #endif
 }
 
 std::mutex Debug::mutex;

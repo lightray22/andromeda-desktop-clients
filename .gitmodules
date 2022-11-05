@@ -1,7 +1,13 @@
-[submodule "andromeda/thirdparty/cpp-httplib"]
+[submodule "cpp-httplib"]
 	path = src/lib/andromeda/thirdparty/cpp-httplib
 	url = https://github.com/yhirose/cpp-httplib.git
-[submodule "src/lib/andromeda/thirdparty/reproc"]
+    # tag = v0.11.2
+[submodule "reproc"]
 	path = src/lib/andromeda/thirdparty/reproc
 #	url = https://github.com/DaanDeMeyer/reproc
 	url = https://github.com/lightray22/reproc
+[submodule "json"]
+	path = src/lib/andromeda/thirdparty/json
+	url = https://github.com/nlohmann/json.git
+    # tag = v3.11.2
+    shallow = true

@@ -28,7 +28,7 @@ To build one individually, run cmake normally then build with the directory of t
 
 ### Build System
 
-- C++17 compiler (GCC 8+ or Clang 5+)
+- C++17 compiler
 - cmake (>= 3.16)
 - Python3
 
@@ -45,6 +45,7 @@ The following platforms are targeted for support and should work:
   - FreeBSD 12.3 (cmake 3.23, Clang 10.0, python 3.9)
   - FreeBSD 13.1 (cmake 3.23, Clang 13.0, python 3.9)
 - macOS amd64: `brew install make cmake python`
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/) 3.24, [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/) 3.9)
 
 
 # libandromeda
@@ -52,7 +53,6 @@ The following platforms are targeted for support and should work:
 ### Libraries
 
 - OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
-- nlohmann-json (3.x) https://github.com/nlohmann/json
 
 libssl, libcrypto are dynamically linked so they must be available at runtime.
 
@@ -60,15 +60,17 @@ Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### OS Examples
 
-- Debian/Ubuntu: `apt install nlohmann-json3-dev libssl-dev libcrypt-dev` 
-  - Ubuntu 20.04 (nlohmann 3.7, openssl 1.1.1f)
-  - Ubuntu 22.10 (nlohmann 3.11, openssl 3.0.5)
-- Arch/Manjaro: `pacman -S nlohmann-json openssl` (nlohmann 3.11, openssl 1.1.1q)
-- Alpine: `apk add nlohmann-json openssl-dev` (nlohmann 3.10, openssl 1.1.1q)
-- FreeBSD: `pkg install nlohmann-json`
-  - FreeBSD 12: (nlohmann 3.10, openssl 1.1.1l)
-  - FreeBSD 13: (nlohmann 3.10, openssl 1.1.1o)
-- macOS: `brew install nlohmann-json openssl@1.1`
+- Debian/Ubuntu: `apt install libssl-dev libcrypt-dev` 
+  - Ubuntu 20.04 (openssl 1.1.1f)
+  - Ubuntu 22.10 (openssl 3.0.5)
+- Arch/Manjaro: `pacman -S openssl` (openssl 1.1.1q)
+- Alpine: `apk add openssl-dev` (openssl 1.1.1q)
+- FreeBSD: nothing?
+  - FreeBSD 12: (openssl 1.1.1l)
+  - FreeBSD 13: (openssl 1.1.1o)
+- macOS: `brew install openssl@1.1`
+- Windows: [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html)
+  - You will need to add OPENSSL_ROOT_DIR to your system environment
 
 
 # FUSE Client
@@ -104,6 +106,7 @@ on the command line in cleartext.
 - libfuse (3.x >= 3.9 or 2.x >= 2.9) https://github.com/libfuse/libfuse
     - To compile with FUSE 2.x, run cmake with `-DLIBFUSE2=1`
     - for macOS, use OSXFUSE https://osxfuse.github.io/
+    - For Windows, install WinFSP (install Developer) https://winfsp.dev/rel/
 
 libfuse is dynamically linked so it must be available at runtime.
 

@@ -9,6 +9,11 @@
 #include "Config.hpp"
 #include "Utilities.hpp"
 
+#if WIN32 && defined(CreateFile)
+// thanks for nothing, Windows >:(
+#undef CreateFile
+#endif
+
 namespace Andromeda {
 
 /** Manages communication with the backend API */

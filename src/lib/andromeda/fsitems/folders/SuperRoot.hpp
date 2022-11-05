@@ -2,8 +2,8 @@
 #ifndef LIBA2_SUPERROOT_H_
 #define LIBA2_SUPERROOT_H_
 
-#include "andromeda/fsitems/Folder.hpp"
 #include "andromeda/Utilities.hpp"
+#include "andromeda/fsitems/Folder.hpp"
 
 namespace Andromeda {
 namespace FSItems {
