@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
 (cd src; find . -maxdepth 2 -mindepth 2 -type d) | while read -r d; do
    mkdir -p docs/$d
-   doxygen src/$d/Doxyfile || exit $?
+   doxygen src/$d/Doxyfile
 done
 
 if [ "$1" == latex ]; then

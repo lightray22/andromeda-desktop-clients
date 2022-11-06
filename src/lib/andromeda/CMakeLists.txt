@@ -3,6 +3,10 @@ project(libandromeda VERSION 1.0.0)
 
 include(../../../andromeda.cmake)
 
+if (BUILD_TESTING)
+    add_subdirectory(_tests)
+endif()
+
 # build the Andromeda library
 
 add_library(andromeda)

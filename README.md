@@ -21,10 +21,13 @@ To build one individually, run cmake normally then build with the directory of t
 
 ### Building
 
+Run `tools/build`, or the manual steps:
+
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
-  - This will also clone in-tree dependencies 
 3. Run compile `cmake --build .`
+
+Cmake will automatically clone in-tree dependencies.
 
 ### Build System
 
@@ -144,4 +147,8 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## CppCheck
 
-Static analysis is done with the `tools/analyze` script which runs cmake and cppcheck.
+Static analysis is done with cppcheck (must be installed).  Run `tools/analyze` to run the static analysis.
+
+## Catch2 Testing
+
+Unit testing is done with catch2, which is built in-tree.  Run `tools/unittests` to build and run tests.  If configuring cmake manually, use `-DBUILD_TESTING=1`.

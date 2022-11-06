@@ -10,5 +10,15 @@ else()
         -Wno-unused-parameter -pedantic -pedantic-errors)
 endif()
 
-Include(FetchContent)
-Set(FETCHCONTENT_QUIET FALSE)
+include(FetchContent)
+set(FETCHCONTENT_QUIET FALSE)
+
+option(BUILD_TESTING "Build unit tests" OFF)
+
+if (BUILD_TESTING)
+    FetchContent_Declare(Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.1.1)
+    FetchContent_MakeAvailable(Catch2)
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+endif()
