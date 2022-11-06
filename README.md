@@ -149,6 +149,6 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 Static analysis is done with cppcheck (must be installed).  Run `tools/analyze` to run the static analysis.
 
-## Catch2 Testing
+## Catch2
 
 Unit testing is done with catch2, which is built in-tree.  Run `tools/unittests` to build and run tests.  If configuring cmake manually, use `-DBUILD_TESTING=1`.
