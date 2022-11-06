@@ -14,7 +14,7 @@ for PLAT in $PLATFORMS; do
     cppcheck --project=compile_commands.json \
         --cppcheck-build-dir=cppcheck/$PLAT \
         --quiet --std=c++17 --platform=$PLAT \
-        -i thirdparty --suppress="*:*/thirdparty/*" \
+        --suppress="*:*_deps/*" \
         --suppress=missingIncludeSystem \
         --suppress=unreadVariable \
         --suppress=unusedFunction \

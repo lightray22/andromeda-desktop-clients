@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(libandromeda VERSION 1.0.0)
 
-include(../../../CMakeLists.inc.txt)
+include(../../../andromeda.cmake)
 
 # build the Andromeda library
 
@@ -45,15 +45,24 @@ set(HTTPLIB_REQUIRE_OPENSSL True)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE False)
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
-add_subdirectory(thirdparty/cpp-httplib)
-target_include_directories(andromeda PRIVATE 
-    ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/cpp-httplib/out)
-target_link_libraries(andromeda INTERFACE httplib)
+FetchContent_Declare(cpp-httplib
+    GIT_REPOSITORY  https://github.com/yhirose/cpp-httplib.git
+    GIT_TAG         v0.11.2
+    GIT_PROGRESS    true)
+FetchContent_MakeAvailable(cpp-httplib)
+
+target_link_libraries(andromeda PUBLIC httplib)
 
 # include/link reproc++
 
 set(REPROC++ ON)
-add_subdirectory(thirdparty/reproc)
+
+FetchContent_Declare(reproc
+    GIT_REPOSITORY  https://github.com/lightray22/reproc
+    GIT_TAG         5d4ac1f # master
+    GIT_PROGRESS    true)
+FetchContent_MakeAvailable(reproc)
+
 target_link_libraries(andromeda PUBLIC reproc++)
 
 # include nlohmann (header-only)
@@ -61,5 +70,10 @@ target_link_libraries(andromeda PUBLIC reproc++)
 set(JSON_ImplicitConversions "OFF")
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
-add_subdirectory(thirdparty/json)
-target_link_libraries(andromeda PUBLIC nlohmann_json::nlohmann_json)
+FetchContent_Declare(nlohmann_json
+    GIT_REPOSITORY  https://github.com/nlohmann/json.git
+    GIT_TAG         v3.11.2
+    GIT_PROGRESS    true)
+FetchContent_MakeAvailable(nlohmann_json)
+
+target_link_libraries(andromeda PUBLIC nlohmann_json)

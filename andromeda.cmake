@@ -9,3 +9,6 @@ else()
     set(ANDROMEDA_WARNINGS -Wall -Wextra -Werror
         -Wno-unused-parameter -pedantic -pedantic-errors)
 endif()
+
+Include(FetchContent)
+Set(FETCHCONTENT_QUIET FALSE)

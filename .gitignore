@@ -2,8 +2,9 @@
 .vscode
 .vs
 .DS_Store
+*.code-workspace
 
-build/
+build*/
 docs/
 tools/Doxyfile.bak
 

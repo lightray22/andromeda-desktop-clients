@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(libandromeda-fuse VERSION 1.0.0)
 
-include(../../../CMakeLists.inc.txt)
+include(../../../andromeda.cmake)
 
 # build the andromeda-fuse library
 

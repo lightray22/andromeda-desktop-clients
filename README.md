@@ -21,10 +21,10 @@ To build one individually, run cmake normally then build with the directory of t
 
 ### Building
 
-1. Get submodules `git submodule update --init`
-2. Make build folder `mkdir build; cd build`
-3. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
-4. Run compile `cmake --build .`
+1. Make build folder `mkdir build; cd build`
+2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
+  - This will also clone in-tree dependencies 
+3. Run compile `cmake --build .`
 
 ### Build System
 
