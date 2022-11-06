@@ -145,7 +145,7 @@ void Utilities::parseUrl(const std::string& url,
 /*****************************************************/
 bool Utilities::stringToBool(const std::string& str)
 {
-    return (str != "0" && str != "false" && str != "off" && str != "no");
+    return (str != "" && str != "0" && str != "false" && str != "off" && str != "no");
 }
 
 /*****************************************************/
