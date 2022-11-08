@@ -4,6 +4,6 @@ if ! [ -e build ]; then mkdir build; fi; cd build
 
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=1 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$@"
 
-(cd ..; tools/analyze)
+(cd ..; tools/analyze noinit)
 
 cmake --build . -j$(nproc)
