@@ -1,5 +1,0 @@
-#!/bin/bash -e
-
-mkdir build 2> /dev/null || true; cd build
-
-cmake .. "$@" && cmake --build . -j$(nproc)

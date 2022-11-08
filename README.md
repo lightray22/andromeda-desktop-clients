@@ -21,7 +21,7 @@ To build one individually, run cmake normally then build with the directory of t
 
 ### Building
 
-Run `tools/build`, or the manual steps:
+Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build, including static analysis and unit tests.  Or the manual steps:
 
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
@@ -145,10 +145,10 @@ Andromeda including all source code, documentation, and APIs are copyrighted by 
 
 Use the `tools/mkdocs` script from the repo root to generate documentation using Doxygen.  It will output separately for each bin/lib subdirectory.  This requires `doxygen` and `graphviz`.  Use `tools/mkdocs latex` to generate LaTEX PDFs - requires `doxygen-latex`.  
 
-## CppCheck
+## Testing
 
-Static analysis is done with cppcheck (must be installed).  Run `tools/analyze` to run the static analysis.
+Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTING=1`, then build, and the tests will be run.  Static analysis is done with cppcheck (must be installed).  Both unit tests and static analysis are part of `tools/builddev`.  Static analysis can be run standalone with `tools/analyze`.
 
 ## Catch2
 
-Unit testing is done with catch2, which is built in-tree.  Run `tools/unittests` to build and run tests.  If configuring cmake manually, use `-DBUILD_TESTING=1`.
+Unit testing is done with catch2, which is built in-tree.  Run `tools/unittests` or configure cmake with `-DBUILD_TESTING=1`, then build.

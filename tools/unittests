@@ -1,7 +1,0 @@
-#!/bin/bash -e
-
-tools/build -DBUILD_TESTING=1
-
-find build -type f -iname "*__tests" | while read -r f; do 
-    echo; echo "running $f"; $f
-done
