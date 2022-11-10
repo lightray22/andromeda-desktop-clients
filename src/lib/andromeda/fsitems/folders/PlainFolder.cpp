@@ -54,13 +54,13 @@ void PlainFolder::LoadItems()
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFile(const std::string& name)
+void PlainFolder::SubCreateFile(const std::string& name_)
 {
-    debug << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << __func__ << "(name:" << name_ << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFile(GetID(), name));
+    nlohmann::json data(backend.CreateFile(GetID(), name_));
 
     std::unique_ptr<File> file(std::make_unique<File>(backend, data, *this));
 
@@ -68,13 +68,13 @@ void PlainFolder::SubCreateFile(const std::string& name)
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFolder(const std::string& name)
+void PlainFolder::SubCreateFolder(const std::string& name_)
 {
-    debug << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << __func__ << "(name:" << name_ << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFolder(GetID(), name));
+    nlohmann::json data(backend.CreateFolder(GetID(), name_));
 
     std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, &data, this));
 
@@ -88,15 +88,15 @@ void PlainFolder::SubDeleteItem(Item& item)
 }
 
 /*****************************************************/
-void PlainFolder::SubRenameItem(Item& item, const std::string& name, bool overwrite)
+void PlainFolder::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
 {
-    item.Rename(name, overwrite, true);
+    item.Rename(newName, overwrite, true);
 }
 
 /*****************************************************/
-void PlainFolder::SubMoveItem(Item& item, Folder& parent, bool overwrite)
+void PlainFolder::SubMoveItem(Item& item, Folder& newParent, bool overwrite)
 {
-    item.Move(parent, overwrite, true);
+    item.Move(newParent, overwrite, true);
 }
 
 /*****************************************************/
@@ -110,23 +110,23 @@ void PlainFolder::SubDelete()
 }
 
 /*****************************************************/
-void PlainFolder::SubRename(const std::string& name, bool overwrite)
+void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 {
-    debug << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << __func__ << "(name:" << newName << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.RenameFolder(GetID(), name, overwrite);
+    backend.RenameFolder(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
-void PlainFolder::SubMove(Folder& parent, bool overwrite)
+void PlainFolder::SubMove(Folder& newParent, bool overwrite)
 {
-    debug << __func__ << "(parent:" << parent.GetName() << ")"; debug.Info();
+    debug << __func__ << "(parent:" << newParent.GetName() << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.MoveFolder(GetID(), parent.GetID(), overwrite);
+    backend.MoveFolder(GetID(), newParent.GetID(), overwrite);
 }
 
 } // namespace Andromeda

@@ -11,11 +11,11 @@ namespace Andromeda {
 Config::Config() : debug("Config",this){ }
 
 /*****************************************************/
-void Config::Initialize(Backend& backend, const Config::Options& options)
+void Config::Initialize(Backend& backend, const Config::Options& options_)
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
-    this->options = options;
+    this->options = options_;
 
     nlohmann::json config(backend.GetConfigJ());
 

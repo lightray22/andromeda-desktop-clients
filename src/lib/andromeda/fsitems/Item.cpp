@@ -96,25 +96,25 @@ void Item::Delete(bool internal)
 }
 
 /*****************************************************/
-void Item::Rename(const std::string& name, bool overwrite, bool internal)
+void Item::Rename(const std::string& newName, bool overwrite, bool internal)
 {
     if (internal || !HasParent())
     {
-        SubRename(name, overwrite); 
-        this->name = name;
+        SubRename(newName, overwrite); 
+        this->name = newName;
     }
-    else GetParent().RenameItem(this->name, name, overwrite);
+    else GetParent().RenameItem(this->name, newName, overwrite);
 }
 
 /*****************************************************/
-void Item::Move(Folder& parent, bool overwrite, bool internal)
+void Item::Move(Folder& newParent, bool overwrite, bool internal)
 {
     if (internal)
     {
-        SubMove(parent, overwrite); 
-        this->parent = &parent;
+        SubMove(newParent, overwrite); 
+        this->parent = &newParent;
     }
-    else GetParent().MoveItem(this->name, parent, overwrite);
+    else GetParent().MoveItem(this->name, newParent, overwrite);
 }
 
 } // namespace FSItems

@@ -27,9 +27,9 @@ std::string Options::HelpText()
     Config::Options cfgDefault;
     HTTPRunner::Options httpDefault;
 
-    const int defRefresh(seconds(cfgDefault.refreshTime).count());
-    const int defRetry(seconds(httpDefault.retryTime).count());
-    const int defTimeout(seconds(httpDefault.timeout).count());
+    const auto defRefresh(seconds(cfgDefault.refreshTime).count());
+    const auto defRetry(seconds(httpDefault.retryTime).count());
+    const auto defTimeout(seconds(httpDefault.timeout).count());
 
     using std::endl;
 
@@ -144,11 +144,11 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             Utilities::parseUrl(this->apiPath, urlFlags, urlOptions);
 
             /** Certain mount details can be parsed from the URL */
-            for (decltype(urlOptions)::value_type pair : urlOptions)
+            for (decltype(urlOptions)::value_type urlPair : urlOptions)
             {
-                if (pair.first == "folder")
+                if (urlPair.first == "folder")
                 {
-                    this->mountItemID = pair.second;
+                    this->mountItemID = urlPair.second;
                     this->mountRootType = RootType::FOLDER;
                 }
             }
@@ -222,7 +222,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->hOptions.proxyHost = value;
         else if (option == "proxy-port")
         {
-            try { this->hOptions.proxyPort = stoi(value); }
+            try { this->hOptions.proxyPort = static_cast<decltype(this->hOptions.proxyPort)>(stoi(value)); }
             catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }

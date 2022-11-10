@@ -40,10 +40,9 @@ Cmake will automatically clone in-tree dependencies.
 The following platforms are targeted for support and should work:
 - Debian/Ubuntu: `apt install make cmake g++ python3`
   - Ubuntu 20.04 amd64 (GCC 9.4)
-  - Ubuntu 22.10 amd64 (GCC 12.2)
+  - Ubuntu 22.10 amd64 (GCC 12.2 or Clang 15)
   - Debian 11 armhf (GCC 10.2)
-- Arch Linux amd64: `pacman -S make cmake gcc python` (GCC 12.2)
-  - Arch Linux amd64 (Clang): `pacman -S clang llvm` (Clang 14)
+- Arch Linux amd64: `pacman -S make cmake gcc python` (GCC 12.2 or Clang 14)
 - Alpine Linux amd64: `apk add make cmake g++ python3` (GCC 11.2)
 - FreeBSD amd64: `pkg install cmake python`
   - FreeBSD 12.3 (Clang 10.0)

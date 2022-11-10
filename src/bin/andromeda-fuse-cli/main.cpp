@@ -58,9 +58,18 @@ int main(int argc, char** argv)
         std::list<std::string> paths { 
             "/etc/andromeda", "/usr/local/etc/andromeda" };
 
+        #if WIN32
+            #pragma warning(push)
+            #pragma warning(disable:4996) // getenv is safe in C++11
+        #endif
+
         const char* homeDir = std::getenv("HOME");
         if (homeDir != nullptr) paths.push_back(
             std::string(homeDir)+"/.config/andromeda");
+
+        #if WIN32
+            #pragma warning(pop)
+        #endif
 
         paths.push_back("."); for (std::string path : paths)
         {

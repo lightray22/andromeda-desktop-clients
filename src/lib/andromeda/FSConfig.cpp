@@ -17,14 +17,14 @@ const FSConfig& FSConfig::LoadByID(Backend& backend, const std::string& id)
     if (it == cache.end())
     {
         it = cache.emplace(std::piecewise_construct, std::forward_as_tuple(id), 
-            std::forward_as_tuple(backend, backend.GetFilesystem(id), backend.GetFSLimits(id))).first;
+            std::forward_as_tuple(backend.GetFilesystem(id), backend.GetFSLimits(id))).first;
     }
 
     return it->second;
 }
 
 /*****************************************************/
-FSConfig::FSConfig(Backend& backend, const nlohmann::json& data, const nlohmann::json& lims) :
+FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
     debug("FSConfig", this)
 {
     if (data.is_null() && lims.is_null()) return;

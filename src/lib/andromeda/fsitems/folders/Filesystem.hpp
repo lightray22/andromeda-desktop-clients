@@ -47,7 +47,7 @@ protected:
 
     virtual void SubDelete() override { throw ModifyException(); }
 
-    virtual void SubMove(Folder& parent, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(Folder& newParent, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

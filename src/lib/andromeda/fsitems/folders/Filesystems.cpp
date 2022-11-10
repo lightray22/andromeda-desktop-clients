@@ -55,7 +55,7 @@ void Filesystems::SubDeleteItem(Item& item)
 }
 
 /*****************************************************/
-void Filesystems::SubRenameItem(Item& item, const std::string& name, bool overwrite)
+void Filesystems::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
 {
     item.Rename(name, overwrite, true);
 }

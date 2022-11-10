@@ -108,7 +108,7 @@ public:
     static Level GetLevel() { return level; }
 
     /** Sets the configured global debug level */
-    static void SetLevel(Level level){ Debug::level = level; }
+    static void SetLevel(Level level_){ Debug::level = level_; }
 
     /**
      * Shows the given debug string with minlevel=INFO

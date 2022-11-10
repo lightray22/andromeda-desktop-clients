@@ -55,7 +55,7 @@ public:
     virtual void WriteBytes(const std::byte* buffer, const size_t offset, const size_t length) final;
 
     /** Set the file size to the given value */
-    virtual void Truncate(size_t size) final;
+    virtual void Truncate(size_t newSize) final;
 
     virtual void FlushCache(bool nothrow = false) override;
 
@@ -63,9 +63,9 @@ protected:
 
     virtual void SubDelete() override;
 
-    virtual void SubRename(const std::string& name, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, bool overwrite) override;
 
-    virtual void SubMove(Folder& parent, bool overwrite) override;
+    virtual void SubMove(Folder& newParent, bool overwrite) override;
 
 private:
 

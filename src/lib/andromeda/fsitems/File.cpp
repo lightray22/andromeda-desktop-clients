@@ -92,23 +92,23 @@ void File::SubDelete()
 }
 
 /*****************************************************/
-void File::SubRename(const std::string& name, bool overwrite)
+void File::SubRename(const std::string& newName, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << " (name:" << name << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (name:" << newName << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.RenameFile(GetID(), name, overwrite);
+    backend.RenameFile(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
-void File::SubMove(Folder& parent, bool overwrite)
+void File::SubMove(Folder& newParent, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << " (parent:" << parent.GetName() << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (parent:" << newParent.GetName() << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.MoveFile(GetID(), parent.GetID(), overwrite);
+    backend.MoveFile(GetID(), newParent.GetID(), overwrite);
 }
 
 /*****************************************************/
@@ -173,19 +173,19 @@ void File::FlushCache(bool nothrow)
 
         if (page.dirty)
         {
-            const size_t offset = index*this->pageSize;
-            const size_t size = std::min(this->size-offset, this->pageSize);
+            const size_t pageOffset = index*this->pageSize;
+            const size_t pageSizeI = std::min(this->size-pageOffset, this->pageSize);
 
-            std::string data(reinterpret_cast<const char*>(page.data.data()), size);
+            std::string data(reinterpret_cast<const char*>(page.data.data()), pageSizeI);
 
-            if (debug) { debug << __func__ << "()... index:" << index << " offset:" << offset << " size:" << size; debug.Info(); }
+            if (debug) { debug << __func__ << "()... index:" << index << " offset:" << pageOffset << " size:" << pageSizeI; debug.Info(); }
 
-            auto writeFunc = [&]()->void { backend.WriteFile(GetID(), offset, data); }; 
+            auto writeFunc = [&]()->void { backend.WriteFile(GetID(), pageOffset, data); }; 
 
             if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
                 debug << __func__ << "()... Ignoring Error: " << e.what(); debug.Error(); }
 
-            page.dirty = false; this->backendSize = std::max(this->backendSize, offset+size);
+            page.dirty = false; this->backendSize = std::max(this->backendSize, pageOffset+pageSizeI);
         }
     }
 }
@@ -291,21 +291,21 @@ void File::WriteBytes(const std::byte* buffer, const size_t offset, const size_t
 }
 
 /*****************************************************/
-void File::Truncate(const size_t size)
+void File::Truncate(const size_t newSize)
 {    
-    debug << this->name << ":" << __func__ << " (size:" << size << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << " (size:" << newSize << ")"; debug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 
-    this->backend.TruncateFile(GetID(), size); 
+    this->backend.TruncateFile(GetID(), newSize); 
 
-    this->size = size; this->backendSize = size;
+    this->size = newSize; this->backendSize = newSize;
 
     for (PageMap::iterator it = pages.begin(); it != pages.end(); )
     {
-        if (!size || it->first > (size-1)/pageSize)
+        if (!newSize || it->first > (newSize-1)/pageSize)
         {
             it = pages.erase(it); // remove past end
         }

@@ -207,9 +207,9 @@ int a2fuse_access(const char* path, int mask) // TODO does this actually get cal
 
     return standardTry(__func__,[&]()->int
     {
-        Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
-
         #if defined(W_OK)
+            Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
+
             if ((mask & W_OK) && item.isReadOnly()) return -EROFS;
         #endif // W_OK
             
@@ -373,11 +373,11 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 {
     while (oldpath[0] == '/') oldpath++; 
     const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
-    const std::string& path0 = pair0.first; const std::string& name0 = pair0.second;
+    const std::string& oldPath = pair0.first; const std::string& oldName = pair0.second;
 
     while (newpath[0] == '/') newpath++; 
     const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
-    const std::string& path1 = pair1.first; const std::string& name1 = pair1.second;
+    const std::string& newPath = pair1.first; const std::string& newName = pair1.second;
 
     debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
 
@@ -385,21 +385,21 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
     {
         Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(oldpath));
 
-        if (path0 != path1 && name0 != name1)
+        if (oldPath != newPath && oldName != newName)
         {
-            //Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path1));
+            //Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(newPath));
 
             debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO
         }
-        else if (path0 != path1)
+        else if (oldPath != newPath)
         {
-            Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path1));
+            Folder& newParent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(newPath));
 
-            item.Move(parent, true);
+            item.Move(newParent, true);
         }
-        else if (name0 != name1) 
+        else if (oldName != newName) 
         {
-            item.Rename(name1, true);
+            item.Rename(newName, true);
         }
 
         return FUSE_SUCCESS;

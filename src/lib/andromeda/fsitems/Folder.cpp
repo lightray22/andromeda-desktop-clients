@@ -30,11 +30,11 @@ Item& Folder::GetItemByPath(std::string path)
     Utilities::StringList parts = Utilities::explode(path,"/");
 
     // iteratively (not recursively) find the correct parent/subitem
-    Folder* parent = this; 
+    Folder* parent_ = this; 
     for (Utilities::StringList::iterator pIt = parts.begin(); 
         pIt != parts.end(); ++pIt )
     {
-        const ItemMap& items = parent->GetItems();
+        const ItemMap& items = parent_->GetItems();
         ItemMap::const_iterator it = items.find(*pIt);
         if (it == items.end()) throw NotFoundException();
 
@@ -44,7 +44,7 @@ Item& Folder::GetItemByPath(std::string path)
 
         if (item.GetType() != Type::FOLDER) throw NotFolderException();
 
-        parent = dynamic_cast<Folder*>(&item);
+        parent_ = dynamic_cast<Folder*>(&item);
     }
 
     throw NotFoundException(); // should never get here
@@ -129,15 +129,15 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 
     for (const NewItemMap::value_type& newIt : newItems)
     {
-        const std::string& name(newIt.first);
+        const std::string& name_(newIt.first);
         const nlohmann::json& data(newIt.second.first);
 
-        ItemMap::const_iterator existIt(this->itemMap.find(name));
+        ItemMap::const_iterator existIt(this->itemMap.find(name_));
 
         if (existIt == this->itemMap.end()) // insert new item
         {
             NewItemFunc newFunc(newIt.second.second);
-            this->itemMap[name] = newFunc(data);
+            this->itemMap[name_] = newFunc(data);
         }
         else existIt->second->Refresh(data); // update existing
     }
@@ -154,79 +154,79 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 }
 
 /*****************************************************/
-void Folder::CreateFile(const std::string& name)
+void Folder::CreateFile(const std::string& name_)
 {
-    debug << this->name << ":" << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
     const ItemMap& items = GetItems(); // pre-populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (items.count(name_)) throw DuplicateItemException();
 
-    SubCreateFile(name);
+    SubCreateFile(name_);
 }
 
 /*****************************************************/
-void Folder::CreateFolder(const std::string& name)
+void Folder::CreateFolder(const std::string& name_)
 {
-    debug << this->name << ":" << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
     const ItemMap& items = GetItems(); // pre-populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (items.count(name_)) throw DuplicateItemException();
 
-    SubCreateFolder(name);
+    SubCreateFolder(name_);
 }
 
 /*****************************************************/
-void Folder::DeleteItem(const std::string& name)
+void Folder::DeleteItem(const std::string& name_)
 {
-    debug << this->name << ":" << __func__ << "(name:" << name << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name_);
     if (it == this->itemMap.end()) throw NotFoundException();
 
     SubDeleteItem(*(it->second)); this->itemMap.erase(it);
 }
 
 /*****************************************************/
-void Folder::RenameItem(const std::string& name0, const std::string& name1, bool overwrite)
+void Folder::RenameItem(const std::string& oldName, const std::string& newName, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << "(name0:" << name0 << " name1:" << name1 << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << "(oldName:" << oldName << " newName:" << newName << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name0);
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(oldName);
     if (it == this->itemMap.end()) throw NotFoundException();
 
-    ItemMap::const_iterator dup = this->itemMap.find(name1);
+    ItemMap::const_iterator dup = this->itemMap.find(newName);
     if (!overwrite && dup != this->itemMap.end())
         throw DuplicateItemException();
 
-    SubRenameItem(*(it->second), name1, overwrite);
+    SubRenameItem(*(it->second), newName, overwrite);
 
     if (dup != this->itemMap.end()) this->itemMap.erase(dup);
 
     ItemMap::node_type node(this->itemMap.extract(it));
-    node.key() = name1; this->itemMap.insert(std::move(node));
+    node.key() = newName; this->itemMap.insert(std::move(node));
 }
 
 /*****************************************************/
-void Folder::MoveItem(const std::string& name, Folder& parent, bool overwrite)
+void Folder::MoveItem(const std::string& name_, Folder& newParent, bool overwrite)
 {
-    debug << this->name << ":" << __func__ << "(name:" << name << " parent:" << parent.GetName() << ")"; debug.Info();
+    debug << this->name << ":" << __func__ << "(name:" << name_ << " parent:" << newParent.GetName() << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name);
+    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name_);
     if (it == this->itemMap.end()) throw NotFoundException();
 
-    parent.GetItems(); if (parent.isReadOnly()) throw ModifyException();
+    newParent.GetItems(); if (newParent.isReadOnly()) throw ModifyException();
 
-    ItemMap::const_iterator dup = parent.itemMap.find(name);    
-    if (!overwrite && dup != parent.itemMap.end())
+    ItemMap::const_iterator dup = newParent.itemMap.find(name_);    
+    if (!overwrite && dup != newParent.itemMap.end())
         throw DuplicateItemException();
 
-    SubMoveItem(*(it->second), parent, overwrite);
+    SubMoveItem(*(it->second), newParent, overwrite);
 
-    if (dup != parent.itemMap.end()) parent.itemMap.erase(dup);
+    if (dup != newParent.itemMap.end()) newParent.itemMap.erase(dup);
 
-    parent.itemMap.insert(this->itemMap.extract(it));
+    newParent.itemMap.insert(this->itemMap.extract(it));
 }
 
 /*****************************************************/

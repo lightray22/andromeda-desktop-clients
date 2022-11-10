@@ -106,13 +106,13 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
 }
 
 /*****************************************************/
-void Backend::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
+void Backend::Authenticate(const std::string& username_, const std::string& password, const std::string& twofactor)
 {
-    this->debug << __func__ << "(username:" << username << ")"; this->debug.Info();
+    this->debug << __func__ << "(username:" << username_ << ")"; this->debug.Info();
 
     CloseSession();
 
-    Runner::Input input { "accounts", "createsession", {{ "username", username }, { "auth_password", password }}};
+    Runner::Input input { "accounts", "createsession", {{ "username", username_ }, { "auth_password", password }}};
 
     if (!twofactor.empty()) input.params["auth_twofactor"] = twofactor;
 
@@ -131,14 +131,14 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 
-    SetUsername(username);
+    SetUsername(username_);
     config.LoadAccountLimits(*this);
 }
 
 /*****************************************************/
-void Backend::AuthInteractive(const std::string& username, std::string password, bool forceSession)
+void Backend::AuthInteractive(const std::string& username_, std::string password, bool forceSession)
 {
-    this->debug << __func__ << "(username:" << username << ")"; this->debug.Info();
+    this->debug << __func__ << "(username:" << username_ << ")"; this->debug.Info();
 
     if (this->runner.RequiresSession() || forceSession)
     {
@@ -150,28 +150,28 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
 
         try
         {
-            Authenticate(username, password);
+            Authenticate(username_, password);
         }
         catch (const TwoFactorRequiredException&)
         {
             std::string twofactor; std::cout << "Two Factor? ";
             Utilities::SilentReadConsole(twofactor);
 
-            Authenticate(username, password, twofactor);
+            Authenticate(username_, password, twofactor);
         }
     }
-    else SetUsername(username);
+    else SetUsername(username_);
 }
 
 /*****************************************************/
-void Backend::PreAuthenticate(const std::string& sessionID, const std::string& sessionKey)
+void Backend::PreAuthenticate(const std::string& sessionID_, const std::string& sessionKey_)
 {
     this->debug << __func__ << "()"; this->debug.Info();
 
     CloseSession();
 
-    this->sessionID = sessionID;
-    this->sessionKey = sessionKey;
+    this->sessionID = sessionID_;
+    this->sessionKey = sessionKey_;
 
     Runner::Input input {"accounts", "getaccount"};
 

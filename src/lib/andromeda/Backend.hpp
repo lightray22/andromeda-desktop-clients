@@ -130,7 +130,7 @@ public:
     void Initialize(const Config::Options& options);
 
     /** Sets the backend to use the given username w/o a session */
-    void SetUsername(const std::string& username) { this->username = username; }
+    void SetUsername(const std::string& username_) { this->username = username_; }
 
     /** Registers a pre-existing session ID/key for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);

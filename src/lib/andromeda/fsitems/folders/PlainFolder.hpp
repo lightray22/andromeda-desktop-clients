@@ -47,15 +47,15 @@ protected:
     
     virtual void SubDeleteItem(Item& item) override;
 
-    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) override;
+    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override;
 
-    virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) override;
+    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) override;
 
     virtual void SubDelete() override;
 
-    virtual void SubRename(const std::string& name, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, bool overwrite) override;
 
-    virtual void SubMove(Folder& parent, bool overwrite) override;
+    virtual void SubMove(Folder& newParent, bool overwrite) override;
 
 private:
 

@@ -74,10 +74,10 @@ public:
     virtual void Delete(bool internal = false) final;
 
     /** Set this item's name to the given name, optionally overwrite */
-    virtual void Rename(const std::string& name, bool overwrite = false, bool internal = false) final;
+    virtual void Rename(const std::string& newName, bool overwrite = false, bool internal = false) final;
 
     /** Move this item to the given parent folder, optionally overwrite */
-    virtual void Move(Folder& parent, bool overwrite = false, bool internal = false) final;
+    virtual void Move(Folder& newParent, bool overwrite = false, bool internal = false) final;
 
     /** 
      * Flushes all dirty pages to the backend 
@@ -112,10 +112,10 @@ protected:
     virtual void SubDelete() = 0;
 
     /** Item type-specific rename */
-    virtual void SubRename(const std::string& name, bool overwrite) = 0;
+    virtual void SubRename(const std::string& newName, bool overwrite) = 0;
 
     /** Item type-specific move */
-    virtual void SubMove(Folder& parent, bool overwrite) = 0;
+    virtual void SubMove(Folder& newParent, bool overwrite) = 0;
     
     /** Reference to the API backend */
     Backend& backend;

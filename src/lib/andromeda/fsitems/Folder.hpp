@@ -81,11 +81,11 @@ public:
     /** Delete the subitem with the given name */
     virtual void DeleteItem(const std::string& name) final;
 
-    /** Rename the subitem name0 to name1, optionally overwrite */
-    virtual void RenameItem(const std::string& name0, const std::string& name1, bool overwrite = false) final;
+    /** Rename the subitem oldName to newName, optionally overwrite */
+    virtual void RenameItem(const std::string& oldName, const std::string& newName, bool overwrite = false) final;
 
     /** Move the subitem name to parent folder, optionally overwrite */
-    virtual void MoveItem(const std::string& name, Folder& parent, bool overwrite = false) final;
+    virtual void MoveItem(const std::string& name, Folder& newParent, bool overwrite = false) final;
 
     virtual void FlushCache(bool nothrow = false) override;
 
@@ -122,10 +122,10 @@ protected:
     virtual void SubDeleteItem(Item& item) = 0;
 
     /** The folder-type-specific rename subitem */
-    virtual void SubRenameItem(Item& item, const std::string& name, bool overwrite) = 0;
+    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) = 0;
 
     /** The folder-type-specific move subitem */
-    virtual void SubMoveItem(Item& item, Folder& parent, bool overwrite) = 0;
+    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) = 0;
 
     /** map of subitems */
     ItemMap itemMap;
