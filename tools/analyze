@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+which cppcheck || (echo "can't find cppcheck"; exit 1)
+
 if ! [ -e build ]; then mkdir build; fi; cd build
 
 if [ "$1" != "noinit" ]; then
@@ -10,12 +12,15 @@ PLATFORMS="native unix32 unix64 win32A win32W win64"
 LOGFILE=cppcheck/analyze_stderr.log
 
 for PLAT in $PLATFORMS; do
+
     if [ -e $LOGFILE ]; then rm $LOGFILE; fi
-    if ! [ -e cppcheck/$PLAT ]; then mkdir -p cppcheck/$PLAT; fi
+
+    BUILD=cppcheck/$PLAT
+    if ! [ -e cppcheck/$PLAT ]; then mkdir -p $BUILD; fi
 
     echo "scanning platform $PLAT..."
     cppcheck --project=compile_commands.json \
-        --cppcheck-build-dir=cppcheck/$PLAT \
+        --cppcheck-build-dir=$BUILD \
         --quiet --std=c++17 --platform=$PLAT \
         --suppress="*:*_deps/*" \
         --suppress=missingIncludeSystem \
@@ -26,7 +31,6 @@ for PLAT in $PLATFORMS; do
 
     if [ -s $LOGFILE ]; then
         echo "found errors with target $PLAT!"
-        cat $LOGFILE
-        exit 1
+        cat $LOGFILE; exit 2
     fi
 done; rm $LOGFILE

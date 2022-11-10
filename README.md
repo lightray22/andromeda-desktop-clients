@@ -43,6 +43,7 @@ The following platforms are targeted for support and should work:
   - Ubuntu 22.10 amd64 (GCC 12.2)
   - Debian 11 armhf (GCC 10.2)
 - Arch Linux amd64: `pacman -S make cmake gcc python` (GCC 12.2)
+  - Arch Linux amd64 (Clang): `pacman -S clang llvm` (Clang 14)
 - Alpine Linux amd64: `apk add make cmake g++ python3` (GCC 11.2)
 - FreeBSD amd64: `pkg install cmake python`
   - FreeBSD 12.3 (Clang 10.0)

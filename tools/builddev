@@ -2,7 +2,9 @@
 
 if ! [ -e build ]; then mkdir build; fi; cd build
 
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=1 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON "$@"
+cmake .. -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DBUILD_TESTING=1 "$@"
 
 (cd ..; tools/analyze noinit)
 
