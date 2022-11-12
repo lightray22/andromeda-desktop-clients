@@ -32,7 +32,7 @@ public:
     struct Options
     {
         /** maximum retries before throwing */
-        size_t maxRetries { 12 };
+        unsigned long maxRetries { 12 };
         /** The time to wait between each retry */
         std::chrono::seconds retryTime { std::chrono::seconds(5) };
         /** The connection read/write timeout */

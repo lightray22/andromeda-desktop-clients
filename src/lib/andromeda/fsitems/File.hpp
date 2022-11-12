@@ -43,8 +43,9 @@ public:
      * @param buffer pointer to buffer to fill
      * @param offset byte offset in file to read
      * @param length number of bytes to read
+     * @return the number of bytes read
      */
-    virtual size_t ReadBytes(std::byte* buffer, const size_t offset, size_t length) final;
+    virtual size_t ReadBytes(std::byte* buffer, const uint64_t offset, size_t length) final;
 
     /**
      * Writes data to a file
@@ -52,10 +53,10 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const std::byte* buffer, const size_t offset, const size_t length) final;
+    virtual void WriteBytes(const std::byte* buffer, const uint64_t offset, const size_t length) final;
 
     /** Set the file size to the given value */
-    virtual void Truncate(size_t newSize) final;
+    virtual void Truncate(uint64_t newSize) final;
 
     virtual void FlushCache(bool nothrow = false) override;
 
@@ -72,32 +73,32 @@ private:
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const;
 
-    size_t pageSize;
+    uint64_t pageSize;
 
     struct Page
     {
-        explicit Page(size_t pageSize) : data(pageSize){}
+        explicit Page(uint64_t pageSize) : data(pageSize){}
         typedef std::vector<std::byte> Data; Data data;
         bool dirty { false };
     };
 
-    typedef std::map<size_t, Page> PageMap; PageMap pages;
+    typedef std::map<uint64_t, Page> PageMap; PageMap pages;
 
     /** 
      * Returns a reference to a data page
      * @param index index of the page to load
      * @param minsize minimum size of the page for writing
      */
-    virtual Page& GetPage(const size_t index, const size_t minsize = 0) final;
+    virtual Page& GetPage(const uint64_t index, const uint64_t minsize = 0) final;
 
     /** Reads data from the given page index */
-    virtual void ReadPage(std::byte* buffer, const size_t index, const size_t offset, const size_t length) final;
+    virtual void ReadPage(std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length) final;
 
     /** Writes data to the given page index */
-    virtual void WritePage(const std::byte* buffer, const size_t index, const size_t offset, const size_t length) final;
+    virtual void WritePage(const std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length) final;
 
     /* file size as far as the backend knows */
-    size_t backendSize;
+    uint64_t backendSize;
 
     /** true if the file was deleted */
     bool deleted { false };

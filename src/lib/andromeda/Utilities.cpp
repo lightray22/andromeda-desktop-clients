@@ -232,12 +232,12 @@ void Debug::Error(const std::string& str)
 }
 
 /*****************************************************/
-void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
+void Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
 {
     this->buffer << "printing " << bytes << " bytes at " 
         << std::hex << ptr << std::endl;
 
-    for (size_t i { 0 }; i < bytes; i++)
+    for (decltype(bytes) i { 0 }; i < bytes; i++)
     {
         const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
         
@@ -246,7 +246,7 @@ void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
         // need to cast to a 16-bit integer so it gets printed as a number not a character
         this->buffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
 
-        if (i % width == width-1) this->buffer << std::endl;
+        if ((i % width) + 1 == width) this->buffer << std::endl;
     }
 
     this->buffer << std::endl;

@@ -52,7 +52,7 @@ public:
         /** The client cache type (debug) */
         CacheType cacheType { CacheType::NORMAL };
         /** The file data page size */
-        size_t pageSize { 1024*1024 }; // 1M
+        uint64_t pageSize { 1024*1024 }; // 1M
         /** Whether we are in read-only mode */
         bool readOnly { false };
         /** The time period to use for refreshing API data */

@@ -252,7 +252,7 @@ public:
      * @param offset offset to read from
      * @param length number of bytes to read
      */
-    std::string ReadFile(const std::string& id, const size_t offset, const size_t length);
+    std::string ReadFile(const std::string& id, const uint64_t offset, const size_t length);
 
     /**
      * Writes data to a file
@@ -260,14 +260,14 @@ public:
      * @param offset offset to write to
      * @param data file data to write
      */
-    nlohmann::json WriteFile(const std::string& id, const size_t offset, const std::string& data);
+    nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const std::string& data);
 
     /**
      * Truncates a file
      * @param id file ID
      * @param size new file size
      */
-    nlohmann::json TruncateFile(const std::string& id, const size_t size);
+    nlohmann::json TruncateFile(const std::string& id, const uint64_t size);
 
 private:
     
@@ -295,8 +295,8 @@ private:
     std::string accountID;
     std::string sessionID;
     std::string sessionKey;
-
-    size_t reqCount { 0 };
+    
+    uint64_t reqCount { 0 };
 
     Runner& runner;
     Config config;

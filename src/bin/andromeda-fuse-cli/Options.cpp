@@ -237,7 +237,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
         else if (option == "max-retries")
         {
-            try { this->hOptions.maxRetries = stoi(value); }
+            try { this->hOptions.maxRetries = stoul(value); }
             catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }

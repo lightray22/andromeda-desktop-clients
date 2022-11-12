@@ -53,7 +53,7 @@ public:
     virtual const std::string& GetName() const final { return this->name; }
 
     /** Returns the total size */
-    virtual size_t GetSize() const final { return this->size; }
+    virtual uint64_t GetSize() const final { return this->size; }
 
     /** Get the created time stamp */
     virtual Date GetCreated() const final { return this->created; } 
@@ -133,7 +133,7 @@ protected:
     std::string name;
 
     /** Size of the item in bytes */
-    size_t size { 0 };
+    uint64_t size { 0 };
 
     /** Item creation timestamp */
     Date created { 0 };

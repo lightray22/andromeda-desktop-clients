@@ -450,7 +450,7 @@ nlohmann::json Backend::MoveFolder(const std::string& id, const std::string& par
 }
 
 /*****************************************************/
-std::string Backend::ReadFile(const std::string& id, const size_t offset, const size_t length)
+std::string Backend::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -469,7 +469,7 @@ std::string Backend::ReadFile(const std::string& id, const size_t offset, const 
 }
 
 /*****************************************************/
-nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, const std::string& data)
+nlohmann::json Backend::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
     this->debug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size(); this->debug.Info();
 
@@ -481,7 +481,7 @@ nlohmann::json Backend::WriteFile(const std::string& id, const size_t offset, co
 }
 
 /*****************************************************/
-nlohmann::json Backend::TruncateFile(const std::string& id, const size_t size)
+nlohmann::json Backend::TruncateFile(const std::string& id, const uint64_t size)
 {
     this->debug << __func__ << "(id:" << id << " size:" << size << ")"; this->debug.Info();
 
