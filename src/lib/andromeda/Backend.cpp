@@ -78,9 +78,9 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             return val.at("appdata");
         else
         {
-            const int code = val.at("code").get<int>();
-            const auto [message, details] = Utilities::split(
-                val.at("message").get<std::string>(),":");
+            const int code { val.at("code").get<int>() };
+            const auto [message, details] { Utilities::split(
+                val.at("message").get<std::string>(),":") };
             
             this->debug << __func__ << "()... message:" << message; this->debug.Backend();
 

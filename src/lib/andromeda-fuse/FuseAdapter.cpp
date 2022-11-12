@@ -188,7 +188,7 @@ struct FuseLoop
     {
         debug << __func__ << "() fuse_loop()"; debug.Info();
 
-        int retval = fuse_loop(context.fuse);
+        int retval { fuse_loop(context.fuse) };
 
         debug << __func__ << "() fuse_loop() returned! retval:" << retval; debug.Info();
     }

@@ -37,7 +37,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
         arguments.push_back(param.second);
     }
 
-    const std::string* inputPtr = nullptr;
+    const std::string* inputPtr { nullptr };
 
     if (input.files.size() > 0)
     {
@@ -60,7 +60,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 
     if (inputPtr != nullptr)
     {
-        const auto* inputData = reinterpret_cast<const uint8_t*>(inputPtr->c_str());
+        const auto* inputData { reinterpret_cast<const uint8_t*>(inputPtr->c_str()) };
 
         reproc::input procIn(inputData, inputPtr->size());
         error = reproc::fill(process, procIn);

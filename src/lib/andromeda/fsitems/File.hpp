@@ -78,7 +78,7 @@ private:
     {
         explicit Page(size_t pageSize) : data(pageSize){}
         typedef std::vector<std::byte> Data; Data data;
-        bool dirty = false;
+        bool dirty { false };
     };
 
     typedef std::map<size_t, Page> PageMap; PageMap pages;
@@ -100,7 +100,7 @@ private:
     size_t backendSize;
 
     /** true if the file was deleted */
-    bool deleted = false;
+    bool deleted { false };
 
     Debug debug;
 };

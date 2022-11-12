@@ -146,7 +146,7 @@ private:
     Andromeda::HTTPRunner::Options& hOptions;
     AndromedaFuse::FuseAdapter::Options& fOptions;
 
-    Andromeda::Debug::Level debugLevel = Andromeda::Debug::Level::NONE;
+    Andromeda::Debug::Level debugLevel { Andromeda::Debug::Level::NONE };
 
     ApiType apiType { static_cast<ApiType>(-1) };
     std::string apiPath;
@@ -154,12 +154,12 @@ private:
 
     std::string username;
     std::string password;
-    bool forceSession = false;
+    bool forceSession { false };
 
     std::string sessionid;
     std::string sessionkey;
     
-    RootType mountRootType = RootType::SUPERROOT;
+    RootType mountRootType { RootType::SUPERROOT };
     std::string mountItemID;
 };
 

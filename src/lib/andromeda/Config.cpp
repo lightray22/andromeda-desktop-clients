@@ -21,12 +21,12 @@ void Config::Initialize(Backend& backend, const Config::Options& options_)
 
     try
     {
-        int api = config.at("core").at("api").get<int>();
+        const int api { config.at("core").at("api").get<int>() };
 
         if (API_VERSION != api) 
             throw APIVersionException(api);
 
-        const nlohmann::json& apps1 = config.at("core").at("apps");
+        const nlohmann::json& apps1 { config.at("core").at("apps") };
         std::vector<const char*> apps2 { "core", "accounts", "files" };
 
         for (const std::string app : apps2)

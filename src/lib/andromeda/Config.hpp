@@ -17,7 +17,7 @@ public:
     Config();
     
     /** The Major API version this client works with */
-    static constexpr int API_VERSION = 2;
+    static constexpr int API_VERSION { 2 };
 
     /** Base exception for Config exceptions */
     class Exception : public Utilities::Exception { public:
@@ -50,13 +50,13 @@ public:
         };
 
         /** The client cache type (debug) */
-        CacheType cacheType = CacheType::NORMAL;
+        CacheType cacheType { CacheType::NORMAL };
         /** The file data page size */
-        size_t pageSize = 1024*1024; // 1M
+        size_t pageSize { 1024*1024 }; // 1M
         /** Whether we are in read-only mode */
-        bool readOnly = false;
+        bool readOnly { false };
         /** The time period to use for refreshing API data */
-        std::chrono::seconds refreshTime = std::chrono::seconds(15);
+        std::chrono::seconds refreshTime { std::chrono::seconds(15) };
     };
 
     /** Sets config from the given backend and options */
@@ -75,21 +75,21 @@ public:
     bool canRandWrite() const { return this->randWrite; }
 
     /** Returns the max # of bytes allowed in an upload */
-    unsigned int GetUploadMaxBytes() const { return this->uploadMaxBytes; }
+    uint64_t GetUploadMaxBytes() const { return this->uploadMaxBytes; }
 
     /** Returns the max # of files allowed in an upload */
-    unsigned int GetUploadMaxFiles() const { return this->uploadMaxFiles; }
+    uint64_t GetUploadMaxFiles() const { return this->uploadMaxFiles; }
 
 private:
     Debug debug;
 
     Options options;
 
-    bool readOnly = false;
-    bool randWrite = true;
+    bool readOnly { false };
+    bool randWrite { true };
 
-    unsigned int uploadMaxBytes = 0;
-    unsigned int uploadMaxFiles = 0;
+    uint64_t uploadMaxBytes { 0 };
+    uint64_t uploadMaxFiles { 0 };
 };
 
 } // namespace Andromeda

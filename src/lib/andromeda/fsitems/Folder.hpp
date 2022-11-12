@@ -136,7 +136,7 @@ protected:
 private:
 
     /** true if itemMap is loaded */
-    bool haveItems = false;
+    bool haveItems { false };
 
     /** time point when contents were loaded */
     std::chrono::steady_clock::time_point refreshed;

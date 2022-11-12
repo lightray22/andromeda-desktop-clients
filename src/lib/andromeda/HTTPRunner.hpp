@@ -32,11 +32,11 @@ public:
     struct Options
     {
         /** maximum retries before throwing */
-        size_t maxRetries = 12;
+        size_t maxRetries { 12 };
         /** The time to wait between each retry */
-        std::chrono::seconds retryTime = std::chrono::seconds(5);
+        std::chrono::seconds retryTime { std::chrono::seconds(5) };
         /** The connection read/write timeout */
-        std::chrono::seconds timeout = std::chrono::seconds(120);
+        std::chrono::seconds timeout { std::chrono::seconds(120) };
         /** HTTP basic-auth username */
         std::string username;
         /** HTTP basic-auth password */
@@ -44,7 +44,7 @@ public:
         /** HTTP proxy server hostname */
         std::string proxyHost;
         /** HTTP proxy server port */
-        short proxyPort = 443;
+        uint16_t proxyPort { 443 };
         /** HTTP proxy server basic-auth username */
         std::string proxyUsername;
         /** HTTP proxy server basic-auth password */
@@ -74,7 +74,7 @@ private:
     std::string baseURL;
     httplib::Client httpClient;
 
-    bool canRetry = false;
+    bool canRetry { false };
 };
 
 } // namespace Andromeda

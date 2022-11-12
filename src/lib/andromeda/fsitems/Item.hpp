@@ -121,10 +121,10 @@ protected:
     Backend& backend;
 
     /** Pointer to parent folder */
-    Folder* parent = nullptr;
+    Folder* parent { nullptr };
 
     /** Pointer to filesystem config */
-    const FSConfig* fsConfig = nullptr;
+    const FSConfig* fsConfig { nullptr };
 
     /** Backend object ID */
     std::string id;
@@ -133,16 +133,16 @@ protected:
     std::string name;
 
     /** Size of the item in bytes */
-    size_t size = 0;
+    size_t size { 0 };
 
     /** Item creation timestamp */
-    Date created = 0;
+    Date created { 0 };
 
     /** Item modified timestamp */
-    Date modified = 0;
+    Date modified { 0 };
 
     /** Item accessed timestamp */
-    Date accessed = 0;
+    Date accessed { 0 };
 
 private:
 

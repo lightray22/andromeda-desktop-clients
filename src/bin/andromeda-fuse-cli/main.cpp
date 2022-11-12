@@ -63,7 +63,7 @@ int main(int argc, char** argv)
             #pragma warning(disable:4996) // getenv is safe in C++11
         #endif
 
-        const char* homeDir = std::getenv("HOME");
+        const char* homeDir { std::getenv("HOME") };
         if (homeDir != nullptr) paths.push_back(
             std::string(homeDir)+"/.config/andromeda");
 

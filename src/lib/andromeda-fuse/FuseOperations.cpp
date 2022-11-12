@@ -178,9 +178,9 @@ static void item_stat(const Item& item, struct stat* stbuf)
     stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
 
     #if WIN32
-        auto created = item.GetCreated();
-        auto modified = item.GetModified();
-        auto accessed = item.GetAccessed();
+        auto created { item.GetCreated() };
+        auto modified { item.GetModified() };
+        auto accessed { item.GetAccessed() };
 
         get_timespec(created, stbuf->st_birthtim);
         get_timespec(created, stbuf->st_ctim);
@@ -274,12 +274,12 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 
         for (const Folder::ItemMap::value_type& pair : items)
         {
-            const std::unique_ptr<Item>& item = pair.second;
+            const std::unique_ptr<Item>& item { pair.second };
 
             debug << __func__ << "... subitem: " << item->GetName(); debug.Info();
             
 #if LIBFUSE2
-            int retval = filler(buf, item->GetName().c_str(), NULL, 0);
+            int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
@@ -295,9 +295,9 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
         for (const char* name : {".",".."})
         {
 #if LIBFUSE2
-            int retval = filler(buf, name, NULL, 0);
+            int retval { filler(buf, name, NULL, 0) };
 #else
-            int retval = filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0));
+            int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
 #endif
             if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
@@ -311,7 +311,8 @@ int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
     while (fullpath[0] == '/') fullpath++; 
     const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
-    const std::string& path = pair.first; const std::string& name = pair.second;
+    const std::string& path { pair.first }; 
+    const std::string& name { pair.second };
 
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
@@ -328,7 +329,8 @@ int a2fuse_mkdir(const char* fullpath, mode_t mode)
 {
     while (fullpath[0] == '/') fullpath++; 
     const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
-    const std::string& path = pair.first; const std::string& name = pair.second;
+    const std::string& path { pair.first }; 
+    const std::string& name { pair.second };
     
     debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
 
@@ -373,11 +375,13 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 {
     while (oldpath[0] == '/') oldpath++; 
     const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
-    const std::string& oldPath = pair0.first; const std::string& oldName = pair0.second;
+    const std::string& oldPath { pair0.first }; 
+    const std::string& oldName { pair0.second };
 
     while (newpath[0] == '/') newpath++; 
     const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
-    const std::string& newPath = pair1.first; const std::string& newName = pair1.second;
+    const std::string& newPath { pair1.first };
+    const std::string& newName { pair1.second };
 
     debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
 

@@ -115,8 +115,8 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
     for (const decltype(options)::value_type& pair : options) 
     {
-        const std::string& option = pair.first;
-        const std::string& value = pair.second;
+        const std::string& option { pair.first };
+        const std::string& value { pair.second };
 
         if (option == "d" || option == "debug")
         {
@@ -128,8 +128,8 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         /** Backend endpoint selection */
         else if (option == "s" || option == "apiurl")
         {
-            std::vector<std::string> parts = 
-                Utilities::explode(value, "/", 2, 2);
+            std::vector<std::string> parts {
+                Utilities::explode(value, "/", 2, 2) };
 
             if (parts.size() != 2) 
                 throw BadValueException(option);

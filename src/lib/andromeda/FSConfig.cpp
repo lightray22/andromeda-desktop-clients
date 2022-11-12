@@ -12,7 +12,7 @@ typedef std::map<std::string, FSConfig> CacheMap; static CacheMap cache;
 /*****************************************************/
 const FSConfig& FSConfig::LoadByID(Backend& backend, const std::string& id)
 {
-    CacheMap::iterator it = cache.find(id);
+    CacheMap::iterator it { cache.find(id) };
 
     if (it == cache.end())
     {
@@ -36,7 +36,7 @@ FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
 
         data.at("readonly").get_to(this->readOnly);
 
-        std::string sttype; data.at("sttype").get_to(sttype);
+        const std::string sttype { data.at("sttype").get<std::string>() };
 
         if (sttype == "S3")  this->writeMode = WriteMode::NONE;
         if (sttype == "FTP") this->writeMode = WriteMode::APPEND;

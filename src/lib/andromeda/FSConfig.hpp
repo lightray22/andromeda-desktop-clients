@@ -44,11 +44,11 @@ public:
 
 private:
 
-    size_t chunksize = 0;
+    size_t chunksize { 0 };
 
-    bool readOnly = false;
+    bool readOnly { false };
 
-    WriteMode writeMode = WriteMode::RANDOM;
+    WriteMode writeMode { WriteMode::RANDOM };
 
     Debug debug;
 };

@@ -27,18 +27,18 @@ Item& Folder::GetItemByPath(std::string path)
 
     if (path.empty()) return *this;    
 
-    Utilities::StringList parts = Utilities::explode(path,"/");
+    Utilities::StringList parts { Utilities::explode(path,"/") };
 
     // iteratively (not recursively) find the correct parent/subitem
-    Folder* parent_ = this; 
-    for (Utilities::StringList::iterator pIt = parts.begin(); 
+    Folder* parent_ { this }; 
+    for (Utilities::StringList::iterator pIt { parts.begin() }; 
         pIt != parts.end(); ++pIt )
     {
-        const ItemMap& items = parent_->GetItems();
-        ItemMap::const_iterator it = items.find(*pIt);
+        const ItemMap& items { parent_->GetItems() };
+        ItemMap::const_iterator it { items.find(*pIt) };
         if (it == items.end()) throw NotFoundException();
 
-        Item& item = *(it->second);
+        Item& item { *(it->second) };
 
         if (std::next(pIt) == parts.end()) return item; // last part of path
 
@@ -53,7 +53,7 @@ Item& Folder::GetItemByPath(std::string path)
 /*****************************************************/
 File& Folder::GetFileByPath(const std::string& path)
 {
-    Item& item = GetItemByPath(path);
+    Item& item { GetItemByPath(path) };
 
     if (item.GetType() != Type::FILE)
         throw NotFileException();
@@ -64,7 +64,7 @@ File& Folder::GetFileByPath(const std::string& path)
 /*****************************************************/
 Folder& Folder::GetFolderByPath(const std::string& path)
 {
-    Item& item = GetItemByPath(path);
+    Item& item { GetItemByPath(path) };
 
     if (item.GetType() != Type::FOLDER)
         throw NotFolderException();
@@ -75,11 +75,11 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 /*****************************************************/
 const Folder::ItemMap& Folder::GetItems()
 {
-    bool expired = (steady_clock::now() - this->refreshed)
-        > backend.GetConfig().GetOptions().refreshTime;
+    bool expired { (steady_clock::now() - this->refreshed)
+        > backend.GetConfig().GetOptions().refreshTime };
 
-    bool noCache = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE; // load always
-    bool memory  = backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::MEMORY; // load once
+    bool noCache { backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE }; // load always
+    bool memory  { backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::MEMORY }; // load once
 
     if (!this->haveItems || (expired && !memory) || noCache) 
     {
@@ -97,11 +97,11 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
 
     Folder::NewItemMap newItems;
 
-    NewItemFunc newFile = [&](const nlohmann::json& fileJ)->std::unique_ptr<Item> {
-        return std::make_unique<File>(backend, fileJ, *this); };
+    NewItemFunc newFile { [&](const nlohmann::json& fileJ)->std::unique_ptr<Item> {
+        return std::make_unique<File>(backend, fileJ, *this); } };
 
-    NewItemFunc newFolder = [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
-        return std::make_unique<Folders::PlainFolder>(backend, &folderJ, this); };
+    NewItemFunc newFolder { [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
+        return std::make_unique<Folders::PlainFolder>(backend, &folderJ, this); } };
 
     try
     {
@@ -142,7 +142,7 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
         else existIt->second->Refresh(data); // update existing
     }
 
-    ItemMap::const_iterator oldIt = this->itemMap.begin();
+    ItemMap::const_iterator oldIt { this->itemMap.begin() };
     for (; oldIt != this->itemMap.end();)
     {
         if (newItems.find(oldIt->first) == newItems.end())
@@ -158,7 +158,7 @@ void Folder::CreateFile(const std::string& name_)
 {
     debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
-    const ItemMap& items = GetItems(); // pre-populate items
+    const ItemMap& items { GetItems() }; // pre-populate items
 
     if (items.count(name_)) throw DuplicateItemException();
 
@@ -170,7 +170,7 @@ void Folder::CreateFolder(const std::string& name_)
 {
     debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
-    const ItemMap& items = GetItems(); // pre-populate items
+    const ItemMap& items { GetItems() }; // pre-populate items
 
     if (items.count(name_)) throw DuplicateItemException();
 
@@ -182,7 +182,7 @@ void Folder::DeleteItem(const std::string& name_)
 {
     debug << this->name << ":" << __func__ << "(name:" << name_ << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name_);
+    GetItems(); ItemMap::const_iterator it { this->itemMap.find(name_) };
     if (it == this->itemMap.end()) throw NotFoundException();
 
     SubDeleteItem(*(it->second)); this->itemMap.erase(it);
@@ -193,10 +193,10 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
 {
     debug << this->name << ":" << __func__ << "(oldName:" << oldName << " newName:" << newName << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(oldName);
+    GetItems(); ItemMap::const_iterator it { this->itemMap.find(oldName) };
     if (it == this->itemMap.end()) throw NotFoundException();
 
-    ItemMap::const_iterator dup = this->itemMap.find(newName);
+    ItemMap::const_iterator dup { this->itemMap.find(newName) };
     if (!overwrite && dup != this->itemMap.end())
         throw DuplicateItemException();
 
@@ -213,12 +213,12 @@ void Folder::MoveItem(const std::string& name_, Folder& newParent, bool overwrit
 {
     debug << this->name << ":" << __func__ << "(name:" << name_ << " parent:" << newParent.GetName() << ")"; debug.Info();
 
-    GetItems(); ItemMap::const_iterator it = this->itemMap.find(name_);
+    GetItems(); ItemMap::const_iterator it { this->itemMap.find(name_) };
     if (it == this->itemMap.end()) throw NotFoundException();
 
     newParent.GetItems(); if (newParent.isReadOnly()) throw ModifyException();
 
-    ItemMap::const_iterator dup = newParent.itemMap.find(name_);    
+    ItemMap::const_iterator dup { newParent.itemMap.find(name_) };
     if (!overwrite && dup != newParent.itemMap.end())
         throw DuplicateItemException();
 

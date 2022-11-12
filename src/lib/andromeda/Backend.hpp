@@ -289,14 +289,14 @@ private:
     bool isMemory() const;
 
     /** True if we created the session in use */
-    bool createdSession = false;
+    bool createdSession { false };
 
     std::string username;
     std::string accountID;
     std::string sessionID;
     std::string sessionKey;
 
-    size_t reqCount = 0;
+    size_t reqCount { 0 };
 
     Runner& runner;
     Config config;

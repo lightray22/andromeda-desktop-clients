@@ -35,10 +35,10 @@ public:
         std::list<std::string> fuseArgs;
 
         /** Whether fake chmod (no-op) is allowed */
-        bool fakeChmod = true;
+        bool fakeChmod { true };
 
         /** Whether fake chown (no-op) is allowed */
-        bool fakeChown = true;
+        bool fakeChown { true };
     };
 
     /**

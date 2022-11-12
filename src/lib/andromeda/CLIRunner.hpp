@@ -34,7 +34,7 @@ private:
 
     std::string apiPath;
 
-    const std::chrono::seconds timeout = std::chrono::seconds(120);
+    const std::chrono::seconds timeout { std::chrono::seconds(120) };
 };
 
 } // namespace Andromeda

@@ -40,11 +40,11 @@ else()
         # -Wshadow TODO
         -Wnon-virtual-dtor -Wold-style-cast
         -Wcast-align -Woverloaded-virtual -Wpedantic
-        -Wconversion 
+        -Wconversion -Wdouble-promotion
         # -Wsign-conversion TODO
             -Wno-sign-conversion
-        -Wdouble-promotion
         -Wformat=2 -Wimplicit-fallthrough
+        -Wcast-qual -Wfloat-equal -Wcast-align
     )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

@@ -35,7 +35,8 @@ public:
      * @param parent pointer to parent
      * @param haveItems true if JSON has subitems
      */
-    explicit PlainFolder(Backend& backend, const nlohmann::json* data = nullptr, Folder* parent = nullptr, bool haveItems = false);
+    explicit PlainFolder(Backend& backend, const nlohmann::json* data = nullptr, 
+        Folder* parent = nullptr, bool haveItems = false);
 
 protected:
 

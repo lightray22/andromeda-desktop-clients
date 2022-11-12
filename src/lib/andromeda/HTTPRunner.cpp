@@ -63,7 +63,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
     }
 
-    for (size_t attempt = 0;; attempt++)
+    for (size_t attempt { 0 }; ; attempt++)
     {
         httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
 

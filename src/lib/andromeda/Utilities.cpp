@@ -25,7 +25,7 @@ Utilities::StringList Utilities::explode(
     
     if (str.empty()) return retval;
 
-    size_t skipped = 0, start = 0, end;
+    size_t skipped { 0 }, start { 0 }, end;
     while ((end = str.find(delim, start)) != std::string::npos
             && retval.size()+1 < max)
     {
@@ -52,7 +52,7 @@ Utilities::StringPair Utilities::split(
 {
     StringPair retval;
 
-    size_t pos = last ? str.rfind(delim) : str.find(delim);
+    size_t pos { last ? str.rfind(delim) : str.find(delim) };
 
     if (pos == std::string::npos)
     {
@@ -81,12 +81,12 @@ bool Utilities::endsWith(const std::string& str, const std::string& end)
 bool Utilities::parseArgs(int argc, char** argv, 
     Utilities::Flags& flags, Utilities::Options& options)
 {
-    for (int i = 1; i < argc; i++)
+    for (int i { 1 }; i < argc; i++)
     {
         if (strlen(argv[i]) < 2 || argv[i][0] != '-') return false;
 
-        const char* flag = argv[i]+1;
-        bool ext = (flag[0] == '-');
+        const char* flag { argv[i]+1 };
+        bool ext { (flag[0] == '-') };
         if (ext) flag++; // --opt
 
         if (!ext && strlen(flag) > 1)
@@ -152,8 +152,8 @@ bool Utilities::stringToBool(const std::string& str)
 void Utilities::SilentReadConsole(std::string& retval)
 {
     #if WIN32
-        HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
-        DWORD mode = 0; GetConsoleMode(hStdin, &mode);
+        HANDLE hStdin { GetStdHandle(STD_INPUT_HANDLE) }; 
+        DWORD mode { 0 }; GetConsoleMode(hStdin, &mode);
         SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
     #else // !WIN32
         struct termios oflags, nflags;
@@ -176,8 +176,8 @@ void Utilities::SilentReadConsole(std::string& retval)
 }
 
 std::mutex Debug::mutex;
-Debug::Level Debug::level = Debug::Level::NONE;
-high_resolution_clock::time_point Debug::start = high_resolution_clock::now();
+Debug::Level Debug::level { Debug::Level::NONE };
+high_resolution_clock::time_point Debug::start { high_resolution_clock::now() };
 
 /*****************************************************/
 Debug::operator bool() const
@@ -212,7 +212,7 @@ void Debug::Error(const std::string& str)
 
     if (level >= Level::DETAILS)
     {
-        duration<double> time = high_resolution_clock::now() - start;
+        duration<double> time { high_resolution_clock::now() - start };
         out << "time:" << time.count() << " ";
 
         out << "tid:" << std::this_thread::get_id() << " ";
@@ -237,9 +237,9 @@ void Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
     this->buffer << "printing " << bytes << " bytes at " 
         << std::hex << ptr << std::endl;
 
-    for (size_t i = 0; i < bytes; i++)
+    for (size_t i { 0 }; i < bytes; i++)
     {
-        const uint8_t* byte = static_cast<const uint8_t*>(ptr)+i;
+        const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
         
         if (i % width == 0) this->buffer << static_cast<const void*>(byte) << ": ";
         

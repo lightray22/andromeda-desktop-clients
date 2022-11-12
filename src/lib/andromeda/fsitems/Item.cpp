@@ -81,7 +81,7 @@ bool Item::isReadOnly() const
 {
     const Config& config(backend.GetConfig());
 
-    bool retval = config.isReadOnly() || config.GetOptions().readOnly;
+    bool retval { config.isReadOnly() || config.GetOptions().readOnly };
 
     if (HasFSConfig()) retval |= GetFSConfig().isReadOnly();
 
