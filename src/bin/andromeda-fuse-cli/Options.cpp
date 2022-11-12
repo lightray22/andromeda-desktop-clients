@@ -222,7 +222,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->hOptions.proxyHost = value;
         else if (option == "proxy-port")
         {
-            try { this->hOptions.proxyPort = static_cast<decltype(this->hOptions.proxyPort)>(stoi(value)); }
+            try { this->hOptions.proxyPort = static_cast<decltype(this->hOptions.proxyPort)>(stoul(value)); }
             catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }

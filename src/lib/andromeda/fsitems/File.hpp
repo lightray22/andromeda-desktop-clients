@@ -73,11 +73,11 @@ private:
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const;
 
-    uint64_t pageSize;
+    size_t pageSize;
 
     struct Page
     {
-        explicit Page(uint64_t pageSize) : data(pageSize){}
+        explicit Page(size_t pageSize) : data(pageSize){}
         typedef std::vector<std::byte> Data; Data data;
         bool dirty { false };
     };
@@ -89,13 +89,13 @@ private:
      * @param index index of the page to load
      * @param minsize minimum size of the page for writing
      */
-    virtual Page& GetPage(const uint64_t index, const uint64_t minsize = 0) final;
+    virtual Page& GetPage(const uint64_t index, const size_t minsize = 0) final;
 
     /** Reads data from the given page index */
-    virtual void ReadPage(std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length) final;
+    virtual void ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     /** Writes data to the given page index */
-    virtual void WritePage(const std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length) final;
+    virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     /* file size as far as the backend knows */
     uint64_t backendSize;

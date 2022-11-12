@@ -10,6 +10,12 @@
 namespace Andromeda {
 namespace FSItems {
 
+/** return the size_t min of a (uint64_t and size_t) */
+size_t min64st(uint64_t s1, size_t s2)
+{
+    return static_cast<size_t>(std::min(s1, static_cast<uint64_t>(s2)));
+}
+
 /*****************************************************/
 File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
     Item(backend), debug("File",this)
@@ -30,8 +36,8 @@ File::File(Backend& backend, const nlohmann::json& data, Folder& parent) :
 
     this->fsConfig = &FSConfig::LoadByID(backend, fsid);
 
-    const uint64_t fsChunk { this->fsConfig->GetChunkSize() };
-    const uint64_t cfChunk { backend.GetConfig().GetOptions().pageSize };
+    const size_t fsChunk { this->fsConfig->GetChunkSize() };
+    const size_t cfChunk { backend.GetConfig().GetOptions().pageSize };
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
     this->pageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
@@ -127,14 +133,14 @@ FSConfig::WriteMode File::GetWriteMode() const
 }
 
 /*****************************************************/
-File::Page& File::GetPage(const uint64_t index, const uint64_t minsize)
+File::Page& File::GetPage(const uint64_t index, const size_t minsize)
 {
     PageMap::iterator it { pages.find(index) };
 
     if (it == pages.end())
     {
         const uint64_t offset { index*this->pageSize };
-        const uint64_t readsize { std::min(this->size-offset, this->pageSize) };
+        const size_t readsize { min64st(this->size-offset, this->pageSize) };
         
         debug << __func__ << "()... index:" << index << " offset:" << offset << " readsize:" << readsize; debug.Info();
 
@@ -144,7 +150,7 @@ File::Page& File::GetPage(const uint64_t index, const uint64_t minsize)
 
         // for the first page we keep it minimal to save memory on small files
         // for subsequent pages we allocate the full size ahead of time for speed
-        const uint64_t pageSizeI { (index == 0) ? readsize : this->pageSize };
+        const size_t pageSizeI { (index == 0) ? readsize : this->pageSize };
 
         it = pages.emplace(index, pageSizeI).first;
 
@@ -175,7 +181,7 @@ void File::FlushCache(bool nothrow)
         if (page.dirty)
         {
             const uint64_t pageOffset { index*this->pageSize };
-            const uint64_t pageSizeI { std::min(this->size-pageOffset, this->pageSize) };
+            const size_t pageSizeI { min64st(this->size-pageOffset, this->pageSize) };
 
             std::string data(reinterpret_cast<const char*>(page.data.data()), pageSizeI);
 
@@ -192,7 +198,7 @@ void File::FlushCache(bool nothrow)
 }
 
 /*****************************************************/
-void File::ReadPage(std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length)
+void File::ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length)
 {
     if (debug) { debug << this->name << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
@@ -202,7 +208,7 @@ void File::ReadPage(std::byte* buffer, const uint64_t index, const uint64_t offs
 }
 
 /*****************************************************/
-void File::WritePage(const std::byte* buffer, const uint64_t index, const uint64_t offset, const size_t length)
+void File::WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length)
 {
     if (debug) { debug << this->name << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; debug.Info(); }
 
@@ -218,7 +224,7 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
 
     if (offset >= this->size) return 0;
 
-    length = std::min(this->size - offset, length);
+    length = min64st(this->size-offset, length);
 
     if (backend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
     {
@@ -229,9 +235,8 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
         uint64_t index { byte / pageSize };
-        uint64_t pOffset { byte - index*pageSize };
-
-        uint64_t pLength { std::min(length+offset-byte, pageSize-pOffset) };
+        size_t pOffset { static_cast<size_t>(byte - index*pageSize) };
+        size_t pLength { min64st(length+offset-byte, pageSize-pOffset) };
 
         if (debug) { debug << __func__ << "()... size:" << this->size << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; debug.Info(); }
@@ -276,9 +281,8 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
         }
 
         uint64_t index { byte / pageSize };
-        uint64_t pOffset { byte - index*pageSize };
-
-        uint64_t pLength { std::min(length+offset-byte, pageSize-pOffset) };
+        size_t pOffset { static_cast<size_t>(byte - index*pageSize) };
+        size_t pLength { min64st(length+offset-byte, pageSize-pOffset) };
 
         if (debug) { debug << __func__ << "()... size:" << size << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; debug.Info(); }

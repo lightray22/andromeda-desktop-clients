@@ -31,7 +31,7 @@ public:
     FSConfig(const nlohmann::json& data, const nlohmann::json& lims);
 
     /** Returns the filesystem chunk size or 0 for none */
-    uint64_t GetChunkSize() const { return this->chunksize; }
+    size_t GetChunkSize() const { return this->chunksize; }
 
     /** Returns true if the filesystem is read-only */
     bool isReadOnly() const { return this->readOnly; }
@@ -44,7 +44,7 @@ public:
 
 private:
 
-    uint64_t chunksize { 0 };
+    size_t chunksize { 0 };
 
     bool readOnly { false };
 
