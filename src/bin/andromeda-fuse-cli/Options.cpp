@@ -254,7 +254,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 /*****************************************************/
 void Options::CheckMissing()
 {
-    if (this->apiType == (ApiType)(-1))
+    if (this->apiType == static_cast<ApiType>(-1))
         throw MissingOptionException("apiurl/apipath");
     if (this->fOptions.mountPath.empty())
         throw MissingOptionException("mountpath");

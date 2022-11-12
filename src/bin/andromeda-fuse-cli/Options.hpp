@@ -148,7 +148,7 @@ private:
 
     Andromeda::Debug::Level debugLevel = Andromeda::Debug::Level::NONE;
 
-    ApiType apiType = (ApiType)(-1);
+    ApiType apiType { static_cast<ApiType>(-1) };
     std::string apiPath;
     std::string apiHostname;
 

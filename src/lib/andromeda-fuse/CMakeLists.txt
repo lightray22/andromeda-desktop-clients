@@ -7,7 +7,7 @@ include(../../../andromeda.cmake)
 
 add_library(andromeda-fuse)
 
-set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp a2fuse_ops.c)
+set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp)
 
 target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse

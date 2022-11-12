@@ -19,7 +19,7 @@ namespace Andromeda {
 /*****************************************************/
 Utilities::StringList Utilities::explode(
     std::string str, const std::string& delim, 
-    const int max, const size_t skip)
+    const size_t max, const size_t skip)
 {
     StringList retval;
     
@@ -27,7 +27,7 @@ Utilities::StringList Utilities::explode(
 
     size_t skipped = 0, start = 0, end;
     while ((end = str.find(delim, start)) != std::string::npos
-            && (max < 0 || retval.size()+1 < (size_t)max))
+            && retval.size()+1 < max)
     {
         if (skipped >= skip)
         {
@@ -160,8 +160,7 @@ void Utilities::SilentReadConsole(std::string& retval)
         tcgetattr(fileno(stdin), &oflags);
 
         nflags = oflags;
-        nflags.c_lflag &= ~ECHO;
-        nflags.c_lflag |= ECHONL;
+        nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO);
         tcsetattr(fileno(stdin), TCSANOW, &nflags);
     #endif
 
@@ -172,6 +171,8 @@ void Utilities::SilentReadConsole(std::string& retval)
     #else // !WIN32
         tcsetattr(fileno(stdin), TCSANOW, &oflags);
     #endif
+
+    std::cout << std::endl;
 }
 
 std::mutex Debug::mutex;

@@ -3,10 +3,6 @@
 
 #include "libfuse_Includes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int a2fuse_statfs(const char *path, struct statvfs* buf);
 int a2fuse_access(const char* path, int mask);
 int a2fuse_open(const char* path, struct fuse_file_info* fi);
@@ -40,8 +36,33 @@ int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
 int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
 #endif
 
-#ifdef __cplusplus
-} // extern "C"
-#endif
+/** fuse_operations mapped to Andromeda functions */
+struct a2fuse_operations : public fuse_operations
+{
+    a2fuse_operations() : fuse_operations() // zero-init base
+    {
+        getattr = a2fuse_getattr;
+        mkdir = a2fuse_mkdir;
+        unlink = a2fuse_unlink;
+        rmdir = a2fuse_rmdir;
+        rename = a2fuse_rename;
+        chmod = a2fuse_chmod;
+        chown = a2fuse_chown;
+        truncate = a2fuse_truncate;
+        open = a2fuse_open;
+        read = a2fuse_read;
+        write = a2fuse_write;
+        statfs = a2fuse_statfs;
+        flush = a2fuse_flush;
+        fsync = a2fuse_fsync;
+        opendir = a2fuse_opendir;
+        readdir = a2fuse_readdir;
+        fsyncdir = a2fuse_fsyncdir;
+        init = a2fuse_init;
+        destroy = a2fuse_destroy;
+        access = a2fuse_access;
+        create = a2fuse_create;
+    }
+};
 
 #endif // FUSEOPERATIONS_H

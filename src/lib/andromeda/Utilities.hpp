@@ -37,7 +37,8 @@ public:
      */
     static StringList explode(
         std::string str, const std::string& delim, 
-        const int max = -1, const size_t skip = 0);
+        const size_t max = static_cast<size_t>(-1), 
+        const size_t skip = 0);
 
     /** A pair of two strings */
     typedef std::pair<std::string,std::string> StringPair;

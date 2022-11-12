@@ -9,7 +9,7 @@
 
 #include "FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
-#include "FuseOperations.h"
+#include "FuseOperations.hpp"
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
@@ -110,7 +110,7 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     cfg->negative_timeout = 1;
 #endif // !LIBFUSE2
 
-    return (void*)GetFuseAdapter();
+    return static_cast<void*>(GetFuseAdapter());
 }
 
 /*****************************************************/
@@ -287,7 +287,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
-            else retval = filler(buf, item->GetName().c_str(), NULL, 0, (fuse_fill_dir_flags)0);
+            else retval = filler(buf, item->GetName().c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif
             if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
@@ -297,7 +297,7 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 #if LIBFUSE2
             int retval = filler(buf, name, NULL, 0);
 #else
-            int retval = filler(buf, name, NULL, 0, (fuse_fill_dir_flags)0);
+            int retval = filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif
             if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
         }
