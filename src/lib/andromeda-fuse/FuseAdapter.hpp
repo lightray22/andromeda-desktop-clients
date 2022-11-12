@@ -70,3 +70,4 @@ private:
 } // namespace AndromedaFuse
 
 #endif // FUSEADAPTER_H
+

@@ -35,23 +35,34 @@ if (MSVC)
     )
 else()
     set(ANDROMEDA_WARNINGS -Wall -Wextra -Werror
-        -pedantic -pedantic-errors
+        -pedantic -pedantic-errors -Wpedantic
         -Wno-unused-parameter # NO unused parameter
-        # -Wshadow TODO
-        -Wnon-virtual-dtor -Wold-style-cast
-        -Wcast-align -Woverloaded-virtual -Wpedantic
-        -Wconversion -Wdouble-promotion
+        -Wcast-align
+        -Wcast-qual 
+        -Wconversion 
+        -Wdouble-promotion
+        -Wfloat-equal
+        -Wformat=2 
+        -Wimplicit-fallthrough
+        -Wnon-virtual-dtor 
+        -Wold-style-cast
+        -Woverloaded-virtual 
         # -Wsign-conversion TODO
             -Wno-sign-conversion
-        -Wformat=2 -Wimplicit-fallthrough
-        -Wcast-qual -Wfloat-equal -Wcast-align
+        # -Wshadow TODO
     )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         list(APPEND ANDROMEDA_WARNINGS 
-            -Wmisleading-indentation -Wduplicated-cond
-            -Wduplicated-branches -Wlogical-op 
+            -Wduplicated-branches
+            -Wduplicated-cond
+            -Wlogical-op 
+            -Wmisleading-indentation
             -Wnull-dereference
+        )
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        list(APPEND ANDROMEDA_WARNINGS 
+            -Wnewline-eof
         )
     endif()
 endif()
