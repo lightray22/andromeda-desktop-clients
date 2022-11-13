@@ -26,8 +26,8 @@ Utilities::StringList Utilities::explode(
     if (str.empty()) return retval;
 
     size_t skipped { 0 }, start { 0 }, end;
-    while ((end = str.find(delim, start)) != std::string::npos
-            && retval.size()+1 < max)
+    while ( !delim.empty() && retval.size()+1 < max
+            && (end = str.find(delim, start)) != std::string::npos)
     {
         if (skipped >= skip)
         {
