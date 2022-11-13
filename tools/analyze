@@ -6,7 +6,7 @@ if ! [ -e build ]; then mkdir build; fi; cd build
 
 if [ "$1" != "noinit" ]; then
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
-fi
+else shift; fi
 
 PLATFORMS="native unix32 unix64 win32A win32W win64"
 LOGFILE=cppcheck/analyze_stderr.log
@@ -23,11 +23,13 @@ for PLAT in $PLATFORMS; do
         --cppcheck-build-dir=$BUILD \
         --quiet --std=c++17 --platform=$PLAT \
         --suppress="*:*_deps/*" \
+        --suppress=unmatchedSuppression \
         --suppress=missingIncludeSystem \
         --suppress=unreadVariable \
         --suppress=unusedFunction \
-        --suppress=unmatchedSuppression \
-        --enable=style,performance,portability,information $@ 2> $LOGFILE
+        --suppress=knownConditionTrueFalse \
+        --suppress=useStlAlgorithm \
+        --enable=style,performance,portability,information "$@" 2> $LOGFILE
 
     if [ -s $LOGFILE ]; then
         echo "found errors with target $PLAT!"

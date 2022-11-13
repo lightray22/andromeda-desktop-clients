@@ -20,12 +20,12 @@ public:
     /** Exception indicating the HTTP library had an error */
     class Exception : public EndpointException { 
         /** @param error the library error code */
-        public: Exception(httplib::Error error) : 
+        public: explicit Exception(httplib::Error error) : 
             EndpointException(httplib::to_string(error)) {} };
 
     /** Exception indicating that the connection to the server failed */
     class ConnectionException : public Exception {
-        public: ConnectionException() : 
+        public: explicit ConnectionException() : 
             Exception(httplib::Error::Connection) {} };
 
     /** HTTP config options */

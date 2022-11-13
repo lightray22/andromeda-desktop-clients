@@ -38,25 +38,25 @@ public:
     /** Exception indicating the given flag is unknown */
     class BadFlagException : public Exception { 
         /** @param flag the unknown flag */
-        public: BadFlagException(const std::string& flag) : 
+        public: explicit BadFlagException(const std::string& flag) : 
             Exception("Unknown Flag: "+flag) {} };
 
     /** Exception indicating the given option is unknown */
     class BadOptionException : public Exception { 
         /** @param option the unknown option */
-        public: BadOptionException(const std::string& option) : 
+        public: explicit BadOptionException(const std::string& option) : 
             Exception("Unknown Option: "+option) {} };
 
     /** Exception indicating the given option has a bad value */
     class BadValueException : public Exception {
         /** @param option the option name */
-        public: BadValueException(const std::string& option) :
+        public: explicit BadValueException(const std::string& option) :
             Exception("Bad Option Value: "+option) {} };
 
     /** Exception indicating the given option is required but not present */
     class MissingOptionException : public Exception {
         /** @param option the option name */
-        public: MissingOptionException(const std::string& option) :
+        public: explicit MissingOptionException(const std::string& option) :
             Exception("Missing Option: "+option) {} };
 
     /** Retrieve the standard help text string */

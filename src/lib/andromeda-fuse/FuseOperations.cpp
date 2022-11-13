@@ -225,7 +225,7 @@ int a2fuse_open(const char* path, struct fuse_file_info* fi)
 
     return standardTry(__func__,[&]()->int
     {
-        Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
+        const Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
 
         if ((fi->flags & O_WRONLY || fi->flags & O_RDWR)
             && item.isReadOnly()) return -EROFS;
