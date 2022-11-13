@@ -24,7 +24,7 @@ endif()
 # https://github.com/cpp-best-practices/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 
 if (MSVC)
-    set(ANDROMEDA_WARNINGS /W4 /WX /permissive-
+    set(ANDROMEDA_WARNINGS /W4 #/WX /permissive- TODO
         /wd4100 # NO unreferenced formal parameter
         /wd4101 # NO unreferenced local variable
         /w14242 /w14254 /w14263 /w14265

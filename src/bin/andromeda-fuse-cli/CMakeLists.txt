@@ -16,8 +16,4 @@ if (NOT TARGET andromeda-fuse)
     add_subdirectory(../../lib/andromeda-fuse lib/andromeda-fuse)
 endif()
 
-if (NOT TARGET andromeda)
-    add_subdirectory(../../lib/andromeda lib/andromeda)
-endif()
-
 target_link_libraries(andromeda-fuse-cli PRIVATE andromeda-fuse)

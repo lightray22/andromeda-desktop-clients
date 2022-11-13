@@ -1,5 +1,5 @@
-#ifndef LIBA2_OPTIONS_H_
-#define LIBA2_OPTIONS_H_
+#ifndef A2FUSE_OPTIONS_H_
+#define A2FUSE_OPTIONS_H_
 
 #include <filesystem>
 #include <list>
@@ -163,5 +163,4 @@ private:
     std::string mMountItemID;
 };
 
-#endif
-
+#endif // A2FUSE_OPTIONS_H_

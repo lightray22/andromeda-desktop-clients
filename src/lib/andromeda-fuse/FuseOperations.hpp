@@ -1,5 +1,5 @@
-#ifndef FUSEOPERATIONS_H_
-#define FUSEOPERATIONS_H_
+#ifndef A2FUSE_FUSEOPERATIONS_H_
+#define A2FUSE_FUSEOPERATIONS_H_
 
 #include "libfuse_Includes.h"
 
@@ -65,4 +65,4 @@ struct a2fuse_operations : public fuse_operations
     }
 };
 
-#endif // FUSEOPERATIONS_H
+#endif // A2FUSE_FUSEOPERATIONS_H

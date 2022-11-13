@@ -1,5 +1,5 @@
-#ifndef FUSEINCLUDES_H_
-#define FUSEINCLUDES_H_
+#ifndef A2FUSE_FUSEINCLUDES_H_
+#define A2FUSE_FUSEINCLUDES_H_
 
 #if WIN32
     #define FUSE_USE_VERSION 35
@@ -41,5 +41,5 @@
     #define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH)
 #endif
 
-#endif // FUSEINCLUDES_H_
+#endif // A2FUSE_FUSEINCLUDES_H_
 

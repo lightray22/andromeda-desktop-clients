@@ -47,11 +47,11 @@ int main(int argc, char** argv)
 {
     Debug debug("main"); 
     
-    Config::Options cOptions;
-    HTTPRunner::Options hOptions;
-    FuseAdapter::Options fOptions;
+    HTTPRunner::Options httpOptions;
+    Config::Options configOptions;
+    FuseAdapter::Options fuseOptions;
 
-    Options options(cOptions, hOptions, fOptions);
+    Options options(configOptions, httpOptions, fuseOptions); // TODO reorder
 
     try
     {
@@ -110,7 +110,7 @@ int main(int argc, char** argv)
         case Options::ApiType::API_URL:
         {
             runner = std::make_unique<HTTPRunner>(
-                options.GetApiHostname(), options.GetApiPath(), hOptions);
+                options.GetApiHostname(), options.GetApiPath(), httpOptions);
         }; break;
         case Options::ApiType::API_PATH:
         {
@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 
     try
     {
-        backend.Initialize(cOptions);
+        backend.Initialize(configOptions);
 
         if (options.HasSession())
         {
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseAdapter fuseAdapter(*folder, fOptions, true);
+        FuseAdapter fuseAdapter(*folder, fuseOptions, true);
     }
     catch (const FuseAdapter::Exception& ex)
     {

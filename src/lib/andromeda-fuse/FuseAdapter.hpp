@@ -1,5 +1,5 @@
-#ifndef FUSEADAPTER_H_
-#define FUSEADAPTER_H_
+#ifndef A2FUSE_FUSEADAPTER_H_
+#define A2FUSE_FUSEADAPTER_H_
 
 #include <string>
 #include <list>
@@ -47,7 +47,7 @@ public:
      * @param options command line options
      * @param daemonize if true, fuse_daemonize
      */
-    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, bool daemonize);
+    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, bool daemonize = false);
 
     /** Returns the root folder */
     Andromeda::FSItems::Folder& GetRootFolder(){ return mRootFolder; }
@@ -69,5 +69,5 @@ private:
 
 } // namespace AndromedaFuse
 
-#endif // FUSEADAPTER_H
+#endif // A2FUSE_FUSEADAPTER_H
 

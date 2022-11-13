@@ -195,7 +195,7 @@ struct FuseLoop
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize):
+FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize): // TODO enum FOREGROUND, THREAD, DAEMON
     mRootFolder(root), mOptions(options)
 {
     debug << __func__ << "(path:" << mOptions.mountPath << ")"; debug.Info();

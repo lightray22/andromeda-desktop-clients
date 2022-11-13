@@ -135,6 +135,17 @@ The `--cachemode enum` option is also useful for debugging caching.
 - normal - the normal mode of cache operation
 
 
+# Qt GUI Application
+
+## Building
+
+### Libraries
+
+### OS Examples
+
+- Ubuntu 22.10: `apt install qt6-base-dev`
+
+
 # Development
 
 ## License
