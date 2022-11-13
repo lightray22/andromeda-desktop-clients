@@ -22,11 +22,11 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::
 
 /*****************************************************/
 PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
-    Folder(backend), debug("PlainFolder",this)
+    Folder(backend), mDebug("PlainFolder",this)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    this->parent = parent;
+    mParent = parent;
     
     if (data != nullptr)
     {
@@ -41,44 +41,44 @@ PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* p
         catch (const nlohmann::json::exception& ex) {
             throw Backend::JSONErrorException(ex.what()); }
 
-        this->fsConfig = &FSConfig::LoadByID(backend, fsid);
+        mFsConfig = &FSConfig::LoadByID(backend, fsid);
     }
 }
 
 /*****************************************************/
 void PlainFolder::LoadItems()
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    Folder::LoadItemsFrom(backend.GetFolder(GetID()));
+    Folder::LoadItemsFrom(mBackend.GetFolder(GetID()));
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFile(const std::string& name_)
+void PlainFolder::SubCreateFile(const std::string& name)
 {
-    debug << __func__ << "(name:" << name_ << ")"; debug.Info();
+    mDebug << __func__ << "(name:" << name << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFile(GetID(), name_));
+    nlohmann::json data(mBackend.CreateFile(GetID(), name));
 
-    std::unique_ptr<File> file(std::make_unique<File>(backend, data, *this));
+    std::unique_ptr<File> file(std::make_unique<File>(mBackend, data, *this));
 
-    this->itemMap[file->GetName()] = std::move(file);
+    mItemMap[file->GetName()] = std::move(file);
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFolder(const std::string& name_)
+void PlainFolder::SubCreateFolder(const std::string& name)
 {
-    debug << __func__ << "(name:" << name_ << ")"; debug.Info();
+    mDebug << __func__ << "(name:" << name << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(backend.CreateFolder(GetID(), name_));
+    nlohmann::json data(mBackend.CreateFolder(GetID(), name));
 
-    std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(backend, &data, this));
+    std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(mBackend, &data, this));
 
-    this->itemMap[folder->GetName()] = std::move(folder);
+    mItemMap[folder->GetName()] = std::move(folder);
 }
 
 /*****************************************************/
@@ -102,31 +102,31 @@ void PlainFolder::SubMoveItem(Item& item, Folder& newParent, bool overwrite)
 /*****************************************************/
 void PlainFolder::SubDelete()
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.DeleteFolder(GetID());
+    mBackend.DeleteFolder(GetID());
 }
 
 /*****************************************************/
 void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 {
-    debug << __func__ << "(name:" << newName << ")"; debug.Info();
+    mDebug << __func__ << "(name:" << newName << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.RenameFolder(GetID(), newName, overwrite);
+    mBackend.RenameFolder(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
 void PlainFolder::SubMove(Folder& newParent, bool overwrite)
 {
-    debug << __func__ << "(parent:" << newParent.GetName() << ")"; debug.Info();
+    mDebug << __func__ << "(parent:" << newParent.GetName() << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    backend.MoveFolder(GetID(), newParent.GetID(), overwrite);
+    mBackend.MoveFolder(GetID(), newParent.GetID(), overwrite);
 }
 
 } // namespace Andromeda

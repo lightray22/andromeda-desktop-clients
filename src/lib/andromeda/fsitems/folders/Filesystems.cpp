@@ -11,27 +11,27 @@ namespace Folders {
 
 /*****************************************************/
 Filesystems::Filesystems(Backend& backend, Folder& parent) : 
-    Folder(backend), debug("Filesystems",this)
+    Folder(backend), mDebug("Filesystems",this)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     backend.RequireAuthentication();
 
-    this->name = "Filesystems";
-    this->parent = &parent;
+    mName = "Filesystems";
+    mParent = &parent;
 }
 
 /*****************************************************/
 void Filesystems::LoadItems()
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    nlohmann::json data(backend.GetFilesystems());
+    nlohmann::json data(mBackend.GetFilesystems());
 
     Folder::NewItemMap newItems;
 
     NewItemFunc newFilesystem { [&](const nlohmann::json& fsJ)->std::unique_ptr<Item> {
-        return std::make_unique<Filesystem>(backend, fsJ, this); } };
+        return std::make_unique<Filesystem>(mBackend, fsJ, this); } };
 
     try
     {
@@ -57,7 +57,7 @@ void Filesystems::SubDeleteItem(Item& item)
 /*****************************************************/
 void Filesystems::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
 {
-    item.Rename(name, overwrite, true);
+    item.Rename(newName, overwrite, true);
 }
 
 } // namespace Andromeda

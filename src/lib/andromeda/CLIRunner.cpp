@@ -12,23 +12,21 @@ namespace Andromeda {
 
 /*****************************************************/
 CLIRunner::CLIRunner(const std::string& apiPath) :
-    debug("CLIRunner",this), apiPath(apiPath)
+    mDebug("CLIRunner",this), mApiPath(apiPath)
 {
-    if (apiPath.empty()) this->apiPath = "andromeda-server";
+    if (mApiPath.empty()) mApiPath = "andromeda-server";
+    else if (std::filesystem::is_directory(mApiPath))
+        mApiPath += "/andromeda-server";
 
-    else if (!Utilities::endsWith(this->apiPath, "/index.php") &&
-             !Utilities::endsWith(this->apiPath, "/andromeda-server")) 
-        this->apiPath += "/andromeda-server";
-
-    debug << __func__ << "(apiPath:" << this->apiPath << ")"; debug.Info();
+    mDebug << __func__ << "(apiPath:" << mApiPath << ")"; mDebug.Info();
 }
 
 /*****************************************************/
 std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 {
-    std::list<std::string> arguments { this->apiPath, "--json", input.app, input.action };
+    std::list<std::string> arguments { mApiPath, "--json", input.app, input.action };
 
-    if (Utilities::endsWith(this->apiPath, "index.php"))
+    if (Utilities::endsWith(mApiPath, ".php"))
         arguments.emplace_front("php");
 
     for (const Params::value_type& param : input.params)
@@ -52,7 +50,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
     for (const std::string& str : arguments) 
         command << str << " ";
 
-    debug << __func__ << "()... command:" << command.str(); debug.Info();
+    mDebug << __func__ << "()... command:" << command.str(); mDebug.Info();
     
     std::error_code error; reproc::process process;
     error = process.start(arguments);
@@ -73,7 +71,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
 
     if (error) { process.terminate(); throw Exception(error.message()); }
 
-    int status = 0; std::tie(status,error) = process.wait(this->timeout);
+    int status = 0; std::tie(status,error) = process.wait(mTimeout);
 
     if (error) { process.terminate(); throw Exception(error.message()); }
 

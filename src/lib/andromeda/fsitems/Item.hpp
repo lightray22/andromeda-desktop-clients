@@ -47,22 +47,22 @@ public:
     virtual Type GetType() const = 0;
 
     /** Returns the Andromeda object ID */
-    virtual const std::string& GetID() { return this->id; }
+    virtual const std::string& GetID() { return mId; }
 
     /** Returns the FS name */
-    virtual const std::string& GetName() const final { return this->name; }
+    virtual const std::string& GetName() const final { return mName; }
 
     /** Returns the total size */
-    virtual uint64_t GetSize() const final { return this->size; }
+    virtual uint64_t GetSize() const final { return mSize; }
 
     /** Get the created time stamp */
-    virtual Date GetCreated() const final { return this->created; } 
+    virtual Date GetCreated() const final { return mCreated; } 
 
     /** Get the modified time stamp */
-    virtual Date GetModified() const final { return this->modified; } 
+    virtual Date GetModified() const final { return mModified; } 
 
     /** Get the accessed time stamp */
-    virtual Date GetAccessed() const final { return this->accessed; } 
+    virtual Date GetAccessed() const final { return mAccessed; } 
 
     /** Returns true if the item is read-only */
     virtual bool isReadOnly() const;
@@ -97,13 +97,13 @@ protected:
     virtual void Initialize(const nlohmann::json& data);
 
     /** Returns true if this item has a parent */
-    virtual bool HasParent() const { return this->parent != nullptr; }
+    virtual bool HasParent() const { return mParent != nullptr; }
 
     /** Returns the parent folder */
     virtual Folder& GetParent() const;
 
     /** Returns true if this item has FSconfig */
-    virtual bool HasFSConfig() const { return this->fsConfig != nullptr; }
+    virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
 
     /** Returns the filesystem config */
     virtual const FSConfig& GetFSConfig() const;
@@ -118,35 +118,35 @@ protected:
     virtual void SubMove(Folder& newParent, bool overwrite) = 0;
     
     /** Reference to the API backend */
-    Backend& backend;
+    Backend& mBackend;
 
     /** Pointer to parent folder */
-    Folder* parent { nullptr };
+    Folder* mParent { nullptr };
 
     /** Pointer to filesystem config */
-    const FSConfig* fsConfig { nullptr };
+    const FSConfig* mFsConfig { nullptr };
 
     /** Backend object ID */
-    std::string id;
+    std::string mId;
 
     /** Name of the item */
-    std::string name;
+    std::string mName;
 
     /** Size of the item in bytes */
-    uint64_t size { 0 };
+    uint64_t mSize { 0 };
 
     /** Item creation timestamp */
-    Date created { 0 };
+    Date mCreated { 0 };
 
     /** Item modified timestamp */
-    Date modified { 0 };
+    Date mModified { 0 };
 
     /** Item accessed timestamp */
-    Date accessed { 0 };
+    Date mAccessed { 0 };
 
 private:
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace FSItems

@@ -73,7 +73,7 @@ private:
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const;
 
-    size_t pageSize;
+    size_t mPageSize;
 
     struct Page
     {
@@ -82,7 +82,7 @@ private:
         bool dirty { false };
     };
 
-    typedef std::map<uint64_t, Page> PageMap; PageMap pages;
+    typedef std::map<uint64_t, Page> PageMap; PageMap mPages;
 
     /** 
      * Returns a reference to a data page
@@ -98,12 +98,12 @@ private:
     virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     /* file size as far as the backend knows */
-    uint64_t backendSize;
+    uint64_t mBackendSize;
 
     /** true if the file was deleted */
-    bool deleted { false };
+    bool mDeleted { false };
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace FSItems

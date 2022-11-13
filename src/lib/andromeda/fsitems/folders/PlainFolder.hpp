@@ -60,7 +60,7 @@ protected:
 
 private:
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace Andromeda

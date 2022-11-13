@@ -10,19 +10,19 @@ namespace Folders {
 
 /*****************************************************/
 Adopted::Adopted(Backend& backend, Folder& parent) :
-    PlainFolder(backend, nullptr, &parent), debug("Adopted",this)
+    PlainFolder(backend, nullptr, &parent), mDebug("Adopted",this)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    this->name = "Adopted by others";
+    mName = "Adopted by others";
 }
 
 /*****************************************************/
 void Adopted::LoadItems()
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    Folder::LoadItemsFrom(backend.GetAdopted());
+    Folder::LoadItemsFrom(mBackend.GetAdopted());
 }
 
 } // namespace Andromeda

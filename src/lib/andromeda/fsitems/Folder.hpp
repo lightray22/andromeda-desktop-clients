@@ -128,20 +128,20 @@ protected:
     virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) = 0;
 
     /** map of subitems */
-    ItemMap itemMap;
+    ItemMap mItemMap;
 
     /** Returns true iff the itemMap is loaded */
-    virtual bool HaveItems() const { return this->haveItems; }
+    virtual bool HaveItems() const { return mHaveItems; }
 
 private:
 
     /** true if itemMap is loaded */
-    bool haveItems { false };
+    bool mHaveItems { false };
 
     /** time point when contents were loaded */
-    std::chrono::steady_clock::time_point refreshed;
+    std::chrono::steady_clock::time_point mRefreshed;
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace FSItems

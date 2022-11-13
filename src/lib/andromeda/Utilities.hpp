@@ -103,13 +103,13 @@ public:
      * @param addr address to print with details
      */
     explicit Debug(const std::string& prefix, void* addr = nullptr) : 
-        addr(addr), prefix(prefix) { }
+        mAddr(addr), mPrefix(prefix) { }
 
     /** Returns the configured global debug level */
-    static Level GetLevel() { return level; }
+    static Level GetLevel() { return sLevel; }
 
     /** Sets the configured global debug level */
-    static void SetLevel(Level level_){ Debug::level = level_; }
+    static void SetLevel(Level level){ Debug::sLevel = level; }
 
     /**
      * Shows the given debug string with minlevel=INFO
@@ -140,8 +140,8 @@ public:
     /** Append to an internal buffer that can be shown with an empty Print */
     template <class T> Debug& operator<<(const T& dat)
     {
-        if (static_cast<bool>(level))
-            this->buffer << dat;
+        if (static_cast<bool>(sLevel))
+            mBuffer << dat;
         return *this;
     }
 
@@ -150,14 +150,14 @@ public:
 
 private:
 
-    void* addr;
-    std::string prefix;
-    std::ostringstream buffer;
+    void* mAddr;
+    std::string mPrefix;
+    std::ostringstream mBuffer;
 
-    static Level level;
-    static std::mutex mutex;
+    static Level sLevel;
+    static std::mutex sMutex;
 
-    static std::chrono::high_resolution_clock::time_point start;
+    static std::chrono::high_resolution_clock::time_point sStart;
 };
 
 } // namespace Andromeda

@@ -51,10 +51,12 @@ std::string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& cOpts, 
-                HTTPRunner::Options& hOpts, 
-                FuseAdapter::Options& fOpts) : 
-    cOptions(cOpts), hOptions(hOpts), fOptions(fOpts) { }
+Options::Options(Config::Options& configOptions, 
+                 HTTPRunner::Options& httpOptions, 
+                 FuseAdapter::Options& fuseOptions) : 
+    mConfigOptions(configOptions), 
+    mHttpOptions(httpOptions), 
+    mFuseOptions(fuseOptions) { }
 
 /*****************************************************/
 void Options::ParseArgs(int argc, char** argv)
@@ -90,25 +92,25 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             throw ShowVersionException();
 
         else if (flag == "d" || flag == "debug")
-            this->debugLevel = Debug::Level::ERRORS;
+            mDebugLevel = Debug::Level::ERRORS;
         else if (flag == "p" || flag == "apipath")
-            this->apiType = ApiType::API_PATH;
+            mApiType = ApiType::API_PATH;
 
         else if (flag == "force-session")
-            this->forceSession = true;
+            mForceSession = true;
 
         else if (flag == "filesystem")
-            this->mountRootType = RootType::FILESYSTEM;
+            mMountRootType = RootType::FILESYSTEM;
         else if (flag == "folder")
-            this->mountRootType = RootType::FOLDER;
+            mMountRootType = RootType::FOLDER;
 
         else if (flag == "r" || flag == "read-only")
-            this->cOptions.readOnly = true;
+            mConfigOptions.readOnly = true;
         
         else if (flag == "no-chmod")
-            this->fOptions.fakeChmod = false;
+            mFuseOptions.fakeChmod = false;
         else if (flag == "no-chown")
-            this->fOptions.fakeChown = false;
+            mFuseOptions.fakeChown = false;
 
         else throw BadFlagException(flag);
     }
@@ -120,7 +122,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
         if (option == "d" || option == "debug")
         {
-            try { this->debugLevel = static_cast<Debug::Level>(stoul(value)); }
+            try { mDebugLevel = static_cast<Debug::Level>(stoul(value)); }
             catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
         }
@@ -134,116 +136,116 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             if (parts.size() != 2) 
                 throw BadValueException(option);
 
-            this->apiPath = "/"+parts[1];
-            this->apiHostname = parts[0];
-            this->apiType = ApiType::API_URL;
+            mApiPath = "/"+parts[1];
+            mApiHostname = parts[0];
+            mApiType = ApiType::API_URL;
 
             Utilities::Flags urlFlags; 
             Utilities::Options urlOptions;
 
-            Utilities::parseUrl(this->apiPath, urlFlags, urlOptions);
+            Utilities::parseUrl(mApiPath, urlFlags, urlOptions);
 
             /** Certain mount details can be parsed from the URL */
             for (decltype(urlOptions)::value_type urlPair : urlOptions)
             {
                 if (urlPair.first == "folder")
                 {
-                    this->mountItemID = urlPair.second;
-                    this->mountRootType = RootType::FOLDER;
+                    mMountItemID = urlPair.second;
+                    mMountRootType = RootType::FOLDER;
                 }
             }
         }
         else if (option == "p" || option == "apipath")
         {
-            this->apiPath = value;
-            this->apiType = ApiType::API_PATH;
+            mApiPath = value;
+            mApiType = ApiType::API_PATH;
         }
 
         /** Backend authentication details */
         else if (option == "u" || option == "username")
-            this->username = value;
+            mUsername = value;
         else if (option == "password")
-            this->password = value;
+            mPassword = value;
         else if (option == "sessionid")
-            this->sessionid = value;
+            mSessionid = value;
         else if (option == "sessionkey")
-            this->sessionkey = value;
+            mSessionkey = value;
 
         /** Backend mount object selection */
         else if (option == "ri" || option == "filesystem")
         {
-            this->mountItemID = value;
-            this->mountRootType = RootType::FILESYSTEM;
+            mMountItemID = value;
+            mMountRootType = RootType::FILESYSTEM;
         }
         else if (option == "rf" || option == "folder")
         {
-            this->mountItemID = value;
-            this->mountRootType = RootType::FOLDER;
+            mMountItemID = value;
+            mMountRootType = RootType::FOLDER;
         }
 
         /** FUSE wrapper options */
         else if (option == "m" || option == "mountpath")
         {
-            this->fOptions.mountPath = value;
+            mFuseOptions.mountPath = value;
         }
         else if (option == "o" || option == "option")
         {
-            this->fOptions.fuseArgs.push_back(value);
+            mFuseOptions.fuseArgs.push_back(value);
         }
 
         /** libandromeda Config options */
         else if (option == "cachemode")
         {
-                 if (value == "none")   this->cOptions.cacheType = Config::Options::CacheType::NONE;
-            else if (value == "memory") this->cOptions.cacheType = Config::Options::CacheType::MEMORY;
-            else if (value == "normal") this->cOptions.cacheType = Config::Options::CacheType::NORMAL;
+                 if (value == "none")   mConfigOptions.cacheType = Config::Options::CacheType::NONE;
+            else if (value == "memory") mConfigOptions.cacheType = Config::Options::CacheType::MEMORY;
+            else if (value == "normal") mConfigOptions.cacheType = Config::Options::CacheType::NORMAL;
             else throw BadValueException(option);
         }
         else if (option == "pagesize")
         {
-            try { this->cOptions.pageSize = stoul(value); }
+            try { mConfigOptions.pageSize = stoul(value); }
             catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
 
-            if (!this->cOptions.pageSize) throw BadValueException(option);
+            if (!mConfigOptions.pageSize) throw BadValueException(option);
         }
         else if (option == "refresh")
         {
-            try { this->cOptions.refreshTime = seconds(stoul(value)); }
+            try { mConfigOptions.refreshTime = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 
         /** HTTP runner options */
         else if (option == "http-user")
-            this->hOptions.username = value;
+            mHttpOptions.username = value;
         else if (option == "http-pass")
-            this->hOptions.password = value;
+            mHttpOptions.password = value;
         else if (option == "proxy-host")
-            this->hOptions.proxyHost = value;
+            mHttpOptions.proxyHost = value;
         else if (option == "proxy-port")
         {
-            try { this->hOptions.proxyPort = static_cast<decltype(this->hOptions.proxyPort)>(stoul(value)); }
+            try { mHttpOptions.proxyPort = static_cast<decltype(mHttpOptions.proxyPort)>(stoul(value)); }
             catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }
         else if (option == "hproxy-user")
-            this->hOptions.proxyUsername = value;
+            mHttpOptions.proxyUsername = value;
         else if (option == "hproxy-pass")
-            this->hOptions.proxyPassword = value;
+            mHttpOptions.proxyPassword = value;
         else if (option == "http-timeout")
         {
-            try { this->hOptions.timeout = seconds(stoul(value)); }
+            try { mHttpOptions.timeout = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
         else if (option == "max-retries")
         {
-            try { this->hOptions.maxRetries = stoul(value); }
+            try { mHttpOptions.maxRetries = stoul(value); }
             catch (const std::logic_error& e) {
                 throw BadValueException(option); }
         }
         else if (option == "retry-time")
         {
-            try { this->hOptions.retryTime = seconds(stoul(value)); }
+            try { mHttpOptions.retryTime = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 
@@ -252,10 +254,10 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 }
 
 /*****************************************************/
-void Options::CheckMissing()
+void Options::Validate()
 {
-    if (this->apiType == static_cast<ApiType>(-1))
+    if (mApiType == static_cast<ApiType>(-1))
         throw MissingOptionException("apiurl/apipath");
-    if (this->fOptions.mountPath.empty())
+    if (mFuseOptions.mountPath.empty())
         throw MissingOptionException("mountpath");
 }

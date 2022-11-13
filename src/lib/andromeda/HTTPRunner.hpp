@@ -54,27 +54,27 @@ public:
     /**
      * @param hostname to use with HTTP
      * @param baseURL URL of the endpoint
-     * @param opts HTTP config options
+     * @param options HTTP config options
      */
-    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& opts);
+    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& options);
 
     virtual std::string RunAction(const Input& input) override;
 
     /** Allows automatic retry on HTTP failure */
-    virtual void EnableRetry(bool enable = true) { this->canRetry = enable; }
+    virtual void EnableRetry(bool enable = true) { mCanRetry = enable; }
 
     virtual bool RequiresSession() override { return true; }
 
 private:
 
-    Debug debug;
+    Debug mDebug;
 
-    Options options;
+    Options mOptions;
 
-    std::string baseURL;
-    httplib::Client httpClient;
+    std::string mBaseURL;
+    httplib::Client mHttpClient;
 
-    bool canRetry { false };
+    bool mCanRetry { false };
 };
 
 } // namespace Andromeda

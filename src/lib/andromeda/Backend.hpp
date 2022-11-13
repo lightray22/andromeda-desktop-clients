@@ -130,7 +130,7 @@ public:
     void Initialize(const Config::Options& options);
 
     /** Sets the backend to use the given username w/o a session */
-    void SetUsername(const std::string& username_) { this->username = username_; }
+    void SetUsername(const std::string& username) { mUsername = username; }
 
     /** Registers a pre-existing session ID/key for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
@@ -159,7 +159,7 @@ public:
     nlohmann::json GetConfigJ();
 
     /** Gets the server config object */
-    const Config& GetConfig() { return this->config; }
+    const Config& GetConfig() { return mConfig; }
 
     /** Load limits for the current account */
     nlohmann::json GetAccountLimits();
@@ -289,18 +289,18 @@ private:
     bool isMemory() const;
 
     /** True if we created the session in use */
-    bool createdSession { false };
+    bool mCreatedSession { false };
 
-    std::string username;
-    std::string accountID;
-    std::string sessionID;
-    std::string sessionKey;
+    std::string mUsername;
+    std::string mAccountID;
+    std::string mSessionID;
+    std::string mSessionKey;
     
-    uint64_t reqCount { 0 };
+    uint64_t mReqCount { 0 };
 
-    Runner& runner;
-    Config config;
-    Debug debug;
+    Runner& mRunner;
+    Config mConfig;
+    Debug mDebug;
 };
 
 } // namespace Andromeda

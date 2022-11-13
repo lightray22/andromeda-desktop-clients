@@ -175,58 +175,58 @@ void Utilities::SilentReadConsole(std::string& retval)
     std::cout << std::endl;
 }
 
-std::mutex Debug::mutex;
-Debug::Level Debug::level { Debug::Level::NONE };
-high_resolution_clock::time_point Debug::start { high_resolution_clock::now() };
+std::mutex Debug::sMutex;
+Debug::Level Debug::sLevel { Debug::Level::NONE };
+high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
 
 /*****************************************************/
 Debug::operator bool() const
 {
-    return static_cast<bool>(level);
+    return static_cast<bool>(sLevel);
 }
 
 /*****************************************************/
 void Debug::Info(const std::string& str)
 {
-    if (level >= Level::INFO) Error(str);
+    if (sLevel >= Level::INFO) Error(str);
 
-    if (str.empty()) this->buffer.str(std::string());
+    if (str.empty()) mBuffer.str(std::string());
 }
 
 /*****************************************************/
 void Debug::Backend(const std::string& str)
 {
-    if (level >= Level::BACKEND) Error(str);
+    if (sLevel >= Level::BACKEND) Error(str);
 
-    if (str.empty()) this->buffer.str(std::string());
+    if (str.empty()) mBuffer.str(std::string());
 }
 
 /*****************************************************/
 void Debug::Error(const std::string& str)
 {
-    if (level < Level::ERRORS) return;
+    if (sLevel < Level::ERRORS) return;
 
-    const std::lock_guard<std::mutex> lock(mutex);
+    const std::lock_guard<std::mutex> lock(sMutex);
 
-    std::ostream& out(level == Level::ERRORS ? std::cout : std::cerr);
+    std::ostream& out(sLevel == Level::ERRORS ? std::cout : std::cerr);
 
-    if (level >= Level::DETAILS)
+    if (sLevel >= Level::DETAILS)
     {
-        duration<double> time { high_resolution_clock::now() - start };
+        duration<double> time { high_resolution_clock::now() - sStart };
         out << "time:" << time.count() << " ";
 
         out << "tid:" << std::this_thread::get_id() << " ";
 
-        if (this->addr != nullptr) out << "obj:" << this->addr << " ";
+        if (mAddr != nullptr) out << "obj:" << mAddr << " ";
     }
 
-    out << this->prefix << ": ";
+    out << mPrefix << ": ";
 
     if (str.empty())
     {
-        out << this->buffer.str() << std::endl; 
+        out << mBuffer.str() << std::endl; 
         
-        this->buffer.str(std::string()); // reset buffer
+        mBuffer.str(std::string()); // reset buffer
     }
     else out << str << std::endl;
 }
@@ -234,22 +234,22 @@ void Debug::Error(const std::string& str)
 /*****************************************************/
 void Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
 {
-    this->buffer << "printing " << bytes << " bytes at " 
+    mBuffer << "printing " << bytes << " bytes at " 
         << std::hex << ptr << std::endl;
 
     for (decltype(bytes) i { 0 }; i < bytes; i++)
     {
         const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
         
-        if (i % width == 0) this->buffer << static_cast<const void*>(byte) << ": ";
+        if (i % width == 0) mBuffer << static_cast<const void*>(byte) << ": ";
         
         // need to cast to a 16-bit integer so it gets printed as a number not a character
-        this->buffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
+        mBuffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
 
-        if ((i % width) + 1 == width) this->buffer << std::endl;
+        if ((i % width) + 1 == width) mBuffer << std::endl;
     }
 
-    this->buffer << std::endl;
+    mBuffer << std::endl;
 }
 
 } // namespace Andromeda

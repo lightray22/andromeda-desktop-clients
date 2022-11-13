@@ -31,26 +31,26 @@ public:
     FSConfig(const nlohmann::json& data, const nlohmann::json& lims);
 
     /** Returns the filesystem chunk size or 0 for none */
-    size_t GetChunkSize() const { return this->chunksize; }
+    size_t GetChunkSize() const { return mChunksize; }
 
     /** Returns true if the filesystem is read-only */
-    bool isReadOnly() const { return this->readOnly; }
+    bool isReadOnly() const { return mReadOnly; }
 
     /** The overwrite mode supported by the filesystem */
     enum class WriteMode { NONE, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */
-    WriteMode GetWriteMode() const { return this->writeMode; }
+    WriteMode GetWriteMode() const { return mWriteMode; }
 
 private:
 
-    size_t chunksize { 0 };
+    size_t mChunksize { 0 };
 
-    bool readOnly { false };
+    bool mReadOnly { false };
 
-    WriteMode writeMode { WriteMode::RANDOM };
+    WriteMode mWriteMode { WriteMode::RANDOM };
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace Andromeda

@@ -63,13 +63,13 @@ public:
     static std::string HelpText();
 
     /**
-     * @param cOpts Config options ref to fill
-     * @param fOpts FUSE options ref to fill
-     * @param hOpts HTTPRunner options ref to fill (if applicable)
+     * @param configOptions Config options ref to fill
+     * @param httpOptions HTTPRunner options ref to fill (if applicable)
+     * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::Config::Options& cOpts, 
-            Andromeda::HTTPRunner::Options& hOpts, 
-            AndromedaFuse::FuseAdapter::Options& fOpts);
+    Options(Andromeda::Config::Options& configOptions, 
+            Andromeda::HTTPRunner::Options& httpOptions, 
+            AndromedaFuse::FuseAdapter::Options& fuseOptions);
 
     /** Parses command line arguments from main */
     void ParseArgs(int argc, char** argv);
@@ -78,10 +78,10 @@ public:
     void ParseFile(const std::filesystem::path& path);
 
     /** Makes sure all required args were provided */
-    void CheckMissing();
+    virtual void Validate();
 
     /** Returns the desired debug level */
-    Andromeda::Debug::Level GetDebugLevel() const { return this->debugLevel; }
+    Andromeda::Debug::Level GetDebugLevel() const { return mDebugLevel; }
 
     /** Backend connection type */
     enum class ApiType
@@ -91,37 +91,37 @@ public:
     };
 
     /** Returns the specified API type */
-    ApiType GetApiType() const { return this->apiType; }    
+    ApiType GetApiType() const { return mApiType; }    
 
     /** Returns the path to the API endpoint */
-    std::string GetApiPath() const { return this->apiPath; }
+    std::string GetApiPath() const { return mApiPath; }
 
     /** Returns the API hostname if using API_URL */
-    std::string GetApiHostname() const { return this->apiHostname; }
+    std::string GetApiHostname() const { return mApiHostname; }
 
     /** Returns true if a username is specified */
-    bool HasUsername() const { return !this->username.empty(); }
+    bool HasUsername() const { return !mUsername.empty(); }
 
     /** Returns the specified username */
-    std::string GetUsername() const { return this->username; }
+    std::string GetUsername() const { return mUsername; }
 
     /** Returns true if a password is specified */
-    bool HasPassword() const { return !this->password.empty(); }
+    bool HasPassword() const { return !mPassword.empty(); }
 
     /** Returns the specified password */
-    std::string GetPassword() const { return this->password; }
+    std::string GetPassword() const { return mPassword; }
 
     /** Returns true if a session ID was provided */
-    bool HasSession() const { return !this->sessionid.empty(); }
+    bool HasSession() const { return !mSessionid.empty(); }
 
     /** Returns the specified session ID */
-    std::string GetSessionID() const { return this->sessionid; }
+    std::string GetSessionID() const { return mSessionid; }
 
     /** Returns the specified session key */
-    std::string GetSessionKey() const { return this->sessionkey; }
+    std::string GetSessionKey() const { return mSessionkey; }
 
     /** Returns true if using a session is forced */
-    bool GetForceSession() const { return this->forceSession; }
+    bool GetForceSession() const { return mForceSession; }
 
     /** Folder types that can be mounted as root */
     enum class RootType
@@ -132,35 +132,35 @@ public:
     };
 
     /** Returns the specified mount item type */
-    RootType GetMountRootType() const { return this->mountRootType; }
+    RootType GetMountRootType() const { return mMountRootType; }
 
     /** Returns the specified mount item ID */
-    std::string GetMountItemID() const { return this->mountItemID; }
+    std::string GetMountItemID() const { return mMountItemID; }
 
 private:
 
     /** Load config from the given flags and options */
     void LoadFrom(const Andromeda::Utilities::Flags& flags, const Andromeda::Utilities::Options options);
 
-    Andromeda::Config::Options& cOptions;
-    Andromeda::HTTPRunner::Options& hOptions;
-    AndromedaFuse::FuseAdapter::Options& fOptions;
+    Andromeda::Config::Options& mConfigOptions;
+    Andromeda::HTTPRunner::Options& mHttpOptions;
+    AndromedaFuse::FuseAdapter::Options& mFuseOptions;
 
-    Andromeda::Debug::Level debugLevel { Andromeda::Debug::Level::NONE };
+    Andromeda::Debug::Level mDebugLevel { Andromeda::Debug::Level::NONE };
 
-    ApiType apiType { static_cast<ApiType>(-1) };
-    std::string apiPath;
-    std::string apiHostname;
+    ApiType mApiType { static_cast<ApiType>(-1) };
+    std::string mApiPath;
+    std::string mApiHostname;
 
-    std::string username;
-    std::string password;
-    bool forceSession { false };
+    std::string mUsername;
+    std::string mPassword;
+    bool mForceSession { false };
 
-    std::string sessionid;
-    std::string sessionkey;
+    std::string mSessionid;
+    std::string mSessionkey;
     
-    RootType mountRootType { RootType::SUPERROOT };
-    std::string mountItemID;
+    RootType mMountRootType { RootType::SUPERROOT };
+    std::string mMountItemID;
 };
 
 #endif

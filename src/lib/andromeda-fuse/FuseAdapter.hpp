@@ -50,10 +50,10 @@ public:
     FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, bool daemonize);
 
     /** Returns the root folder */
-    Andromeda::FSItems::Folder& GetRootFolder(){ return rootFolder; }
+    Andromeda::FSItems::Folder& GetRootFolder(){ return mRootFolder; }
 
     /** Returns the FUSE options */
-    const Options& GetOptions(){ return options; }
+    const Options& GetOptions(){ return mOptions; }
 
     /** Print help text to stdout */
     static void ShowHelpText();
@@ -63,8 +63,8 @@ public:
 
 private:
 
-    Andromeda::FSItems::Folder& rootFolder;
-    const Options& options;
+    Andromeda::FSItems::Folder& mRootFolder;
+    const Options& mOptions;
 };
 
 } // namespace AndromedaFuse

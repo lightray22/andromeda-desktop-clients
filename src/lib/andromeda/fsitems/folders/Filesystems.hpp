@@ -25,9 +25,9 @@ protected:
 
     virtual void LoadItems() override;
 
-    virtual void SubCreateFile(const std::string& name_) override { throw ModifyException(); }
+    virtual void SubCreateFile(const std::string& name) override { throw ModifyException(); }
 
-    virtual void SubCreateFolder(const std::string& name_) override { throw ModifyException(); }
+    virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }
 
     virtual void SubDeleteItem(Item& item) override;
 
@@ -45,7 +45,7 @@ protected:
 
 private:
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace Andromeda

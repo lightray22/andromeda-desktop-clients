@@ -66,30 +66,30 @@ public:
     void LoadAccountLimits(Backend& backend);
 
     /** Gets the configured backend options */
-    const Options& GetOptions() const { return this->options; }
+    const Options& GetOptions() const { return mOptions; }
 
     /** Returns true if the backend is read-only */
-    bool isReadOnly() const { return this->readOnly; }
+    bool isReadOnly() const { return mReadOnly; }
 
     /** Returns true if random write is allowed */
-    bool canRandWrite() const { return this->randWrite; }
+    bool canRandWrite() const { return mRandWrite; }
 
     /** Returns the max # of bytes allowed in an upload */
-    uint64_t GetUploadMaxBytes() const { return this->uploadMaxBytes; }
+    uint64_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
 
     /** Returns the max # of files allowed in an upload */
-    uint64_t GetUploadMaxFiles() const { return this->uploadMaxFiles; }
+    uint64_t GetUploadMaxFiles() const { return mUploadMaxFiles; }
 
 private:
-    Debug debug;
+    Debug mDebug;
 
-    Options options;
+    Options mOptions;
 
-    bool readOnly { false };
-    bool randWrite { true };
+    bool mReadOnly { false };
+    bool mRandWrite { true };
 
-    uint64_t uploadMaxBytes { 0 };
-    uint64_t uploadMaxFiles { 0 };
+    uint64_t mUploadMaxBytes { 0 };
+    uint64_t mUploadMaxFiles { 0 };
 };
 
 } // namespace Andromeda

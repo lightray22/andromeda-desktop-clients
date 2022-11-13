@@ -196,18 +196,18 @@ struct FuseLoop
 
 /*****************************************************/
 FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize):
-    rootFolder(root), options(options)
+    mRootFolder(root), mOptions(options)
 {
-    debug << __func__ << "(path:" << options.mountPath << ")"; debug.Info();
+    debug << __func__ << "(path:" << mOptions.mountPath << ")"; debug.Info();
 
-    FuseArguments opts; for (const std::string& opt : options.fuseArgs) opts.AddArg(opt);
+    FuseArguments opts; for (const std::string& opt : mOptions.fuseArgs) opts.AddArg(opt);
 
 #if LIBFUSE2
     FuseMount mount(opts, options.mountPath.c_str());
     FuseContext context(mount, opts, *this);
 #else // !LIBFUSE2
     FuseContext context(opts, *this);
-    FuseMount mount(context, options.mountPath.c_str());
+    FuseMount mount(context, mOptions.mountPath.c_str());
 #endif // LIBFUSE2
     
     if (daemonize)

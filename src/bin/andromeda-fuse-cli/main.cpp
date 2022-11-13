@@ -81,7 +81,7 @@ int main(int argc, char** argv)
 
         options.ParseArgs(argc, argv);
 
-        options.CheckMissing();
+        options.Validate();
     }
     catch (const Options::ShowHelpException& ex)
     {

@@ -9,35 +9,35 @@
 namespace Andromeda {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& opts) : 
-    debug("HTTPRunner",this), options(opts), baseURL(baseURL), httpClient(hostname)
+HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& options) : 
+    mDebug("HTTPRunner",this), mOptions(options), mBaseURL(baseURL), mHttpClient(hostname)
 {
-    debug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; debug.Info();
+    mDebug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; mDebug.Info();
 
-    this->httpClient.set_keep_alive(true);
+    mHttpClient.set_keep_alive(true);
 
-    this->httpClient.set_read_timeout(options.timeout);
-    this->httpClient.set_write_timeout(options.timeout);
+    mHttpClient.set_read_timeout(mOptions.timeout);
+    mHttpClient.set_write_timeout(mOptions.timeout);
 
-    if (!Utilities::endsWith(this->baseURL, "/index.php"))
-        this->baseURL += "/index.php";
+    if (!Utilities::endsWith(mBaseURL, "/index.php"))
+        mBaseURL += "/index.php";
 
-    if (!options.username.empty())
+    if (!mOptions.username.empty())
     {
-        httpClient.set_basic_auth(
-            options.username.c_str(), options.password.c_str());
+        mHttpClient.set_basic_auth(
+            mOptions.username.c_str(), mOptions.password.c_str());
     }
 
-    if (!options.proxyHost.empty())
+    if (!mOptions.proxyHost.empty())
     {
-        httpClient.set_proxy(
-            options.proxyHost.c_str(), options.proxyPort);
+        mHttpClient.set_proxy(
+            mOptions.proxyHost.c_str(), mOptions.proxyPort);
     }
 
-    if (!options.proxyUsername.empty())
+    if (!mOptions.proxyUsername.empty())
     {
-        httpClient.set_proxy_basic_auth(
-            options.proxyUsername.c_str(), options.proxyPassword.c_str());
+        mHttpClient.set_proxy_basic_auth(
+            mOptions.proxyUsername.c_str(), mOptions.proxyPassword.c_str());
     }
 }
 
@@ -46,9 +46,9 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 {
     httplib::Params urlParams {{"app",input.app},{"action",input.action}};
 
-    std::string sep(this->baseURL.find("?") != std::string::npos ? "&" : "?");
+    std::string sep(mBaseURL.find("?") != std::string::npos ? "&" : "?");
 
-    std::string url(this->baseURL + sep + 
+    std::string url(mBaseURL + sep + 
         httplib::detail::params_to_query_str(urlParams));
 
     httplib::MultipartFormDataItems postParams;
@@ -63,22 +63,22 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
     }
 
-    for (decltype(options.maxRetries) attempt { 0 }; ; attempt++)
+    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        httplib::Result response(this->httpClient.Post(url.c_str(), postParams));
+        httplib::Result response(mHttpClient.Post(url.c_str(), postParams));
 
         if (!response || response->status >= 500) 
         {
-            if (attempt <= options.maxRetries && this->canRetry)
+            if (attempt <= mOptions.maxRetries && mCanRetry)
             {
-                debug << __func__ << "()... ";
+                mDebug << __func__ << "()... ";
                 
-                if (response) debug << "HTTP " << response->status;
-                else debug << httplib::to_string(response.error());
+                if (response) mDebug << "HTTP " << response->status;
+                else mDebug << httplib::to_string(response.error());
 
-                debug << " error, attempt " << attempt+1 << " of " << options.maxRetries+1; debug.Error();
+                mDebug << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1; mDebug.Error();
 
-                std::this_thread::sleep_for(options.retryTime); continue;
+                std::this_thread::sleep_for(mOptions.retryTime); continue;
             }
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
@@ -86,7 +86,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
             else throw Exception(response.error());
         }
 
-        debug << __func__ << "()... HTTP:" << response->status; debug.Info();
+        mDebug << __func__ << "()... HTTP:" << response->status; mDebug.Info();
 
         switch (response->status)
         {

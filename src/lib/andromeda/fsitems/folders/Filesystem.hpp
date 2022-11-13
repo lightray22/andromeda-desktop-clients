@@ -51,9 +51,9 @@ protected:
 
 private:
 
-    std::string fsid;
+    std::string mFsid;
 
-    Debug debug;
+    Debug mDebug;
 };
 
 } // namespace Andromeda

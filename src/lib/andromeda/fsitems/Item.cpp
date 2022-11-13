@@ -11,24 +11,24 @@ namespace FSItems {
 
 /*****************************************************/
 Item::Item(Backend& backend) : 
-    backend(backend), debug("Item",this)
+    mBackend(backend), mDebug("Item",this)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 }
 
 /*****************************************************/
 void Item::Initialize(const nlohmann::json& data)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     try
     {
-        data.at("id").get_to(this->id);
-        data.at("name").get_to(this->name);
+        data.at("id").get_to(mId);
+        data.at("name").get_to(mName);
 
         if (data.contains("dates"))
         {
-            data.at("dates").at("created").get_to(this->created);
+            data.at("dates").at("created").get_to(mCreated);
         }
     }
     catch (const nlohmann::json::exception& ex) {
@@ -40,19 +40,19 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     try
     {
-        data.at("name").get_to(this->name);
+        data.at("name").get_to(mName);
 
-        debug << __func__ << "... name:" << this->name; debug.Info();
+        mDebug << __func__ << "... name:" << mName; mDebug.Info();
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
-        if (!modifiedJ.is_null()) modifiedJ.get_to(this->modified);
+        if (!modifiedJ.is_null()) modifiedJ.get_to(mModified);
 
         const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
-        if (!accessedJ.is_null()) accessedJ.get_to(this->accessed);
+        if (!accessedJ.is_null()) accessedJ.get_to(mAccessed);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
@@ -61,25 +61,25 @@ void Item::Refresh(const nlohmann::json& data)
 /*****************************************************/
 Folder& Item::GetParent() const     
 {
-    if (this->parent == nullptr) 
+    if (mParent == nullptr) 
         throw NullParentException();
             
-    return *this->parent; 
+    return *mParent; 
 }
 
 /*****************************************************/
 const FSConfig& Item::GetFSConfig() const
 {
-    if (this->fsConfig == nullptr)
+    if (mFsConfig == nullptr)
         throw NullFSConfigException();
 
-    return *this->fsConfig;
+    return *mFsConfig;
 }
 
 /*****************************************************/
 bool Item::isReadOnly() const
 {
-    const Config& config(backend.GetConfig());
+    const Config& config(mBackend.GetConfig());
 
     bool retval { config.isReadOnly() || config.GetOptions().readOnly };
 
@@ -92,7 +92,7 @@ bool Item::isReadOnly() const
 void Item::Delete(bool internal)
 {
     if (internal || !HasParent()) SubDelete();
-    else GetParent().DeleteItem(this->name);
+    else GetParent().DeleteItem(mName);
 }
 
 /*****************************************************/
@@ -101,9 +101,9 @@ void Item::Rename(const std::string& newName, bool overwrite, bool internal)
     if (internal || !HasParent())
     {
         SubRename(newName, overwrite); 
-        this->name = newName;
+        mName = newName;
     }
-    else GetParent().RenameItem(this->name, newName, overwrite);
+    else GetParent().RenameItem(mName, newName, overwrite);
 }
 
 /*****************************************************/
@@ -112,9 +112,9 @@ void Item::Move(Folder& newParent, bool overwrite, bool internal)
     if (internal)
     {
         SubMove(newParent, overwrite); 
-        this->parent = &newParent;
+        mParent = &newParent;
     }
-    else GetParent().MoveItem(this->name, newParent, overwrite);
+    else GetParent().MoveItem(mName, newParent, overwrite);
 }
 
 } // namespace FSItems

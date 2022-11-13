@@ -30,11 +30,11 @@ public:
 
 private:
 
-    Debug debug;
+    Debug mDebug;
 
-    std::string apiPath;
+    std::string mApiPath;
 
-    const std::chrono::seconds timeout { std::chrono::seconds(120) };
+    const std::chrono::seconds mTimeout { std::chrono::seconds(120) };
 };
 
 } // namespace Andromeda

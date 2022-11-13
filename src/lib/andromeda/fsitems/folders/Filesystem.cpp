@@ -20,35 +20,35 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::st
 
 /*****************************************************/
 Filesystem::Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent) :
-    PlainFolder(backend), debug("Filesystem",this) 
+    PlainFolder(backend), mDebug("Filesystem",this) 
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    Initialize(data); this->parent = parent;
+    Initialize(data); mParent = parent;
 
-    this->fsid = this->id; this->id = "";
+    mFsid = mId; mId = "";
 
-    this->fsConfig = &FSConfig::LoadByID(backend, this->fsid);
+    mFsConfig = &FSConfig::LoadByID(backend, mFsid);
 }
 
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    if (this->id.empty()) LoadItems(); // populates ID
+    if (mId.empty()) LoadItems(); // populates ID
 
-    return this->id;
+    return mId;
 }
 
 /*****************************************************/
 void Filesystem::LoadItems()
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    const nlohmann::json data(backend.GetFSRoot(this->fsid));
+    const nlohmann::json data(mBackend.GetFSRoot(mFsid));
 
     try
     {
-        data.at("id").get_to(this->id); // late load
+        data.at("id").get_to(mId); // late load
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }

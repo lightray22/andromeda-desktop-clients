@@ -48,7 +48,7 @@ else()
         -Wold-style-cast
         -Woverloaded-virtual 
         -Wsign-conversion
-        # -Wshadow TODO
+        -Wshadow
     )
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

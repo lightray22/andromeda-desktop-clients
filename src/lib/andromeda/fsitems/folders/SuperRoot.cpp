@@ -11,13 +11,13 @@ namespace Folders {
 
 /*****************************************************/
 SuperRoot::SuperRoot(Backend& backend) : 
-    Folder(backend), debug("SuperRoot",this)
+    Folder(backend), mDebug("SuperRoot",this)
 {
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     backend.RequireAuthentication();
 
-    this->name = "SuperRoot";
+    mName = "SuperRoot";
 }
 
 /*****************************************************/
@@ -25,13 +25,13 @@ void SuperRoot::LoadItems()
 {
     if (HaveItems()) return; // never refresh
 
-    debug << __func__ << "()"; debug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(backend, *this));
-    this->itemMap[adopted->GetName()] = std::move(adopted);
+    std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
+    mItemMap[adopted->GetName()] = std::move(adopted);
 
-    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(backend, *this));
-    this->itemMap[filesystems->GetName()] = std::move(filesystems);
+    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
+    mItemMap[filesystems->GetName()] = std::move(filesystems);
 }
 
 } // namespace Andromeda
