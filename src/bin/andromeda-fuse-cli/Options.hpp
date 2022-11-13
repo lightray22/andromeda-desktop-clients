@@ -78,7 +78,7 @@ public:
     void ParseFile(const std::filesystem::path& path);
 
     /** Makes sure all required args were provided */
-    virtual void Validate();
+    void Validate();
 
     /** Returns the desired debug level */
     Andromeda::Debug::Level GetDebugLevel() const { return mDebugLevel; }
