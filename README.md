@@ -117,7 +117,7 @@ libfuse is dynamically linked so it must be available at runtime.
 - Alpine: `apk add fuse3 fuse3-dev`
 - FreeBSD: `pkg install fusefs-libs3`
 
-Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m ``whoami```, and enable user mounting with `sysctl vfs.usermount=1`.  
+Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m ```whoami````, and enable user mounting with `sysctl vfs.usermount=1`.  
 
 ## Debug
 
