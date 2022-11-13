@@ -62,8 +62,8 @@ target_link_libraries(andromeda PUBLIC httplib)
 set(REPROC++ ON)
 
 FetchContent_Declare(reproc
-    GIT_REPOSITORY  https://github.com/lightray22/reproc
-    GIT_TAG         5d4ac1f # master
+    GIT_REPOSITORY  https://github.com/stingray-11/reproc
+    GIT_TAG         c1edf03 # master
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
 
