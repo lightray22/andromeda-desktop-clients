@@ -160,7 +160,7 @@ void Utilities::SilentReadConsole(std::string& retval)
         tcgetattr(fileno(stdin), &oflags);
 
         nflags = oflags;
-        nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO);
+        nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
         tcsetattr(fileno(stdin), TCSANOW, &nflags);
     #endif
 

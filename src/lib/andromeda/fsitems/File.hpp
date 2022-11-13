@@ -42,8 +42,8 @@ public:
      * Read data from the file
      * @param buffer pointer to buffer to fill
      * @param offset byte offset in file to read
-     * @param length number of bytes to read
-     * @return the number of bytes read
+     * @param length max number of bytes to read
+     * @return the number of bytes read (may be < length if EOF)
      */
     virtual size_t ReadBytes(std::byte* buffer, const uint64_t offset, size_t length) final;
 

@@ -173,7 +173,7 @@ static void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
     
-    if (item.isReadOnly()) stbuf->st_mode &= ~S_IWUSR & ~S_IWGRP & ~S_IWOTH;
+    if (item.isReadOnly()) stbuf->st_mode &= static_cast<decltype(stbuf->st_mode)>(~S_IWUSR & ~S_IWGRP & ~S_IWOTH); // -Wsign-conversion
 
     stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
 
@@ -416,11 +416,13 @@ int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse
     while (path[0] == '/') path++;
     debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
+    if (off < 0) return -EINVAL;
+
     return standardTry(__func__,[&]()->int
     {
         File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
 
-        return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), off, size));
+        return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), static_cast<uint64_t>(off), size));
     });
 }
 
@@ -430,11 +432,13 @@ int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, stru
     while (path[0] == '/') path++;
     debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
+    if (off < 0) return -EINVAL;
+
     return standardTry(__func__,[&]()->int
     {
         File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
 
-        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), off, size); 
+        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), static_cast<uint64_t>(off), size); 
         
         return static_cast<int>(size);
     });
@@ -503,11 +507,13 @@ int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
     while (path[0] == '/') path++;
     debug<<__func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
 
+    if (size < 0) return -EINVAL;
+
     return standardTry(__func__,[&]()->int
     {
         File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
 
-        file.Truncate(size); return FUSE_SUCCESS;
+        file.Truncate(static_cast<uint64_t>(size)); return FUSE_SUCCESS;
     });
 }
 

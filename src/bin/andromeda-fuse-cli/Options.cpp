@@ -43,9 +43,9 @@ std::string Options::HelpText()
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << cfgDefault.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
-           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port int] [--hproxy-user str --hproxy-pass str]]" << endl
-           << "HTTP Advanced:   [--http-timeout int(" << defTimeout << ")] [--max-retries int(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
-           << "Debugging:       [-d|--debug [int]] [--cachemode none|memory|normal]" << endl;
+           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
+           << "HTTP Advanced:   [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
+           << "Debugging:       [-d|--debug [uint]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
 }
@@ -120,7 +120,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
 
         if (option == "d" || option == "debug")
         {
-            try { this->debugLevel = static_cast<Debug::Level>(stoi(value)); }
+            try { this->debugLevel = static_cast<Debug::Level>(stoul(value)); }
             catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
         }
@@ -201,7 +201,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
         else if (option == "pagesize")
         {
-            try { this->cOptions.pageSize = stoi(value); }
+            try { this->cOptions.pageSize = stoul(value); }
             catch (const std::logic_error& e) { 
                 throw BadValueException(option); }
 
@@ -209,7 +209,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
         else if (option == "refresh")
         {
-            try { this->cOptions.refreshTime = seconds(stoi(value)); }
+            try { this->cOptions.refreshTime = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 
@@ -232,7 +232,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             this->hOptions.proxyPassword = value;
         else if (option == "http-timeout")
         {
-            try { this->hOptions.timeout = seconds(stoi(value)); }
+            try { this->hOptions.timeout = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
         else if (option == "max-retries")
@@ -243,7 +243,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
         else if (option == "retry-time")
         {
-            try { this->hOptions.retryTime = seconds(stoi(value)); }
+            try { this->hOptions.retryTime = seconds(stoul(value)); }
             catch (const std::logic_error& e) { throw BadValueException(option); }
         }
 

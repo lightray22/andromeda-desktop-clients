@@ -47,8 +47,7 @@ else()
         -Wnon-virtual-dtor 
         -Wold-style-cast
         -Woverloaded-virtual 
-        # -Wsign-conversion TODO
-            -Wno-sign-conversion
+        -Wsign-conversion
         # -Wshadow TODO
     )
 

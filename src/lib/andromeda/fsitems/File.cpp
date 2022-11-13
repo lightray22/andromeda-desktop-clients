@@ -204,7 +204,10 @@ void File::ReadPage(std::byte* buffer, const uint64_t index, const size_t offset
 
     const Page& page(GetPage(index));
 
-    std::copy(page.data.cbegin()+offset, page.data.cbegin()+offset+length, buffer);
+    const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
+    const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
+
+    std::copy(page.data.cbegin()+iOffset, page.data.cbegin()+iOffset+iLength, buffer);
 }
 
 /*****************************************************/
@@ -214,7 +217,10 @@ void File::WritePage(const std::byte* buffer, const uint64_t index, const size_t
 
     Page& page(GetPage(index, offset+length)); page.dirty = true;
 
-    std::copy(buffer, buffer+length, page.data.begin()+offset);
+    const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
+    const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
+
+    std::copy(buffer, buffer+iLength, page.data.begin()+iOffset);
 }
 
 /*****************************************************/
