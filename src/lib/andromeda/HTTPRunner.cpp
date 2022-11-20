@@ -19,9 +19,6 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, 
     mHttpClient.set_read_timeout(mOptions.timeout);
     mHttpClient.set_write_timeout(mOptions.timeout);
 
-    if (!Utilities::endsWith(mBaseURL, "/index.php"))
-        mBaseURL += "/index.php";
-
     if (!mOptions.username.empty())
     {
         mHttpClient.set_basic_auth(
@@ -39,6 +36,27 @@ HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, 
         mHttpClient.set_proxy_basic_auth(
             mOptions.proxyUsername.c_str(), mOptions.proxyPassword.c_str());
     }
+}
+
+/*****************************************************/
+HTTPRunner::HostUrlPair HTTPRunner::ParseURL(std::string fullURL)
+{
+    if (fullURL.find("://") == std::string::npos)
+        fullURL.insert(0, "http://");
+
+    HTTPRunner::HostUrlPair retval { 
+        Utilities::split(fullURL, "/", 2) };
+
+    if (retval.second.empty() || retval.second[0] != '/')
+        retval.second.insert(0,"/");
+
+    if (Utilities::endsWith(retval.second, "/"))
+        retval.second += "index.php";
+    
+    if (!Utilities::endsWith(retval.second, "/index.php"))
+        retval.second += "/index.php";
+    
+    return retval;
 }
 
 /*****************************************************/

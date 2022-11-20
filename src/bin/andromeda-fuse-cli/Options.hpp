@@ -96,9 +96,6 @@ public:
     /** Returns the path to the API endpoint */
     std::string GetApiPath() const { return mApiPath; }
 
-    /** Returns the API hostname if using API_URL */
-    std::string GetApiHostname() const { return mApiHostname; }
-
     /** Returns true if a username is specified */
     bool HasUsername() const { return !mUsername.empty(); }
 
@@ -150,7 +147,6 @@ private:
 
     ApiType mApiType { static_cast<ApiType>(-1) };
     std::string mApiPath;
-    std::string mApiHostname;
 
     std::string mUsername;
     std::string mPassword;

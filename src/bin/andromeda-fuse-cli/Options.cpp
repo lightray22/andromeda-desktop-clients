@@ -130,14 +130,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         /** Backend endpoint selection */
         else if (option == "s" || option == "apiurl")
         {
-            std::vector<std::string> parts {
-                Utilities::explode(value, "/", 2, 2) };
-
-            if (parts.size() != 2) 
-                throw BadValueException(option);
-
-            mApiPath = "/"+parts[1];
-            mApiHostname = parts[0];
+            mApiPath = value;
             mApiType = ApiType::API_URL;
 
             Utilities::Flags urlFlags; 

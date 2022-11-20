@@ -1,8 +1,12 @@
 #ifndef A2FUSE_FUSEADAPTER_H_
 #define A2FUSE_FUSEADAPTER_H_
 
-#include <string>
+#include <condition_variable>
+#include <exception>
 #include <list>
+#include <mutex>
+#include <string>
+#include <thread>
 
 #include "andromeda/Utilities.hpp"
 
@@ -13,6 +17,9 @@ namespace FSItems {
 } // namespace Andromeda
 
 namespace AndromedaFuse {
+
+struct FuseLoop;
+struct FuseOperations;
 
 /** Static class for FUSE operations */
 class FuseAdapter
@@ -41,13 +48,27 @@ public:
         bool fakeChown { true };
     };
 
+    /** Thread mode for the FUSE Adapter */
+    enum class RunMode
+    {
+        /** Run in the foreground (block) */
+        FOREGROUND,
+        /** Run in the foreground but detach from the terminal */
+        DAEMON,
+        /** Run in a background thread (don't block) */
+        THREAD
+    };
+
     /**
      * Starts and mounts libfuse
      * @param root andromeda folder as root
-     * @param options command line options
-     * @param daemonize if true, fuse_daemonize
+     * @param options command line options (copied)
+     * @param runMode threading mode
      */
-    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, bool daemonize = false);
+    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, RunMode runMode);
+
+    /** Stop and unmount FUSE */
+    virtual ~FuseAdapter();
 
     /** Returns the root folder */
     Andromeda::FSItems::Folder& GetRootFolder(){ return mRootFolder; }
@@ -63,11 +84,29 @@ public:
 
 private:
 
+    friend struct FuseLoop;
+    friend struct FuseOperations;
+
+    /** Runs/mounts libfuse (blocking) */
+    void RunFuse(RunMode runMode);
+
+    /** Signals initialization complete */
+    void SignalInit();
+    
     Andromeda::FSItems::Folder& mRootFolder;
-    const Options& mOptions;
+    Options mOptions;
+
+    std::thread mFuseThread;
+    FuseLoop* mFuseLoop { nullptr }; // TODO should probably be locked?
+
+    bool mInitialized { false };
+    std::mutex mInitMutex;
+    std::condition_variable mInitCV;
+    std::exception_ptr mInitError;
+
+    FuseAdapter(const FuseAdapter&) = delete; // no copying
 };
 
 } // namespace AndromedaFuse
 
 #endif // A2FUSE_FUSEADAPTER_H
-

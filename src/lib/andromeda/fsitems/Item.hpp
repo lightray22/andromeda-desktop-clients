@@ -147,6 +147,8 @@ protected:
 private:
 
     Debug mDebug;
+
+    Item(const Item&) = delete; // no copy
 };
 
 } // namespace FSItems

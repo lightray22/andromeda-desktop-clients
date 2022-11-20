@@ -1,7 +1,9 @@
 
-#include <QApplication>
+#include <QtWidgets/QApplication>
 
-#include "MainWindow.hpp"
+#include "BackendManager.hpp"
+#include "MountManager.hpp"
+#include "windows/MainWindow.hpp"
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;
@@ -20,17 +22,21 @@ int main(int argc, char** argv)
     Debug debug("main");
 
     // TODO parse options on cmdline (e.g. debug)
+    debug.SetLevel(Debug::Level::DETAILS); 
 
-    debug.SetLevel(Debug::Level::DETAILS); // TODO temp
     debug << __func__ << "()"; debug.Info();
 
-    QApplication a(argc, argv);
+    QApplication application(argc, argv);
     
-    MainWindow w;
-    w.show();
+    BackendManager backendManager;
+    MountManager mountManager;
 
-    return a.exec();
+    MainWindow mainWindow(backendManager, mountManager); 
+    
+    mainWindow.show(); 
+    int retval = application.exec();
 
-    //debug.Info("returning success...");
-    //return static_cast<int>(ExitCode::SUCCESS);
+    debug << __func__ << "()... return " << retval; debug.Info();
+
+    return retval;
 }

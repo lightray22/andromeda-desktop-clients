@@ -19,54 +19,57 @@ namespace Andromeda {
 /*****************************************************/
 Utilities::StringList Utilities::explode(
     std::string str, const std::string& delim, 
-    const size_t max, const size_t skip)
+    const size_t skip, const bool reverse, const size_t max)
 {
     StringList retval;
     
     if (str.empty()) return retval;
+    if (delim.empty()) return { str };
 
-    size_t skipped { 0 }, start { 0 }, end;
-    while ( !delim.empty() && retval.size()+1 < max
-            && (end = str.find(delim, start)) != std::string::npos)
+    std::string segment; size_t skipped { 0 };
+
+    if (reverse) std::reverse(str.begin(), str.end());
+
+    while ( retval.size() + 1 < max )
     {
+        const size_t segEnd { str.find(delim) };
+        if (segEnd == std::string::npos) break;
+
+        segment += str.substr(0, segEnd);
+
         if (skipped >= skip)
-        {
-            start = 0;
-            retval.push_back(str.substr(0, end));
-            str.erase(0, end + delim.length());
+        { 
+            retval.push_back(segment); 
+            segment.clear(); 
         }
-        else 
-        {
-            skipped++;
-            start = (end + delim.length());
-        }
+        else { skipped++; segment += delim; }
+
+        str.erase(0, segEnd + delim.length());
     }
 
-    retval.push_back(str);
+    retval.push_back(segment+str);
+
+    if (reverse)
+    {
+        for (std::string& el : retval)
+            std::reverse(el.begin(), el.end());
+        std::reverse(retval.begin(), retval.end());
+    }
+
     return retval;
 }
 
 /*****************************************************/
 Utilities::StringPair Utilities::split(
-    const std::string& str, const std::string& delim, const bool last)
+    const std::string& str, const std::string& delim, 
+    const size_t skip, const bool reverse)
 {
-    StringPair retval;
+    Utilities::StringList list { explode(str, delim, skip, reverse, 2) };
 
-    size_t pos { last ? str.rfind(delim) : str.find(delim) };
+    if (list.size() < 1) list.push_back("");
+    if (list.size() < 2) list.push_back("");
 
-    if (pos == std::string::npos)
-    {
-        if (last) 
-             retval.second = str;
-        else retval.first = str;
-    }
-    else
-    {
-        retval.first = str.substr(0, pos);
-        retval.second = str.substr(pos + delim.length());
-    }
-
-    return retval;
+    return Utilities::StringPair { list[0], list[1] };
 }
 
 /*****************************************************/

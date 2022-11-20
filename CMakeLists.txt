@@ -7,4 +7,9 @@ add_subdirectory(src/lib/andromeda-sync lib/sync)
 
 add_subdirectory(src/bin/andromeda-fuse-cli bin/cli-fuse)
 add_subdirectory(src/bin/andromeda-sync-cli bin/cli-sync)
-add_subdirectory(src/bin/andromeda-gui bin/gui)
+
+option(WITHOUT_GUI "Don't build the Qt GUI" OFF)
+
+if (NOT WITHOUT_GUI)
+    add_subdirectory(src/bin/andromeda-gui bin/gui)
+endif()

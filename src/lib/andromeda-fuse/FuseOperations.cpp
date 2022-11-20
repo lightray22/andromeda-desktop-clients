@@ -26,14 +26,16 @@ using Andromeda::FSItems::Folder;
 
 static Andromeda::Debug debug("FuseOperations");
 
+namespace AndromedaFuse {
+
 /*****************************************************/
-static FuseAdapter* GetFuseAdapter()
+static FuseAdapter& GetFuseAdapter()
 {
-    return static_cast<FuseAdapter*>(fuse_get_context()->private_data);
+    return *static_cast<FuseAdapter*>(fuse_get_context()->private_data);
 }
 
 /*****************************************************/
-int standardTry(const std::string& fname, std::function<int()> func)
+static int standardTry(const std::string& fname, std::function<int()> func)
 {
     try { return func(); }
 
@@ -98,9 +100,9 @@ int standardTry(const std::string& fname, std::function<int()> func)
 
 /*****************************************************/
 #if LIBFUSE2
-void* a2fuse_init(struct fuse_conn_info* conn)
+void* FuseOperations::init(struct fuse_conn_info* conn)
 #else
-void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
+void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 #endif // LIBFUSE2
 {
     debug << __func__ << "()"; debug.Info();
@@ -110,14 +112,17 @@ void* a2fuse_init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     cfg->negative_timeout = 1;
 #endif // !LIBFUSE2
 
-    return static_cast<void*>(GetFuseAdapter());
+    FuseAdapter& adapter { GetFuseAdapter() };
+
+    adapter.SignalInit();
+    return static_cast<void*>(&adapter);
 }
 
 /*****************************************************/
-int a2fuse_statfs(const char *path, struct statvfs* buf)
+int FuseOperations::statfs(const char *path, struct statvfs* buf)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     buf->f_namemax = 255;
     
@@ -200,15 +205,15 @@ static void item_stat(const Item& item, struct stat* stbuf)
 }
 
 /*****************************************************/
-int a2fuse_access(const char* path, int mask) // TODO does this actually get called? WinFSP does not
+int FuseOperations::access(const char* path, int mask)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
         #if defined(W_OK)
-            Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
+            Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
 
             if ((mask & W_OK) && item.isReadOnly()) return -EROFS;
         #endif // W_OK
@@ -218,14 +223,14 @@ int a2fuse_access(const char* path, int mask) // TODO does this actually get cal
 }
 
 /*****************************************************/
-int a2fuse_open(const char* path, struct fuse_file_info* fi)
+int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        const Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(path));
+        const Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
 
         if ((fi->flags & O_WRONLY || fi->flags & O_RDWR)
             && item.isReadOnly()) return -EROFS;
@@ -235,40 +240,40 @@ int a2fuse_open(const char* path, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-int a2fuse_opendir(const char* path, struct fuse_file_info* fi)
+int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
-    return a2fuse_open(path, fi);
+    return open(path, fi);
 }
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_getattr(const char* path, struct stat* stbuf)
+int FuseOperations::getattr(const char* path, struct stat* stbuf)
 #else
-int a2fuse_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
+int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        item_stat(GetFuseAdapter()->GetRootFolder().GetItemByPath(path), stbuf); return FUSE_SUCCESS;
+        item_stat(GetFuseAdapter().GetRootFolder().GetItemByPath(path), stbuf); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
-int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
+int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        const Folder::ItemMap& items(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path).GetItems());
+        const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
 
         debug << __func__ << "... #items:" << items.size(); debug.Info();
 
@@ -307,10 +312,10 @@ int a2fuse_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t of
 }
 
 /*****************************************************/
-int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
+int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
     while (fullpath[0] == '/') fullpath++; 
-    const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    const Utilities::StringPair pair(Utilities::split(fullpath,"/",0,true));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
@@ -318,17 +323,17 @@ int a2fuse_create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path));
+        Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
         parent.CreateFile(name); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-int a2fuse_mkdir(const char* fullpath, mode_t mode)
+int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 {
     while (fullpath[0] == '/') fullpath++; 
-    const Utilities::StringPair pair(Utilities::split(fullpath,"/",true));
+    const Utilities::StringPair pair(Utilities::split(fullpath,"/",0,true));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
@@ -336,50 +341,50 @@ int a2fuse_mkdir(const char* fullpath, mode_t mode)
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path));
+        Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
         parent.CreateFolder(name); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-int a2fuse_unlink(const char* path)
+int FuseOperations::unlink(const char* path)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter()->GetRootFolder().GetFileByPath(path).Delete(); return FUSE_SUCCESS;
+        GetFuseAdapter().GetRootFolder().GetFileByPath(path).Delete(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-int a2fuse_rmdir(const char* path)
+int FuseOperations::rmdir(const char* path)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter()->GetRootFolder().GetFolderByPath(path).Delete(); return FUSE_SUCCESS;
+        GetFuseAdapter().GetRootFolder().GetFolderByPath(path).Delete(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_rename(const char* oldpath, const char* newpath)
+int FuseOperations::rename(const char* oldpath, const char* newpath)
 #else
-int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
+int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif
 {
     while (oldpath[0] == '/') oldpath++; 
-    const Utilities::StringPair pair0(Utilities::split(oldpath,"/",true));
+    const Utilities::StringPair pair0(Utilities::split(oldpath,"/",0,true));
     const std::string& oldPath { pair0.first }; 
     const std::string& oldName { pair0.second };
 
     while (newpath[0] == '/') newpath++; 
-    const Utilities::StringPair pair1(Utilities::split(newpath,"/",true));
+    const Utilities::StringPair pair1(Utilities::split(newpath,"/",0,true));
     const std::string& newPath { pair1.first };
     const std::string& newName { pair1.second };
 
@@ -387,17 +392,17 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 
     return standardTry(__func__,[&]()->int
     {
-        Item& item(GetFuseAdapter()->GetRootFolder().GetItemByPath(oldpath));
+        Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(oldpath));
 
         if (oldPath != newPath && oldName != newName)
         {
-            //Folder& parent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(newPath));
+            //Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
-            debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO
+            debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
-            Folder& newParent(GetFuseAdapter()->GetRootFolder().GetFolderByPath(newPath));
+            Folder& newParent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
             item.Move(newParent, true);
         }
@@ -411,32 +416,32 @@ int a2fuse_rename(const char* oldpath, const char* newpath, unsigned int flags)
 }
 
 /*****************************************************/
-int a2fuse_read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     if (off < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), static_cast<uint64_t>(off), size));
     });
 }
 
 /*****************************************************/
-int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
 
     if (off < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         file.WriteBytes(reinterpret_cast<const std::byte*>(buf), static_cast<uint64_t>(off), size); 
         
@@ -445,73 +450,74 @@ int a2fuse_write(const char* path, const char* buf, size_t size, off_t off, stru
 }
 
 /*****************************************************/
-int a2fuse_flush(const char* path, struct fuse_file_info* fi)
+int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         file.FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-int a2fuse_fsync(const char* path, int datasync, struct fuse_file_info* fi)
+int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         file.FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-int a2fuse_fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
+int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& folder(GetFuseAdapter()->GetRootFolder().GetFolderByPath(path));
+        Folder& folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
         folder.FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
-void a2fuse_destroy(void* private_data)
+void FuseOperations::destroy(void* private_data)
 {
     debug << __func__ << "()"; debug.Info();
 
     standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter()->GetRootFolder().FlushCache(true); return FUSE_SUCCESS;
+        FuseAdapter& adapter { *static_cast<FuseAdapter*>(private_data) };
+        adapter.GetRootFolder().FlushCache(true); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_truncate(const char* path, off_t size)
+int FuseOperations::truncate(const char* path, off_t size)
 #else
-int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
+int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif
 {
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
 
     if (size < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter()->GetRootFolder().GetFileByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         file.Truncate(static_cast<uint64_t>(size)); return FUSE_SUCCESS;
     });
@@ -519,36 +525,38 @@ int a2fuse_truncate(const char* path, off_t size, struct fuse_file_info* fi)
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_chmod(const char* path, mode_t mode)
+int FuseOperations::chmod(const char* path, mode_t mode)
 #else
-int a2fuse_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif
 {
-    if (!GetFuseAdapter()->GetOptions().fakeChmod) return -ENOTSUP;
+    if (!GetFuseAdapter().GetOptions().fakeChmod) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter()->GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 
 /*****************************************************/
 #if LIBFUSE2
-int a2fuse_chown(const char* path, uid_t uid, gid_t gid)
+int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 #else
-int a2fuse_chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
+int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif
 {
-    if (!GetFuseAdapter()->GetOptions().fakeChown) return -ENOTSUP;
+    if (!GetFuseAdapter().GetOptions().fakeChown) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug<<__func__ << "(path:" << path << ")"; debug.Info();
+    debug << __func__ << "(path:" << path << ")"; debug.Info();
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter()->GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
+
+} // namespace AndromedaFuse

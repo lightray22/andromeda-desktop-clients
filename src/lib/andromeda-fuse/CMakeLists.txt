@@ -16,6 +16,10 @@ target_include_directories(andromeda-fuse
 target_compile_options(andromeda-fuse PRIVATE ${ANDROMEDA_WARNINGS}
     -D_FILE_OFFSET_BITS=64)
 
+install(TARGETS andromeda-fuse
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
 # include/link libandromeda
 
 if (NOT TARGET andromeda)
@@ -44,3 +48,4 @@ find_package(FUSE REQUIRED)
 
 target_include_directories(andromeda-fuse PRIVATE ${FUSE_INCLUDE_DIR})
 target_link_libraries(andromeda-fuse INTERFACE ${FUSE_LIBRARY})
+

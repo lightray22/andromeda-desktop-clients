@@ -109,8 +109,11 @@ int main(int argc, char** argv)
     {
         case Options::ApiType::API_URL:
         {
+            HTTPRunner::HostUrlPair urlPair { 
+                HTTPRunner::ParseURL(options.GetApiPath()) };
+
             runner = std::make_unique<HTTPRunner>(
-                options.GetApiHostname(), options.GetApiPath(), httpOptions);
+                urlPair.first, urlPair.second, httpOptions);
         }; break;
         case Options::ApiType::API_PATH:
         {
@@ -127,28 +130,18 @@ int main(int argc, char** argv)
         backend.Initialize(configOptions);
 
         if (options.HasSession())
-        {
             backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
-        }
         else if (options.HasUsername())
-        {
             backend.AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
-        }
 
         switch (options.GetMountRootType())
         {
             case Options::RootType::SUPERROOT:
-            {
                 folder = std::make_unique<SuperRoot>(backend); break;
-            }
             case Options::RootType::FILESYSTEM:
-            {
                 folder = Filesystem::LoadByID(backend, options.GetMountItemID()); break;
-            }
             case Options::RootType::FOLDER:
-            {
                 folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
-            }
         }
     }
     catch (const Utilities::Exception& ex)
@@ -162,7 +155,8 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseAdapter fuseAdapter(*folder, fuseOptions, true);
+        FuseAdapter fuseAdapter(*folder, fuseOptions, static_cast<bool>(Debug::GetLevel())
+            ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
     }
     catch (const FuseAdapter::Exception& ex)
     {

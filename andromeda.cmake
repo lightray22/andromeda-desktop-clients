@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+include(GNUInstallDirs)
+
 # include and setup FetchContent
 
 include(FetchContent)
@@ -24,9 +26,10 @@ endif()
 # https://github.com/cpp-best-practices/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 
 if (MSVC)
-    set(ANDROMEDA_WARNINGS /W4 #/WX /permissive- TODO
+    set(ANDROMEDA_WARNINGS /W4 /WX /permissive-
         /wd4100 # NO unreferenced formal parameter
         /wd4101 # NO unreferenced local variable
+        /wd4702 # NO unreachable code (Qt)
         /w14242 /w14254 /w14263 /w14265
         /w14287 /we4289 /w14296 /w14311
         /w14545 /w14546 /w14547 /w14549

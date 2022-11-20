@@ -32,13 +32,14 @@ public:
      * Split a string into an array
      * @param str string to split
      * @param delim string separating pieces
-     * @param max max # of elements to return
      * @param skip the number of delims to skip
+     * @param reverse if true, find delims from end
+     * @param max max # of elements to return
      */
     static StringList explode(
         std::string str, const std::string& delim, 
-        const size_t max = static_cast<size_t>(-1),
-        const size_t skip = 0);
+        const size_t skip = 0, const bool reverse = false,
+        const size_t max = static_cast<size_t>(-1));
 
     /** A pair of two strings */
     typedef std::pair<std::string,std::string> StringPair;
@@ -47,10 +48,12 @@ public:
      * Special case of explode with max=1,skip=0 and returns a pair 
      * @param str string to split
      * @param delim string separating pieces
-     * @param last if true, find last delim else first
+     * @param skip the number of delims to skip
+     * @param reverse if true, find delims from end
      */
-    static StringPair split(const std::string& str, 
-        const std::string& delim, const bool last = false);
+    static StringPair split(
+        const std::string& str, const std::string& delim, 
+        const size_t skip = 0, const bool reverse = false);
 
     /** Returns true iff str ends with end */
     static bool endsWith(const std::string& str, const std::string& end);

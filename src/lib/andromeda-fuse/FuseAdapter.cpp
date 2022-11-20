@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <memory>
 
 #include "libfuse_Includes.h"
 #include "FuseAdapter.hpp"
@@ -11,7 +12,7 @@ using Andromeda::Debug;
 using Andromeda::FSItems::Folder;
 
 static a2fuse_operations a2fuse_ops;
-static Debug debug("FuseAdapter");
+static Debug sDebug("FuseAdapter");
 
 namespace AndromedaFuse {
 
@@ -19,31 +20,44 @@ namespace AndromedaFuse {
 /** Scope-managed fuse_args */
 struct FuseArguments
 {
-    FuseArguments(): args(FUSE_ARGS_INIT(0,NULL))
+    FuseArguments(): mFuseArgs(FUSE_ARGS_INIT(0,NULL))
     {
-        if (fuse_opt_add_arg(&args, "andromeda-fuse"))
-            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed");
+        sDebug << __func__ << "() fuse_opt_add_arg()"; sDebug.Info();
+
+        int retval; if ((retval = fuse_opt_add_arg(&mFuseArgs, "andromeda-fuse")) != FUSE_SUCCESS)
+            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed: "+std::to_string(retval));
     };
+
     ~FuseArguments()
     { 
-        debug << __func__ << "() fuse_opt_free_args()"; debug.Info();
+        sDebug << __func__ << "() fuse_opt_free_args()"; sDebug.Info();
 
-        fuse_opt_free_args(&args); 
+        fuse_opt_free_args(&mFuseArgs); 
     };
+
     /** @param arg -o fuse argument */
     void AddArg(const std::string& arg)
     { 
-        debug << __func__ << "(arg:" << arg << ")"; debug.Info();
+        sDebug << __func__ << "(arg:" << arg << ")"; sDebug.Info(); int retval;
 
-        if (fuse_opt_add_arg(&args, "-o") != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed");
+        if ((retval = fuse_opt_add_arg(&mFuseArgs, "-o")) != FUSE_SUCCESS)
+            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed: "+std::to_string(retval));
 
-        if (fuse_opt_add_arg(&args, arg.c_str()) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed");
+        if ((retval = fuse_opt_add_arg(&mFuseArgs, arg.c_str())) != FUSE_SUCCESS)
+            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed: "+std::to_string(retval));
     };
     /** fuse_args struct */
-    struct fuse_args args;
+    struct fuse_args mFuseArgs;
 };
+
+/** Run fuse_daemonize (detach from terminal) */
+static void FuseDaemonize()
+{
+    sDebug << __func__ << "... fuse_daemonize()"; sDebug.Info();
+
+    int retval; if ((retval = fuse_daemonize(0)) != FUSE_SUCCESS)
+        throw FuseAdapter::Exception("fuse_daemonize() failed: "+std::to_string(retval));
+}
 
 #if LIBFUSE2
 
@@ -53,28 +67,30 @@ struct FuseMount
 {
     /** @param fargs FuseArguments reference
      * @param path filesystem path to mount */
-    FuseMount(FuseArguments& fargs, const char* path): path(path)
+    FuseMount(FuseArguments& fargs, const char* const path): mPath(path)
     {
-        debug << __func__ << "() fuse_mount()"; debug.Info();
+        sDebug << __func__ << "() fuse_mount()"; sDebug.Info();
         
-        chan = fuse_mount(path, &fargs.args);
+        mFuseChan = fuse_mount(mPath, &fargs.mFuseArgs);
         
-        if (!chan) throw FuseAdapter::Exception("fuse_mount() failed");
+        if (!mFuseChan) throw FuseAdapter::Exception("fuse_mount() failed");
     };
+
     void Unmount()
     {
-        if (chan == nullptr) return;
+        if (mFuseChan == nullptr) return;
 
-        debug << __func__ << "() fuse_unmount()"; debug.Info();
+        sDebug << __func__ << "() fuse_unmount()"; sDebug.Info();
         
-        fuse_unmount(path.c_str(), chan); chan = nullptr;
+        fuse_unmount(mPath, mFuseChan); mFuseChan = nullptr;
     };
+
     ~FuseMount(){ Unmount(); };
     
     /** mounted path */
-    const std::string path;
+    const char* const mPath;
     /** fuse_chan pointer */
-    struct fuse_chan* chan;
+    struct fuse_chan* mFuseChan;
 };
 
 /*****************************************************/
@@ -83,26 +99,28 @@ struct FuseContext
 {
     /** @param mount FuseMount reference 
      * @param fargs FuseArguments reference */
-    FuseContext(FuseMount& mount, FuseArguments& fargs, FuseAdapter& adapter): mount(mount)
+    FuseContext(FuseMount& mount, FuseArguments& fargs, FuseAdapter& adapter): mMount(mount)
     { 
-        debug << __func__ << "() fuse_new()"; debug.Info();
+        sDebug << __func__ << "() fuse_new()"; sDebug.Info();
 
-        fuse = fuse_new(mount.chan, &(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
-
-        if (!fuse) throw FuseAdapter::Exception("fuse_new() failed");
+        mFuse = fuse_new(mMount.mFuseChan, &(fargs.mFuseArgs), 
+            &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
+        if (!mFuse) throw FuseAdapter::Exception("fuse_new() failed");
     };
+
     ~FuseContext()
     {
-        mount.Unmount(); 
+        mMount.Unmount(); 
 
-        debug << __func__ << "() fuse_destroy()"; debug.Info();
+        sDebug << __func__ << "() fuse_destroy()"; sDebug.Info();
 
-        fuse_destroy(fuse);
+        fuse_destroy(mFuse);
     };
+
     /** Fuse context pointer */
-    struct fuse* fuse;
+    struct fuse* mFuse;
     /** Fuse mount reference */
-    FuseMount& mount;
+    FuseMount& mMount;
 };
 
 #else // !LIBFUSE2
@@ -114,20 +132,22 @@ struct FuseContext
     /** @param fargs FuseArguments reference */
     FuseContext(FuseArguments& fargs, FuseAdapter& adapter)
     {
-        debug << __func__ << "() fuse_new()"; debug.Info();
+        sDebug << __func__ << "() fuse_new()"; sDebug.Info();
 
-        fuse = fuse_new(&(fargs.args), &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
-        
-        if (!fuse) throw FuseAdapter::Exception("fuse_new() failed");
+        mFuse = fuse_new(&(fargs.mFuseArgs), 
+            &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
+        if (!mFuse) throw FuseAdapter::Exception("fuse_new() failed");
     };
+
     ~FuseContext()
     {
-        debug << __func__ << "() fuse_destroy()"; debug.Info();
-        
-        fuse_destroy(fuse);
+        sDebug << __func__ << "() fuse_destroy()"; sDebug.Info();
+
+        fuse_destroy(mFuse);
     };
+
     /** Fuse context pointer */
-    struct fuse* fuse;
+    struct fuse* mFuse;
 };
 
 /*****************************************************/
@@ -136,21 +156,22 @@ struct FuseMount
 {
     /** @param context FuseContext reference
      * @param path filesystem path to mount */
-    FuseMount(FuseContext& context, const char* path): fuse(context.fuse)
+    FuseMount(FuseContext& context, const char* path): mContext(context)
     {
-        debug << __func__ << "() fuse_mount()"; debug.Info();
+        sDebug << __func__ << "() fuse_mount()"; sDebug.Info();
 
-        if (fuse_mount(fuse, path) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_mount() failed");
+        int retval; if ((retval = fuse_mount(mContext.mFuse, path)) != FUSE_SUCCESS)
+            throw FuseAdapter::Exception("fuse_mount() failed: "+std::to_string(retval));
     };
+
     ~FuseMount()
     {
-        debug << __func__ << "() fuse_unmount()"; debug.Info();
+        sDebug << __func__ << "() fuse_unmount()"; sDebug.Info();
         
-        fuse_unmount(fuse);
+        fuse_unmount(mContext.mFuse);
     }
-    /** Fuse context pointer */
-    struct fuse* fuse;
+
+    FuseContext& mContext;
 };
 
 #endif // LIBFUSE2
@@ -162,21 +183,23 @@ struct FuseSignals
     /** @param context FuseContext reference */
     explicit FuseSignals(FuseContext& context)
     { 
-        debug << __func__ << "() fuse_set_signal_handlers()"; debug.Info();
+        sDebug << __func__ << "() fuse_set_signal_handlers()"; sDebug.Info();
 
-        session = fuse_get_session(context.fuse);
+        mFuseSession = fuse_get_session(context.mFuse);
 
-        if (fuse_set_signal_handlers(session) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed");
+        int retval; if ((retval = fuse_set_signal_handlers(mFuseSession)) != FUSE_SUCCESS)
+            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed: "+std::to_string(retval));
     };
+
     ~FuseSignals()
     {
-        debug << __func__ << "() fuse_remove_signal_handlers()"; debug.Info();
+        sDebug << __func__ << "() fuse_remove_signal_handlers()"; sDebug.Info();
 
-        fuse_remove_signal_handlers(session); 
+        fuse_remove_signal_handlers(mFuseSession); 
     }
+
     /** fuse_session pointer */
-    struct fuse_session* session;
+    struct fuse_session* mFuseSession;
 };
 
 /*****************************************************/
@@ -184,41 +207,114 @@ struct FuseSignals
 struct FuseLoop
 {
     /** @param context FUSE context reference */
-    explicit FuseLoop(FuseContext& context)
+    explicit FuseLoop(FuseContext& context, FuseAdapter& adapter): 
+        mContext(context), mAdapter(adapter)
     {
-        debug << __func__ << "() fuse_loop()"; debug.Info();
+        sDebug << __func__ << "() fuse_loop()"; sDebug.Info();
 
-        int retval { fuse_loop(context.fuse) };
+        mAdapter.mFuseLoop = this;
 
-        debug << __func__ << "() fuse_loop() returned! retval:" << retval; debug.Info();
+        int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
+            throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
+
+        sDebug << __func__ << "() fuse_loop() returned!"; sDebug.Info();
+
+        // TODO maybe translate some of the errnos around?
     }
+
+    ~FuseLoop() { mAdapter.mFuseLoop = nullptr; }
+
+    /** Flags the fuse session to terminate */
+    void ExitLoop() { fuse_exit(mContext.mFuse); }
+
+    FuseContext& mContext;
+    FuseAdapter& mAdapter;
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(Folder& root, const Options& options, bool daemonize): // TODO enum FOREGROUND, THREAD, DAEMON
-    mRootFolder(root), mOptions(options)
+FuseAdapter::FuseAdapter(Folder& root, const Options& options, RunMode runMode)
+    : mRootFolder(root), mOptions(options)
 {
-    debug << __func__ << "(path:" << mOptions.mountPath << ")"; debug.Info();
+    sDebug << __func__ << "(path:" << mOptions.mountPath << ")"; sDebug.Info();
 
-    FuseArguments opts; for (const std::string& opt : mOptions.fuseArgs) opts.AddArg(opt);
-
-#if LIBFUSE2
-    FuseMount mount(opts, options.mountPath.c_str());
-    FuseContext context(mount, opts, *this);
-#else // !LIBFUSE2
-    FuseContext context(opts, *this);
-    FuseMount mount(context, mOptions.mountPath.c_str());
-#endif // LIBFUSE2
-    
-    if (daemonize)
+    if (runMode == RunMode::THREAD)
     {
-        debug << __func__ << "... fuse_daemonize()"; debug.Info();
-        if (fuse_daemonize(static_cast<bool>(Debug::GetLevel())) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_daemonize() failed");
-    }
+        mFuseThread = std::thread(&FuseAdapter::RunFuse, this, runMode);
 
-    FuseSignals signals(context); 
-    FuseLoop loop(context);
+        sDebug << __func__ << "()... waiting for init"; sDebug.Info();
+
+        std::unique_lock<std::mutex> initLock(mInitMutex);
+        while (!mInitialized) mInitCV.wait(initLock);
+
+        sDebug << __func__ << "()... init complete!"; sDebug.Info();
+    }
+    else RunFuse(runMode); // blocking
+
+    if (mInitError)
+    {
+        if (runMode == RunMode::THREAD)
+            mFuseThread.join();
+        
+        std::rethrow_exception(mInitError);
+    }
+}
+
+/*****************************************************/
+void FuseAdapter::RunFuse(RunMode runMode)
+{
+    sDebug << __func__ << "()"; sDebug.Info();
+
+    try
+    {
+        FuseArguments fuseArgs; 
+        for (const std::string& fuseArg : mOptions.fuseArgs)
+            fuseArgs.AddArg(fuseArg);
+
+    #if LIBFUSE2
+        FuseMount mount(fuseArgs, mOptions.mountPath.c_str());
+        FuseContext context(mount, fuseArgs, *this);
+    #else // !LIBFUSE2
+        FuseContext context(fuseArgs, *this);
+        FuseMount mount(context, mOptions.mountPath.c_str());
+    #endif // LIBFUSE2
+        
+        if (runMode == RunMode::DAEMON) FuseDaemonize();
+
+        std::unique_ptr<FuseSignals> signals; 
+        if (runMode != RunMode::THREAD) 
+            signals = std::make_unique<FuseSignals>(context);
+        
+        FuseLoop loop(context, *this); // blocks until done
+    }
+    catch (const Exception& ex)
+    {
+        sDebug << __func__ << "(error: " << ex.what() << ")"; sDebug.Error();
+
+        mInitError = std::current_exception(); SignalInit();
+    }
+}
+
+/*****************************************************/
+void FuseAdapter::SignalInit()
+{
+    sDebug << __func__ << "()"; sDebug.Info();
+
+    std::unique_lock<std::mutex> initLock(mInitMutex);
+    mInitialized = true; mInitCV.notify_all();
+}
+
+/*****************************************************/
+FuseAdapter::~FuseAdapter()
+{
+    sDebug << __func__ << "()"; sDebug.Info();
+    
+    if (mFuseLoop) 
+        mFuseLoop->ExitLoop();
+
+    if (mFuseThread.joinable())
+        mFuseThread.join();
+
+    sDebug << __func__ << "()... return"; sDebug.Info();
 }
 
 /*****************************************************/

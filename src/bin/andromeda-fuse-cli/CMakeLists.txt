@@ -10,6 +10,11 @@ add_executable(andromeda-fuse-cli ${SOURCE_FILES})
 
 target_compile_options(andromeda-fuse-cli PRIVATE ${ANDROMEDA_WARNINGS})
 
+install(TARGETS andromeda-fuse-cli
+    BUNDLE  DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
 # include/link libandromeda-fuse
 
 if (NOT TARGET andromeda-fuse)

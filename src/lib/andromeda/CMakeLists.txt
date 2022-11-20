@@ -30,6 +30,10 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(andromeda PRIVATE -Wno-psabi)
 endif()
 
+install(TARGETS andromeda
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
 add_subdirectory(fsitems)
 
 # include/link openssl
@@ -60,6 +64,7 @@ target_link_libraries(andromeda PUBLIC httplib)
 # include/link reproc++
 
 set(REPROC++ ON)
+set(REPROC_INSTALL OFF)
 
 FetchContent_Declare(reproc
     GIT_REPOSITORY  https://github.com/stingray-11/reproc
@@ -67,7 +72,7 @@ FetchContent_Declare(reproc
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
 
-target_link_libraries(andromeda PUBLIC reproc++)
+target_link_libraries(andromeda PRIVATE reproc++)
 
 # include nlohmann (header-only)
 

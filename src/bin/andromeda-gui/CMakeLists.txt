@@ -5,20 +5,51 @@ include(../../../andromeda.cmake)
 
 # set up required Qt packages
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+qt_standard_project_setup()
 
 # build the andromeda-gui executable
 
-set(SOURCE_FILES main.cpp 
-    MainWindow.hpp MainWindow.cpp MainWindow.ui)
+set(SOURCE_FILES 
+    main.cpp
+    BackendManager.cpp
+    MountManager.cpp
+    )
 
 qt_add_executable(andromeda-gui ${SOURCE_FILES})
 
 target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_WARNINGS})
+target_include_directories(andromeda-gui
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+set_target_properties(andromeda-gui PROPERTIES
+    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE TRUE
+)
+
+install(TARGETS andromeda-gui
+    BUNDLE  DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+qt_generate_deploy_app_script(
+    TARGET andromeda-gui
+    FILENAME_VARIABLE deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
+
+message(STATUS RAY $ENV{PATH})
+
+if (WIN32)
+    install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
+      PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"
+      POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+      DIRECTORIES $ENV{PATH}
+    )
+endif()
+
+add_subdirectory(windows)
 
 # include/link libandromeda
 

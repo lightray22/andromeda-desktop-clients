@@ -23,7 +23,9 @@ for PLAT in $PLATFORMS; do
         --cppcheck-build-dir=$BUILD \
         --quiet --std=c++17 --platform=$PLAT \
         --suppress="*:*_deps/*" \
+        --suppress="*:*_autogen/*" \
         --suppress=unmatchedSuppression \
+        --suppress=missingIncludes \
         --suppress=missingIncludeSystem \
         --suppress=unreadVariable \
         --suppress=unusedFunction \

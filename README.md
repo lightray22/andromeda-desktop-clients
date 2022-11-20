@@ -12,12 +12,12 @@ This repo contains the desktop applications and common libraries for Andromeda's
 
 There are several binaries and libraries in the full suite.  By default, all targets will be built (see the preqrequisites sections for each!).  
 
-To build one individually, run cmake normally then build with the directory of the target.  E.g. `cmake ..; cmake --build bin/cli-fuse`.  Alternatively, run cmake targeted at the directory you desire to build, then make normally.  This has the benefit of only checking dependencies for the target you want to build.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.
+To build one individually, run cmake normally then build with the directory of the target.  E.g. `cmake ..; cmake --build bin/cli-fuse`.  Alternatively, run cmake targeted at the directory you desire to build, then make normally.  This has the benefit of only checking dependencies for the target you want to build.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
 - FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
-- FUTURE `src/bin/andromeda-gui` a Qt-based client for FUSE and directory sync (depends on all libraries)
+- `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync (uses the above libraries)
 
 ### Building
 
@@ -137,14 +137,18 @@ The `--cachemode enum` option is also useful for debugging caching.
 
 # Qt GUI Application
 
+This is in VERY early demo-stage development.
+
 ## Building
 
 ### Libraries
 
+- Qt 6.x >= 6.2 LTS
+
 ### OS Examples
 
 - Ubuntu 22.10: `apt install qt6-base-dev`
-
+- Windows: [Qt Framework](https://www.qt.io/download)
 
 # Development
 

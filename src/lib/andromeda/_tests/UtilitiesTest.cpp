@@ -26,11 +26,26 @@ TEST_CASE("explode", "[Utilities]")
     result = Utilities::explode("//test//","/");
     REQUIRE(result == Strings{"", "", "test", "", ""});
 
-    result = Utilities::explode("/test1/page.php","/", 2, 2);
+    result = Utilities::explode("//test//","//");
+    REQUIRE(result == Strings{"", "test", ""});
+
+    result = Utilities::explode("test12testab12", "12");
+    REQUIRE(result == Strings{"test", "testab", ""});
+
+    result = Utilities::explode("http://mytest","/", 2);
+    REQUIRE(result == Strings{"http://mytest"});
+
+    result = Utilities::explode("/test1/page.php","/", 2, false, 2);
     REQUIRE(result == Strings{"/test1/page.php"});
 
-    result = Utilities::explode("http://mytest/test1/page.php","/", 2, 2);
+    result = Utilities::explode("http://mytest/test1/page.php","/", 2, false, 2);
     REQUIRE(result == Strings{"http://mytest", "test1/page.php"});
+
+    result = Utilities::explode("folder1/folder2/file", "/", 0, true, 2);
+    REQUIRE(result == Strings{"folder1/folder2", "file"});
+
+    result = Utilities::explode("//folder1//folder2//file", "//", 1, true);
+    REQUIRE(result == Strings{"", "folder1", "folder2//file"});
 }
 
 TEST_CASE("split", "[Utilities]")
@@ -40,32 +55,44 @@ TEST_CASE("split", "[Utilities]")
     result = Utilities::split("", "");
     REQUIRE(result.first == ""); REQUIRE(result.second == "");
 
-    result = Utilities::split("", "", true);
+    result = Utilities::split("", "", 0, true);
     REQUIRE(result.first == ""); REQUIRE(result.second == "");
     
     result = Utilities::split("test", "");
-    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
+    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
-    result = Utilities::split("test", "", true);
+    result = Utilities::split("test", "", 0, true);
     REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
     result = Utilities::split("test", "/");
     REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
-    result = Utilities::split("test", "/", true);
-    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
+    result = Utilities::split("test", "/", 0, true);
+    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
     result = Utilities::split("/test/", "/");
     REQUIRE(result.first == ""); REQUIRE(result.second == "test/");
     
-    result = Utilities::split("/test/", "/", true);
+    result = Utilities::split("/test/", "/", 1);
+    REQUIRE(result.first == "/test"); REQUIRE(result.second == "");
+    
+    result = Utilities::split("/test/", "/", 0, true);
     REQUIRE(result.first == "/test"); REQUIRE(result.second == "");
     
     result = Utilities::split("test1=test2=test3", "=");
     REQUIRE(result.first == "test1"); REQUIRE(result.second == "test2=test3");
     
-    result = Utilities::split("test1=test2=test3", "=", true);
-    REQUIRE(result.first == "test1=test2"); REQUIRE(result.second == "test3");
+    result = Utilities::split("test1=test2=test3=test4", "=", 1, true);
+    REQUIRE(result.first == "test1=test2"); REQUIRE(result.second == "test3=test4");
+
+    result = Utilities::split("folder1/folder2/file", "/", 0, true);
+    REQUIRE(result.first == "folder1/folder2"); REQUIRE(result.second == "file");
+
+    result = Utilities::split("http://mytest", "/", 2);
+    REQUIRE(result.first == "http://mytest"); REQUIRE(result.second == "");
+
+    result = Utilities::split("http://mytest/test2", "/", 2);
+    REQUIRE(result.first == "http://mytest"); REQUIRE(result.second == "test2");
 }
 
 TEST_CASE("endsWith", "[Utilities]")
@@ -97,5 +124,7 @@ TEST_CASE("stringToBool", "[Utilities]")
 
     REQUIRE(Utilities::stringToBool("test") == true);
 }
+
+// TODO test parseArgs, parseFile, parseUrl
 
 } // namespace Andromeda

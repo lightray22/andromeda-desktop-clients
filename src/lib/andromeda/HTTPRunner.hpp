@@ -4,6 +4,7 @@
 #include <string>
 #include <chrono>
 
+// TODO should not include this here - use PRIVATE cmake link
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
 
@@ -57,6 +58,14 @@ public:
      * @param options HTTP config options
      */
     HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& options);
+
+    typedef std::pair<std::string, std::string> HostUrlPair;
+
+    /**
+     * Parse a URL into hostname/baseURL for the constructor
+     * @return std::pair<std::string> hostname, baseURL pair
+     */
+    static HostUrlPair ParseURL(std::string fullURL);
 
     virtual std::string RunAction(const Input& input) override;
 
