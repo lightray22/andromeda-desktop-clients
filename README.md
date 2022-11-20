@@ -2,6 +2,7 @@
 * [Overview](#overview)
 * [libandromeda](#libandromeda)
 * [FUSE Client](#fuse-client)
+* [Qt GUI Client](#qt-gui-client)
 * [Development](#development)
 
 # Overview
@@ -135,7 +136,7 @@ The `--cachemode enum` option is also useful for debugging caching.
 - normal - the normal mode of cache operation
 
 
-# Qt GUI Application
+# Qt GUI Client
 
 This is in VERY early demo-stage development.
 

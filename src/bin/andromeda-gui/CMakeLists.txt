@@ -39,8 +39,6 @@ qt_generate_deploy_app_script(
 )
 install(SCRIPT ${deploy_script})
 
-message(STATUS RAY $ENV{PATH})
-
 if (WIN32)
     install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
       PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"

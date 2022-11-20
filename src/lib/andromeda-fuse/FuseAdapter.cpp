@@ -50,6 +50,7 @@ struct FuseArguments
     struct fuse_args mFuseArgs;
 };
 
+/*****************************************************/
 /** Run fuse_daemonize (detach from terminal) */
 static void FuseDaemonize()
 {

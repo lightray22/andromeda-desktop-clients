@@ -44,8 +44,8 @@ Backend& BackendManager::AddBackend(
     context.backend = std::make_unique<Backend>(*context.runner);
     Backend& backend { *context.backend }; // context will get moved
 
-    context.backend->Initialize(context.configOptions);
-    context.backend->Authenticate(username, password, twofactor);
+    backend.Initialize(context.configOptions);
+    backend.Authenticate(username, password, twofactor);
 
     context.runner->EnableRetry(); // no retry during init
 
