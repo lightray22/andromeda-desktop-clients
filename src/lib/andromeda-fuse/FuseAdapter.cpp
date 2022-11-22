@@ -291,8 +291,10 @@ void FuseAdapter::RunFuse(RunMode runMode)
     {
         sDebug << __func__ << "(error: " << ex.what() << ")"; sDebug.Error();
 
-        mInitError = std::current_exception(); SignalInit();
+        mInitError = std::current_exception();
     }
+
+    SignalInit(); // outside catch just in case fuse fails but doesn't throw
 }
 
 /*****************************************************/

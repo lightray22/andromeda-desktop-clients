@@ -144,8 +144,7 @@ This is in VERY early demo-stage development.
 
 ### Libraries
 
-- Qt 6.x >= 6.2 LTS
-  - Qt 5.12 is supported on Ubuntu 20.04, only
+- Qt (Windows/macOS: >= 6.4, Linux: >= 5.12)
 
 ### OS Examples
 

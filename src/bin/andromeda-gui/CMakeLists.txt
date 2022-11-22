@@ -48,7 +48,6 @@ if ((WIN32 OR APPLE) AND ${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_generate_deploy_app_script(
         TARGET andromeda-gui
         FILENAME_VARIABLE deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
     )
     if (WIN32)
         install(SCRIPT ${deploy_script})
@@ -57,6 +56,9 @@ if ((WIN32 OR APPLE) AND ${QT_VERSION_MAJOR} GREATER_EQUAL 6)
           POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
           DIRECTORIES $ENV{PATH}
         )
+        # don't need this, not sure why it installs them
+        install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/D3Dcompiler_47.dll)")
+        install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/opengl32sw.dll)")
     endif()
 endif()
 
