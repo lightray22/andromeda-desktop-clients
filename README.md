@@ -105,7 +105,6 @@ on the command line in cleartext.
 ### Libraries
 
 - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
-    - To compile with FUSE 2.x, configure cmake with `-DLIBFUSE2=1`
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 
@@ -113,7 +112,7 @@ libfuse is dynamically linked so it must be available at runtime.
 
 ### OS Examples
 
-- Ubuntu 20.04: `apt install fuse libfuse-dev` (use `-DLIBFUSE2=1`)
+- Ubuntu 20.04: `apt install fuse libfuse-dev`
 - Ubuntu 22.10: `apt install fuse3 libfuse3-dev`
 - Arch/Manjaro: `pacman -S fuse3`
 - Alpine: `apk add fuse3 fuse3-dev`

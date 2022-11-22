@@ -28,24 +28,15 @@ endif()
 
 target_link_libraries(andromeda-fuse PUBLIC andromeda)
 
-# use FUSE 2.x or 3.x?
-
-if (NOT WIN32)
-    if (APPLE)
-        SET(LIBFUSE2 ON)
-    else()
-        option(LIBFUSE2 "Use FUSE 2.x" OFF)
-    endif()
-
-    target_compile_definitions(andromeda-fuse PRIVATE LIBFUSE2=$<BOOL:${LIBFUSE2}>)
-endif()
-
 # include/link libfuse
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(FUSE REQUIRED)
 
+if (${FUSE_MAJOR_VERSION} MATCHES 2)
+    target_compile_definitions(andromeda-fuse PRIVATE LIBFUSE2=1)
+endif()
+
 target_include_directories(andromeda-fuse PRIVATE ${FUSE_INCLUDE_DIR})
 target_link_libraries(andromeda-fuse INTERFACE ${FUSE_LIBRARY})
-

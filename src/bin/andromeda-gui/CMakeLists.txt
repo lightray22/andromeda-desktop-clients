@@ -77,4 +77,7 @@ target_link_libraries(andromeda-gui PRIVATE andromeda-fuse)
 
 # include/link Qt libraries
 
-target_link_libraries(andromeda-gui PRIVATE Qt::Core Qt::Gui Qt::Widgets)
+target_link_libraries(andromeda-gui PRIVATE
+    Qt${QT_VERSION_MAJOR}::Core 
+    Qt${QT_VERSION_MAJOR}::Gui 
+    Qt${QT_VERSION_MAJOR}::Widgets)
