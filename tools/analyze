@@ -25,7 +25,7 @@ for PLAT in $PLATFORMS; do
         --suppress="*:*_deps/*" \
         --suppress="*:*_autogen/*" \
         --suppress=unmatchedSuppression \
-        --suppress=missingIncludes \
+        --suppress=missingInclude \
         --suppress=missingIncludeSystem \
         --suppress=unreadVariable \
         --suppress=unusedFunction \

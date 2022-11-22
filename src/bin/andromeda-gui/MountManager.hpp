@@ -10,7 +10,7 @@
 #include "andromeda/fsitems/Folder.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
-namespace Andromeda { class Backend; }; 
+namespace Andromeda { class Backend; }
 
 // TODO comments (here + all functions)
 class MountManager

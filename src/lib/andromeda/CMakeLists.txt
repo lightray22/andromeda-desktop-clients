@@ -36,17 +36,11 @@ install(TARGETS andromeda
 
 add_subdirectory(fsitems)
 
-# include/link openssl
+# include/link libhttplib
 
 if (APPLE)
     set(OPENSSL_ROOT_DIR /usr/local/opt/openssl@1.1)
 endif()
-
-find_package(OpenSSL REQUIRED)
-target_link_libraries(andromeda PUBLIC OpenSSL::SSL)
-target_link_libraries(andromeda PUBLIC OpenSSL::Crypto)
-
-# include/link libhttplib
 
 set(HTTPLIB_COMPILE True)
 set(HTTPLIB_REQUIRE_OPENSSL True)

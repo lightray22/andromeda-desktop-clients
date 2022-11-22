@@ -5,8 +5,16 @@ include(../../../andromeda.cmake)
 
 # set up required Qt packages
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-qt_standard_project_setup()
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Gui Widgets)
+
+if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_standard_project_setup()
+else()
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTORCC ON)
+    set(CMAKE_AUTOUIC ON)
+endif()
 
 # build the andromeda-gui executable
 
@@ -16,8 +24,12 @@ set(SOURCE_FILES
     MountManager.cpp
     )
 
-qt_add_executable(andromeda-gui ${SOURCE_FILES})
-
+if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(andromeda-gui ${SOURCE_FILES})
+else()
+    add_executable(andromeda-gui ${SOURCE_FILES})
+endif()
+    
 target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_WARNINGS})
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -32,19 +44,20 @@ install(TARGETS andromeda-gui
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-qt_generate_deploy_app_script(
-    TARGET andromeda-gui
-    FILENAME_VARIABLE deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
-
-if (WIN32)
-    install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
-      PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"
-      POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-      DIRECTORIES $ENV{PATH}
+if ((WIN32 OR APPLE) AND ${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_generate_deploy_app_script(
+        TARGET andromeda-gui
+        FILENAME_VARIABLE deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
     )
+    if (WIN32)
+        install(SCRIPT ${deploy_script})
+        install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
+          PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"
+          POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+          DIRECTORIES $ENV{PATH}
+        )
+    endif()
 endif()
 
 add_subdirectory(windows)
@@ -64,4 +77,4 @@ target_link_libraries(andromeda-gui PRIVATE andromeda-fuse)
 
 # include/link Qt libraries
 
-target_link_libraries(andromeda-gui PRIVATE Qt6::Widgets)
+target_link_libraries(andromeda-gui PRIVATE Qt::Core Qt::Gui Qt::Widgets)

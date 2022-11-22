@@ -13,7 +13,7 @@ This repo contains the desktop applications and common libraries for Andromeda's
 
 There are several binaries and libraries in the full suite.  By default, all targets will be built (see the preqrequisites sections for each!).  
 
-To build one individually, run cmake normally then build with the directory of the target.  E.g. `cmake ..; cmake --build bin/cli-fuse`.  Alternatively, run cmake targeted at the directory you desire to build, then make normally.  This has the benefit of only checking dependencies for the target you want to build.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
+To build one individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
@@ -35,10 +35,22 @@ Cmake will automatically clone in-tree dependencies.
 - C++17 compiler
 - cmake (>= 3.16)
 - Python3 (>= 3.8?)
+- Bash (if running tools/)
+
+# libandromeda
+
+### Libraries
+
+- OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
+
+libssl, libcrypto are dynamically linked so they must be available at runtime.
+
+Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### Supported Platforms
 
 The following platforms are targeted for support and should work:
+
 - Debian/Ubuntu: `apt install make cmake g++ python3`
   - Ubuntu 20.04 amd64 (GCC 9.4)
   - Ubuntu 22.10 amd64 (GCC 12.2 or Clang 15)
@@ -50,17 +62,6 @@ The following platforms are targeted for support and should work:
   - FreeBSD 13.1 (Clang 13.0)
 - macOS amd64: `brew install make cmake`
 - Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/))
-
-
-# libandromeda
-
-### Libraries
-
-- OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
-
-libssl, libcrypto are dynamically linked so they must be available at runtime.
-
-Some other dependencies are included in thirdparty/ and built in-tree.
 
 ### OS Examples
 
@@ -104,7 +105,7 @@ on the command line in cleartext.
 ### Libraries
 
 - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
-    - To compile with FUSE 2.x, run cmake with `-DLIBFUSE2=1`
+    - To compile with FUSE 2.x, configure cmake with `-DLIBFUSE2=1`
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 
@@ -112,7 +113,7 @@ libfuse is dynamically linked so it must be available at runtime.
 
 ### OS Examples
 
-- Ubuntu 20.04: `apt install fuse libfuse-dev`
+- Ubuntu 20.04: `apt install fuse libfuse-dev` (use `-DLIBFUSE2=1`)
 - Ubuntu 22.10: `apt install fuse3 libfuse3-dev`
 - Arch/Manjaro: `pacman -S fuse3`
 - Alpine: `apk add fuse3 fuse3-dev`
@@ -145,10 +146,15 @@ This is in VERY early demo-stage development.
 ### Libraries
 
 - Qt 6.x >= 6.2 LTS
+  - Qt 5.12 is supported on Ubuntu 20.04, only
 
 ### OS Examples
 
+Official OS support for the GUI is more narrow than the other targets.  Reminder, you can configure cmake with `-DWITHOUT_GUI=1`.
+
+- Ubuntu 20.04: `apt install qtbase5-dev`
 - Ubuntu 22.10: `apt install qt6-base-dev`
+- Arch/Manjaro: `pacman -S qt6-base`
 - Windows: [Qt Framework](https://www.qt.io/download)
 
 # Development
