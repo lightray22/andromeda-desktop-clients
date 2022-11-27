@@ -9,10 +9,10 @@
 namespace Andromeda {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& hostname, const std::string& baseURL, const HTTPRunner::Options& options) : 
-    mDebug("HTTPRunner",this), mOptions(options), mBaseURL(baseURL), mHttpClient(hostname)
+HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunner::Options& options) : 
+    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL), mHttpClient(protoHost)
 {
-    mDebug << __func__ << "(hostname:" << hostname << " baseURL:" << baseURL << ")"; mDebug.Info();
+    mDebug << __func__ << "(protoHost:" << protoHost << " baseURL:" << baseURL << ")"; mDebug.Info();
 
     mHttpClient.set_keep_alive(true);
 
@@ -57,6 +57,12 @@ HTTPRunner::HostUrlPair HTTPRunner::ParseURL(std::string fullURL)
         retval.second += "/index.php";
     
     return retval;
+}
+
+/*****************************************************/
+std::string HTTPRunner::GetHostname() const
+{
+    return Utilities::split(mProtoHost, "://").second;
 }
 
 /*****************************************************/

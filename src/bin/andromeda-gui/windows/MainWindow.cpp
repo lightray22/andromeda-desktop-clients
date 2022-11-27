@@ -1,11 +1,8 @@
 
-#include <QtCore/QUrl>
-#include <QtGui/QDesktopServices>
-#include <QtWidgets/QMessageBox>
-
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
 
+#include "AccountTab.hpp"
 #include "LoginDialog.hpp"
 
 #include "andromeda-gui/BackendManager.hpp"
@@ -13,8 +10,6 @@
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
-#include "andromeda-fuse/FuseAdapter.hpp"
-using AndromedaFuse::FuseAdapter;
 
 /*****************************************************/
 MainWindow::MainWindow(BackendManager& backendManager, MountManager& mountManager) : QMainWindow(),
@@ -47,68 +42,70 @@ void MainWindow::AddAccount()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    LoginDialog loginDialog(*this, mBackendManager);
+    // TODO where/how to prevent adding duplicate accounts?
+    // TODO disable mount/unmount/browse menu buttons until valid
 
+    LoginDialog loginDialog(*this, mBackendManager);
     if (loginDialog.exec())
-        mBackend = loginDialog.GetBackend();
+    {
+        Backend* backend { loginDialog.GetBackend() };
+        if (backend != nullptr)
+        {
+            AccountTab* accountTab { new AccountTab(*this, mMountManager, *backend) };
+            mQtUi->tabAccounts->addTab(accountTab, backend->GetName(true).c_str());
+        }
+    }
 }
 
 /*****************************************************/
 void MainWindow::RemoveAccount()
 {
-    mDebug << __func__ << "()"; mDebug.Info(); // TODO implement me
+    mDebug << __func__ << "()"; mDebug.Info();
+
+    // TODO should have a confirmation prompt for this
+
+    AccountTab* accountTab { GetCurrentTab() };
+    if (accountTab != nullptr)
+    {
+        Backend& tabBackend { accountTab->GetBackend() };
+
+        int tabIndex { mQtUi->tabAccounts->currentIndex() };
+        mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
+
+        mBackendManager.RemoveBackend(tabBackend);
+    }
 }
 
 /*****************************************************/
-void MainWindow::Mount(bool autoMount)
+AccountTab* MainWindow::GetCurrentTab()
+{
+    QWidget* widgetTab { mQtUi->tabAccounts->currentWidget() };
+    return (widgetTab != nullptr) ? dynamic_cast<AccountTab*>(widgetTab) : nullptr;
+}
+
+/*****************************************************/
+void MainWindow::MountCurrent()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    if (!mBackend) return;
-
-    FuseAdapter::Options fuseOptions;
-
-    try
-    {
-        mMountManager.CreateMount(*mBackend, fuseOptions);
-    }
-    catch (const FuseAdapter::Exception& ex)
-    {
-        std::cout << ex.what() << std::endl; 
-
-        QMessageBox errorBox(QMessageBox::Critical, QString("Mount Error"), ex.what()); 
-
-        errorBox.exec(); return;
-    }
-    
-    if (!autoMount) Browse();
-
-    mQtUi->buttonMount->setEnabled(false);
-    mQtUi->buttonUnmount->setEnabled(true);
-    mQtUi->buttonBrowse->setEnabled(true);
+    AccountTab* accountTab { GetCurrentTab() };
+    if (accountTab != nullptr) accountTab->Mount();
 }
 
 /*****************************************************/
-void MainWindow::Unmount()
+void MainWindow::UnmountCurrent()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    mMountManager.RemoveMount(); // TODO args?
-
-    mQtUi->buttonMount->setEnabled(true);
-    mQtUi->buttonUnmount->setEnabled(false);
-    mQtUi->buttonBrowse->setEnabled(false);
+    AccountTab* accountTab { GetCurrentTab() };
+    if (accountTab != nullptr) accountTab->Unmount();
 }
 
 /*****************************************************/
-void MainWindow::Browse()
+void MainWindow::BrowseCurrent()
 {
-    std::string homeRoot { mMountManager.GetHomeRoot() };
+    mDebug << __func__ << "()"; mDebug.Info();
 
-    if (homeRoot.empty())
-         { mDebug << __func__ << "... ERROR empty homeRoot!"; mDebug.Error(); return; } // TODO GUI error - also GetHomeRoot should throw exception if not found
-    else { mDebug << __func__ << "(homeRoot: " << homeRoot << ")"; mDebug.Info(); }
-
-    homeRoot.insert(0, "file:///");
-    QDesktopServices::openUrl(QUrl(homeRoot.c_str()));
+    AccountTab* accountTab { GetCurrentTab() };
+    if (accountTab != nullptr) accountTab->Browse();
 }

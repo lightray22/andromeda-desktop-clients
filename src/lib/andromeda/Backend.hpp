@@ -64,6 +64,9 @@ public:
 
         virtual ~Runner(){ };
 
+        /** Returns the remote hostname of the runner */
+        virtual std::string GetHostname() const = 0;
+
         /**
          * Runs an API call and returns the result
          * @param input input params struct
@@ -128,6 +131,12 @@ public:
 
     /** Initializes the backend by loading config */
     void Initialize(const Config::Options& options);
+
+    /** 
+     * Return the hostname_username ID string 
+     * @param human if true make it human-pretty
+     */
+    std::string GetName(bool human) const;
 
     /** Sets the backend to use the given username w/o a session */
     void SetUsername(const std::string& username) { mUsername = username; }

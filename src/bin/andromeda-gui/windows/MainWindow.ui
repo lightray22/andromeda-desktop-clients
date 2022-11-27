@@ -26,44 +26,24 @@
    <string>Andromeda</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="verticalLayoutWidget">
+   <widget class="QTabWidget" name="tabAccounts">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>131</width>
-      <height>101</height>
+      <x>0</x>
+      <y>0</y>
+      <width>401</width>
+      <height>261</height>
      </rect>
     </property>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="QPushButton" name="buttonMount">
-       <property name="text">
-        <string>Mount Storage</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonUnmount">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Unmount Storage</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="buttonBrowse">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Browse Storage</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="currentIndex">
+     <number>-1</number>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -100,7 +80,11 @@
    <addaction name="menuEdit"/>
    <addaction name="menuTools"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="sizeGripEnabled">
+    <bool>false</bool>
+   </property>
+  </widget>
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
@@ -147,11 +131,6 @@
    </property>
   </action>
  </widget>
- <tabstops>
-  <tabstop>buttonMount</tabstop>
-  <tabstop>buttonUnmount</tabstop>
-  <tabstop>buttonBrowse</tabstop>
- </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -167,54 +146,6 @@
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonMount</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>Mount()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>129</x>
-     <y>58</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonUnmount</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>Unmount()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>129</x>
-     <y>91</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBrowse</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>Browse()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>80</x>
-     <y>112</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>199</x>
-     <y>149</y>
     </hint>
    </hints>
   </connection>
@@ -253,57 +184,57 @@
   <connection>
    <sender>actionMount_Storage</sender>
    <signal>triggered()</signal>
-   <receiver>buttonMount</receiver>
-   <slot>click()</slot>
+   <receiver>MainWindow</receiver>
+   <slot>MountCurrent()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>70</x>
-     <y>46</y>
+     <x>199</x>
+     <y>149</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>actionUnmount_Storage</sender>
    <signal>triggered()</signal>
-   <receiver>buttonUnmount</receiver>
-   <slot>click()</slot>
+   <receiver>MainWindow</receiver>
+   <slot>UnmountCurrent()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>70</x>
-     <y>79</y>
+     <x>199</x>
+     <y>149</y>
     </hint>
    </hints>
   </connection>
   <connection>
    <sender>actionBrowse_Storage</sender>
    <signal>triggered()</signal>
-   <receiver>buttonBrowse</receiver>
-   <slot>click()</slot>
+   <receiver>MainWindow</receiver>
+   <slot>BrowseCurrent()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>70</x>
-     <y>112</y>
+     <x>199</x>
+     <y>149</y>
     </hint>
    </hints>
   </connection>
  </connections>
  <slots>
-  <slot>Mount()</slot>
-  <slot>Unmount()</slot>
-  <slot>Browse()</slot>
   <slot>AddAccount()</slot>
   <slot>RemoveAccount()</slot>
+  <slot>MountCurrent()</slot>
+  <slot>UnmountCurrent()</slot>
+  <slot>BrowseCurrent()</slot>
  </slots>
 </ui>

@@ -6,7 +6,7 @@ include(../../../andromeda.cmake)
 # set up required Qt packages
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Gui Widgets)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets)
 
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_standard_project_setup()
@@ -44,22 +44,22 @@ install(TARGETS andromeda-gui
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if ((WIN32 OR APPLE) AND ${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+if (WIN32 OR APPLE)
     qt_generate_deploy_app_script(
         TARGET andromeda-gui
         FILENAME_VARIABLE deploy_script
     )
-    if (WIN32)
-        install(SCRIPT ${deploy_script})
-        install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
-          PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"
-          POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
-          DIRECTORIES $ENV{PATH}
-        )
-        # don't need this, not sure why it installs them
-        install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/D3Dcompiler_47.dll)")
-        install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/opengl32sw.dll)")
-    endif()
+    install(SCRIPT ${deploy_script})
+endif()
+if (WIN32)
+    install(TARGETS andromeda-gui RUNTIME_DEPENDENCIES
+      PRE_EXCLUDE_REGEXES "api-ms-" "ext-ms-" "^qt.*\\.dll"
+      POST_EXCLUDE_REGEXES ".*system32/.*\\.dll"
+      DIRECTORIES $ENV{PATH}
+    )
+    # don't need this, not sure why it installs them
+    install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/D3Dcompiler_47.dll)")
+    install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/opengl32sw.dll)")
 endif()
 
 add_subdirectory(windows)

@@ -26,54 +26,68 @@ MountManager::MountManager() :
 MountManager::~MountManager()
 {
     mDebug << __func__ << "()"; mDebug.Info();
+    
+    mMounts.clear(); // unmount all
+
+    if (!mHomeRoot.empty() && 
+        std::filesystem::exists(mHomeRoot) &&
+        std::filesystem::is_empty(mHomeRoot))
+    {
+        std::filesystem::remove(mHomeRoot);
+    }
 }
 
 /*****************************************************/
-std::string MountManager::InitHomeRoot()
+std::string MountManager::GetHomeRoot(const std::string& path)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    mDebug << __func__ << "(path:" << path << ")"; mDebug.Info();
 
-    // TODO move to QtUtilities? want to avoid Qt deps outside the windows folder
-    QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
+    if (mHomeRoot.empty())
+    {
+        // TODO move to QtUtilities? want to avoid Qt deps outside the windows folder + rename windows to Qt maybe?
+        QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
 
-    // TODO throw exception if list is empty
-    mHomeRoot = locations[0].toStdString()+"/Andromeda";
+        // TODO throw exception if list is empty
+        mHomeRoot = locations[0].toStdString()+"/Andromeda";
 
-    // TODO check for exceptions thrown by these filesystem functions
+        // TODO check for exceptions thrown by all filesystem functions
+
+        if (!std::filesystem::is_directory(mHomeRoot))
+            std::filesystem::create_directory(mHomeRoot);
+    }
+
+    std::string retval { mHomeRoot + "/" + path };
+
+    mDebug << __func__ << "... retval:" << retval; mDebug.Info();
+
+    return retval;
+}
+
+/*****************************************************/
+void MountManager::CreateMount(bool home, Backend& backend, FuseAdapter::Options& options)
+{
+    mDebug << __func__ << "(mountPath:" << options.mountPath << ")"; mDebug.Info();
+
+    if (home) options.mountPath = GetHomeRoot(options.mountPath);
+
+    // TODO check if already in map? // mMounts.find
 
     #if WIN32
         // Windows auto-creates the directory and fails if it already exists
-        if (std::filesystem::is_directory(mHomeRoot))
+        if (std::filesystem::is_directory(options.mountPath) &&
+            std::filesystem::is_empty(options.mountPath))
         {
-            if (std::filesystem::is_empty(mHomeRoot)) 
-                std::filesystem::remove(mHomeRoot);
+            std::filesystem::remove(options.mountPath);
         }
     #else
         // Linux complains if the directory doesn't exist before mounting
-        if (!std::filesystem::is_directory(mHomeRoot))
-            std::filesystem::create_directory(mHomeRoot);
+        if (home && !std::filesystem::is_directory(options.mountPath))
+        {
+            std::filesystem::create_directory(options.mountPath);
+        }
     #endif
     
-    // TODO if mount is not empty, error out...
-
-    mDebug << __func__ << "... return " << mHomeRoot; mDebug.Info();
-
-    return mHomeRoot;
-}
-
-/*****************************************************/
-void MountManager::CreateMount(Backend& backend, FuseAdapter::Options& options)
-{
-    mDebug << __func__ << "(path:" << options.mountPath << ")"; mDebug.Info();
-
-    if (options.mountPath.empty())
-    {
-        options.mountPath = InitHomeRoot(); // TODO what if already init'd?
-
-        mDebug << __func__ << "... mountPath:" << options.mountPath << ")"; mDebug.Info();
-    }
-
-    // TODO check if already in map? // mMounts.find
+    // TODO if mount exists and is not empty, error out...
 
     MountContext context;
     
@@ -86,16 +100,19 @@ void MountManager::CreateMount(Backend& backend, FuseAdapter::Options& options)
 }
 
 /*****************************************************/
-void MountManager::RemoveMount() // TODO what arguments?
+void MountManager::RemoveMount(bool home, std::string mountPath)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();
 
-    mMounts.clear(); // TODO for now, remove all
+    if (home) mountPath = GetHomeRoot(mountPath);
 
-    if (!mHomeRoot.empty() && 
-        std::filesystem::exists(mHomeRoot) &&
-        std::filesystem::is_empty(mHomeRoot))
+    MountMap::iterator it { mMounts.find(mountPath) }; // TODO what if not found?
+
+    mMounts.erase(it);
+
+    if (home && std::filesystem::is_directory(mountPath) &&
+        std::filesystem::is_empty(mountPath))
     {
-        std::filesystem::remove(mHomeRoot);
+        std::filesystem::remove(mountPath);
     }
 }

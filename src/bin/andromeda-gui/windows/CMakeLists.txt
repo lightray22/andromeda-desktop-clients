@@ -1,5 +1,8 @@
 
 set(SOURCE_FILES 
+    AccountTab.hpp
+    AccountTab.cpp
+    AccountTab.ui
     LoginDialog.hpp
     LoginDialog.cpp
     LoginDialog.ui

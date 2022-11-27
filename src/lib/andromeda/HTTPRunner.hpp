@@ -53,19 +53,21 @@ public:
     };
 
     /**
-     * @param hostname to use with HTTP
-     * @param baseURL URL of the endpoint
+     * @param protoHost protocol://hostname
+     * @param baseURL /baseURL of the endpoint
      * @param options HTTP config options
      */
-    HTTPRunner(const std::string& hostname, const std::string& baseURL, const Options& options);
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const Options& options);
 
     typedef std::pair<std::string, std::string> HostUrlPair;
 
     /**
-     * Parse a URL into hostname/baseURL for the constructor
-     * @return std::pair<std::string> hostname, baseURL pair
+     * Parse a URL for the constructor
+     * @return std::pair<std::string> protoHost, baseURL pair
      */
     static HostUrlPair ParseURL(std::string fullURL);
+
+    virtual std::string GetHostname() const override;
 
     virtual std::string RunAction(const Input& input) override;
 
@@ -80,6 +82,7 @@ private:
 
     Options mOptions;
 
+    std::string mProtoHost;
     std::string mBaseURL;
     httplib::Client mHttpClient;
 

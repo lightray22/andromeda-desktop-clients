@@ -93,6 +93,9 @@ TEST_CASE("split", "[Utilities]")
 
     result = Utilities::split("http://mytest/test2", "/", 2);
     REQUIRE(result.first == "http://mytest"); REQUIRE(result.second == "test2");
+
+    result = Utilities::split("http://mytest", "://");
+    REQUIRE(result.first == "http"); REQUIRE(result.second == "mytest");
 }
 
 TEST_CASE("endsWith", "[Utilities]")

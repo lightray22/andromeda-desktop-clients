@@ -6,9 +6,9 @@
 
 #include "andromeda/Utilities.hpp"
 
+class AccountTab;
 class BackendManager;
 class MountManager;
-namespace Andromeda { class Backend; }
 namespace Ui { class MainWindow; }
 
 /** The main Andromeda GUI window */
@@ -30,18 +30,18 @@ public slots:
 
     void RemoveAccount();
 
-    void Mount(bool autoMount = false);
+    void MountCurrent();
 
-    void Unmount();
+    void UnmountCurrent();
 
-    void Browse();
+    void BrowseCurrent();
 
 private:
 
+    AccountTab* GetCurrentTab();
+
     BackendManager& mBackendManager;
     MountManager& mMountManager;
-
-    Andromeda::Backend* mBackend { nullptr }; // TODO temp - have one per tab
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 

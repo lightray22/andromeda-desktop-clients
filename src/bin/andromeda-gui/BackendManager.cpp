@@ -51,3 +51,13 @@ Backend& BackendManager::AddBackend(
 
     mContexts.emplace_back(std::move(context)); return backend;
 }
+
+/*****************************************************/
+void BackendManager::RemoveBackend(const Backend& backend)
+{
+    ContextList::iterator it;
+    for (it = mContexts.begin(); it != mContexts.end(); ++it)
+        if (it->backend.get() == &backend) break;
+    
+    mContexts.erase(it); // TODO what if not existing?
+}

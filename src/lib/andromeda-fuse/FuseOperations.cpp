@@ -126,7 +126,7 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
 
     buf->f_namemax = 255;
     
-    // TODO temporary garbage so writing works...
+    // TODO temporary garbage so windows writing works...
     #if WIN32
         buf->f_bsize = 4096;
         buf->f_frsize = 4096;
@@ -178,7 +178,8 @@ static void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
     
-    if (item.isReadOnly()) stbuf->st_mode &= static_cast<decltype(stbuf->st_mode)>(~S_IWUSR & ~S_IWGRP & ~S_IWOTH); // -Wsign-conversion
+    if (item.isReadOnly()) stbuf->st_mode &= 
+        static_cast<decltype(stbuf->st_mode)>(~S_IWUSR & ~S_IWGRP & ~S_IWOTH); // -Wsign-conversion
 
     stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
 

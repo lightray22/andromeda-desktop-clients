@@ -35,6 +35,19 @@ void Backend::Initialize(const Config::Options& options)
 }
 
 /*****************************************************/
+std::string Backend::GetName(bool human) const
+{
+    std::string hostname { mRunner.GetHostname() };
+    if (mUsername.empty()) return hostname;
+    else return mUsername+(human ? " on " : "_")+hostname;
+
+    // std::transform(data.begin(), data.end(), data.begin(),
+    //[](unsigned char c){ return std::tolower(c); });
+
+    // TODO need to control user case - lowercase? also hostname should be lower
+}
+
+/*****************************************************/
 std::string Backend::RunAction(Backend::Runner::Input& input)
 {
     mReqCount++;
@@ -131,7 +144,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
 
-    SetUsername(username);
+    mUsername = username;
     mConfig.LoadAccountLimits(*this);
 }
 
@@ -139,6 +152,8 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
 void Backend::AuthInteractive(const std::string& username, std::string password, bool forceSession)
 {
     mDebug << __func__ << "(username:" << username << ")"; mDebug.Info();
+
+    CloseSession();
 
     if (mRunner.RequiresSession() || forceSession)
     {
@@ -160,7 +175,11 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
             Authenticate(username, password, twofactor);
         }
     }
-    else SetUsername(username);
+    else 
+    {
+        mUsername = username;
+        mConfig.LoadAccountLimits(*this);
+    }
 }
 
 /*****************************************************/
@@ -180,6 +199,7 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
     try
     {
         resp.at("id").get_to(mAccountID);
+        resp.at("username").get_to(mUsername);
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
@@ -197,6 +217,7 @@ void Backend::CloseSession()
         GetJSON(RunAction(input));
     }
 
+    mUsername.clear();
     mCreatedSession = false;
     mSessionID.clear();
     mSessionKey.clear();

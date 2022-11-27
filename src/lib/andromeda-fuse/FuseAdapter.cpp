@@ -213,7 +213,7 @@ struct FuseLoop
     {
         sDebug << __func__ << "() fuse_loop()"; sDebug.Info();
 
-        mAdapter.mFuseLoop = this;
+        mAdapter.mFuseLoop = this; // register with adapter
 
         int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
             throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
@@ -226,7 +226,12 @@ struct FuseLoop
     ~FuseLoop() { mAdapter.mFuseLoop = nullptr; }
 
     /** Flags the fuse session to terminate */
-    void ExitLoop() { fuse_exit(mContext.mFuse); }
+    void ExitLoop() 
+    {
+        sDebug << __func__ << "()"; sDebug.Info();
+
+        fuse_exit(mContext.mFuse); 
+    }
 
     FuseContext& mContext;
     FuseAdapter& mAdapter;
@@ -314,10 +319,12 @@ FuseAdapter::~FuseAdapter()
     if (mFuseLoop) 
         mFuseLoop->ExitLoop();
 
+    sDebug << __func__ << "()... waiting"; sDebug.Info();
+
     if (mFuseThread.joinable())
         mFuseThread.join();
 
-    sDebug << __func__ << "()... return"; sDebug.Info();
+    sDebug << __func__ << "()... return!"; sDebug.Info();
 }
 
 /*****************************************************/

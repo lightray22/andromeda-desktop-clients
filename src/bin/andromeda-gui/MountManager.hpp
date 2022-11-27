@@ -21,17 +21,15 @@ public:
 
     virtual ~MountManager();
 
-    void CreateMount(Andromeda::Backend& backend, AndromedaFuse::FuseAdapter::Options& options);
+    // TODO need an automatic way to ensure that if a backend is deleted, we don't have a stale reference here
+    void CreateMount(bool home, Andromeda::Backend& backend, AndromedaFuse::FuseAdapter::Options& options);
 
-    void RemoveMount();
-
-    /** Returns the path to the home root, if mounted */
-    std::string GetHomeRoot() { return mHomeRoot; }
-
-private:
+    void RemoveMount(bool home, std::string mountPath);
 
     /** Sets up and returns the path to HOMEDIR/Andromeda */
-    std::string InitHomeRoot();
+    std::string GetHomeRoot(const std::string& path);
+
+private:
 
     /** The currently mounted standard home mount path */
     std::string mHomeRoot;

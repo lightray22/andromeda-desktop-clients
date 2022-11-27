@@ -24,6 +24,8 @@ public:
     /** @param apiPath path to the API index.php */
     explicit CLIRunner(const std::string& apiPath);
 
+    virtual std::string GetHostname() const override { return "local"; }
+
     virtual std::string RunAction(const Input& input) override;
 
     virtual bool RequiresSession() override { return false; }

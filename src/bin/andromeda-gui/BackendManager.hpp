@@ -1,8 +1,8 @@
 #ifndef A2GUI_BACKENDMANAGER_H
 #define A2GUI_BACKENDMANAGER_H
 
+#include <list>
 #include <memory>
-#include <vector>
 
 #include "andromeda/Backend.hpp"
 #include "andromeda/Config.hpp"
@@ -24,6 +24,8 @@ public:
         const std::string& url, const std::string& username, 
         const std::string& password, const std::string& twofactor);
 
+    void RemoveBackend(const Andromeda::Backend& backend);
+
 private:
 
     struct BackendContext
@@ -34,7 +36,7 @@ private:
         std::unique_ptr<Andromeda::Backend> backend;
     };
 
-    std::vector<BackendContext> mContexts;
+    typedef std::list<BackendContext> ContextList; ContextList mContexts;
 
     Andromeda::Debug mDebug;
 };
