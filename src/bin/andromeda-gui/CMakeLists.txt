@@ -62,7 +62,7 @@ if (WIN32)
     install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/opengl32sw.dll)")
 endif()
 
-add_subdirectory(windows)
+add_subdirectory(gui)
 
 # include/link libandromeda
 

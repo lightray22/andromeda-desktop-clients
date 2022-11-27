@@ -3,8 +3,8 @@
 
 #include "BackendManager.hpp"
 #include "MountManager.hpp"
-#include "windows/MainWindow.hpp"
-#include "windows/SystemTray.hpp"
+#include "gui/MainWindow.hpp"
+#include "gui/SystemTray.hpp"
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;

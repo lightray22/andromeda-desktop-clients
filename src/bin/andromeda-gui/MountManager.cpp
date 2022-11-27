@@ -44,7 +44,7 @@ std::string MountManager::GetHomeRoot(const std::string& path)
 
     if (mHomeRoot.empty())
     {
-        // TODO move to QtUtilities? want to avoid Qt deps outside the windows folder + rename windows to Qt maybe?
+        // TODO move to QtUtilities? want to avoid Qt deps outside the gui folder
         QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
 
         // TODO throw exception if list is empty
