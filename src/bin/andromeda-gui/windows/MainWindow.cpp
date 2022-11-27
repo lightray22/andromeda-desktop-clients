@@ -32,9 +32,29 @@ MainWindow::~MainWindow()
 /*****************************************************/
 void MainWindow::show()
 {
-    QWidget::show(); // base class
+    mDebug << __func__ << "()"; mDebug.Info();
+
+    QMainWindow::show(); // base class
+    activateWindow(); // bring to front
 
     if (!mBackendManager.HasBackend()) AddAccount();
+}
+
+/*****************************************************/
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    mDebug << __func__ << "()"; mDebug.Info();
+
+    if (!event->spontaneous() || !mBackendManager.HasBackend())
+    {
+        mDebug.Info("closing MainWindow");
+        QMainWindow::closeEvent(event);
+    }
+    else
+    {
+        mDebug.Info("hiding MainWindow");
+        event->ignore(); hide();
+    }
 }
 
 /*****************************************************/
@@ -43,7 +63,7 @@ void MainWindow::AddAccount()
     mDebug << __func__ << "()"; mDebug.Info();
 
     // TODO where/how to prevent adding duplicate accounts?
-    // TODO disable mount/unmount/browse menu buttons until valid
+    // TODO disable mount/unmount/browse/remove account menu buttons until valid
 
     LoginDialog loginDialog(*this, mBackendManager);
     if (loginDialog.exec())

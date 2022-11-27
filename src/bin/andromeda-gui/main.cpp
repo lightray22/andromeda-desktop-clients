@@ -4,6 +4,7 @@
 #include "BackendManager.hpp"
 #include "MountManager.hpp"
 #include "windows/MainWindow.hpp"
+#include "windows/SystemTray.hpp"
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;
@@ -32,8 +33,11 @@ int main(int argc, char** argv)
     MountManager mountManager;
 
     MainWindow mainWindow(backendManager, mountManager); 
-    
-    mainWindow.show(); 
+    SystemTray systemTray(application, mainWindow);
+
+    mainWindow.show();
+    systemTray.show();
+
     int retval = application.exec();
 
     debug << __func__ << "()... return " << retval; debug.Info();

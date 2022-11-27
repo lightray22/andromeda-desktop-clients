@@ -2,11 +2,13 @@
 #define A2GUI_MAINWINDOW_H
 
 #include <memory>
+#include <QtGui/QCloseEvent>
 #include <QtWidgets/QMainWindow>
 
 #include "andromeda/Utilities.hpp"
 
 class AccountTab;
+
 class BackendManager;
 class MountManager;
 namespace Ui { class MainWindow; }
@@ -21,6 +23,8 @@ public:
     MainWindow(BackendManager& backendManager, MountManager& mountManager);
 
     virtual ~MainWindow();
+
+    void closeEvent(QCloseEvent* event) override;
 
 public slots:
 
