@@ -43,12 +43,9 @@ void LoginDialog::accept()
     }
     catch (const Utilities::Exception& ex)
     {
-        std::cout << ex.what() << std::endl; 
+        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
 
-        // TODO make this a reusable class that only needs text
-        QMessageBox errorBox(QMessageBox::Critical, QString("Login Error"), ex.what()); 
-
-        errorBox.exec(); return;
+        QMessageBox::critical(this, "Login Error", ex.what()); return;
     }
 
     QDialog::accept();

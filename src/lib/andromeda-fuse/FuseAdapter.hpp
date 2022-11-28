@@ -97,7 +97,8 @@ private:
     Options mOptions;
 
     std::thread mFuseThread;
-    FuseLoop* mFuseLoop { nullptr }; // TODO should probably be locked?
+    FuseLoop* mFuseLoop { nullptr };
+    std::mutex mFuseLoopMutex;
 
     bool mInitialized { false };
     std::mutex mInitMutex;

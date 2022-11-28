@@ -9,6 +9,8 @@
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
 
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
@@ -53,13 +55,11 @@ void AccountTab::Mount(bool autoMount)
     {
         mMountContext = std::make_unique<MountContext>(true, backend, fuseOptions);
     }
-    catch (const FuseAdapter::Exception& ex)
+    catch (const Utilities::Exception& ex)
     {
-        std::cout << ex.what() << std::endl; 
+        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
 
-        QMessageBox errorBox(QMessageBox::Critical, QString("Mount Error"), ex.what()); 
-
-        errorBox.exec(); return;
+        QMessageBox::critical(this, "Mount Error", ex.what()); return;
     }
     
     if (!autoMount) Browse();
@@ -84,6 +84,8 @@ void AccountTab::Unmount()
 /*****************************************************/
 void AccountTab::Browse()
 {
+    if (!mMountContext) return; // check nullptr
+
     std::string homeRoot { mMountContext->GetMountPath() };
 
     mDebug << __func__ << "(homeRoot: " << homeRoot << ")"; mDebug.Info();

@@ -10,6 +10,7 @@
 class BackendContext;
 namespace Ui { class LoginDialog; }
 
+/** The window for logging in (creating backend resources) */
 class LoginDialog : public QDialog
 {
     Q_OBJECT
@@ -20,6 +21,7 @@ public:
 
     virtual ~LoginDialog();
 
+    /** Returns and takes ownership of a unique_ptr to the created backend */
     std::unique_ptr<BackendContext> TakeBackend();
 
 public slots:
@@ -28,6 +30,7 @@ public slots:
 
 private:
 
+    /** The backend context created by the user */
     std::unique_ptr<BackendContext> mBackendContext;
 
     std::unique_ptr<Ui::LoginDialog> mQtUi;

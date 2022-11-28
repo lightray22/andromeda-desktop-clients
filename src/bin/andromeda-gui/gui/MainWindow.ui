@@ -102,11 +102,17 @@
    </property>
   </action>
   <action name="actionRemove_Account">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Remove Account</string>
    </property>
   </action>
   <action name="actionMount_Storage">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Mount Storage</string>
    </property>
@@ -115,6 +121,9 @@
    </property>
   </action>
   <action name="actionUnmount_Storage">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Unmount Storage</string>
    </property>
@@ -123,6 +132,9 @@
    </property>
   </action>
   <action name="actionBrowse_Storage">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Browse Storage</string>
    </property>

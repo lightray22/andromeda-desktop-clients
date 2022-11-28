@@ -28,18 +28,24 @@ public slots:
 
     void show(); // override
 
+    /** GUI action to add a new account */
     void AddAccount();
 
+    /** GUI action to remove the current account */
     void RemoveAccount();
 
+    /** GUI action to mount the current account's files */
     void MountCurrent();
 
+    /** GUI action to unmount the current account's files */
     void UnmountCurrent();
 
+    /** GUI action to browse the current account's files */
     void BrowseCurrent();
 
 private:
 
+    /** Returns the current AccountTab or nullptr if none */
     AccountTab* GetCurrentTab();
 
     std::unique_ptr<Ui::MainWindow> mQtUi;

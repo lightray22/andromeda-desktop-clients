@@ -1,4 +1,6 @@
 
+#include <QtWidgets/QMessageBox>
+
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
 
@@ -59,20 +61,20 @@ void MainWindow::AddAccount()
     mDebug << __func__ << "()"; mDebug.Info();
 
     // TODO where/how to prevent adding duplicate accounts?
-    // TODO disable mount/unmount/browse/remove account menu buttons until valid
 
     LoginDialog loginDialog(*this);
     if (loginDialog.exec())
     {
-        std::unique_ptr<BackendContext> backendContext { loginDialog.TakeBackend() };
-        
-        if (backendContext)
-        {
-            AccountTab* accountTab { new AccountTab(*this, loginDialog.TakeBackend()) };
+        AccountTab* accountTab { new AccountTab(*this, loginDialog.TakeBackend()) };
 
-            mQtUi->tabAccounts->setCurrentIndex(
-                mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
-        }
+        mQtUi->tabAccounts->setCurrentIndex(
+            mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
+
+        // TODO this shouldn't all be always enabled, accountTab will need to manage
+        mQtUi->actionMount_Storage->setEnabled(true);
+        mQtUi->actionUnmount_Storage->setEnabled(true);
+        mQtUi->actionBrowse_Storage->setEnabled(true);
+        mQtUi->actionRemove_Account->setEnabled(true);
     }
 }
 
@@ -81,13 +83,23 @@ void MainWindow::RemoveAccount()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    // TODO should have a confirmation prompt for this
+    if (QMessageBox::question(this, "Remove Account", "Are you sure?") == QMessageBox::Yes)
+        { mDebug << __func__ << "... confirmed"; mDebug.Info(); }
+    else return; // early return!
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr)
     {
         int tabIndex { mQtUi->tabAccounts->currentIndex() };
         mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
+    }
+
+    if (GetCurrentTab() == nullptr) // no accounts left
+    {
+        mQtUi->actionMount_Storage->setEnabled(false);
+        mQtUi->actionUnmount_Storage->setEnabled(false);
+        mQtUi->actionBrowse_Storage->setEnabled(false);
+        mQtUi->actionRemove_Account->setEnabled(false);
     }
 }
 

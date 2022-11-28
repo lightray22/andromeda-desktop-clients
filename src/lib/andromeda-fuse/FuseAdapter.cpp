@@ -213,8 +213,11 @@ struct FuseLoop
     {
         sDebug << __func__ << "() fuse_loop()"; sDebug.Info();
 
-        mAdapter.mFuseLoop = this; // register with adapter
-
+        { // scoped lock
+            const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
+            mAdapter.mFuseLoop = this; // register with adapter
+        }
+        
         int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
             throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
 
@@ -223,7 +226,11 @@ struct FuseLoop
         // TODO maybe translate some of the errnos around?
     }
 
-    ~FuseLoop() { mAdapter.mFuseLoop = nullptr; }
+    ~FuseLoop()
+    {
+        const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
+        mAdapter.mFuseLoop = nullptr;
+    }
 
     /** Flags the fuse session to terminate */
     void ExitLoop() 
@@ -316,8 +323,10 @@ FuseAdapter::~FuseAdapter()
 {
     sDebug << __func__ << "()"; sDebug.Info();
     
-    if (mFuseLoop) 
-        mFuseLoop->ExitLoop();
+    { // scoped lock
+        const std::lock_guard<std::mutex> lock(mFuseLoopMutex);
+        if (mFuseLoop) mFuseLoop->ExitLoop();
+    }
 
     sDebug << __func__ << "... waiting"; sDebug.Info();
 

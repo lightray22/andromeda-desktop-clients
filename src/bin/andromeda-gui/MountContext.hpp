@@ -11,15 +11,36 @@ namespace Andromeda { class Backend;
     namespace FSItems { class Folder; }
 }
 
-// TODO comments (here + all functions)
+/** Encapsulates a FUSE mount and root folder */
 class MountContext
 {
 public:
 
+    /** Base Exception for mount context issues */
+    class Exception : public Andromeda::Utilities::Exception { public:
+        /** @param message error message */
+        explicit Exception(const std::string& message) :
+            Andromeda::Utilities::Exception("MountContext Error: "+message) {}; };
+
+    /** Exception indicating that no home directory was found */
+    class UnknownHomeException : public Exception { public:
+        UnknownHomeException() : Exception("Unknown Home Directory") {}; };
+
+    /** Exception indicating the desired mount directory is not empty */
+    class NonEmptyMountException : public Exception { public:
+        NonEmptyMountException(const std::string& path) : Exception("Mount Directory not empty:\n\n"+path) {}; };
+
+    /**
+     * Create a new MountContext
+     * @param home if true, options.mountPath is home-relative
+     * @param backend the backend resource to use
+     * @param options FUSE adapter options
+     */
     MountContext(bool home, Andromeda::Backend& backend, AndromedaFuse::FuseAdapter::Options& options);
 
     virtual ~MountContext();
 
+    /** Returns the FUSE mount path */
     const std::string& GetMountPath() const;
 
 private:
@@ -27,6 +48,7 @@ private:
     /** Sets up and returns the path to HOMEDIR/Andromeda */
     const std::string& InitHomeRoot();
 
+    /** The path to the user's HOMEDIR (if init'd) */
     std::string mHomeRoot;
 
     std::unique_ptr<Andromeda::FSItems::Folder> mRootFolder;

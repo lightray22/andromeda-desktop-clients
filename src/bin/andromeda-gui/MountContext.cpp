@@ -13,6 +13,9 @@ using Andromeda::FSItems::Folders::SuperRoot;
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 
+// TODO cleanup exists vs is directory
+// TODO check for exceptions thrown by all filesystem functions
+
 /*****************************************************/
 MountContext::MountContext(bool home, Backend& backend, FuseAdapter::Options& options) : 
     mDebug("MountContext") 
@@ -33,8 +36,10 @@ MountContext::MountContext(bool home, Backend& backend, FuseAdapter::Options& op
         if (home && !std::filesystem::is_directory(options.mountPath))
             std::filesystem::create_directory(options.mountPath);
     #endif
-    
-    // TODO if mount exists and is not empty, error out...
+
+    if (std::filesystem::exists(options.mountPath)
+        && !std::filesystem::is_empty(options.mountPath))
+        throw NonEmptyMountException(options.mountPath);
 
     mRootFolder = std::make_unique<SuperRoot>(backend);
 
@@ -70,16 +75,14 @@ const std::string& MountContext::InitHomeRoot()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    // TODO move to QtUtilities? want to avoid Qt deps outside the gui folder
     QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
+    if (locations.empty()) throw UnknownHomeException();
 
-    // TODO throw exception if list is empty
-    mHomeRoot = locations[0].toStdString()+"/Andromeda";
+    mHomeRoot = locations.at(0).toStdString()+"/Andromeda";
 
     mDebug << __func__ << "... homeRoot:" << mHomeRoot; mDebug.Info();
 
-    // TODO check for exceptions thrown by all filesystem functions
-
+    
     if (!std::filesystem::is_directory(mHomeRoot))
         std::filesystem::create_directory(mHomeRoot);
 

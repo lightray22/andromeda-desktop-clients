@@ -23,8 +23,11 @@ public:
 
 private:
 
+    /** The context menu shown when right-clicking */
     QMenu mContextMenu;
+    /** The menu option to show the main window */
     QAction mActionShow;
+    /** The menu option to close the application */
     QAction mActionExit;
 
     QApplication& mApplication;

@@ -22,7 +22,7 @@ Backend::~Backend()
     try { CloseSession(); }
     catch(const Utilities::Exception& ex) 
     { 
-        mDebug << __func__ << "..." << ex.what(); mDebug.Error();
+        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
     }
 }
 

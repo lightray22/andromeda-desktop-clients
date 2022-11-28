@@ -42,59 +42,59 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     // Item exceptions
     catch (const Folder::NotFileException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -EISDIR;
+        debug << fname << "... " << e.what(); debug.Info(); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOTDIR;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOENT;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -EEXIST;
+        debug << fname << "... " << e.what(); debug.Info(); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -EROFS;
+        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
     }
 
     // Backend exceptions
     catch (const Backend::UnsupportedException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOTSUP;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
     }
     catch (const Backend::ReadOnlyException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -EROFS;
+        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
     }
     catch (const Backend::DeniedException& e)
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -EACCES;
+        debug << fname << "... " << e.what(); debug.Info(); return -EACCES;
     }
     catch (const Backend::NotFoundException& e)  
     {
-        debug << fname << "..." << e.what(); debug.Info(); return -ENOENT;
+        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
     }
 
     // Error exceptions
     catch (const HTTPRunner::ConnectionException& e)
     {
-        debug << fname << "..." << e.what(); debug.Error(); return -EHOSTDOWN;
+        debug << fname << "... " << e.what(); debug.Error(); return -EHOSTDOWN;
     }
     catch (const Utilities::Exception& e)
     {
-        debug << fname << "..." << e.what(); debug.Error(); return -EIO;
+        debug << fname << "... " << e.what(); debug.Error(); return -EIO;
     }
 }
 
