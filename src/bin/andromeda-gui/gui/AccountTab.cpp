@@ -17,7 +17,7 @@ using AndromedaFuse::FuseAdapter;
 #include "andromeda-gui/MountContext.hpp"
 
 /*****************************************************/
-AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext>& backendContext) : QWidget(&parent),
+AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext) : QWidget(&parent),
     mBackendContext(std::move(backendContext)),
     mQtUi(std::make_unique<Ui::AccountTab>()),
     mDebug("AccountTab")
@@ -31,6 +31,12 @@ AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext>& backend
 AccountTab::~AccountTab()
 {
     mDebug << __func__ << "()"; mDebug.Info();
+}
+
+/*****************************************************/
+std::string AccountTab::GetTabName() const
+{
+    return mBackendContext->GetBackend().GetName(true);
 }
 
 /*****************************************************/

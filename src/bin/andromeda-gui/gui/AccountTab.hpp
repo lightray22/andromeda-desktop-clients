@@ -10,17 +10,17 @@ class BackendContext;
 class MountContext;
 namespace Ui { class AccountTab; }
 
-namespace Andromeda { class Backend; }
-
 class AccountTab : public QWidget
 {
     Q_OBJECT
 
 public:
 
-    explicit AccountTab(QWidget& parent, std::unique_ptr<BackendContext>& backendContext);
+    explicit AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext);
     
     virtual ~AccountTab();
+
+    std::string GetTabName() const;
 
 public slots:
 

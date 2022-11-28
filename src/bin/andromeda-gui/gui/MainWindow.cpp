@@ -68,13 +68,10 @@ void MainWindow::AddAccount()
         
         if (backendContext)
         {
-            // get backendName before accountTab takes ownership of it
-            const std::string backendName { backendContext->GetBackend().GetName(true) };
+            AccountTab* accountTab { new AccountTab(*this, loginDialog.TakeBackend()) };
 
-            AccountTab* accountTab { new AccountTab(*this, backendContext) };
-            
             mQtUi->tabAccounts->setCurrentIndex(
-                mQtUi->tabAccounts->addTab(accountTab, backendName.c_str()));
+                mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
         }
     }
 }
