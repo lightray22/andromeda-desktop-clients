@@ -50,7 +50,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
     for (const std::string& str : arguments) 
         command << str << " ";
 
-    mDebug << __func__ << "()... command:" << command.str(); mDebug.Info();
+    mDebug << __func__ << "... command:" << command.str(); mDebug.Info();
     
     std::error_code error; reproc::process process;
     error = process.start(arguments);

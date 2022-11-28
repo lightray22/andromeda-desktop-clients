@@ -95,7 +95,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
         {
             if (attempt <= mOptions.maxRetries && mCanRetry)
             {
-                mDebug << __func__ << "()... ";
+                mDebug << __func__ << "... ";
                 
                 if (response) mDebug << "HTTP " << response->status;
                 else mDebug << httplib::to_string(response.error());
@@ -110,7 +110,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
             else throw Exception(response.error());
         }
 
-        mDebug << __func__ << "()... HTTP:" << response->status; mDebug.Info();
+        mDebug << __func__ << "... HTTP:" << response->status; mDebug.Info();
 
         switch (response->status)
         {

@@ -59,7 +59,7 @@ void File::Refresh(const nlohmann::json& data)
 
     if (newSize == mBackendSize) return;
 
-    mDebug << mName << ":" << __func__ << "()... backend changed size!"
+    mDebug << mName << ":" << __func__ << "... backend changed size!"
         << " old:" << mBackendSize << " new:" << newSize << " size:" << mSize; mDebug.Info();
 
     mBackendSize = newSize; 
@@ -142,7 +142,7 @@ File::Page& File::GetPage(const uint64_t index, const size_t minsize)
         const uint64_t offset { index*mPageSize };
         const size_t readsize { min64st(mSize-offset, mPageSize) };
         
-        mDebug << __func__ << "()... index:" << index << " offset:" << offset << " readsize:" << readsize; mDebug.Info();
+        mDebug << __func__ << "... index:" << index << " offset:" << offset << " readsize:" << readsize; mDebug.Info();
 
         bool hasData { readsize > 0 && offset < mBackendSize };
 
@@ -185,12 +185,12 @@ void File::FlushCache(bool nothrow)
 
             std::string data(reinterpret_cast<const char*>(page.data.data()), pageSize);
 
-            if (mDebug) { mDebug << __func__ << "()... index:" << index << " offset:" << pageOffset << " size:" << pageSize; mDebug.Info(); }
+            if (mDebug) { mDebug << __func__ << "... index:" << index << " offset:" << pageOffset << " size:" << pageSize; mDebug.Info(); }
 
             auto writeFunc { [&]()->void { mBackend.WriteFile(GetID(), pageOffset, data); } };
 
             if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
-                mDebug << __func__ << "()... Ignoring Error: " << e.what(); mDebug.Error(); }
+                mDebug << __func__ << "... Ignoring Error: " << e.what(); mDebug.Error(); }
 
             page.dirty = false; mBackendSize = std::max(mBackendSize, pageOffset+pageSize);
         }
@@ -244,7 +244,7 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
         const size_t pOffset { static_cast<size_t>(byte - index*mPageSize) };
         const size_t pLength { min64st(length+offset-byte, mPageSize-pOffset) };
 
-        if (mDebug) { mDebug << __func__ << "()... size:" << mSize << " byte:" << byte << " index:" << index 
+        if (mDebug) { mDebug << __func__ << "... size:" << mSize << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
 
         ReadPage(buffer, index, pOffset, pLength);
@@ -290,7 +290,7 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
         const size_t pOffset { static_cast<size_t>(byte - index*mPageSize) };
         const size_t pLength { min64st(length+offset-byte, mPageSize-pOffset) };
 
-        if (mDebug) { mDebug << __func__ << "()... size:" << mSize << " byte:" << byte << " index:" << index 
+        if (mDebug) { mDebug << __func__ << "... size:" << mSize << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
 
         WritePage(buffer, index, pOffset, pLength);   

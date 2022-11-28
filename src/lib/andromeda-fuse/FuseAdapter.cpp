@@ -247,12 +247,12 @@ FuseAdapter::FuseAdapter(Folder& root, const Options& options, RunMode runMode)
     {
         mFuseThread = std::thread(&FuseAdapter::RunFuse, this, runMode);
 
-        sDebug << __func__ << "()... waiting for init"; sDebug.Info();
+        sDebug << __func__ << "... waiting for init"; sDebug.Info();
 
         std::unique_lock<std::mutex> initLock(mInitMutex);
         while (!mInitialized) mInitCV.wait(initLock);
 
-        sDebug << __func__ << "()... init complete!"; sDebug.Info();
+        sDebug << __func__ << "... init complete!"; sDebug.Info();
     }
     else RunFuse(runMode); // blocking
 
@@ -319,12 +319,12 @@ FuseAdapter::~FuseAdapter()
     if (mFuseLoop) 
         mFuseLoop->ExitLoop();
 
-    sDebug << __func__ << "()... waiting"; sDebug.Info();
+    sDebug << __func__ << "... waiting"; sDebug.Info();
 
     if (mFuseThread.joinable())
         mFuseThread.join();
 
-    sDebug << __func__ << "()... return!"; sDebug.Info();
+    sDebug << __func__ << "... return!"; sDebug.Info();
 }
 
 /*****************************************************/

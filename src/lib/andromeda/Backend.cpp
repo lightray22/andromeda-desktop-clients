@@ -95,7 +95,7 @@ nlohmann::json Backend::GetJSON(const std::string& resp)
             const auto [message, details] { Utilities::split(
                 val.at("message").get<std::string>(),":") };
             
-            mDebug << __func__ << "()... message:" << message; mDebug.Backend();
+            mDebug << __func__ << "... message:" << message; mDebug.Backend();
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
