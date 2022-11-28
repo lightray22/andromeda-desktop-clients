@@ -9,8 +9,6 @@
 
 class AccountTab;
 
-class BackendManager;
-class MountManager;
 namespace Ui { class MainWindow; }
 
 /** The main Andromeda GUI window */
@@ -20,7 +18,7 @@ class MainWindow : public QMainWindow
 
 public:
 
-    MainWindow(BackendManager& backendManager, MountManager& mountManager);
+    MainWindow();
 
     virtual ~MainWindow();
 
@@ -43,9 +41,6 @@ public slots:
 private:
 
     AccountTab* GetCurrentTab();
-
-    BackendManager& mBackendManager;
-    MountManager& mMountManager;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 

@@ -5,11 +5,10 @@
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
-#include "andromeda-gui/BackendManager.hpp"
+#include "andromeda-gui/BackendContext.hpp"
 
 /*****************************************************/
-LoginDialog::LoginDialog(QWidget& parent, BackendManager& backendManager) : QDialog(&parent),
-    mBackendManager(backendManager),
+LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
     mQtUi(std::make_unique<Ui::LoginDialog>()),
     mDebug("LoginDialog")
 {
@@ -40,7 +39,7 @@ void LoginDialog::accept()
         std::string password { mQtUi->lineEditPassword->text().toStdString() };
         std::string twofactor { mQtUi->lineEditTwoFactor->text().toStdString() };
         
-        mBackend = &mBackendManager.AddBackend(apiurl, username, password, twofactor);
+        mBackendContext = std::make_unique<BackendContext>(apiurl, username, password, twofactor);
     }
     catch (const Utilities::Exception& ex)
     {
@@ -53,4 +52,10 @@ void LoginDialog::accept()
     }
 
     QDialog::accept();
+}
+
+/*****************************************************/
+std::unique_ptr<BackendContext> LoginDialog::TakeBackend()
+{
+    return std::move(mBackendContext);
 }

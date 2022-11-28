@@ -20,8 +20,8 @@ endif()
 
 set(SOURCE_FILES 
     main.cpp
-    BackendManager.cpp
-    MountManager.cpp
+    BackendContext.cpp
+    MountContext.cpp
     )
 
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)

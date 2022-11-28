@@ -7,18 +7,18 @@
 #include "AccountTab.hpp"
 #include "ui_AccountTab.h"
 
-#include "andromeda-gui/MountManager.hpp"
-
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
+
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 
+#include "andromeda-gui/BackendContext.hpp"
+#include "andromeda-gui/MountContext.hpp"
+
 /*****************************************************/
-AccountTab::AccountTab(QWidget& parent, MountManager& mountManager, Backend& backend) : QWidget(&parent),
-    mBackend(backend),
-    mMountManager(mountManager),
-    mMountName(backend.GetName(false)),
+AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext>& backendContext) : QWidget(&parent),
+    mBackendContext(std::move(backendContext)),
     mQtUi(std::make_unique<Ui::AccountTab>()),
     mDebug("AccountTab")
 {
@@ -31,8 +31,6 @@ AccountTab::AccountTab(QWidget& parent, MountManager& mountManager, Backend& bac
 AccountTab::~AccountTab()
 {
     mDebug << __func__ << "()"; mDebug.Info();
-
-    if (mMounted) Unmount();
 }
 
 /*****************************************************/
@@ -40,12 +38,14 @@ void AccountTab::Mount(bool autoMount)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
+    Backend& backend { mBackendContext->GetBackend() };
+
     FuseAdapter::Options fuseOptions;
-    fuseOptions.mountPath = mMountName;
+    fuseOptions.mountPath = backend.GetName(false);
 
     try
     {
-        mMountManager.CreateMount(true, mBackend, fuseOptions);
+        mMountContext = std::make_unique<MountContext>(true, backend, fuseOptions);
     }
     catch (const FuseAdapter::Exception& ex)
     {
@@ -58,7 +58,6 @@ void AccountTab::Mount(bool autoMount)
     
     if (!autoMount) Browse();
 
-    mMounted = true;
     mQtUi->buttonMount->setEnabled(false);
     mQtUi->buttonUnmount->setEnabled(true);
     mQtUi->buttonBrowse->setEnabled(true);
@@ -69,9 +68,8 @@ void AccountTab::Unmount()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    mMountManager.RemoveMount(true, mMountName);
+    mMountContext.reset();
 
-    mMounted = false;
     mQtUi->buttonMount->setEnabled(true);
     mQtUi->buttonUnmount->setEnabled(false);
     mQtUi->buttonBrowse->setEnabled(false);
@@ -80,7 +78,7 @@ void AccountTab::Unmount()
 /*****************************************************/
 void AccountTab::Browse()
 {
-    std::string homeRoot { mMountManager.GetHomeRoot(mMountName) };
+    std::string homeRoot { mMountContext->GetMountPath() };
 
     mDebug << __func__ << "(homeRoot: " << homeRoot << ")"; mDebug.Info();
 

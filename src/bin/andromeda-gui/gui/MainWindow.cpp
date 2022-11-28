@@ -5,16 +5,10 @@
 #include "AccountTab.hpp"
 #include "LoginDialog.hpp"
 
-#include "andromeda-gui/BackendManager.hpp"
-#include "andromeda-gui/MountManager.hpp"
-
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
+#include "andromeda-gui/BackendContext.hpp"
 
 /*****************************************************/
-MainWindow::MainWindow(BackendManager& backendManager, MountManager& mountManager) : QMainWindow(),
-    mBackendManager(backendManager),
-    mMountManager(mountManager),
+MainWindow::MainWindow() : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
     mDebug("MainWindow")
 {
@@ -37,7 +31,7 @@ void MainWindow::show()
     QMainWindow::show(); // base class
     activateWindow(); // bring to front
 
-    if (!mBackendManager.HasBackend()) AddAccount();
+    if (GetCurrentTab() == nullptr) AddAccount();
 }
 
 /*****************************************************/
@@ -45,14 +39,16 @@ void MainWindow::closeEvent(QCloseEvent* event)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    if (!event->spontaneous() || !mBackendManager.HasBackend())
+    if (!event->spontaneous() || GetCurrentTab() == nullptr)
     {
-        mDebug.Info("closing MainWindow");
+        mDebug << __func__ << "... closing"; mDebug.Info();
+
         QMainWindow::closeEvent(event);
     }
     else
     {
-        mDebug.Info("hiding MainWindow");
+        mDebug << __func__ << "... hiding"; mDebug.Info();
+
         event->ignore(); hide();
     }
 }
@@ -65,14 +61,20 @@ void MainWindow::AddAccount()
     // TODO where/how to prevent adding duplicate accounts?
     // TODO disable mount/unmount/browse/remove account menu buttons until valid
 
-    LoginDialog loginDialog(*this, mBackendManager);
+    LoginDialog loginDialog(*this);
     if (loginDialog.exec())
     {
-        Backend* backend { loginDialog.GetBackend() };
-        if (backend != nullptr)
+        std::unique_ptr<BackendContext> backendContext { loginDialog.TakeBackend() };
+        
+        if (backendContext)
         {
-            AccountTab* accountTab { new AccountTab(*this, mMountManager, *backend) };
-            mQtUi->tabAccounts->addTab(accountTab, backend->GetName(true).c_str());
+            // get backendName before accountTab takes ownership of it
+            const std::string backendName { backendContext->GetBackend().GetName(true) };
+
+            AccountTab* accountTab { new AccountTab(*this, backendContext) };
+            
+            mQtUi->tabAccounts->setCurrentIndex(
+                mQtUi->tabAccounts->addTab(accountTab, backendName.c_str()));
         }
     }
 }
@@ -87,12 +89,8 @@ void MainWindow::RemoveAccount()
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr)
     {
-        Backend& tabBackend { accountTab->GetBackend() };
-
         int tabIndex { mQtUi->tabAccounts->currentIndex() };
         mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
-
-        mBackendManager.RemoveBackend(tabBackend);
     }
 }
 

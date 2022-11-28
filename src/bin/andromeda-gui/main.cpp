@@ -1,8 +1,6 @@
 
 #include <QtWidgets/QApplication>
 
-#include "BackendManager.hpp"
-#include "MountManager.hpp"
 #include "gui/MainWindow.hpp"
 #include "gui/SystemTray.hpp"
 
@@ -28,11 +26,8 @@ int main(int argc, char** argv)
     debug << __func__ << "()"; debug.Info();
 
     QApplication application(argc, argv);
-    
-    BackendManager backendManager;
-    MountManager mountManager;
 
-    MainWindow mainWindow(backendManager, mountManager); 
+    MainWindow mainWindow; 
     SystemTray systemTray(application, mainWindow);
 
     mainWindow.show();
@@ -40,7 +35,7 @@ int main(int argc, char** argv)
 
     int retval = application.exec();
 
-    debug << __func__ << "()... return " << retval; debug.Info();
+    debug << __func__ << "... return " << retval; debug.Info();
 
     return retval;
 }

@@ -7,8 +7,7 @@
 
 #include "andromeda/Utilities.hpp"
 
-class BackendManager;
-namespace Andromeda { class Backend; }
+class BackendContext;
 namespace Ui { class LoginDialog; }
 
 class LoginDialog : public QDialog
@@ -17,11 +16,11 @@ class LoginDialog : public QDialog
 
 public:
 
-    explicit LoginDialog(QWidget& parent, BackendManager& backendManager);
+    explicit LoginDialog(QWidget& parent);
 
     virtual ~LoginDialog();
 
-    Andromeda::Backend* GetBackend() { return mBackend; }
+    std::unique_ptr<BackendContext> TakeBackend();
 
 public slots:
 
@@ -29,9 +28,7 @@ public slots:
 
 private:
 
-    BackendManager& mBackendManager;
-
-    Andromeda::Backend* mBackend { nullptr };
+    std::unique_ptr<BackendContext> mBackendContext;
 
     std::unique_ptr<Ui::LoginDialog> mQtUi;
 

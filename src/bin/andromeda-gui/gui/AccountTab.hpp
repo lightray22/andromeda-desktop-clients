@@ -6,9 +6,11 @@
 
 #include "andromeda/Utilities.hpp"
 
-class MountManager;
-namespace Andromeda { class Backend; }
+class BackendContext;
+class MountContext;
 namespace Ui { class AccountTab; }
+
+namespace Andromeda { class Backend; }
 
 class AccountTab : public QWidget
 {
@@ -16,11 +18,9 @@ class AccountTab : public QWidget
 
 public:
 
-    explicit AccountTab(QWidget& parent, MountManager& mountManager, Andromeda::Backend& backend);
+    explicit AccountTab(QWidget& parent, std::unique_ptr<BackendContext>& backendContext);
     
     virtual ~AccountTab();
-
-    Andromeda::Backend& GetBackend(){ return mBackend; }
 
 public slots:
 
@@ -32,11 +32,8 @@ public slots:
 
 private:
 
-    Andromeda::Backend& mBackend;
-    MountManager& mMountManager;
-
-    bool mMounted { false };
-    std::string mMountName;
+    std::unique_ptr<BackendContext> mBackendContext;
+    std::unique_ptr<MountContext> mMountContext;
 
     std::unique_ptr<Ui::AccountTab> mQtUi;
 
