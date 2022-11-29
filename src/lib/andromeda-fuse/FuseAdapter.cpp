@@ -222,8 +222,6 @@ struct FuseLoop
             throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
 
         sDebug << __func__ << "() fuse_loop() returned!"; sDebug.Info();
-
-        // TODO maybe translate some of the errnos around?
     }
 
     ~FuseLoop()

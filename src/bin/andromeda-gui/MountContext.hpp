@@ -1,6 +1,7 @@
 #ifndef A2GUI_MOUNTCONTEXT_H
 #define A2GUI_MOUNTCONTEXT_H
 
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -20,7 +21,7 @@ public:
     class Exception : public Andromeda::Utilities::Exception { public:
         /** @param message error message */
         explicit Exception(const std::string& message) :
-            Andromeda::Utilities::Exception("MountContext Error: "+message) {}; };
+            Andromeda::Utilities::Exception("Mount Error: "+message) {}; };
 
     /** Exception indicating that no home directory was found */
     class UnknownHomeException : public Exception { public:
@@ -28,7 +29,13 @@ public:
 
     /** Exception indicating the desired mount directory is not empty */
     class NonEmptyMountException : public Exception { public:
-        NonEmptyMountException(const std::string& path) : Exception("Mount Directory not empty:\n\n"+path) {}; };
+        NonEmptyMountException(const std::string& path) : 
+            Exception("Mount Directory not empty:\n\n"+path) {}; };
+
+    /** Exception indicating std::filesystem threw an exception */
+    class FilesystemErrorException : public Exception { public:
+        FilesystemErrorException(const std::filesystem::filesystem_error& err) : 
+            Exception("Filesystem Error: "+std::string(err.what())) {}; };
 
     /**
      * Create a new MountContext

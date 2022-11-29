@@ -28,7 +28,6 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
 
     setContextMenu(&mContextMenu);
     setToolTip("Andromeda");
-    setVisible(true);
 }
 
 /*****************************************************/

@@ -138,9 +138,6 @@ public:
      */
     std::string GetName(bool human) const;
 
-    /** Sets the backend to use the given username w/o a session */
-    void SetUsername(const std::string& username) { mUsername = username; }
-
     /** Registers a pre-existing session ID/key for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
 

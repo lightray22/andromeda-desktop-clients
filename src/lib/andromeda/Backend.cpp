@@ -1,7 +1,8 @@
-#include <string>
+
 #include <iostream>
-#include <sstream>
 #include <map>
+#include <string>
+#include <sstream>
 
 #include <nlohmann/json.hpp>
 
@@ -38,13 +39,9 @@ void Backend::Initialize(const Config::Options& options)
 std::string Backend::GetName(bool human) const
 {
     std::string hostname { mRunner.GetHostname() };
+
     if (mUsername.empty()) return hostname;
-    else return mUsername+(human ? " on " : "_")+hostname;
-
-    // std::transform(data.begin(), data.end(), data.begin(),
-    //[](unsigned char c){ return std::tolower(c); });
-
-    // TODO need to control user case - lowercase? also hostname should be lower
+    else return mUsername + (human ? " on " : "_") + hostname;
 }
 
 /*****************************************************/
@@ -155,7 +152,7 @@ void Backend::AuthInteractive(const std::string& username, std::string password,
 
     CloseSession();
 
-    if (mRunner.RequiresSession() || forceSession)
+    if (mRunner.RequiresSession() || forceSession || !password.empty())
     {
         if (password.empty())
         {
@@ -217,8 +214,8 @@ void Backend::CloseSession()
         GetJSON(RunAction(input));
     }
 
-    mUsername.clear();
     mCreatedSession = false;
+    mUsername.clear();
     mSessionID.clear();
     mSessionKey.clear();
 }
