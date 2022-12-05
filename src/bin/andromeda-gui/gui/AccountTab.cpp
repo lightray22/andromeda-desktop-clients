@@ -50,6 +50,7 @@ void AccountTab::Mount(bool autoMount)
 
     FuseAdapter::Options fuseOptions;
     fuseOptions.mountPath = backend.GetName(false);
+    // TODO replace / in mountPath just in case
 
     try
     {

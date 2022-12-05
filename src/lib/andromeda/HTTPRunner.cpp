@@ -15,6 +15,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
     mDebug << __func__ << "(protoHost:" << protoHost << " baseURL:" << baseURL << ")"; mDebug.Info();
 
     mHttpClient.set_keep_alive(true);
+    mHttpClient.set_follow_location(true);
 
     mHttpClient.set_read_timeout(mOptions.timeout);
     mHttpClient.set_write_timeout(mOptions.timeout);
@@ -68,7 +69,7 @@ std::string HTTPRunner::GetHostname() const
 /*****************************************************/
 std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 {
-    httplib::Params urlParams {{"app",input.app},{"action",input.action}};
+    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
 
     std::string sep(mBaseURL.find("?") != std::string::npos ? "&" : "?");
 

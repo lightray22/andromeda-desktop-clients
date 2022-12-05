@@ -101,12 +101,8 @@ const std::string& MountContext::InitHomeRoot()
     
     try
     {
-        if (fs::exists(mHomeRoot))
-        {
-            if (!fs::is_directory(mHomeRoot) || !fs::is_empty(mHomeRoot))
-                throw NonEmptyMountException(mHomeRoot);
-        }
-        else fs::create_directory(mHomeRoot);
+        if (!fs::is_directory(mHomeRoot))
+            fs::create_directory(mHomeRoot);
     }
     catch (const fs::filesystem_error& err)
     {
