@@ -37,7 +37,7 @@ std::string Options::HelpText()
            << "andromeda-fuse (-h|--help | -V|--version)" << endl << endl
            
            << "Local Mount:     -m|--mountpath path" << endl
-           << "Remote Endpoint: (-s|--apiurl url) | (-p|--apipath [path])" << endl << endl
+           << "Remote Endpoint: (-a|--apiurl url) | (-p|--apipath [path])" << endl << endl
 
            << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl
@@ -128,7 +128,7 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         }
 
         /** Backend endpoint selection */
-        else if (option == "s" || option == "apiurl")
+        else if (option == "a" || option == "apiurl")
         {
             mApiPath = value;
             mApiType = ApiType::API_URL;
