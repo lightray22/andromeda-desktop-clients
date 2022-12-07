@@ -18,7 +18,11 @@ To build one individually, configure cmake targeted at the directory you desire 
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
 - FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
-- `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync (uses the above libraries)
+- `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
+
+### Common Usage
+
+For all binaries, given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  
 
 ### Building
 
@@ -104,6 +108,8 @@ on the command line in cleartext.
 
 ### Libraries
 
+Requires libandromeda and libandromeda-fuse.
+
 - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
@@ -143,6 +149,8 @@ This is in VERY early demo-stage development.
 ## Building
 
 ### Libraries
+
+Requires libandromeda and libandromeda-fuse.
 
 - Qt (Windows/macOS: >= 6.4, Linux: >= 5.12)
 
