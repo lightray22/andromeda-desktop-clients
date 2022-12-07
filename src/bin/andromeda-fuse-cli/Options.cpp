@@ -43,8 +43,8 @@ std::string Options::HelpText()
            << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl
            << "Permissions:     [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions] [-r|--read-only]" << endl
            << "Advanced:        [-o fuseoption]+ [--pagesize bytes(" << cfgDefault.pageSize << ")] [--refresh secs(" << defRefresh << ")] [--no-chmod] [--no-chown]" << endl
-           << "HTTP Options:    [--http-user str --http-pass str] [--proxy-host host [--proxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
-           << "HTTP Advanced:   [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
+           << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
+           << "HTTP Advanced:   [--http-redirect bool(" << httpDefault.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << httpDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")]" << endl
            << "Debugging:       [-d|--debug [uint]] [--cachemode none|memory|normal]" << endl;
 
     return output.str();
@@ -213,9 +213,9 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             mHttpOptions.username = value;
         else if (option == "http-pass")
             mHttpOptions.password = value;
-        else if (option == "proxy-host")
+        else if (option == "hproxy-host")
             mHttpOptions.proxyHost = value;
-        else if (option == "proxy-port")
+        else if (option == "hproxy-port")
         {
             try { mHttpOptions.proxyPort = static_cast<decltype(mHttpOptions.proxyPort)>(stoul(value)); }
             catch (const std::logic_error& e) {
@@ -225,6 +225,8 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
             mHttpOptions.proxyUsername = value;
         else if (option == "hproxy-pass")
             mHttpOptions.proxyPassword = value;
+        else if (option == "http-redirect")
+            mHttpOptions.followRedirects = Utilities::stringToBool(value);
         else if (option == "http-timeout")
         {
             try { mHttpOptions.timeout = seconds(stoul(value)); }

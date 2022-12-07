@@ -146,8 +146,12 @@ void Utilities::parseUrl(const std::string& url,
 }
 
 /*****************************************************/
-bool Utilities::stringToBool(const std::string& str)
+bool Utilities::stringToBool(std::string str)
 {
+    str.erase(str.begin(), std::find_if(str.begin(), str.end(), 
+        [](unsigned char c) { return !std::isspace(c); }
+    ));
+
     return (str != "" && str != "0" && str != "false" && str != "off" && str != "no");
 }
 
@@ -211,27 +215,25 @@ void Debug::Error(const std::string& str)
 
     const std::lock_guard<std::mutex> lock(sMutex);
 
-    std::ostream& out(sLevel == Level::ERRORS ? std::cout : std::cerr);
-
     if (sLevel >= Level::DETAILS)
     {
         duration<double> time { high_resolution_clock::now() - sStart };
-        out << "time:" << time.count() << " ";
+        std::cerr << "time:" << time.count() << " ";
 
-        out << "tid:" << std::this_thread::get_id() << " ";
+        std::cerr << "tid:" << std::this_thread::get_id() << " ";
 
-        if (mAddr != nullptr) out << "obj:" << mAddr << " ";
+        if (mAddr != nullptr) std::cerr << "obj:" << mAddr << " ";
     }
 
-    out << mPrefix << ": ";
+    std::cerr << mPrefix << ": ";
 
     if (str.empty())
     {
-        out << mBuffer.str() << std::endl; 
+        std::cerr << mBuffer.str() << std::endl; 
         
         mBuffer.str(std::string()); // reset buffer
     }
-    else out << str << std::endl;
+    else std::cerr << str << std::endl;
 }
 
 /*****************************************************/

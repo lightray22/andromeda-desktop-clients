@@ -76,8 +76,8 @@ public:
     /** Parses URL variables from a URL into flags and options */
     static void parseUrl(const std::string& url, Flags& flags, Options& options);
 
-    /** Returns false if the given string is a false-like value */
-    static bool stringToBool(const std::string& str);
+    /** Returns false if the trimmed string is a false-like value */
+    static bool stringToBool(std::string str);
 
     /**
      * Silently read a line of input from stdin
@@ -112,7 +112,7 @@ public:
     static Level GetLevel() { return sLevel; }
 
     /** Sets the configured global debug level */
-    static void SetLevel(Level level){ Debug::sLevel = level; }
+    static void SetLevel(Level level){ sLevel = level; }
 
     /**
      * Shows the given debug string with minlevel=INFO

@@ -82,7 +82,7 @@ Any option or flag can also be listed in a config file named `andromeda-fuse.con
 Example:
 ```
 # Example config file
-apiurl=http://myserv.tld/index.php
+apiurl=myserv.tld
 read-only
 ```
 

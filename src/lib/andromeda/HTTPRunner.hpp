@@ -1,8 +1,9 @@
 #ifndef LIBA2_HTTPRUNNER_H_
 #define LIBA2_HTTPRUNNER_H_
 
-#include <string>
 #include <chrono>
+#include <memory>
+#include <string>
 
 // TODO should not include this here - use PRIVATE cmake link
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
@@ -12,6 +13,8 @@
 #include "Utilities.hpp"
 
 namespace Andromeda {
+
+class HTTPRunnerFriend;
 
 /** Runs the API remotely over HTTP */
 class HTTPRunner : public Backend::Runner
@@ -38,6 +41,8 @@ public:
         std::chrono::seconds retryTime { std::chrono::seconds(5) };
         /** The connection read/write timeout */
         std::chrono::seconds timeout { std::chrono::seconds(120) };
+        /** Whether or not redirects are allowed */
+        bool followRedirects { true };
         /** HTTP basic-auth username */
         std::string username;
         /** HTTP basic-auth password */
@@ -53,8 +58,8 @@ public:
     };
 
     /**
-     * @param protoHost protocol://hostname
-     * @param baseURL /baseURL of the endpoint
+     * @param protoHost (protocol://)hostname
+     * @param baseURL baseURL of the endpoint
      * @param options HTTP config options
      */
     HTTPRunner(const std::string& protoHost, const std::string& baseURL, const Options& options);
@@ -67,16 +72,31 @@ public:
      */
     static HostUrlPair ParseURL(std::string fullURL);
 
+    /** Returns the HTTP hostname (without proto://) */
     virtual std::string GetHostname() const override;
+
+    /** Returns the proto://hostname string */
+    virtual std::string GetProtoHost() const;
+
+    /** Returns the base URL being used */
+    virtual const std::string& GetBaseURL() const { return mBaseURL; }
 
     virtual std::string RunAction(const Input& input) override;
 
     /** Allows automatic retry on HTTP failure */
     virtual void EnableRetry(bool enable = true) { mCanRetry = enable; }
 
+    /** Returns whether retry is enabled or disabled */
+    virtual bool GetCanRetry() const { return mCanRetry; }
+
     virtual bool RequiresSession() override { return true; }
 
 private:
+
+    friend class HTTPRunnerFriend;
+
+    /** Handles an HTTP redirect to a new location */
+    virtual void HandleRedirect(const std::string& location);
 
     Debug mDebug;
 
@@ -84,7 +104,8 @@ private:
 
     std::string mProtoHost;
     std::string mBaseURL;
-    httplib::Client mHttpClient;
+
+    std::unique_ptr<httplib::Client> mHttpClient;
 
     bool mCanRetry { false };
 };

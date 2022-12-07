@@ -28,8 +28,7 @@ void LoginDialog::accept()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    std::string protocol { mQtUi->comboBoxProtocol->currentText().toStdString() };
-    std::string apiurl { protocol + mQtUi->lineEditServerUrl->text().toStdString() };
+    std::string apiurl { mQtUi->lineEditServerUrl->text().toStdString() };
     std::string username { mQtUi->lineEditUsername->text().toStdString() };
 
     mDebug << __func__ << "... apiurl:(" << apiurl << ") username:(" << username << ")"; mDebug.Info();

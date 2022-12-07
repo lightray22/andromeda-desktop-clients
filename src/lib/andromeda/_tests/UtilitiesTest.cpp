@@ -4,6 +4,7 @@
 
 namespace Andromeda {
 
+/*****************************************************/
 TEST_CASE("explode", "[Utilities]")
 {
     typedef std::vector<std::string> Strings; Strings result;
@@ -48,6 +49,7 @@ TEST_CASE("explode", "[Utilities]")
     REQUIRE(result == Strings{"", "folder1", "folder2//file"});
 }
 
+/*****************************************************/
 TEST_CASE("split", "[Utilities]")
 {
     typedef std::pair<std::string,std::string> StrPair; StrPair result;
@@ -98,6 +100,7 @@ TEST_CASE("split", "[Utilities]")
     REQUIRE(result.first == "http"); REQUIRE(result.second == "mytest");
 }
 
+/*****************************************************/
 TEST_CASE("endsWith", "[Utilities]")
 {
     REQUIRE(Utilities::endsWith("","") == true);
@@ -112,6 +115,7 @@ TEST_CASE("endsWith", "[Utilities]")
     REQUIRE(Utilities::endsWith("test123","test") == false);
 }
 
+/*****************************************************/
 TEST_CASE("stringToBool", "[Utilities]") 
 {
     REQUIRE(Utilities::stringToBool("") == false);

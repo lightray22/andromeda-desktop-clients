@@ -10,31 +10,35 @@ namespace Andromeda {
 
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunner::Options& options) : 
-    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL), mHttpClient(protoHost)
+    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL), 
+    mHttpClient(std::make_unique<httplib::Client>(protoHost))
 {
-    mDebug << __func__ << "(protoHost:" << protoHost << " baseURL:" << baseURL << ")"; mDebug.Info();
+    if (mBaseURL.find("/") != 0) mBaseURL.insert(0, "/");
 
-    mHttpClient.set_keep_alive(true);
-    mHttpClient.set_follow_location(true);
+    mDebug << __func__ << "(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")"; mDebug.Info();
 
-    mHttpClient.set_read_timeout(mOptions.timeout);
-    mHttpClient.set_write_timeout(mOptions.timeout);
+    if (options.followRedirects)
+        mHttpClient->set_follow_location(true);
+
+    mHttpClient->set_keep_alive(true);
+    mHttpClient->set_read_timeout(mOptions.timeout);
+    mHttpClient->set_write_timeout(mOptions.timeout);
 
     if (!mOptions.username.empty())
     {
-        mHttpClient.set_basic_auth(
+        mHttpClient->set_basic_auth(
             mOptions.username.c_str(), mOptions.password.c_str());
     }
 
     if (!mOptions.proxyHost.empty())
     {
-        mHttpClient.set_proxy(
+        mHttpClient->set_proxy(
             mOptions.proxyHost.c_str(), mOptions.proxyPort);
     }
 
     if (!mOptions.proxyUsername.empty())
     {
-        mHttpClient.set_proxy_basic_auth(
+        mHttpClient->set_proxy_basic_auth(
             mOptions.proxyUsername.c_str(), mOptions.proxyPassword.c_str());
     }
 }
@@ -42,28 +46,26 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 /*****************************************************/
 HTTPRunner::HostUrlPair HTTPRunner::ParseURL(std::string fullURL)
 {
-    if (fullURL.find("://") == std::string::npos)
-        fullURL.insert(0, "http://");
+    bool hasProto = fullURL.find("://") != std::string::npos;
+    Utilities::StringPair pair { Utilities::split(fullURL, "/", hasProto ? 2 : 0) };
 
-    HTTPRunner::HostUrlPair retval { 
-        Utilities::split(fullURL, "/", 2) };
+    if (pair.second.find("/") != 0) pair.second.insert(0, "/");
 
-    if (retval.second.empty() || retval.second[0] != '/')
-        retval.second.insert(0,"/");
-
-    if (Utilities::endsWith(retval.second, "/"))
-        retval.second += "index.php";
-    
-    if (!Utilities::endsWith(retval.second, "/index.php"))
-        retval.second += "/index.php";
-    
-    return retval;
+    return pair;
 }
 
 /*****************************************************/
 std::string HTTPRunner::GetHostname() const
 {
-    return Utilities::split(mProtoHost, "://").second;
+    Utilities::StringPair pair { Utilities::split(mProtoHost, "://") };
+    return pair.second.empty() ? pair.first : pair.second; 
+}
+
+/*****************************************************/
+std::string HTTPRunner::GetProtoHost() const
+{
+    return (mProtoHost.find("://") != std::string::npos)
+        ? mProtoHost : ("http://"+mProtoHost);
 }
 
 /*****************************************************/
@@ -79,22 +81,18 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
     httplib::MultipartFormDataItems postParams;
 
     for (const Params::value_type& it : input.params)
-    {
         postParams.push_back({it.first, it.second, {}, {}});
-    }
 
     for (const Files::value_type& it : input.files)
-    {
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
-    }
 
     for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        httplib::Result response(mHttpClient.Post(url.c_str(), postParams));
+        httplib::Result response(mHttpClient->Post(url.c_str(), postParams));
 
         if (!response || response->status >= 500) 
         {
-            if (attempt <= mOptions.maxRetries && mCanRetry)
+            if (mCanRetry && attempt <= mOptions.maxRetries)
             {
                 mDebug << __func__ << "... ";
                 
@@ -105,21 +103,60 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 
                 std::this_thread::sleep_for(mOptions.retryTime); continue;
             }
+            else if (response) // got a response
+                throw EndpointException(response->status);
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
-            else if (response) throw EndpointException(response->status);
             else throw Exception(response.error());
         }
 
         mDebug << __func__ << "... HTTP:" << response->status; mDebug.Info();
 
+        if (mOptions.followRedirects && !response->location.empty()) 
+            HandleRedirect(response->location);
+
         switch (response->status)
         {
             case 200: return std::move(response->body);
+            
+            case 301: case 302: // HTTP redirect
+            {
+                std::string extext { "Redirected" };
+                auto location { response->headers.find("Location") };
+                if (location != response->headers.end())
+                    extext += ": "+location->second;
+                throw EndpointException(extext);
+            }
+
             case 403: throw EndpointException("Access Denied");
             case 404: throw EndpointException("Not Found");
             default:  throw EndpointException(response->status);
         }
+    }
+}
+
+/*****************************************************/
+void HTTPRunner::HandleRedirect(const std::string& location)
+{
+    mDebug << __func__ << "(location:" << location << ")"; mDebug.Info();
+
+    HTTPRunner::HostUrlPair newPair { HTTPRunner::ParseURL(location) };
+
+    const size_t paramsPos { newPair.second.find("?") };
+    if (paramsPos != std::string::npos) // remove URL params
+        newPair.second.erase(paramsPos);
+    
+    if (newPair.first != GetProtoHost())
+    {
+        mDebug << __func__ << "... newProtoHost:" << newPair.first; mDebug.Info();
+        mHttpClient = std::make_unique<httplib::Client>(newPair.first);
+        mProtoHost = newPair.first;
+    }
+
+    if (newPair.second != mBaseURL)
+    {
+        mDebug << __func__ << "... newBaseURL:" << newPair.second; mDebug.Info();
+        mBaseURL = newPair.second;
     }
 }
 
