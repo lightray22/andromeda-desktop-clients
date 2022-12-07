@@ -29,12 +29,16 @@ void Item::Initialize(const nlohmann::json& data)
         if (data.contains("dates"))
         {
             data.at("dates").at("created").get_to(mCreated);
+            
+            const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
+            if (!modifiedJ.is_null()) modifiedJ.get_to(mModified);
+
+            const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
+            if (!accessedJ.is_null()) accessedJ.get_to(mAccessed);
         }
     }
     catch (const nlohmann::json::exception& ex) {
         throw Backend::JSONErrorException(ex.what()); }
-
-    Refresh(data);
 }
 
 /*****************************************************/
@@ -46,7 +50,7 @@ void Item::Refresh(const nlohmann::json& data)
     {
         data.at("name").get_to(mName);
 
-        mDebug << __func__ << "... name:" << mName; mDebug.Info();
+        mDebug << __func__ << "... newName:" << mName; mDebug.Info();
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
         if (!modifiedJ.is_null()) modifiedJ.get_to(mModified);

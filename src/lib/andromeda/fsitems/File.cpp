@@ -20,7 +20,7 @@ size_t min64st(uint64_t s1, size_t s2)
 File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
     Item(backend), mDebug("File",this)
 {
-    mDebug << mName << ":" << __func__ << "()"; mDebug.Info();
+    mDebug << __func__ << "()"; mDebug.Info();
 
     Initialize(data); mParent = &parent;
 

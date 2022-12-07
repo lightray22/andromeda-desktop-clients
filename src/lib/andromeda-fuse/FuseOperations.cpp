@@ -216,12 +216,17 @@ int FuseOperations::access(const char* path, int mask)
         #if defined(W_OK)
             Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
 
-            if ((mask & W_OK) && item.isReadOnly()) return -EROFS;
+            if ((mask & W_OK) && item.isReadOnly()) 
+            {
+                debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+            }
         #endif // W_OK
             
         return FUSE_SUCCESS;
     });
 }
+
+// TODO should close() be implemented and flush cache?
 
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
@@ -233,8 +238,10 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
     {
         const Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR)
-            && item.isReadOnly()) return -EROFS;
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && item.isReadOnly())
+        {
+            debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+        }
 
         return FUSE_SUCCESS;
     });
