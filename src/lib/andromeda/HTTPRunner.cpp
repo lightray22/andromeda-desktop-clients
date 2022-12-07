@@ -90,7 +90,7 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
     {
         httplib::Result response(mHttpClient->Post(url.c_str(), postParams));
 
-        if (!response || response->status >= 500) 
+        if (!response || response->status == 503) // 503 is temporary 
         {
             if (mCanRetry && attempt <= mOptions.maxRetries)
             {
