@@ -8,16 +8,14 @@
 namespace Andromeda {
 
 /*****************************************************/
-Config::Config() : mDebug("Config",this){ }
+Config::Config(Backend& backend) : mDebug("Config",this), mBackend(backend) { }
 
 /*****************************************************/
-void Config::Initialize(Backend& backend, const Config::Options& options)
+void Config::Initialize()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    mOptions = options;
-
-    nlohmann::json config(backend.GetConfigJ());
+    nlohmann::json config(mBackend.GetConfigJ());
 
     try
     {

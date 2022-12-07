@@ -7,13 +7,14 @@
 #include <nlohmann/json.hpp>
 
 #include "Backend.hpp"
-#include "Utilities.hpp"
+#include "BaseRunner.hpp"
+#include "RunnerInput.hpp"
 
 namespace Andromeda {
 
 /*****************************************************/
-Backend::Backend(Runner& runner) : 
-    mRunner(runner), mDebug("Backend",this) { }
+Backend::Backend(const BackendOptions& options, BaseRunner& runner) : 
+    mOptions(options), mRunner(runner), mConfig(*this), mDebug("Backend",this) { }
 
 /*****************************************************/
 Backend::~Backend()
@@ -28,11 +29,17 @@ Backend::~Backend()
 }
 
 /*****************************************************/
-void Backend::Initialize(const Config::Options& options)
+void Backend::Initialize()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    mConfig.Initialize(*this, options);
+    mConfig.Initialize();
+}
+
+/*****************************************************/
+bool Backend::isReadOnly() const
+{
+    return mOptions.readOnly || mConfig.isReadOnly();
 }
 
 /*****************************************************/
@@ -45,7 +52,7 @@ std::string Backend::GetName(bool human) const
 }
 
 /*****************************************************/
-std::string Backend::RunAction(Backend::Runner::Input& input)
+std::string Backend::RunAction(RunnerInput& input)
 {
     mReqCount++;
 
@@ -122,7 +129,7 @@ void Backend::Authenticate(const std::string& username, const std::string& passw
 
     CloseSession();
 
-    Runner::Input input { "accounts", "createsession", {{ "username", username }, { "auth_password", password }}};
+    RunnerInput input { "accounts", "createsession", {{ "username", username }, { "auth_password", password }}};
 
     if (!twofactor.empty()) input.params["auth_twofactor"] = twofactor;
 
@@ -189,7 +196,7 @@ void Backend::PreAuthenticate(const std::string& sessionID, const std::string& s
     mSessionID = sessionID;
     mSessionKey = sessionKey;
 
-    Runner::Input input {"accounts", "getaccount"};
+    RunnerInput input {"accounts", "getaccount"};
 
     nlohmann::json resp(GetJSON(RunAction(input)));
 
@@ -209,7 +216,7 @@ void Backend::CloseSession()
     
     if (mCreatedSession)
     {
-        Runner::Input input {"accounts", "deleteclient"};
+        RunnerInput input {"accounts", "deleteclient"};
 
         GetJSON(RunAction(input));
     }
@@ -238,7 +245,7 @@ void Backend::RequireAuthentication() const
 /*****************************************************/
 bool Backend::isMemory() const
 {
-    return mConfig.GetOptions().cacheType == Config::Options::CacheType::MEMORY;
+    return mOptions.cacheType == BackendOptions::CacheType::MEMORY;
 }
 
 /*****************************************************/
@@ -249,12 +256,12 @@ nlohmann::json Backend::GetConfigJ()
     nlohmann::json configJ;
 
     {
-        Runner::Input input {"core", "getconfig"};
+        RunnerInput input {"core", "getconfig"};
         configJ["core"] = GetJSON(RunAction(input));
     }
 
     {
-        Runner::Input input {"files", "getconfig"};
+        RunnerInput input {"files", "getconfig"};
         configJ["files"] = GetJSON(RunAction(input));
     }
 
@@ -267,7 +274,7 @@ nlohmann::json Backend::GetAccountLimits()
     if (mAccountID.empty())
         return nullptr;
 
-    Runner::Input input {"files", "getlimits", {{"account", mAccountID}}};
+    RunnerInput input {"files", "getlimits", {{"account", mAccountID}}};
 
     return GetJSON(RunAction(input));
 }
@@ -287,7 +294,7 @@ nlohmann::json Backend::GetFolder(const std::string& id)
         return retval;
     }
 
-    Runner::Input input {"files", "getfolder"}; 
+    RunnerInput input {"files", "getfolder"}; 
     
     if (!id.empty()) input.params["folder"] = id;
 
@@ -299,7 +306,7 @@ nlohmann::json Backend::GetFSRoot(const std::string& id)
 {
     mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
 
-    Runner::Input input {"files", "getfolder"}; 
+    RunnerInput input {"files", "getfolder"}; 
     
     if (!id.empty()) input.params["filesystem"] = id;
 
@@ -313,7 +320,7 @@ nlohmann::json Backend::GetFilesystem(const std::string& id)
 
     if (isMemory() && id.empty()) return nullptr;
 
-    Runner::Input input {"files", "getfilesystem"};
+    RunnerInput input {"files", "getfilesystem"};
 
     if (!id.empty()) input.params["filesystem"] = id;
 
@@ -327,7 +334,7 @@ nlohmann::json Backend::GetFSLimits(const std::string& id)
 
     if (isMemory() && id.empty()) return nullptr;
 
-    Runner::Input input {"files", "getlimits", {{"filesystem", id}}};
+    RunnerInput input {"files", "getlimits", {{"filesystem", id}}};
 
     return GetJSON(RunAction(input));
 }
@@ -337,7 +344,7 @@ nlohmann::json Backend::GetFilesystems()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    Runner::Input input {"files", "getfilesystems"};
+    RunnerInput input {"files", "getfilesystems"};
 
     return GetJSON(RunAction(input));
 }
@@ -347,7 +354,7 @@ nlohmann::json Backend::GetAdopted()
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    Runner::Input input {"files", "listadopted"};
+    RunnerInput input {"files", "listadopted"};
 
     return GetJSON(RunAction(input));
 }
@@ -366,7 +373,7 @@ nlohmann::json Backend::CreateFile(const std::string& parent, const std::string&
         return retval;
     }
 
-    Runner::Input input {"files", "upload", {{"parent", parent}, {"name", name}}, {{"file", {name, ""}}}};
+    RunnerInput input {"files", "upload", {{"parent", parent}, {"name", name}}, {{"file", {name, ""}}}};
 
     return GetJSON(RunAction(input));
 }
@@ -388,7 +395,7 @@ nlohmann::json Backend::CreateFolder(const std::string& parent, const std::strin
         return retval;
     }
 
-    Runner::Input input {"files", "createfolder", {{"parent", parent},{"name", name}}};
+    RunnerInput input {"files", "createfolder", {{"parent", parent},{"name", name}}};
 
     return GetJSON(RunAction(input));
 }
@@ -400,7 +407,7 @@ void Backend::DeleteFile(const std::string& id)
 
     if (isMemory()) return;
 
-    Runner::Input input {"files", "deletefile", {{"file", id}}};
+    RunnerInput input {"files", "deletefile", {{"file", id}}};
     
     try { GetJSON(RunAction(input)); }
     catch (const NotFoundException&) { }
@@ -413,7 +420,7 @@ void Backend::DeleteFolder(const std::string& id)
 
     if (isMemory()) return;
 
-    Runner::Input input {"files", "deletefolder", {{"folder", id}}}; 
+    RunnerInput input {"files", "deletefolder", {{"folder", id}}}; 
     
     try { GetJSON(RunAction(input)); }
     catch (const NotFoundException&) { }
@@ -426,7 +433,7 @@ nlohmann::json Backend::RenameFile(const std::string& id, const std::string& nam
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
 }
@@ -438,7 +445,7 @@ nlohmann::json Backend::RenameFolder(const std::string& id, const std::string& n
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
 }
@@ -450,7 +457,7 @@ nlohmann::json Backend::MoveFile(const std::string& id, const std::string& paren
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
 }
@@ -462,7 +469,7 @@ nlohmann::json Backend::MoveFolder(const std::string& id, const std::string& par
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
     return GetJSON(RunAction(input));
 }
@@ -477,7 +484,7 @@ std::string Backend::ReadFile(const std::string& id, const uint64_t offset, cons
 
     if (isMemory()) return std::string(length,'\0');
 
-    Runner::Input input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
+    RunnerInput input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
 
     std::string data(RunAction(input));
 
@@ -493,7 +500,7 @@ nlohmann::json Backend::WriteFile(const std::string& id, const uint64_t offset, 
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
+    RunnerInput input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
 
     return GetJSON(RunAction(input));
 }
@@ -505,7 +512,7 @@ nlohmann::json Backend::TruncateFile(const std::string& id, const uint64_t size)
 
     if (isMemory()) return nullptr;
 
-    Runner::Input input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
+    RunnerInput input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
 
     return GetJSON(RunAction(input));
 }

@@ -6,7 +6,7 @@
 #include "andromeda/Backend.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
@@ -61,5 +61,5 @@ void Filesystems::SubRenameItem(Item& item, const std::string& newName, bool ove
 }
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders

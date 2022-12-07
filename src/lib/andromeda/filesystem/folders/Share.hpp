@@ -2,10 +2,10 @@
 #ifndef LIBA2_SHARE_H_
 #define LIBA2_SHARE_H_
 
-#include "andromeda/fsitems/Item.hpp"
+#include "andromeda/filesystem/Item.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /** An item accessed via a share */
@@ -17,7 +17,7 @@ public:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

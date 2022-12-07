@@ -34,6 +34,7 @@ for PLAT in $PLATFORMS; do
         --suppress=unusedFunction \
         --suppress=knownConditionTrueFalse \
         --suppress=useStlAlgorithm \
+        --suppress=stlIfStrFind \
         --enable=style,performance,portability,information "$@" 2> $LOGFILE
 
     if [ -s $LOGFILE ]; then

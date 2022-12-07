@@ -1,9 +1,9 @@
-#include "Shared.hpp"
+#include "Share.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders

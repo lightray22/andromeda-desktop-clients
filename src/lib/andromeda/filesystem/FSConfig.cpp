@@ -3,9 +3,11 @@
 #include <nlohmann/json.hpp>
 
 #include "FSConfig.hpp"
-#include "Backend.hpp"
+#include "andromeda/Backend.hpp"
+using Andromeda::Backend;
 
 namespace Andromeda {
+namespace Filesystem {
 
 typedef std::map<std::string, FSConfig> CacheMap; static CacheMap sCache;
 
@@ -56,4 +58,5 @@ FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
         throw Backend::JSONErrorException(ex.what()); }
 }
 
+} // namespace Filesystem
 } // namespace Andromeda

@@ -3,11 +3,11 @@
 
 #include <memory>
 
-#include "andromeda/Config.hpp"
-#include "andromeda/HTTPRunner.hpp"
+#include "andromeda/BackendOptions.hpp"
+#include "andromeda/HTTPRunnerOptions.hpp"
 #include "andromeda/Utilities.hpp"
 
-namespace Andromeda { class Backend; }
+namespace Andromeda { class Backend; class HTTPRunner; }
 
 /** Encapsulates a backend and its resources */
 class BackendContext
@@ -27,9 +27,9 @@ public:
 private:
 
     /** libandromeda configuration */
-    Andromeda::Config::Options mConfigOptions;
+    Andromeda::BackendOptions mConfigOptions;
     /** HTTP Runner configuration */
-    Andromeda::HTTPRunner::Options mHttpOptions;
+    Andromeda::HTTPRunnerOptions mHttpOptions;
     
     std::unique_ptr<Andromeda::HTTPRunner> mRunner;
     std::unique_ptr<Andromeda::Backend> mBackend;

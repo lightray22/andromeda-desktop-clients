@@ -3,11 +3,11 @@
 
 #include "PlainFolder.hpp"
 #include "andromeda/Backend.hpp"
-#include "andromeda/FSConfig.hpp"
-#include "andromeda/fsitems/File.hpp"
+#include "andromeda/filesystem/FSConfig.hpp"
+#include "andromeda/filesystem/File.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
@@ -130,5 +130,5 @@ void PlainFolder::SubMove(Folder& newParent, bool overwrite)
 }
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders

@@ -10,26 +10,30 @@
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 
+#include "andromeda/Backend.hpp"
+using Andromeda::Backend;
+#include "andromeda/BackendOptions.hpp"
+using Andromeda::BackendOptions;
+#include "andromeda/BaseRunner.hpp"
+using Andromeda::BaseRunner;
 #include "andromeda/CLIRunner.hpp"
 using Andromeda::CLIRunner;
 #include "andromeda/HTTPRunner.hpp"
 using Andromeda::HTTPRunner;
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
-#include "andromeda/Config.hpp"
-using Andromeda::Config;
+#include "andromeda/HTTPRunnerOptions.hpp"
+using Andromeda::HTTPRunnerOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;
 using Andromeda::Utilities;
 
-#include "andromeda/fsitems/Folder.hpp"
-using Andromeda::FSItems::Folder;
-#include "andromeda/fsitems/folders/PlainFolder.hpp"
-using Andromeda::FSItems::Folders::PlainFolder;
-#include "andromeda/fsitems/folders/Filesystem.hpp"
-using Andromeda::FSItems::Folders::Filesystem;
-#include "andromeda/fsitems/folders/SuperRoot.hpp"
-using Andromeda::FSItems::Folders::SuperRoot;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
+#include "andromeda/filesystem/folders/PlainFolder.hpp"
+using Andromeda::Filesystem::Folders::PlainFolder;
+#include "andromeda/filesystem/folders/Filesystem.hpp"
+using Andromeda::Filesystem::Folders::Filesystem;
+#include "andromeda/filesystem/folders/SuperRoot.hpp"
+using Andromeda::Filesystem::Folders::SuperRoot;
 
 #define VERSION "0.1-alpha"
 
@@ -47,11 +51,11 @@ int main(int argc, char** argv)
 {
     Debug debug("main"); 
     
-    HTTPRunner::Options httpOptions;
-    Config::Options configOptions;
+    BackendOptions backendOptions;
+    HTTPRunnerOptions httpOptions;
     FuseAdapter::Options fuseOptions;
 
-    Options options(configOptions, httpOptions, fuseOptions); // TODO reorder
+    Options options(backendOptions, httpOptions, fuseOptions);
 
     try
     {
@@ -104,7 +108,7 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    std::unique_ptr<Backend::Runner> runner;
+    std::unique_ptr<BaseRunner> runner;
     switch (options.GetApiType())
     {
         case Options::ApiType::API_URL:
@@ -122,12 +126,12 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    Backend backend(*runner);
+    Backend backend(backendOptions, *runner);
     std::unique_ptr<Folder> folder;
 
     try
     {
-        backend.Initialize(configOptions);
+        backend.Initialize();
 
         if (options.HasSession())
             backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());

@@ -5,13 +5,15 @@
 #include <string>
 #include <system_error>
 
-#include "Backend.hpp"
+#include "BaseRunner.hpp"
 #include "Utilities.hpp"
 
 namespace Andromeda {
 
+struct RunnerInput;
+
 /** Runs the API locally by invoking it as a process */
-class CLIRunner : public Backend::Runner
+class CLIRunner : public BaseRunner
 {
 public:
 
@@ -26,7 +28,7 @@ public:
 
     virtual std::string GetHostname() const override { return "local"; }
 
-    virtual std::string RunAction(const Input& input) override;
+    virtual std::string RunAction(const RunnerInput& input) override;
 
     virtual bool RequiresSession() override { return false; }
 

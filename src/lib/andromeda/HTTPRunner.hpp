@@ -9,15 +9,17 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
 
-#include "Backend.hpp"
+#include "BaseRunner.hpp"
+#include "HTTPRunnerOptions.hpp"
 #include "Utilities.hpp"
 
 namespace Andromeda {
 
 class HTTPRunnerFriend;
+struct RunnerInput;
 
 /** Runs the API remotely over HTTP */
-class HTTPRunner : public Backend::Runner
+class HTTPRunner : public BaseRunner
 {
 public:
 
@@ -32,37 +34,12 @@ public:
         public: explicit ConnectionException() : 
             Exception(httplib::Error::Connection) {} };
 
-    /** HTTP config options */
-    struct Options
-    {
-        /** maximum retries before throwing */
-        unsigned long maxRetries { 12 };
-        /** The time to wait between each retry */
-        std::chrono::seconds retryTime { std::chrono::seconds(5) };
-        /** The connection read/write timeout */
-        std::chrono::seconds timeout { std::chrono::seconds(120) };
-        /** Whether or not redirects are allowed */
-        bool followRedirects { true };
-        /** HTTP basic-auth username */
-        std::string username;
-        /** HTTP basic-auth password */
-        std::string password;
-        /** HTTP proxy server hostname */
-        std::string proxyHost;
-        /** HTTP proxy server port */
-        uint16_t proxyPort { 443 };
-        /** HTTP proxy server basic-auth username */
-        std::string proxyUsername;
-        /** HTTP proxy server basic-auth password */
-        std::string proxyPassword;
-    };
-
     /**
      * @param protoHost (protocol://)hostname
      * @param baseURL baseURL of the endpoint
      * @param options HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const Options& options);
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunnerOptions& options);
 
     typedef std::pair<std::string, std::string> HostUrlPair;
 
@@ -81,7 +58,7 @@ public:
     /** Returns the base URL being used */
     virtual const std::string& GetBaseURL() const { return mBaseURL; }
 
-    virtual std::string RunAction(const Input& input) override;
+    virtual std::string RunAction(const RunnerInput& input) override;
 
     /** Allows automatic retry on HTTP failure */
     virtual void EnableRetry(bool enable = true) { mCanRetry = enable; }
@@ -96,14 +73,14 @@ private:
     friend class HTTPRunnerFriend;
 
     /** Initializes the HTTP client */
-    virtual void InitializeClient(const std::string& protoHost);
+    void InitializeClient(const std::string& protoHost);
 
     /** Handles an HTTP redirect to a new location */
-    virtual void HandleRedirect(const std::string& location);
+    void HandleRedirect(const std::string& location);
 
     Debug mDebug;
 
-    Options mOptions;
+    HTTPRunnerOptions mOptions;
 
     std::string mProtoHost;
     std::string mBaseURL;

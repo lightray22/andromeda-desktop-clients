@@ -19,10 +19,10 @@ BackendContext::BackendContext(
     mRunner = std::make_unique<HTTPRunner>(
         urlPair.first, urlPair.second, mHttpOptions);
 
-    mBackend = std::make_unique<Backend>(*mRunner);
+    mBackend = std::make_unique<Backend>(mConfigOptions, *mRunner);
     Backend& backend { *mBackend }; // context will get moved
 
-    backend.Initialize(mConfigOptions);
+    backend.Initialize();
     backend.Authenticate(username, password, twofactor);
 
     mRunner->EnableRetry(); // no retry during init

@@ -7,6 +7,7 @@
 #include "reproc++/drain.hpp"
 
 #include "CLIRunner.hpp"
+#include "RunnerInput.hpp"
 
 namespace Andromeda {
 
@@ -22,14 +23,14 @@ CLIRunner::CLIRunner(const std::string& apiPath) :
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
+std::string CLIRunner::RunAction(const RunnerInput& input)
 {
     std::list<std::string> arguments { mApiPath, "--json", input.app, input.action };
 
     if (Utilities::endsWith(mApiPath, ".php"))
         arguments.emplace_front("php");
 
-    for (const Params::value_type& param : input.params)
+    for (const RunnerInput::Params::value_type& param : input.params)
     {
         arguments.push_back("--"+param.first);
         arguments.push_back(param.second);
@@ -40,7 +41,7 @@ std::string CLIRunner::RunAction(const Backend::Runner::Input& input)
     if (input.files.size() > 0)
     {
         if (input.files.size() > 1) throw Exception("Multiple Files");
-        const Files::value_type& infile(*(input.files.begin()));
+        const RunnerInput::Files::value_type& infile(*(input.files.begin()));
 
         arguments.push_back("--"+infile.first+"-");
         inputPtr = &(infile.second.data);

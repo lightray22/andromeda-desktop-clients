@@ -8,7 +8,7 @@
 namespace Andromeda {
 class Backend;
 
-namespace FSItems {
+namespace Filesystem {
 class Folder;
 
 namespace Folders {
@@ -45,7 +45,7 @@ private:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

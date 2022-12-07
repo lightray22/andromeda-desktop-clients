@@ -17,12 +17,12 @@ using Andromeda::Backend;
 using Andromeda::HTTPRunner;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
-#include "andromeda/fsitems/Item.hpp"
-using Andromeda::FSItems::Item;
-#include "andromeda/fsitems/File.hpp"
-using Andromeda::FSItems::File;
-#include "andromeda/fsitems/Folder.hpp"
-using Andromeda::FSItems::Folder;
+#include "andromeda/filesystem/Item.hpp"
+using Andromeda::Filesystem::Item;
+#include "andromeda/filesystem/File.hpp"
+using Andromeda::Filesystem::File;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
 
 static Andromeda::Debug debug("FuseOperations");
 

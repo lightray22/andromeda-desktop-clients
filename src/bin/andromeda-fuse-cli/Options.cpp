@@ -9,10 +9,10 @@
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 
-#include "andromeda/Config.hpp"
-using Andromeda::Config;
-#include "andromeda/HTTPRunner.hpp"
-using Andromeda::HTTPRunner;
+#include "andromeda/BackendOptions.hpp"
+using Andromeda::BackendOptions;
+#include "andromeda/HTTPRunnerOptions.hpp"
+using Andromeda::HTTPRunnerOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;
 using Andromeda::Utilities;
@@ -24,8 +24,8 @@ std::string Options::HelpText()
 {
     std::ostringstream output;
 
-    Config::Options cfgDefault;
-    HTTPRunner::Options httpDefault;
+    BackendOptions cfgDefault;
+    HTTPRunnerOptions httpDefault;
 
     const auto defRefresh(seconds(cfgDefault.refreshTime).count());
     const auto defRetry(seconds(httpDefault.retryTime).count());
@@ -51,8 +51,8 @@ std::string Options::HelpText()
 }
 
 /*****************************************************/
-Options::Options(Config::Options& configOptions, 
-                 HTTPRunner::Options& httpOptions, 
+Options::Options(BackendOptions& configOptions, 
+                 HTTPRunnerOptions& httpOptions, 
                  FuseAdapter::Options& fuseOptions) : 
     mConfigOptions(configOptions), 
     mHttpOptions(httpOptions), 
@@ -189,9 +189,9 @@ void Options::LoadFrom(const Utilities::Flags& flags, const Utilities::Options o
         /** libandromeda Config options */
         else if (option == "cachemode")
         {
-                 if (value == "none")   mConfigOptions.cacheType = Config::Options::CacheType::NONE;
-            else if (value == "memory") mConfigOptions.cacheType = Config::Options::CacheType::MEMORY;
-            else if (value == "normal") mConfigOptions.cacheType = Config::Options::CacheType::NORMAL;
+                 if (value == "none")   mConfigOptions.cacheType = BackendOptions::CacheType::NONE;
+            else if (value == "memory") mConfigOptions.cacheType = BackendOptions::CacheType::MEMORY;
+            else if (value == "normal") mConfigOptions.cacheType = BackendOptions::CacheType::NORMAL;
             else throw BadValueException(option);
         }
         else if (option == "pagesize")

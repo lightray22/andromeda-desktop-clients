@@ -6,12 +6,12 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "andromeda/Utilities.hpp"
-#include "andromeda/fsitems/Folder.hpp"
+#include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {
 class Backend;
 
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /** A regular Andromeda folder */
@@ -64,7 +64,7 @@ private:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

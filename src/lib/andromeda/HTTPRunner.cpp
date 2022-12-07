@@ -4,12 +4,13 @@
 #include <utility>
 
 #include "HTTPRunner.hpp"
+#include "RunnerInput.hpp"
 #include "Utilities.hpp"
 
 namespace Andromeda {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunner::Options& options) : 
+HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunnerOptions& options) : 
     mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
 {
     if (mBaseURL.find("/") != 0) mBaseURL.insert(0, "/");
@@ -76,7 +77,7 @@ std::string HTTPRunner::GetProtoHost() const
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
+std::string HTTPRunner::RunAction(const RunnerInput& input)
 {
     httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
 
@@ -87,10 +88,10 @@ std::string HTTPRunner::RunAction(const Backend::Runner::Input& input)
 
     httplib::MultipartFormDataItems postParams;
 
-    for (const Params::value_type& it : input.params)
+    for (const RunnerInput::Params::value_type& it : input.params)
         postParams.push_back({it.first, it.second, {}, {}});
 
-    for (const Files::value_type& it : input.files)
+    for (const RunnerInput::Files::value_type& it : input.files)
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
 
     for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)

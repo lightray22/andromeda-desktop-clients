@@ -9,8 +9,8 @@
 
 #include "andromeda-fuse/FuseAdapter.hpp"
 
-#include "andromeda/Config.hpp"
-#include "andromeda/HTTPRunner.hpp"
+#include "andromeda/BackendOptions.hpp"
+#include "andromeda/HTTPRunnerOptions.hpp"
 #include "andromeda/Utilities.hpp"
 
 /** Manages command line options and config */
@@ -67,8 +67,8 @@ public:
      * @param httpOptions HTTPRunner options ref to fill (if applicable)
      * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::Config::Options& configOptions, 
-            Andromeda::HTTPRunner::Options& httpOptions, 
+    Options(Andromeda::BackendOptions& configOptions, 
+            Andromeda::HTTPRunnerOptions& httpOptions, 
             AndromedaFuse::FuseAdapter::Options& fuseOptions);
 
     /** Parses command line arguments from main */
@@ -139,8 +139,8 @@ private:
     /** Load config from the given flags and options */
     void LoadFrom(const Andromeda::Utilities::Flags& flags, const Andromeda::Utilities::Options options);
 
-    Andromeda::Config::Options& mConfigOptions;
-    Andromeda::HTTPRunner::Options& mHttpOptions;
+    Andromeda::BackendOptions& mConfigOptions;
+    Andromeda::HTTPRunnerOptions& mHttpOptions;
     AndromedaFuse::FuseAdapter::Options& mFuseOptions;
 
     Andromeda::Debug::Level mDebugLevel { Andromeda::Debug::Level::NONE };

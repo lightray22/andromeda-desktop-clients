@@ -13,10 +13,11 @@ add_library(andromeda)
 
 set(SOURCE_FILES 
     Backend.cpp
+    BackendOptions.cpp
     Config.cpp
-    FSConfig.cpp
     CLIRunner.cpp
     HTTPRunner.cpp
+    HTTPRunnerOptions.cpp
     Utilities.cpp
     )
 
@@ -34,7 +35,7 @@ install(TARGETS andromeda
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-add_subdirectory(fsitems)
+add_subdirectory(filesystem)
 
 # include/link libhttplib
 

@@ -9,9 +9,9 @@
 
 namespace Andromeda {
 class Backend;
-class FSConfig;
 
-namespace FSItems {
+namespace Filesystem {
+class FSConfig;
 
 class Folder;
 
@@ -151,7 +151,7 @@ private:
     Item(const Item&) = delete; // no copy
 };
 
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Andromeda
 
 #endif

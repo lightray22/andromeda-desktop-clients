@@ -3,11 +3,11 @@
 
 #include "Item.hpp"
 #include "Folder.hpp"
+#include "FSConfig.hpp"
 #include "andromeda/Backend.hpp"
-#include "andromeda/FSConfig.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 
 /*****************************************************/
 Item::Item(Backend& backend) : 
@@ -83,9 +83,7 @@ const FSConfig& Item::GetFSConfig() const
 /*****************************************************/
 bool Item::isReadOnly() const
 {
-    const Config& config(mBackend.GetConfig());
-
-    bool retval { config.isReadOnly() || config.GetOptions().readOnly };
+    bool retval { mBackend.isReadOnly() };
 
     if (HasFSConfig()) retval |= GetFSConfig().isReadOnly();
 
@@ -121,5 +119,5 @@ void Item::Move(Folder& newParent, bool overwrite, bool internal)
     else GetParent().MoveItem(mName, newParent, overwrite);
 }
 
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Andromeda

@@ -12,7 +12,7 @@
 namespace Andromeda {
 class Backend;
 
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /** A root folder accessed by its filesystem ID */
@@ -57,7 +57,7 @@ private:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

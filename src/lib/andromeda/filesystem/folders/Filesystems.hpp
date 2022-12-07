@@ -1,23 +1,25 @@
 
-#ifndef LIBA2_SUPERROOT_H_
-#define LIBA2_SUPERROOT_H_
+#ifndef LIBA2_FILESYSTEMS_H_
+#define LIBA2_FILESYSTEMS_H_
 
-#include "andromeda/Utilities.hpp"
-#include "andromeda/fsitems/Folder.hpp"
+#include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
-/** A special folder that lists filesystems, shared files, etc. */
-class SuperRoot : public Folder
+/** A special folder that lists filesystems */
+class Filesystems : public Folder
 {
 public:
 
-    /** @param backend backend reference */
-    explicit SuperRoot(Backend& backend);
+    /**
+     * @param backend backend reference
+     * @param parent parent folder reference
+     */
+    Filesystems(Backend& backend, Folder& parent);
     
-    virtual ~SuperRoot(){};
+    virtual ~Filesystems(){};
 
 protected:
 
@@ -27,12 +29,12 @@ protected:
 
     virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }
 
-    virtual void SubDeleteItem(Item& item) override { throw ModifyException(); }
+    virtual void SubDeleteItem(Item& item) override;
 
-    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override { throw ModifyException(); }
+    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override;
 
     virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) override { throw ModifyException(); }
-
+    
     virtual bool isReadOnly() const override { return true; }
 
     virtual void SubDelete() override { throw ModifyException(); }
@@ -47,7 +49,7 @@ private:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

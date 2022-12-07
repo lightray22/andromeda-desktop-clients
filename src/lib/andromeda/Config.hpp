@@ -14,7 +14,7 @@ class Backend;
 class Config
 {
 public:
-    Config();
+    explicit Config(Backend& backend);
     
     /** The Major API version this client works with */
     static constexpr int API_VERSION { 2 };
@@ -38,35 +38,11 @@ public:
         explicit AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
-    /** Client-based backend options */
-    struct Options
-    {
-        /** Client cache modes (debug) */
-        enum class CacheType
-        {
-            /** read/write directly to server */  NONE,
-            /** never contact server (testing) */ MEMORY,
-            /** normal read/write in pages */     NORMAL
-        };
-
-        /** The client cache type (debug) */
-        CacheType cacheType { CacheType::NORMAL };
-        /** The file data page size */
-        size_t pageSize { 1024*1024 }; // 1M
-        /** Whether we are in read-only mode */
-        bool readOnly { false };
-        /** The time period to use for refreshing API data */
-        std::chrono::seconds refreshTime { std::chrono::seconds(15) };
-    };
-
-    /** Sets config from the given backend and options */
-    void Initialize(Backend& backend, const Options& options);
+    /** Loads config from the given backend */
+    void Initialize();
 
     /** Adds account-specific limits */
     void LoadAccountLimits(Backend& backend);
-
-    /** Gets the configured backend options */
-    const Options& GetOptions() const { return mOptions; }
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const { return mReadOnly; }
@@ -82,8 +58,7 @@ public:
 
 private:
     Debug mDebug;
-
-    Options mOptions;
+    Backend& mBackend;
 
     bool mReadOnly { false };
     bool mRandWrite { true };

@@ -2,10 +2,10 @@
 
 #include "Adopted.hpp"
 #include "andromeda/Backend.hpp"
-#include "andromeda/fsitems/Folder.hpp"
+#include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
@@ -26,5 +26,5 @@ void Adopted::LoadItems()
 }
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders

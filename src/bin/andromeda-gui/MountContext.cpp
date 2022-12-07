@@ -6,10 +6,10 @@
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
-#include "andromeda/fsitems/Folder.hpp"
-using Andromeda::FSItems::Folder;
-#include "andromeda/fsitems/folders/SuperRoot.hpp"
-using Andromeda::FSItems::Folders::SuperRoot;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
+#include "andromeda/filesystem/folders/SuperRoot.hpp"
+using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 

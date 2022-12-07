@@ -6,6 +6,7 @@
 
 #include <nlohmann/json_fwd.hpp>
 
+#include "BackendOptions.hpp"
 #include "Config.hpp"
 #include "Utilities.hpp"
 
@@ -15,6 +16,9 @@
 #endif
 
 namespace Andromeda {
+
+class BaseRunner;
+struct RunnerInput;
 
 /** Manages communication with the backend API */
 class Backend
@@ -26,57 +30,6 @@ public:
         /** @param message API error message */
         explicit Exception(const std::string& message) :
             Utilities::Exception("Backend Error: "+message) {}; };
-
-    /** Implements the actual external call to the API */
-    class Runner
-    {
-    public:
-        /** Indicates an inability to reach the API endpoint */
-        class EndpointException : public Exception { public:
-            /** @param code HTTP code returned by the server */
-            explicit EndpointException(int code) : 
-                Exception("Endpoint: Code "+std::to_string(code)) {};
-            /** @param message formatted error message if known */
-            explicit EndpointException(const std::string& message) :
-                Exception("Endpoint: "+message) {}; };
-
-        /** An API file input param */
-        struct InputFile
-        {
-            /** File name */ std::string name;
-            /** File data */ std::string data;
-        };
-
-        /** A map of input parameter key to string value */
-        typedef std::map<std::string, std::string> Params;
-
-        /** A map of input parameter key to input file */
-        typedef std::map<std::string, InputFile> Files;
-
-        /** API app-action call parameters */
-        struct Input
-        {
-            /** app name to run */     std::string app;
-            /** app action to run */   std::string action;
-            /** map of input params */ Params params = {};
-            /** map of input files */  Files files = {};
-        };
-
-        virtual ~Runner(){ };
-
-        /** Returns the remote hostname of the runner */
-        virtual std::string GetHostname() const = 0;
-
-        /**
-         * Runs an API call and returns the result
-         * @param input input params struct
-         * @return result string from API
-         */
-        virtual std::string RunAction(const Input& input) = 0;
-
-        /** Returns true if the backend requires sessions */
-        virtual bool RequiresSession() = 0;
-    };
 
     /** Exception indicating that authentication is required */
     class AuthRequiredException : public Exception { public:
@@ -124,13 +77,19 @@ public:
         /** @param which string describing what is read-only */
         explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
-    /** @param runner the Runner to use */
-    explicit Backend(Runner& runner);
+    /** @param runner the BaseRunner to use */
+    explicit Backend(const BackendOptions& options, BaseRunner& runner);
 
     virtual ~Backend();
 
     /** Initializes the backend by loading config */
-    void Initialize(const Config::Options& options);
+    void Initialize();
+
+    /** Returns the backend options in use */
+    const BackendOptions& GetOptions() const { return mOptions; }
+
+    /** Returns true if the backend is read-only */
+    bool isReadOnly() const;
 
     /** 
      * Return the hostname_username ID string 
@@ -284,9 +243,9 @@ private:
 
     /**
      * Runs an action with authentication details 
-     * @see Runner::RunAction()
+     * @see BaseRunner::RunAction()
      */
-    std::string RunAction(Runner::Input& input);
+    std::string RunAction(RunnerInput& input);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
@@ -304,7 +263,9 @@ private:
     
     uint64_t mReqCount { 0 };
 
-    Runner& mRunner;
+    BackendOptions mOptions;
+    BaseRunner& mRunner;
+
     Config mConfig;
     Debug mDebug;
 };

@@ -4,11 +4,12 @@
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
-
 class Backend;
+
+namespace Filesystem {
 
 /** Contains filesystem config */
 class FSConfig
@@ -53,6 +54,7 @@ private:
     Debug mDebug;
 };
 
+} // namespace Filesystem
 } // namespace Andromeda
 
 #endif

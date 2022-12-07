@@ -5,7 +5,7 @@
 #include "PlainFolder.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /** A special folder showing the user's shared items */
@@ -17,7 +17,7 @@ public:
 };
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
 
 #endif

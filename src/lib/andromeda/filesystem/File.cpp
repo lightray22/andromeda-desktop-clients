@@ -4,11 +4,11 @@
 
 #include "File.hpp"
 #include "Folder.hpp"
+#include "FSConfig.hpp"
 #include "andromeda/Backend.hpp"
-#include "andromeda/FSConfig.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 
 /** return the size_t min of a (uint64_t and size_t) */
 size_t min64st(uint64_t s1, size_t s2)
@@ -37,7 +37,7 @@ File::File(Backend& backend, const nlohmann::json& data, Folder& parent) :
     mFsConfig = &FSConfig::LoadByID(mBackend, fsid);
 
     const size_t fsChunk { mFsConfig->GetChunkSize() };
-    const size_t cfChunk { mBackend.GetConfig().GetOptions().pageSize };
+    const size_t cfChunk { mBackend.GetOptions().pageSize };
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
     mPageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
@@ -232,7 +232,7 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
 
     length = min64st(mSize-offset, length);
 
-    if (mBackend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
+    if (mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE)
     {
         const std::string data(mBackend.ReadFile(GetID(), offset, length));
 
@@ -265,7 +265,7 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
 
-    if (mBackend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE)
+    if (mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE)
     {
         if (writeMode == FSConfig::WriteMode::APPEND 
             && offset != mBackendSize) throw WriteTypeException();
@@ -324,5 +324,5 @@ void File::Truncate(const uint64_t newSize)
     }
 }
 
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Andromeda

@@ -8,8 +8,8 @@
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Debug;
-#include "andromeda/fsitems/Folder.hpp"
-using Andromeda::FSItems::Folder;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
 
 static a2fuse_operations a2fuse_ops;
 static Debug sDebug("FuseAdapter");

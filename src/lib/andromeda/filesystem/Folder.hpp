@@ -19,7 +19,7 @@
 namespace Andromeda {
 class Backend;
 
-namespace FSItems {
+namespace Filesystem {
 class File;
 
 /** A common folder interface */
@@ -144,7 +144,7 @@ private:
     Debug mDebug;
 };
 
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Andromeda
 
 #endif

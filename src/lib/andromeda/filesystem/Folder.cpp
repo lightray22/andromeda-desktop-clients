@@ -4,12 +4,12 @@
 #include "Folder.hpp"
 #include "File.hpp"
 #include "andromeda/Backend.hpp"
-#include "andromeda/fsitems/folders/PlainFolder.hpp"
+#include "andromeda/filesystem/folders/PlainFolder.hpp"
 
 using namespace std::chrono;
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 
 /*****************************************************/
 Folder::Folder(Backend& backend) : 
@@ -76,10 +76,10 @@ Folder& Folder::GetFolderByPath(const std::string& path)
 const Folder::ItemMap& Folder::GetItems()
 {
     bool expired { (steady_clock::now() - mRefreshed)
-        > mBackend.GetConfig().GetOptions().refreshTime };
+        > mBackend.GetOptions().refreshTime };
 
-    bool noCache { mBackend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::NONE }; // load always
-    bool memory  { mBackend.GetConfig().GetOptions().cacheType == Config::Options::CacheType::MEMORY }; // load once
+    bool noCache { mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE }; // load always
+    bool memory  { mBackend.GetOptions().cacheType == BackendOptions::CacheType::MEMORY }; // load once
 
     if (!mHaveItems || (expired && !memory) || noCache) 
     {
@@ -236,5 +236,5 @@ void Folder::FlushCache(bool nothrow)
         it.second->FlushCache(nothrow);
 }
 
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Andromeda

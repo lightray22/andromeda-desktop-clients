@@ -11,9 +11,9 @@
 #include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
-namespace FSItems { 
+namespace Filesystem { 
     class Folder;
-} // nanespace FSItems
+} // nanespace Filesystem
 } // namespace Andromeda
 
 namespace AndromedaFuse {
@@ -65,13 +65,13 @@ public:
      * @param options command line options (copied)
      * @param runMode threading mode
      */
-    FuseAdapter(Andromeda::FSItems::Folder& root, const Options& options, RunMode runMode);
+    FuseAdapter(Andromeda::Filesystem::Folder& root, const Options& options, RunMode runMode);
 
     /** Stop and unmount FUSE */
     virtual ~FuseAdapter();
 
     /** Returns the root folder */
-    Andromeda::FSItems::Folder& GetRootFolder(){ return mRootFolder; }
+    Andromeda::Filesystem::Folder& GetRootFolder(){ return mRootFolder; }
 
     /** Returns the FUSE options */
     const Options& GetOptions(){ return mOptions; }
@@ -93,7 +93,7 @@ private:
     /** Signals initialization complete */
     void SignalInit();
     
-    Andromeda::FSItems::Folder& mRootFolder;
+    Andromeda::Filesystem::Folder& mRootFolder;
     Options mOptions;
 
     std::thread mFuseThread;

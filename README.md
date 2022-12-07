@@ -20,10 +20,6 @@ To build one individually, configure cmake targeted at the directory you desire 
 - FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
 - `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
 
-### Common Usage
-
-For all binaries, given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  
-
 ### Building
 
 Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build, including static analysis and unit tests.  Or the manual steps:
@@ -42,6 +38,10 @@ Cmake will automatically clone in-tree dependencies.
 - Bash (if running tools/)
 
 # libandromeda
+
+### Common Usage
+
+Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying "https://" ensures TLS is always used.
 
 ### Libraries
 

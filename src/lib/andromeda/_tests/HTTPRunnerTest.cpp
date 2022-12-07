@@ -1,6 +1,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "HTTPRunner.hpp"
+#include "HTTPRunnerOptions.hpp"
 
 namespace Andromeda {
 
@@ -65,7 +66,7 @@ TEST_CASE("ParseURL", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("GetHostname", "[HTTPRunner]")
 {
-    const HTTPRunner::Options options;
+    const HTTPRunnerOptions options;
 
     REQUIRE(HTTPRunner("myhost","",options).GetHostname() == "myhost");
     REQUIRE(HTTPRunner("http://myhost","",options).GetHostname() == "myhost");
@@ -75,7 +76,7 @@ TEST_CASE("GetHostname", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("GetProtoHost", "[HTTPRunner]")
 {
-    const HTTPRunner::Options options;
+    const HTTPRunnerOptions options;
 
     REQUIRE(HTTPRunner("myhost","",options).GetProtoHost() == "http://myhost");
     REQUIRE(HTTPRunner("http://myhost","",options).GetProtoHost() == "http://myhost");
@@ -85,7 +86,7 @@ TEST_CASE("GetProtoHost", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("GetBaseURL", "[HTTPRunner]")
 {
-    const HTTPRunner::Options options;
+    const HTTPRunnerOptions options;
 
     REQUIRE(HTTPRunner("","",options).GetBaseURL() == "/");
     REQUIRE(HTTPRunner("","/",options).GetBaseURL() == "/");
@@ -97,7 +98,7 @@ TEST_CASE("GetBaseURL", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("EnableRetry", "[HTTPRunner]")
 {
-    const HTTPRunner::Options options;
+    const HTTPRunnerOptions options;
     HTTPRunner runner("", "", options);
 
     REQUIRE(runner.GetCanRetry() == false); // default
@@ -108,7 +109,7 @@ TEST_CASE("EnableRetry", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("HandleRedirect", "[HTTPRunner]")
 {
-    const HTTPRunner::Options options;
+    const HTTPRunnerOptions options;
     HTTPRunner runner("myhost", "/page", options);
     HTTPRunnerFriend runnerFriend(runner);
 

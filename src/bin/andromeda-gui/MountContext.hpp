@@ -9,7 +9,7 @@
 #include "andromeda-fuse/FuseAdapter.hpp"
 
 namespace Andromeda { class Backend; 
-    namespace FSItems { class Folder; }
+    namespace Filesystem { class Folder; }
 }
 
 /** Encapsulates a FUSE mount and root folder */
@@ -58,7 +58,7 @@ private:
     /** The path to the user's HOMEDIR (if init'd) */
     std::string mHomeRoot;
 
-    std::unique_ptr<Andromeda::FSItems::Folder> mRootFolder;
+    std::unique_ptr<Andromeda::Filesystem::Folder> mRootFolder;
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;
 
     Andromeda::Debug mDebug;

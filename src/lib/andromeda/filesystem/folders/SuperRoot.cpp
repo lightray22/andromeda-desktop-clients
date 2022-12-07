@@ -6,7 +6,7 @@
 #include "andromeda/Backend.hpp"
 
 namespace Andromeda {
-namespace FSItems {
+namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
@@ -35,5 +35,5 @@ void SuperRoot::LoadItems()
 }
 
 } // namespace Andromeda
-} // namespace FSItems
+} // namespace Filesystem
 } // namespace Folders
