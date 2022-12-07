@@ -95,6 +95,9 @@ private:
 
     friend class HTTPRunnerFriend;
 
+    /** Initializes the HTTP client */
+    virtual void InitializeClient(const std::string& protoHost);
+
     /** Handles an HTTP redirect to a new location */
     virtual void HandleRedirect(const std::string& location);
 

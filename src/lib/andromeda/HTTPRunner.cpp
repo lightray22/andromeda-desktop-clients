@@ -10,14 +10,21 @@ namespace Andromeda {
 
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunner::Options& options) : 
-    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL), 
-    mHttpClient(std::make_unique<httplib::Client>(protoHost))
+    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
 {
     if (mBaseURL.find("/") != 0) mBaseURL.insert(0, "/");
 
     mDebug << __func__ << "(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")"; mDebug.Info();
 
-    if (options.followRedirects)
+    InitializeClient(mProtoHost);
+}
+
+/*****************************************************/
+void HTTPRunner::InitializeClient(const std::string& protoHost)
+{
+    mHttpClient = std::make_unique<httplib::Client>(protoHost);
+
+    if (mOptions.followRedirects)
         mHttpClient->set_follow_location(true);
 
     mHttpClient->set_keep_alive(true);
@@ -149,8 +156,8 @@ void HTTPRunner::HandleRedirect(const std::string& location)
     if (newPair.first != GetProtoHost())
     {
         mDebug << __func__ << "... newProtoHost:" << newPair.first; mDebug.Info();
-        mHttpClient = std::make_unique<httplib::Client>(newPair.first);
         mProtoHost = newPair.first;
+        InitializeClient(mProtoHost);
     }
 
     if (newPair.second != mBaseURL)
