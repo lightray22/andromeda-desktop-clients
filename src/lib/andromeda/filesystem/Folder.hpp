@@ -9,7 +9,7 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 #if WIN32 && defined(CreateFile)
 // thanks for nothing, Windows >:(

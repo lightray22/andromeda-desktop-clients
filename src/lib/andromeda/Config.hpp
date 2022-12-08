@@ -4,7 +4,8 @@
 #include <chrono>
 #include <nlohmann/json_fwd.hpp>
 
-#include "Utilities.hpp"
+#include "BaseException.hpp"
+#include "Debug.hpp"
 
 namespace Andromeda {
 
@@ -20,10 +21,10 @@ public:
     static constexpr int API_VERSION { 2 };
 
     /** Base exception for Config exceptions */
-    class Exception : public Utilities::Exception { public:
+    class Exception : public BaseException { public:
         /** @param message error message string */
         explicit Exception(const std::string& message) :
-            Utilities::Exception("Config Error: "+message){}; };
+            BaseException("Config Error: "+message){}; };
 
     /** Exception indicating the API version is not supported */
     class APIVersionException : public Exception { public:

@@ -9,11 +9,11 @@
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/BaseException.hpp"
+using Andromeda::BaseException;
 
-#include "andromeda-fuse/FuseAdapter.hpp"
-using AndromedaFuse::FuseAdapter;
+#include "andromeda-fuse/FuseOptions.hpp"
+using AndromedaFuse::FuseOptions;
 
 #include "andromeda-gui/BackendContext.hpp"
 #include "andromeda-gui/MountContext.hpp"
@@ -46,17 +46,18 @@ void AccountTab::Mount(bool autoMount)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    Backend& backend { mBackendContext->GetBackend() };
+    FuseOptions fuseOptions;
 
-    FuseAdapter::Options fuseOptions;
-    fuseOptions.mountPath = backend.GetName(false);
+    Backend& backend { mBackendContext->GetBackend() };
+    std::string mountPath { backend.GetName(false) };
     // TODO replace / in mountPath just in case
 
     try
     {
-        mMountContext = std::make_unique<MountContext>(true, backend, fuseOptions);
+        mMountContext = std::make_unique<MountContext>(
+            backend, true, mountPath, fuseOptions);
     }
-    catch (const Utilities::Exception& ex)
+    catch (const BaseException& ex)
     {
         mDebug << __func__ << "... " << ex.what(); mDebug.Error();
 

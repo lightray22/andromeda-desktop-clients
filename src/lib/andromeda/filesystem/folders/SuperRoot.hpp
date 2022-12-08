@@ -2,7 +2,7 @@
 #ifndef LIBA2_SUPERROOT_H_
 #define LIBA2_SUPERROOT_H_
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {

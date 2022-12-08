@@ -5,7 +5,7 @@
 #include <memory>
 #include <nlohmann/json_fwd.hpp>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {

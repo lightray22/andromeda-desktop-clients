@@ -6,7 +6,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QSystemTrayIcon>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 class MainWindow;
 

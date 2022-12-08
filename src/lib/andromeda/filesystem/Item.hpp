@@ -5,7 +5,8 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/BaseException.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
 class Backend;
@@ -20,8 +21,8 @@ class Item
 {
 public:
 
-    class Exception : public Utilities::Exception { public:
-        using Utilities::Exception::Exception; };
+    class Exception : public Andromeda::BaseException { public:
+        using Andromeda::BaseException::BaseException; };
     
     /** Exception indicating this item has no parent */
     class NullParentException : public Exception { public:
@@ -146,7 +147,7 @@ protected:
 
 private:
 
-    Debug mDebug;
+    Andromeda::Debug mDebug;
 
     Item(const Item&) = delete; // no copy
 };

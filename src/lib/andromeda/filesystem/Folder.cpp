@@ -4,6 +4,7 @@
 #include "Folder.hpp"
 #include "File.hpp"
 #include "andromeda/Backend.hpp"
+#include "andromeda/Utilities.hpp"
 #include "andromeda/filesystem/folders/PlainFolder.hpp"
 
 using namespace std::chrono;
@@ -78,8 +79,8 @@ const Folder::ItemMap& Folder::GetItems()
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
-    bool noCache { mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE }; // load always
-    bool memory  { mBackend.GetOptions().cacheType == BackendOptions::CacheType::MEMORY }; // load once
+    bool noCache { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE }; // load always
+    bool memory  { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::MEMORY }; // load once
 
     if (!mHaveItems || (expired && !memory) || noCache) 
     {

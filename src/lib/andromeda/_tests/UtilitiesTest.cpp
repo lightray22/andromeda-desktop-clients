@@ -101,6 +101,23 @@ TEST_CASE("split", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("startsWith", "[Utilities]")
+{
+    REQUIRE(Utilities::startsWith("","") == true);
+    REQUIRE(Utilities::startsWith("a","") == true);
+    REQUIRE(Utilities::startsWith("","a") == false);
+
+    REQUIRE(Utilities::startsWith("a","a") == true);
+    REQUIRE(Utilities::startsWith("a","b") == false);
+
+    REQUIRE(Utilities::startsWith("test123","test") == true);
+    REQUIRE(Utilities::startsWith("test123","test123") == true);
+    REQUIRE(Utilities::startsWith("test123","test1234") == false);
+    REQUIRE(Utilities::startsWith("test123"," test") == false);
+    REQUIRE(Utilities::startsWith("test123","123") == false);
+}
+
+/*****************************************************/
 TEST_CASE("endsWith", "[Utilities]")
 {
     REQUIRE(Utilities::endsWith("","") == true);
@@ -111,6 +128,8 @@ TEST_CASE("endsWith", "[Utilities]")
     REQUIRE(Utilities::endsWith("a","b") == false);
 
     REQUIRE(Utilities::endsWith("test123","123") == true);
+    REQUIRE(Utilities::endsWith("test123","test123") == true);
+    REQUIRE(Utilities::endsWith("test123","test1234") == false);
     REQUIRE(Utilities::endsWith("test123","123 ") == false);
     REQUIRE(Utilities::endsWith("test123","test") == false);
 }
@@ -131,7 +150,5 @@ TEST_CASE("stringToBool", "[Utilities]")
 
     REQUIRE(Utilities::stringToBool("test") == true);
 }
-
-// TODO test parseArgs, parseFile, parseUrl
 
 } // namespace Andromeda

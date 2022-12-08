@@ -10,8 +10,8 @@
 #include "httplib.h"
 
 #include "BaseRunner.hpp"
-#include "HTTPRunnerOptions.hpp"
-#include "Utilities.hpp"
+#include "Debug.hpp"
+#include "HTTPOptions.hpp"
 
 namespace Andromeda {
 
@@ -39,7 +39,7 @@ public:
      * @param baseURL baseURL of the endpoint
      * @param options HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunnerOptions& options);
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options);
 
     typedef std::pair<std::string, std::string> HostUrlPair;
 
@@ -80,7 +80,7 @@ private:
 
     Debug mDebug;
 
-    HTTPRunnerOptions mOptions;
+    HTTPOptions mOptions;
 
     std::string mProtoHost;
     std::string mBaseURL;

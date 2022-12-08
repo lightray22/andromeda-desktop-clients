@@ -9,11 +9,12 @@
 #include "Backend.hpp"
 #include "BaseRunner.hpp"
 #include "RunnerInput.hpp"
+#include "Utilities.hpp"
 
 namespace Andromeda {
 
 /*****************************************************/
-Backend::Backend(const BackendOptions& options, BaseRunner& runner) : 
+Backend::Backend(const ConfigOptions& options, BaseRunner& runner) : 
     mOptions(options), mRunner(runner), mConfig(*this), mDebug("Backend",this) { }
 
 /*****************************************************/
@@ -22,7 +23,7 @@ Backend::~Backend()
     mDebug << __func__ << "()"; mDebug.Info();
 
     try { CloseSession(); }
-    catch(const Utilities::Exception& ex) 
+    catch(const BaseException& ex) 
     { 
         mDebug << __func__ << "... " << ex.what(); mDebug.Error();
     }
@@ -245,7 +246,7 @@ void Backend::RequireAuthentication() const
 /*****************************************************/
 bool Backend::isMemory() const
 {
-    return mOptions.cacheType == BackendOptions::CacheType::MEMORY;
+    return mOptions.cacheType == ConfigOptions::CacheType::MEMORY;
 }
 
 /*****************************************************/

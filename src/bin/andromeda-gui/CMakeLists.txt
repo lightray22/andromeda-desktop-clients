@@ -19,7 +19,7 @@ endif()
 # build the andromeda-gui executable
 
 set(SOURCE_FILES 
-    main.cpp
+    main.cpp Options.cpp
     BackendContext.cpp
     MountContext.cpp
     )

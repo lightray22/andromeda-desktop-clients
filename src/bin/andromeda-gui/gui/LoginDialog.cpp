@@ -3,8 +3,8 @@
 #include "LoginDialog.hpp"
 #include "ui_LoginDialog.h"
 
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/BaseException.hpp"
+using Andromeda::BaseException;
 #include "andromeda-gui/BackendContext.hpp"
 
 /*****************************************************/
@@ -40,7 +40,7 @@ void LoginDialog::accept()
         
         mBackendContext = std::make_unique<BackendContext>(apiurl, username, password, twofactor);
     }
-    catch (const Utilities::Exception& ex)
+    catch (const BaseException& ex)
     {
         mDebug << __func__ << "... " << ex.what(); mDebug.Error();
 

@@ -10,10 +10,10 @@
 namespace Andromeda {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPRunnerOptions& options) : 
+HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options) : 
     mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
 {
-    if (mBaseURL.find("/") != 0) mBaseURL.insert(0, "/");
+    if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
     mDebug << __func__ << "(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")"; mDebug.Info();
 
@@ -57,7 +57,8 @@ HTTPRunner::HostUrlPair HTTPRunner::ParseURL(std::string fullURL)
     bool hasProto = fullURL.find("://") != std::string::npos;
     Utilities::StringPair pair { Utilities::split(fullURL, "/", hasProto ? 2 : 0) };
 
-    if (pair.second.find("/") != 0) pair.second.insert(0, "/");
+    if (!Utilities::startsWith(pair.second,"/")) 
+        pair.second.insert(0, "/");
 
     return pair;
 }

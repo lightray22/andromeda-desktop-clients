@@ -7,7 +7,7 @@ include(../../../andromeda.cmake)
 
 add_library(andromeda-fuse)
 
-set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp)
+set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp FuseOptions.cpp)
 
 target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse
@@ -29,6 +29,8 @@ endif()
 target_link_libraries(andromeda-fuse PUBLIC andromeda)
 
 # include/link libfuse
+
+option(LIBFUSE2 "Force using FUSE 2.x" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 

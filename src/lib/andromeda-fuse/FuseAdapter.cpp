@@ -6,7 +6,7 @@
 #include "FuseAdapter.hpp"
 #include "FuseOperations.hpp"
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 using Andromeda::Debug;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
@@ -243,10 +243,10 @@ struct FuseLoop
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(Folder& root, const Options& options, RunMode runMode)
-    : mRootFolder(root), mOptions(options)
+FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options, RunMode runMode)
+    : mMountPath(mountPath), mRootFolder(root), mOptions(options)
 {
-    sDebug << __func__ << "(path:" << mOptions.mountPath << ")"; sDebug.Info();
+    sDebug << __func__ << "(path:" << mMountPath << ")"; sDebug.Info();
 
     if (runMode == RunMode::THREAD)
     {
@@ -282,11 +282,11 @@ void FuseAdapter::RunFuse(RunMode runMode)
             fuseArgs.AddArg(fuseArg);
 
     #if LIBFUSE2
-        FuseMount mount(fuseArgs, mOptions.mountPath.c_str());
+        FuseMount mount(fuseArgs, mMountPath.c_str());
         FuseContext context(mount, fuseArgs, *this);
     #else // !LIBFUSE2
         FuseContext context(fuseArgs, *this);
-        FuseMount mount(context, mOptions.mountPath.c_str());
+        FuseMount mount(context, mMountPath.c_str());
     #endif // LIBFUSE2
         
         if (runMode == RunMode::DAEMON) FuseDaemonize();

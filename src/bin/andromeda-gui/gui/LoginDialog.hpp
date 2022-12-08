@@ -5,7 +5,7 @@
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QWidget>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 class BackendContext;
 namespace Ui { class LoginDialog; }

@@ -1,13 +1,26 @@
-#ifndef LIBA2_BACKENDOPTIONS_H_
-#define LIBA2_BACKENDOPTIONS_H_
+#ifndef LIBA2_CONFIGOPTIONS_H_
+#define LIBA2_CONFIGOPTIONS_H_
 
 #include <chrono>
+#include <string>
 
 namespace Andromeda {
 
-/** Client-based backend options */
-struct BackendOptions
+/** Client-based libAndromeda options */
+struct ConfigOptions
 {
+    /** Retrieve the standard help text string */
+    static std::string HelpText();
+
+    /** Adds the given argument, returning true iff it was used */
+    bool AddFlag(const std::string& flag);
+
+    /** Adds the given option/value, returning true iff it was used */
+    bool AddOption(const std::string& option, const std::string& value);
+
+    /** Whether we are in read-only mode */
+    bool readOnly { false };
+    
     /** Client cache modes (debug) */
     enum class CacheType
     {
@@ -20,12 +33,10 @@ struct BackendOptions
     CacheType cacheType { CacheType::NORMAL };
     /** The file data page size */
     size_t pageSize { 1024*1024 }; // 1M
-    /** Whether we are in read-only mode */
-    bool readOnly { false };
     /** The time period to use for refreshing API data */
     std::chrono::seconds refreshTime { std::chrono::seconds(15) };
 };
 
 } // namespace Andromeda
 
-#endif // LIBA2_BACKENDOPTIONS_H_
+#endif // LIBA2_CONFIGOPTIONS_H_

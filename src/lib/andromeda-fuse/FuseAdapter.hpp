@@ -8,7 +8,9 @@
 #include <string>
 #include <thread>
 
-#include "andromeda/Utilities.hpp"
+#include "FuseOptions.hpp"
+#include "andromeda/BaseException.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
 namespace Filesystem { 
@@ -27,26 +29,10 @@ class FuseAdapter
 public:
 
     /** Base Exception for all FUSE issues */
-    class Exception : public Andromeda::Utilities::Exception { public:
+    class Exception : public Andromeda::BaseException { public:
         /** @param message FUSE error message */
         explicit Exception(const std::string& message) :
-            Andromeda::Utilities::Exception("FUSE Error: "+message) {}; };
-
-    /** FUSE wrapper options */
-    struct Options
-    {
-        /** The FUSE directory to mount */
-        std::string mountPath;
-
-        /** List of FUSE library options */
-        std::list<std::string> fuseArgs;
-
-        /** Whether fake chmod (no-op) is allowed */
-        bool fakeChmod { true };
-
-        /** Whether fake chown (no-op) is allowed */
-        bool fakeChown { true };
-    };
+            Andromeda::BaseException("FUSE Error: "+message) {}; };
 
     /** Thread mode for the FUSE Adapter */
     enum class RunMode
@@ -61,23 +47,26 @@ public:
 
     /**
      * Starts and mounts libfuse
+     * @param path filesystem path to mount
      * @param root andromeda folder as root
      * @param options command line options (copied)
      * @param runMode threading mode
      */
-    FuseAdapter(Andromeda::Filesystem::Folder& root, const Options& options, RunMode runMode);
+    FuseAdapter(
+        const std::string& path, Andromeda::Filesystem::Folder& root, 
+        const FuseOptions& options, RunMode runMode);
 
     /** Stop and unmount FUSE */
     virtual ~FuseAdapter();
 
+    /** Returns the mounted filesystem path */
+    const std::string& GetMountPath() const { return mMountPath; }
+
     /** Returns the root folder */
-    Andromeda::Filesystem::Folder& GetRootFolder(){ return mRootFolder; }
+    Andromeda::Filesystem::Folder& GetRootFolder() { return mRootFolder; }
 
     /** Returns the FUSE options */
-    const Options& GetOptions(){ return mOptions; }
-
-    /** Print help text to stdout */
-    static void ShowHelpText();
+    const FuseOptions& GetOptions() const { return mOptions; }
 
     /** Print version text to stdout */
     static void ShowVersionText();
@@ -93,8 +82,9 @@ private:
     /** Signals initialization complete */
     void SignalInit();
     
+    std::string mMountPath;
     Andromeda::Filesystem::Folder& mRootFolder;
-    Options mOptions;
+    FuseOptions mOptions;
 
     std::thread mFuseThread;
     FuseLoop* mFuseLoop { nullptr };

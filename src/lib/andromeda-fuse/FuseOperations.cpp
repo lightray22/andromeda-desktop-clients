@@ -13,6 +13,10 @@ using AndromedaFuse::FuseAdapter;
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
+#include "andromeda/BaseException.hpp"
+using Andromeda::BaseException;
+#include "andromeda/Debug.hpp"
+using Andromeda::Debug;
 #include "andromeda/HTTPRunner.hpp"
 using Andromeda::HTTPRunner;
 #include "andromeda/Utilities.hpp"
@@ -24,7 +28,7 @@ using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
-static Andromeda::Debug debug("FuseOperations");
+static Debug debug("FuseOperations");
 
 namespace AndromedaFuse {
 
@@ -92,7 +96,7 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     {
         debug << fname << "... " << e.what(); debug.Error(); return -EHOSTDOWN;
     }
-    catch (const Utilities::Exception& e)
+    catch (const BaseException& e)
     {
         debug << fname << "... " << e.what(); debug.Error(); return -EIO;
     }

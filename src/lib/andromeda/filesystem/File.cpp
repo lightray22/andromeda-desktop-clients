@@ -189,7 +189,7 @@ void File::FlushCache(bool nothrow)
 
             auto writeFunc { [&]()->void { mBackend.WriteFile(GetID(), pageOffset, data); } };
 
-            if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const Utilities::Exception& e) { 
+            if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
                 mDebug << __func__ << "... Ignoring Error: " << e.what(); mDebug.Error(); }
 
             page.dirty = false; mBackendSize = std::max(mBackendSize, pageOffset+pageSize);
@@ -232,7 +232,7 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
 
     length = min64st(mSize-offset, length);
 
-    if (mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE)
+    if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
         const std::string data(mBackend.ReadFile(GetID(), offset, length));
 
@@ -265,7 +265,7 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
 
-    if (mBackend.GetOptions().cacheType == BackendOptions::CacheType::NONE)
+    if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
         if (writeMode == FSConfig::WriteMode::APPEND 
             && offset != mBackendSize) throw WriteTypeException();

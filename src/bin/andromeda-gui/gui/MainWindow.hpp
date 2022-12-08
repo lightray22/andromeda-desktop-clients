@@ -5,7 +5,7 @@
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QMainWindow>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 class AccountTab;
 

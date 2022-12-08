@@ -5,7 +5,8 @@
 #include <memory>
 #include <string>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/BaseException.hpp"
+#include "andromeda/Debug.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
 namespace Andromeda { class Backend; 
@@ -18,10 +19,10 @@ class MountContext
 public:
 
     /** Base Exception for mount context issues */
-    class Exception : public Andromeda::Utilities::Exception { public:
+    class Exception : public Andromeda::BaseException { public:
         /** @param message error message */
         explicit Exception(const std::string& message) :
-            Andromeda::Utilities::Exception("Mount Error: "+message) {}; };
+            Andromeda::BaseException("Mount Error: "+message) {}; };
 
     /** Exception indicating that no home directory was found */
     class UnknownHomeException : public Exception { public:
@@ -39,11 +40,14 @@ public:
 
     /**
      * Create a new MountContext
-     * @param home if true, options.mountPath is home-relative
      * @param backend the backend resource to use
+     * @param home if true, mountPath is home-relative
+     * @param mountPath filesystem path to mount
      * @param options FUSE adapter options
      */
-    MountContext(bool home, Andromeda::Backend& backend, AndromedaFuse::FuseAdapter::Options& options);
+    MountContext(Andromeda::Backend& backend,
+        bool home, std::string mountPath, 
+        AndromedaFuse::FuseOptions& options);
 
     virtual ~MountContext();
 

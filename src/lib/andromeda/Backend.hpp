@@ -6,9 +6,10 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "BackendOptions.hpp"
+#include "ConfigOptions.hpp"
+#include "BaseException.hpp"
 #include "Config.hpp"
-#include "Utilities.hpp"
+#include "Debug.hpp"
 
 #if WIN32 && defined(CreateFile)
 // thanks for nothing, Windows >:(
@@ -26,10 +27,10 @@ class Backend
 public:
 
     /** Base Exception for all backend issues */
-    class Exception : public Utilities::Exception { public:
+    class Exception : public BaseException { public:
         /** @param message API error message */
         explicit Exception(const std::string& message) :
-            Utilities::Exception("Backend Error: "+message) {}; };
+            BaseException("Backend Error: "+message) {}; };
 
     /** Exception indicating that authentication is required */
     class AuthRequiredException : public Exception { public:
@@ -78,7 +79,7 @@ public:
         explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
     /** @param runner the BaseRunner to use */
-    explicit Backend(const BackendOptions& options, BaseRunner& runner);
+    explicit Backend(const ConfigOptions& options, BaseRunner& runner);
 
     virtual ~Backend();
 
@@ -86,7 +87,7 @@ public:
     void Initialize();
 
     /** Returns the backend options in use */
-    const BackendOptions& GetOptions() const { return mOptions; }
+    const ConfigOptions& GetOptions() const { return mOptions; }
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const;
@@ -263,7 +264,7 @@ private:
     
     uint64_t mReqCount { 0 };
 
-    BackendOptions mOptions;
+    ConfigOptions mOptions;
     BaseRunner& mRunner;
 
     Config mConfig;

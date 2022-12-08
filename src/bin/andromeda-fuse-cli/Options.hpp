@@ -3,61 +3,20 @@
 
 #include <filesystem>
 #include <list>
-#include <stdexcept>
 #include <string>
 #include <utility>
 
 #include "andromeda-fuse/FuseAdapter.hpp"
+#include "andromeda-fuse/FuseOptions.hpp"
 
-#include "andromeda/BackendOptions.hpp"
-#include "andromeda/HTTPRunnerOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/BaseOptions.hpp"
+#include "andromeda/ConfigOptions.hpp"
+#include "andromeda/HTTPOptions.hpp"
 
 /** Manages command line options and config */
-class Options
+class Options : public Andromeda::BaseOptions
 {
 public:
-
-    /** Base class for all Options errors */
-    class Exception : public Andromeda::Utilities::Exception { 
-        using Andromeda::Utilities::Exception::Exception; };
-
-    /** Exception indicating help text should be shown */
-    class ShowHelpException : public Exception {
-        public: ShowHelpException() : Exception("") {} };
-
-    /** Exception indicating the version should be shown */
-    class ShowVersionException : public Exception {
-        public: ShowVersionException() : Exception("") {} };
-
-    /** Exception indicating the command usage was bad */
-    class BadUsageException : public Exception { 
-        public: BadUsageException() : 
-            Exception("Invalid Usage") {} };
-
-    /** Exception indicating the given flag is unknown */
-    class BadFlagException : public Exception { 
-        /** @param flag the unknown flag */
-        public: explicit BadFlagException(const std::string& flag) : 
-            Exception("Unknown Flag: "+flag) {} };
-
-    /** Exception indicating the given option is unknown */
-    class BadOptionException : public Exception { 
-        /** @param option the unknown option */
-        public: explicit BadOptionException(const std::string& option) : 
-            Exception("Unknown Option: "+option) {} };
-
-    /** Exception indicating the given option has a bad value */
-    class BadValueException : public Exception {
-        /** @param option the option name */
-        public: explicit BadValueException(const std::string& option) :
-            Exception("Bad Option Value: "+option) {} };
-
-    /** Exception indicating the given option is required but not present */
-    class MissingOptionException : public Exception {
-        /** @param option the option name */
-        public: explicit MissingOptionException(const std::string& option) :
-            Exception("Missing Option: "+option) {} };
 
     /** Retrieve the standard help text string */
     static std::string HelpText();
@@ -67,21 +26,17 @@ public:
      * @param httpOptions HTTPRunner options ref to fill (if applicable)
      * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::BackendOptions& configOptions, 
-            Andromeda::HTTPRunnerOptions& httpOptions, 
-            AndromedaFuse::FuseAdapter::Options& fuseOptions);
+    Options(Andromeda::ConfigOptions& configOptions, 
+            Andromeda::HTTPOptions& httpOptions, 
+            AndromedaFuse::FuseOptions& fuseOptions);
 
-    /** Parses command line arguments from main */
-    void ParseArgs(int argc, char** argv);
+    virtual bool AddFlag(const std::string& flag) override;
 
-    /** Parses arguments from a config file */
-    void ParseFile(const std::filesystem::path& path);
+    virtual bool AddOption(const std::string& option, const std::string& value) override;
 
-    /** Makes sure all required args were provided */
-    void Validate();
+    virtual void TryAddUrlOption(const std::string& option, const std::string& value) override;
 
-    /** Returns the desired debug level */
-    Andromeda::Debug::Level GetDebugLevel() const { return mDebugLevel; }
+    virtual void Validate() override;
 
     /** Backend connection type */
     enum class ApiType
@@ -128,6 +83,9 @@ public:
         FOLDER
     };
 
+    /** Returns the filesystem directory to mount */
+    const std::string& GetMountPath() const { return mMountPath; }
+
     /** Returns the specified mount item type */
     RootType GetMountRootType() const { return mMountRootType; }
 
@@ -136,17 +94,13 @@ public:
 
 private:
 
-    /** Load config from the given flags and options */
-    void LoadFrom(const Andromeda::Utilities::Flags& flags, const Andromeda::Utilities::Options options);
-
-    Andromeda::BackendOptions& mConfigOptions;
-    Andromeda::HTTPRunnerOptions& mHttpOptions;
-    AndromedaFuse::FuseAdapter::Options& mFuseOptions;
-
-    Andromeda::Debug::Level mDebugLevel { Andromeda::Debug::Level::NONE };
+    Andromeda::ConfigOptions& mConfigOptions;
+    Andromeda::HTTPOptions& mHttpOptions;
+    AndromedaFuse::FuseOptions& mFuseOptions;
 
     ApiType mApiType { static_cast<ApiType>(-1) };
     std::string mApiPath;
+    std::string mMountPath;
 
     std::string mUsername;
     std::string mPassword;

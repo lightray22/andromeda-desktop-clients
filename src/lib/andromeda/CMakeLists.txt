@@ -13,11 +13,13 @@ add_library(andromeda)
 
 set(SOURCE_FILES 
     Backend.cpp
-    BackendOptions.cpp
+    ConfigOptions.cpp
+    BaseOptions.cpp
     Config.cpp
     CLIRunner.cpp
+    Debug.cpp
     HTTPRunner.cpp
-    HTTPRunnerOptions.cpp
+    HTTPOptions.cpp
     Utilities.cpp
     )
 

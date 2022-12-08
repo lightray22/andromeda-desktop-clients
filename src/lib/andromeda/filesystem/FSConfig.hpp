@@ -4,7 +4,7 @@
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
 class Backend;

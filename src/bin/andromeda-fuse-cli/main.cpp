@@ -9,22 +9,25 @@
 #include "Options.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
+#include "andromeda-fuse/FuseOptions.hpp"
+using AndromedaFuse::FuseOptions;
 
 #include "andromeda/Backend.hpp"
 using Andromeda::Backend;
-#include "andromeda/BackendOptions.hpp"
-using Andromeda::BackendOptions;
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
+#include "andromeda/BaseException.hpp"
+using Andromeda::BaseException;
 #include "andromeda/BaseRunner.hpp"
 using Andromeda::BaseRunner;
 #include "andromeda/CLIRunner.hpp"
 using Andromeda::CLIRunner;
+#include "andromeda/Debug.hpp"
+using Andromeda::Debug;
 #include "andromeda/HTTPRunner.hpp"
 using Andromeda::HTTPRunner;
-#include "andromeda/HTTPRunnerOptions.hpp"
-using Andromeda::HTTPRunnerOptions;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Debug;
-using Andromeda::Utilities;
+#include "andromeda/HTTPOptions.hpp"
+using Andromeda::HTTPOptions;
 
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
@@ -51,11 +54,11 @@ int main(int argc, char** argv)
 {
     Debug debug("main"); 
     
-    BackendOptions backendOptions;
-    HTTPRunnerOptions httpOptions;
-    FuseAdapter::Options fuseOptions;
+    ConfigOptions configOptions;
+    HTTPOptions httpOptions;
+    FuseOptions fuseOptions;
 
-    Options options(backendOptions, httpOptions, fuseOptions);
+    Options options(configOptions, httpOptions, fuseOptions);
 
     try
     {
@@ -95,7 +98,6 @@ int main(int argc, char** argv)
     catch (const Options::ShowVersionException& ex)
     {
         std::cout << "version: " << VERSION << std::endl;
-        std::cout << "a2lib-version: " << A2LIBVERSION << std::endl;
         FuseAdapter::ShowVersionText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
@@ -107,6 +109,8 @@ int main(int argc, char** argv)
     }
 
     Debug::SetLevel(options.GetDebugLevel());
+
+    debug << __func__ << "()"; debug.Info();
 
     std::unique_ptr<BaseRunner> runner;
     switch (options.GetApiType())
@@ -126,7 +130,7 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    Backend backend(backendOptions, *runner);
+    Backend backend(configOptions, *runner);
     std::unique_ptr<Folder> folder;
 
     try
@@ -148,7 +152,7 @@ int main(int argc, char** argv)
                 folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
         }
     }
-    catch (const Utilities::Exception& ex)
+    catch (const BaseException& ex)
     {
         std::cout << ex.what() << std::endl;
         return static_cast<int>(ExitCode::BACKEND_INIT);
@@ -159,8 +163,8 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseAdapter fuseAdapter(*folder, fuseOptions, static_cast<bool>(Debug::GetLevel())
-            ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
+        FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions, 
+            static_cast<bool>(Debug::GetLevel()) ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
     }
     catch (const FuseAdapter::Exception& ex)
     {

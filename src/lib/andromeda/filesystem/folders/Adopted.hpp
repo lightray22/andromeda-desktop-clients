@@ -3,7 +3,7 @@
 #define LIBA2_ADOPTED_H_
 
 #include "PlainFolder.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
 class Backend;

@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Backend.hpp"
-#include "Utilities.hpp"
+#include "BaseException.hpp"
 
 namespace Andromeda {
 

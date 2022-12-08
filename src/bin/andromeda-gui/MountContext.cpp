@@ -12,30 +12,32 @@ using Andromeda::Filesystem::Folder;
 using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
+#include "andromeda-fuse/FuseOptions.hpp"
+using AndromedaFuse::FuseOptions;
 
 namespace fs = std::filesystem;
 
 /*****************************************************/
-MountContext::MountContext(bool home, Backend& backend, FuseAdapter::Options& options) : 
+MountContext::MountContext(Backend& backend, bool home, std::string mountPath, FuseOptions& options) : 
     mDebug("MountContext") 
 {
-    mDebug << __func__ << "(mountPath:" << options.mountPath << ")"; mDebug.Info();
+    mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();
 
-    if (home) options.mountPath = InitHomeRoot()+"/"+options.mountPath;
+    if (home) mountPath = InitHomeRoot()+"/"+mountPath;
 
     try
     {
-        if (fs::exists(options.mountPath))
+        if (fs::exists(mountPath))
         {
-            if (!fs::is_directory(options.mountPath) || !fs::is_empty(options.mountPath))
-                throw NonEmptyMountException(options.mountPath);
+            if (!fs::is_directory(mountPath) || !fs::is_empty(mountPath))
+                throw NonEmptyMountException(mountPath);
         #if WIN32
             // Windows auto-creates the directory and fails if it already exists
-            fs::remove(options.mountPath);
+            fs::remove(mountPath);
         #endif
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (home) fs::create_directory(options.mountPath);
+        else if (home) fs::create_directory(mountPath);
     #endif
     }
     catch (const fs::filesystem_error& err)
@@ -47,7 +49,7 @@ MountContext::MountContext(bool home, Backend& backend, FuseAdapter::Options& op
     mRootFolder = std::make_unique<SuperRoot>(backend);
 
     mFuseAdapter = std::make_unique<FuseAdapter>(
-        *mRootFolder, options, FuseAdapter::RunMode::THREAD);
+        mountPath, *mRootFolder, options, FuseAdapter::RunMode::THREAD);
 }
 
 /*****************************************************/
@@ -85,7 +87,7 @@ MountContext::~MountContext()
 /*****************************************************/
 const std::string& MountContext::GetMountPath() const
 {
-    return mFuseAdapter->GetOptions().mountPath;
+    return mFuseAdapter->GetMountPath();
 }
 
 /*****************************************************/
