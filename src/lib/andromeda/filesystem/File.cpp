@@ -5,7 +5,10 @@
 #include "File.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/ConfigOptions.hpp"
+using Andromeda::Backend::ConfigOptions;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -17,7 +20,7 @@ size_t min64st(uint64_t s1, size_t s2)
 }
 
 /*****************************************************/
-File::File(Backend& backend, const nlohmann::json& data, Folder& parent) : 
+File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) : 
     Item(backend), mDebug("File",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -32,7 +35,7 @@ File::File(Backend& backend, const nlohmann::json& data, Folder& parent) :
         data.at("filesystem").get_to(fsid);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 
     mFsConfig = &FSConfig::LoadByID(mBackend, fsid);
 
@@ -55,7 +58,7 @@ void File::Refresh(const nlohmann::json& data)
         data.at("size").get_to(newSize);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 
     if (newSize == mBackendSize) return;
 

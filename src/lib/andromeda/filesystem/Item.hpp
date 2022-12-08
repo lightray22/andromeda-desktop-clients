@@ -9,7 +9,8 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 class FSConfig;
@@ -21,8 +22,8 @@ class Item
 {
 public:
 
-    class Exception : public Andromeda::BaseException { public:
-        using Andromeda::BaseException::BaseException; };
+    class Exception : public BaseException { public:
+        using BaseException::BaseException; };
     
     /** Exception indicating this item has no parent */
     class NullParentException : public Exception { public:
@@ -92,7 +93,7 @@ protected:
      * Construct a new item
      * @param backend reference to backend
      */
-    Item(Backend& backend);
+    Item(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
     virtual void Initialize(const nlohmann::json& data);
@@ -119,7 +120,7 @@ protected:
     virtual void SubMove(Folder& newParent, bool overwrite) = 0;
     
     /** Reference to the API backend */
-    Backend& mBackend;
+    Backend::BackendImpl& mBackend;
 
     /** Pointer to parent folder */
     Folder* mParent { nullptr };
@@ -147,7 +148,7 @@ protected:
 
 private:
 
-    Andromeda::Debug mDebug;
+    Debug mDebug;
 
     Item(const Item&) = delete; // no copy
 };

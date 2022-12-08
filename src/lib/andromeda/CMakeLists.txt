@@ -12,14 +12,8 @@ endif()
 add_library(andromeda)
 
 set(SOURCE_FILES 
-    Backend.cpp
-    ConfigOptions.cpp
     BaseOptions.cpp
-    Config.cpp
-    CLIRunner.cpp
     Debug.cpp
-    HTTPRunner.cpp
-    HTTPOptions.cpp
     Utilities.cpp
     )
 
@@ -37,6 +31,7 @@ install(TARGETS andromeda
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+add_subdirectory(backend)
 add_subdirectory(filesystem)
 
 # include/link libhttplib

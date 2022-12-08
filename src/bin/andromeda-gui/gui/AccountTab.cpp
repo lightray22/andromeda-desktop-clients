@@ -7,10 +7,10 @@
 #include "AccountTab.hpp"
 #include "ui_AccountTab.h"
 
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 
 #include "andromeda-fuse/FuseOptions.hpp"
 using AndromedaFuse::FuseOptions;
@@ -48,7 +48,7 @@ void AccountTab::Mount(bool autoMount)
 
     FuseOptions fuseOptions;
 
-    Backend& backend { mBackendContext->GetBackend() };
+    BackendImpl& backend { mBackendContext->GetBackend() };
     std::string mountPath { backend.GetName(false) };
     // TODO replace / in mountPath just in case
 

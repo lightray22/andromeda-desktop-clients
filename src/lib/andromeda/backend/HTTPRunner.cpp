@@ -5,9 +5,10 @@
 
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options) : 
@@ -169,4 +170,5 @@ void HTTPRunner::HandleRedirect(const std::string& location)
     }
 }
 
+} // namespace Backend
 } // namespace Andromeda

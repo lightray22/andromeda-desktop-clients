@@ -3,14 +3,15 @@
 
 #include "Filesystems.hpp"
 #include "Filesystem.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
-Filesystems::Filesystems(Backend& backend, Folder& parent) : 
+Filesystems::Filesystems(BackendImpl& backend, Folder& parent) : 
     Folder(backend), mDebug("Filesystems",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -43,7 +44,7 @@ void Filesystems::LoadItems()
         }
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 
     SyncContents(newItems);
 }

@@ -4,18 +4,19 @@
 #include <chrono>
 #include <nlohmann/json_fwd.hpp>
 
-#include "BaseException.hpp"
-#include "Debug.hpp"
+#include "andromeda/BaseException.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
-class Backend;
+class BackendImpl;
 
 /** Checks and stores backend config */
 class Config
 {
 public:
-    explicit Config(Backend& backend);
+    explicit Config(BackendImpl& backend);
     
     /** The Major API version this client works with */
     static constexpr int API_VERSION { 2 };
@@ -43,7 +44,7 @@ public:
     void Initialize();
 
     /** Adds account-specific limits */
-    void LoadAccountLimits(Backend& backend);
+    void LoadAccountLimits(BackendImpl& backend);
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const { return mReadOnly; }
@@ -59,7 +60,7 @@ public:
 
 private:
     Debug mDebug;
-    Backend& mBackend;
+    BackendImpl& mBackend;
 
     bool mReadOnly { false };
     bool mRandWrite { true };
@@ -68,6 +69,7 @@ private:
     uint64_t mUploadMaxFiles { 0 };
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
 #endif

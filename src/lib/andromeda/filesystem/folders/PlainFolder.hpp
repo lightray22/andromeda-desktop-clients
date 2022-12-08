@@ -9,7 +9,8 @@
 #include "andromeda/filesystem/Folder.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 namespace Folders {
@@ -26,7 +27,7 @@ public:
      * @param backend reference to backend
      * @param id ID of folder to load
      */
-    static std::unique_ptr<PlainFolder> LoadByID(Backend& backend, const std::string& id);
+    static std::unique_ptr<PlainFolder> LoadByID(Backend::BackendImpl& backend, const std::string& id);
     
     /** 
      * Construct with JSON data
@@ -35,7 +36,7 @@ public:
      * @param parent pointer to parent
      * @param haveItems true if JSON has subitems
      */
-    explicit PlainFolder(Backend& backend, const nlohmann::json* data = nullptr, 
+    explicit PlainFolder(Backend::BackendImpl& backend, const nlohmann::json* data = nullptr, 
         Folder* parent = nullptr, bool haveItems = false);
 
 protected:

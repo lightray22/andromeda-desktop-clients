@@ -10,8 +10,8 @@
 #include "andromeda-fuse/FuseOptions.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/ConfigOptions.hpp"
-#include "andromeda/HTTPOptions.hpp"
+#include "andromeda/backend/ConfigOptions.hpp"
+#include "andromeda/backend/HTTPOptions.hpp"
 
 /** Manages command line options and config */
 class Options : public Andromeda::BaseOptions
@@ -26,8 +26,8 @@ public:
      * @param httpOptions HTTPRunner options ref to fill (if applicable)
      * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::ConfigOptions& configOptions, 
-            Andromeda::HTTPOptions& httpOptions, 
+    Options(Andromeda::Backend::ConfigOptions& configOptions, 
+            Andromeda::Backend::HTTPOptions& httpOptions, 
             AndromedaFuse::FuseOptions& fuseOptions);
 
     virtual bool AddFlag(const std::string& flag) override;
@@ -94,8 +94,8 @@ public:
 
 private:
 
-    Andromeda::ConfigOptions& mConfigOptions;
-    Andromeda::HTTPOptions& mHttpOptions;
+    Andromeda::Backend::ConfigOptions& mConfigOptions;
+    Andromeda::Backend::HTTPOptions& mHttpOptions;
     AndromedaFuse::FuseOptions& mFuseOptions;
 
     ApiType mApiType { static_cast<ApiType>(-1) };

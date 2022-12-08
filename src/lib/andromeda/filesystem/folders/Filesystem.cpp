@@ -1,15 +1,17 @@
 #include <nlohmann/json.hpp>
 
 #include "Filesystem.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/FSConfig.hpp"
+using Andromeda::Filesystem::FSConfig;
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
-std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::string& fsid)
+std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std::string& fsid)
 {
     backend.RequireAuthentication();
 
@@ -19,7 +21,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(Backend& backend, const std::st
 }
 
 /*****************************************************/
-Filesystem::Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent) :
+Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
     PlainFolder(backend), mDebug("Filesystem",this) 
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -51,7 +53,7 @@ void Filesystem::LoadItems()
         data.at("id").get_to(mId); // late load
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 
     Folder::LoadItemsFrom(data);
 }

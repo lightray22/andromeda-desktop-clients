@@ -1,13 +1,14 @@
 
 #include <sstream>
 
-#include "BaseOptions.hpp"
 #include "HTTPOptions.hpp"
-#include "Utilities.hpp"
+#include "andromeda/BaseOptions.hpp"
+#include "andromeda/Utilities.hpp"
 
 using namespace std::chrono;
 
 namespace Andromeda {
+namespace Backend {
 
 /*****************************************************/
 std::string HTTPOptions::HelpText()
@@ -69,4 +70,5 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
     return true; 
 }
 
+} // namespace Backend
 } // namespace Andromeda

@@ -9,7 +9,8 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
-namespace Andromeda { class Backend; 
+namespace Andromeda { 
+    namespace Backend { class BackendImpl; }
     namespace Filesystem { class Folder; }
 }
 
@@ -45,7 +46,7 @@ public:
      * @param mountPath filesystem path to mount
      * @param options FUSE adapter options
      */
-    MountContext(Andromeda::Backend& backend,
+    MountContext(Andromeda::Backend::BackendImpl& backend,
         bool home, std::string mountPath, 
         AndromedaFuse::FuseOptions& options);
 

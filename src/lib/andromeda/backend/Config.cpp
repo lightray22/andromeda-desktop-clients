@@ -3,12 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include "Config.hpp"
-#include "Backend.hpp"
+#include "BackendImpl.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
 /*****************************************************/
-Config::Config(Backend& backend) : mDebug("Config",this), mBackend(backend) { }
+Config::Config(BackendImpl& backend) : mDebug("Config",this), mBackend(backend) { }
 
 /*****************************************************/
 void Config::Initialize()
@@ -34,11 +35,11 @@ void Config::Initialize()
         config.at("core").at("features").at("read_only").get_to(mReadOnly);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
-void Config::LoadAccountLimits(Backend& backend)
+void Config::LoadAccountLimits(BackendImpl& backend)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
@@ -52,7 +53,8 @@ void Config::LoadAccountLimits(Backend& backend)
         }
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
+} // namespace Backend
 } // namespace Andromeda

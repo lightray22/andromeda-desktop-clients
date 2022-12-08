@@ -17,7 +17,8 @@
 #endif
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 class File;
@@ -95,7 +96,7 @@ protected:
      * Construct a new abstract folder
      * @param backend reference to backend
      */
-    Folder(Backend& backend);
+    Folder(Backend::BackendImpl& backend);
 
     /** populate itemMap from the backend */
     virtual void LoadItems() = 0;

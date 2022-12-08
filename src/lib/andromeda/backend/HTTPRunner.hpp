@@ -10,10 +10,11 @@
 #include "httplib.h"
 
 #include "BaseRunner.hpp"
-#include "Debug.hpp"
 #include "HTTPOptions.hpp"
+#include "andromeda/Debug.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
 class HTTPRunnerFriend;
 struct RunnerInput;
@@ -90,6 +91,7 @@ private:
     bool mCanRetry { false };
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
 #endif

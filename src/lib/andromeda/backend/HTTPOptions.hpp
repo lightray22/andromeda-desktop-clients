@@ -5,6 +5,7 @@
 #include <string>
 
 namespace Andromeda {
+namespace Backend {
 
 /** HTTP config options */
 struct HTTPOptions
@@ -40,6 +41,7 @@ struct HTTPOptions
     std::string proxyPassword;
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
 #endif // LIBA2_HTTPOPTIONS_H_

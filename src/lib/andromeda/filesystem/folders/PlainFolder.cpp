@@ -2,16 +2,19 @@
 #include <nlohmann/json.hpp>
 
 #include "PlainFolder.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/FSConfig.hpp"
+using Andromeda::Filesystem::FSConfig;
 #include "andromeda/filesystem/File.hpp"
+using Andromeda::Filesystem::File;
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
-std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::string& id)
+std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const std::string& id)
 {
     backend.RequireAuthentication();
 
@@ -21,7 +24,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(Backend& backend, const std::
 }
 
 /*****************************************************/
-PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
+PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
     Folder(backend), mDebug("PlainFolder",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -39,7 +42,7 @@ PlainFolder::PlainFolder(Backend& backend, const nlohmann::json* data, Folder* p
             data->at("filesystem").get_to(fsid);
         }
         catch (const nlohmann::json::exception& ex) {
-            throw Backend::JSONErrorException(ex.what()); }
+            throw BackendImpl::JSONErrorException(ex.what()); }
 
         mFsConfig = &FSConfig::LoadByID(backend, fsid);
     }

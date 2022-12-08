@@ -9,12 +9,12 @@
 #include "andromeda-fuse/FuseOptions.hpp"
 using AndromedaFuse::FuseOptions;
 
-#include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
-#include "andromeda/HTTPOptions.hpp"
-using Andromeda::HTTPOptions;
+#include "andromeda/backend/ConfigOptions.hpp"
+using Andromeda::Backend::ConfigOptions;
+#include "andromeda/backend/HTTPOptions.hpp"
+using Andromeda::Backend::HTTPOptions;
 
 using namespace std::chrono;
 

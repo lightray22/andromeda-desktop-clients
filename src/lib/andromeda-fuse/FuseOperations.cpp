@@ -11,16 +11,16 @@
 using AndromedaFuse::FuseAdapter;
 #include "FuseOperations.hpp"
 
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
-#include "andromeda/HTTPRunner.hpp"
-using Andromeda::HTTPRunner;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/HTTPRunner.hpp"
+using Andromeda::Backend::HTTPRunner;
 #include "andromeda/filesystem/Item.hpp"
 using Andromeda::Filesystem::Item;
 #include "andromeda/filesystem/File.hpp"
@@ -74,19 +74,19 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     }
 
     // Backend exceptions
-    catch (const Backend::UnsupportedException& e)
+    catch (const BackendImpl::UnsupportedException& e)
     {
         debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
     }
-    catch (const Backend::ReadOnlyException& e)
+    catch (const BackendImpl::ReadOnlyException& e)
     {
         debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
     }
-    catch (const Backend::DeniedException& e)
+    catch (const BackendImpl::DeniedException& e)
     {
         debug << fname << "... " << e.what(); debug.Info(); return -EACCES;
     }
-    catch (const Backend::NotFoundException& e)  
+    catch (const BackendImpl::NotFoundException& e)  
     {
         debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
     }

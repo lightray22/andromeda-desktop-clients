@@ -1,15 +1,15 @@
-#ifndef LIBA2_BACKEND_H_
-#define LIBA2_BACKEND_H_
+#ifndef LIBA2_BACKENDIMPL_H_
+#define LIBA2_BACKENDIMPL_H_
 
 #include <map>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
 
-#include "ConfigOptions.hpp"
-#include "BaseException.hpp"
 #include "Config.hpp"
-#include "Debug.hpp"
+#include "ConfigOptions.hpp"
+#include "andromeda/BaseException.hpp"
+#include "andromeda/Debug.hpp"
 
 #if WIN32 && defined(CreateFile)
 // thanks for nothing, Windows >:(
@@ -17,12 +17,13 @@
 #endif
 
 namespace Andromeda {
+namespace Backend {
 
 class BaseRunner;
 struct RunnerInput;
 
 /** Manages communication with the backend API */
-class Backend
+class BackendImpl
 {
 public:
 
@@ -79,9 +80,9 @@ public:
         explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
     /** @param runner the BaseRunner to use */
-    explicit Backend(const ConfigOptions& options, BaseRunner& runner);
+    explicit BackendImpl(const ConfigOptions& options, BaseRunner& runner);
 
-    virtual ~Backend();
+    virtual ~BackendImpl();
 
     /** Initializes the backend by loading config */
     void Initialize();
@@ -271,7 +272,7 @@ private:
     Debug mDebug;
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
-#endif
-
+#endif // LIBA2_BACKENDIMPL_H_

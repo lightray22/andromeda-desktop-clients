@@ -1,15 +1,17 @@
 #include <nlohmann/json.hpp>
 
 #include "Adopted.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
-Adopted::Adopted(Backend& backend, Folder& parent) :
+Adopted::Adopted(BackendImpl& backend, Folder& parent) :
     PlainFolder(backend, nullptr, &parent), mDebug("Adopted",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();

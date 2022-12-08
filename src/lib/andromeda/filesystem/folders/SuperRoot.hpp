@@ -15,7 +15,7 @@ class SuperRoot : public Folder
 public:
 
     /** @param backend backend reference */
-    explicit SuperRoot(Backend& backend);
+    explicit SuperRoot(Backend::BackendImpl& backend);
     
     virtual ~SuperRoot(){};
 

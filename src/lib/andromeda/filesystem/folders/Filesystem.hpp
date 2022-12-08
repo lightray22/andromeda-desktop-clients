@@ -10,7 +10,8 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 namespace Folders {
@@ -27,7 +28,7 @@ public:
      * @param backend reference to backend
      * @param fsid ID of filesystem to load
      */
-    static std::unique_ptr<Filesystem> LoadByID(Backend& backend, const std::string& fsid);
+    static std::unique_ptr<Filesystem> LoadByID(Backend::BackendImpl& backend, const std::string& fsid);
 
     /** 
      * Construct with root folder JSON data
@@ -35,7 +36,7 @@ public:
      * @param data pre-loaded JSON data
      * @param parent optional pointer to parent
      */
-    Filesystem(Backend& backend, const nlohmann::json& data, Folder* parent = nullptr);
+    Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent = nullptr);
 
     virtual const std::string& GetID() override;
 

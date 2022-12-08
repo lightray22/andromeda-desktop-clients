@@ -3,8 +3,8 @@
 #include <nlohmann/json.hpp>
 
 #include "FSConfig.hpp"
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -12,7 +12,7 @@ namespace Filesystem {
 typedef std::map<std::string, FSConfig> CacheMap; static CacheMap sCache;
 
 /*****************************************************/
-const FSConfig& FSConfig::LoadByID(Backend& backend, const std::string& id)
+const FSConfig& FSConfig::LoadByID(BackendImpl& backend, const std::string& id)
 {
     CacheMap::iterator it { sCache.find(id) };
 
@@ -55,7 +55,7 @@ FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
         }
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 } // namespace Filesystem

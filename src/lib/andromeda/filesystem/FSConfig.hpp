@@ -7,7 +7,8 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 
@@ -22,7 +23,7 @@ public:
      * @param backend reference to backend
      * @param id ID of filesystem to load
      */
-    static const FSConfig& LoadByID(Backend& backend, const std::string& id);
+    static const FSConfig& LoadByID(Backend::BackendImpl& backend, const std::string& id);
 
     /** 
      * Construct with JSON data

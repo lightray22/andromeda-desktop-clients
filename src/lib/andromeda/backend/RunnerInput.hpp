@@ -4,6 +4,7 @@
 #include <chrono>
 
 namespace Andromeda {
+namespace Backend {
 
 /** API app-action call parameters */
 struct RunnerInput
@@ -27,6 +28,7 @@ struct RunnerInput
     /** map of input files */  Files files = {};
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
 #endif // LIBA2_RUNNERINPUT_H_

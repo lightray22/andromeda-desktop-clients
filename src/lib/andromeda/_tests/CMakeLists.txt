@@ -3,7 +3,6 @@ add_executable(andromeda_tests)
 
 set(SOURCE_FILES 
     BaseOptionsTest.cpp
-    HTTPRunnerTest.cpp
     UtilitiesTest.cpp
     )
 

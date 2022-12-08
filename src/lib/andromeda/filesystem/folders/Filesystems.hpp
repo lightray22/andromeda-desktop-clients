@@ -17,7 +17,7 @@ public:
      * @param backend backend reference
      * @param parent parent folder reference
      */
-    Filesystems(Backend& backend, Folder& parent);
+    Filesystems(Backend::BackendImpl& backend, Folder& parent);
     
     virtual ~Filesystems(){};
 

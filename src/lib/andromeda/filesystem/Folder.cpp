@@ -3,9 +3,14 @@
 
 #include "Folder.hpp"
 #include "File.hpp"
-#include "andromeda/Backend.hpp"
 #include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/ConfigOptions.hpp"
+using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/folders/PlainFolder.hpp"
+using Andromeda::Filesystem::Folders::PlainFolder;
 
 using namespace std::chrono;
 
@@ -13,7 +18,7 @@ namespace Andromeda {
 namespace Filesystem {
 
 /*****************************************************/
-Folder::Folder(Backend& backend) : 
+Folder::Folder(BackendImpl& backend) : 
     Item(backend), mDebug("Folder",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -115,7 +120,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
                 std::forward_as_tuple(folderJ.at("name")), std::forward_as_tuple(folderJ, newFolder));
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 
     SyncContents(newItems);
 

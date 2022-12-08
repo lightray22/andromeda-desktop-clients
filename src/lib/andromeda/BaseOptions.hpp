@@ -103,7 +103,7 @@ public:
     virtual void Validate() { };
 
     /** Returns the desired debug level */
-    Andromeda::Debug::Level GetDebugLevel() const { return mDebugLevel; }
+    Debug::Level GetDebugLevel() const { return mDebugLevel; }
 
 protected:
 
@@ -115,7 +115,7 @@ protected:
 
 private:
 
-    Andromeda::Debug::Level mDebugLevel { Andromeda::Debug::Level::NONE };
+    Debug::Level mDebugLevel { Debug::Level::NONE };
 };
 
 } // namespace Andromeda

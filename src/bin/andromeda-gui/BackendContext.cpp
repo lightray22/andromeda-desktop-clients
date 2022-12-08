@@ -1,10 +1,10 @@
 
 #include "BackendContext.hpp"
 
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
-#include "andromeda/HTTPRunner.hpp"
-using Andromeda::HTTPRunner;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/HTTPRunner.hpp"
+using Andromeda::Backend::HTTPRunner;
 
 /*****************************************************/
 BackendContext::BackendContext(
@@ -19,8 +19,8 @@ BackendContext::BackendContext(
     mRunner = std::make_unique<HTTPRunner>(
         urlPair.first, urlPair.second, mHttpOptions);
 
-    mBackend = std::make_unique<Backend>(mConfigOptions, *mRunner);
-    Backend& backend { *mBackend }; // context will get moved
+    mBackend = std::make_unique<BackendImpl>(mConfigOptions, *mRunner);
+    BackendImpl& backend { *mBackend }; // context will get moved
 
     backend.Initialize();
     backend.Authenticate(username, password, twofactor);

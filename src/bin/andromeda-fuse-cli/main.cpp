@@ -12,22 +12,22 @@ using AndromedaFuse::FuseAdapter;
 #include "andromeda-fuse/FuseOptions.hpp"
 using AndromedaFuse::FuseOptions;
 
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
-#include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
-#include "andromeda/BaseRunner.hpp"
-using Andromeda::BaseRunner;
-#include "andromeda/CLIRunner.hpp"
-using Andromeda::CLIRunner;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
-#include "andromeda/HTTPRunner.hpp"
-using Andromeda::HTTPRunner;
-#include "andromeda/HTTPOptions.hpp"
-using Andromeda::HTTPOptions;
+#include "andromeda/backend/BaseRunner.hpp"
+using Andromeda::Backend::BaseRunner;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/ConfigOptions.hpp"
+using Andromeda::Backend::ConfigOptions;
+#include "andromeda/backend/CLIRunner.hpp"
+using Andromeda::Backend::CLIRunner;
+#include "andromeda/backend/HTTPRunner.hpp"
+using Andromeda::Backend::HTTPRunner;
+#include "andromeda/backend/HTTPOptions.hpp"
+using Andromeda::Backend::HTTPOptions;
 
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
@@ -130,7 +130,7 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    Backend backend(configOptions, *runner);
+    BackendImpl backend(configOptions, *runner);
     std::unique_ptr<Folder> folder;
 
     try

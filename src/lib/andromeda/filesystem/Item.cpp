@@ -4,13 +4,14 @@
 #include "Item.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 
 namespace Andromeda {
 namespace Filesystem {
 
 /*****************************************************/
-Item::Item(Backend& backend) : 
+Item::Item(BackendImpl& backend) : 
     mBackend(backend), mDebug("Item",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
@@ -38,7 +39,7 @@ void Item::Initialize(const nlohmann::json& data)
         }
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
@@ -59,7 +60,7 @@ void Item::Refresh(const nlohmann::json& data)
         if (!accessedJ.is_null()) accessedJ.get_to(mAccessed);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw Backend::JSONErrorException(ex.what()); }
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/

@@ -4,10 +4,11 @@
 #include <map>
 #include <string>
 
-#include "Backend.hpp"
-#include "BaseException.hpp"
+#include "BackendImpl.hpp"
+#include "andromeda/BaseException.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
 struct RunnerInput;
 
@@ -16,7 +17,7 @@ class BaseRunner
 {
 public:
     /** Indicates an inability to reach the API endpoint */
-    class EndpointException : public Backend::Exception { public:
+    class EndpointException : public BackendImpl::Exception { public:
         /** @param code HTTP code returned by the server */
         explicit EndpointException(int code) : 
             Exception("Endpoint: Code "+std::to_string(code)) {};
@@ -40,6 +41,7 @@ public:
     virtual bool RequiresSession() = 0;
 };
 
+} // namespace Backend
 } // namespace Andromeda
 
 #endif // LIBA2_BASERUNNER_H_

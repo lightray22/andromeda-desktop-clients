@@ -4,8 +4,8 @@
 
 #include "MountContext.hpp"
 
-#include "andromeda/Backend.hpp"
-using Andromeda::Backend;
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 #include "andromeda/filesystem/folders/SuperRoot.hpp"
@@ -18,7 +18,7 @@ using AndromedaFuse::FuseOptions;
 namespace fs = std::filesystem;
 
 /*****************************************************/
-MountContext::MountContext(Backend& backend, bool home, std::string mountPath, FuseOptions& options) : 
+MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
     mDebug("MountContext") 
 {
     mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();

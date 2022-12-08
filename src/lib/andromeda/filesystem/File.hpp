@@ -10,7 +10,8 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 class Folder;
@@ -36,7 +37,7 @@ public:
      * @param data JSON data from backend
      * @param parent reference to parent folder
      */
-    File(Backend& backend, const nlohmann::json& data, Folder& parent);
+    File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
     /**
      * Read data from the file

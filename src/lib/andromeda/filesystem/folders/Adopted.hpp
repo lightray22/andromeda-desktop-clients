@@ -6,7 +6,8 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class Backend;
+
+namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 class Folder;
@@ -24,7 +25,7 @@ public:
      * @param backend backend reference
      * @param parent reference to parent 
      */
-    Adopted(Backend& backend, Folder& parent);
+    Adopted(Backend::BackendImpl& backend, Folder& parent);
 
 protected:
 

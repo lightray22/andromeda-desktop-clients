@@ -3,14 +3,15 @@
 #include "Adopted.hpp"
 #include "Filesystems.hpp"
 #include "SuperRoot.hpp"
-#include "andromeda/Backend.hpp"
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
 /*****************************************************/
-SuperRoot::SuperRoot(Backend& backend) : 
+SuperRoot::SuperRoot(BackendImpl& backend) : 
     Folder(backend), mDebug("SuperRoot",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();

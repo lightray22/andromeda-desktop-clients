@@ -9,9 +9,10 @@
 
 #include "CLIRunner.hpp"
 #include "RunnerInput.hpp"
-#include "Utilities.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
 /*****************************************************/
 CLIRunner::CLIRunner(const std::string& apiPath) :
@@ -81,4 +82,5 @@ std::string CLIRunner::RunAction(const RunnerInput& input)
     return output;
 }
 
+} // namespace Backend
 } // namespace Andromeda
