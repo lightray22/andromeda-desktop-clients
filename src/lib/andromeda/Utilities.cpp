@@ -129,4 +129,50 @@ void Utilities::SilentReadConsole(std::string& retval)
     std::cout << std::endl;
 }
 
+#if WIN32
+#include <stdlib.h>
+#else // !WIN32
+#include <unistd.h>
+#endif // WIN32
+
+/*****************************************************/
+Utilities::StringMap Utilities::GetEnvironment()
+{
+    char** env { nullptr };
+#if WIN32
+    env = *__p__environ();
+#else // !WIN32
+    extern char** environ;
+    env = environ;
+#endif // WIN32
+
+    StringMap retval;
+
+    while (env != nullptr && *env != nullptr)
+        retval.emplace(split(*env++, "="));
+
+    return retval;
+}
+
+/*****************************************************/
+std::string Utilities::GetHomeDirectory()
+{
+    #if WIN32
+        #pragma warning(push)
+        #pragma warning(disable:4996) // getenv is safe in C++11
+    #endif
+
+    for (const char* env : { "HOME", "HOMEDIR", "HOMEPATH" })
+    {
+        const char* path { std::getenv(env) };
+        if (path != nullptr) return path;
+    }
+
+    #if WIN32
+        #pragma warning(pop)
+    #endif
+
+    return ""; // not found
+}
+
 } // namespace Andromeda

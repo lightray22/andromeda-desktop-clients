@@ -26,7 +26,10 @@ enum class ExitCode
     BACKEND_RESP
 };
 
-int main(int argc, char** argv, char** env) // TODO env vars
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
+
+int main(int argc, char** argv)
 {
     Debug debug("main");
     
@@ -38,7 +41,9 @@ int main(int argc, char** argv, char** env) // TODO env vars
 
     try
     {
-        commandLine.ParseArgs(static_cast<size_t>(argc), argv);
+        options.ParseConfig("andromeda-cli");
+
+        commandLine.ParseFullArgs(static_cast<size_t>(argc), argv);
 
         options.Validate();
     }

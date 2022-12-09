@@ -93,6 +93,23 @@ void BaseOptions::ParseFile(const std::filesystem::path& path)
 }
 
 /*****************************************************/
+void BaseOptions::ParseConfig(const std::string& name)
+{
+    std::list<std::string> paths { 
+        "/etc/andromeda", "/usr/local/etc/andromeda" };
+
+    std::string home { Utilities::GetHomeDirectory() };
+    if (!home.empty()) paths.push_back(home+"/.config/andromeda");
+
+    paths.push_back("."); for (std::string path : paths)
+    {
+        path += "/"+name+".conf";
+        if (std::filesystem::is_regular_file(path))
+            ParseFile(path);
+    }
+}
+
+/*****************************************************/
 void BaseOptions::ParseUrl(const std::string& url)
 {
     Flags flags; Options options;

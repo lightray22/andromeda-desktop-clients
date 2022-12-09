@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "CommandLine.hpp"
 #include "Options.hpp"
@@ -13,9 +14,6 @@ using Andromeda::BaseOptions;
 using Andromeda::Utilities;
 #include "andromeda/backend/RunnerInput.hpp"
 using Andromeda::Backend::RunnerInput;
-
-#include "andromeda/Debug.hpp"
-Andromeda::Debug sDebug("CommandLine"); // TODO tmp
 
 /*****************************************************/
 std::string CommandLine::HelpText()
@@ -45,29 +43,44 @@ std::string CommandLine::HelpText()
 CommandLine::CommandLine(Options& options) : mOptions(options) { }
 
 /*****************************************************/
-std::string getNextValue(size_t argc, const char* const* argv, size_t& i)
+std::string getNextValue(Utilities::StringList& argv, size_t& i)
 {
-    return (argc > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
+    return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
 }
 
+#include "andromeda/Debug.hpp"
+Andromeda::Debug sDebug("CommandLine"); // TODO tmp
+
 /*****************************************************/
-void CommandLine::ParseArgs(size_t argc, const char* const* argv)
+void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
 {
     Andromeda::Debug::SetLevel(Andromeda::Debug::Level::DETAILS);
 
-    size_t inputIdx { mOptions.ParseArgs(argc, argv, true) };
-    if (argc < inputIdx+1) throw BaseOptions::BadUsageException("missing app/action");
+    size_t shift { mOptions.ParseArgs(argc, argv, true) };
+    argc -= shift; argv += shift;
 
-    mInput.app = argv[inputIdx];
-    mInput.action = argv[inputIdx+1];
+    if (argc < 2) throw BaseOptions::BadUsageException("missing app/action");
 
-    const char* const* iargv { argv + inputIdx + 2 };
-    const size_t iargc { argc - inputIdx - 2 };
+    mInput.app = argv[0];
+    mInput.action = argv[1];
+
+    std::vector<std::string> args;
+    for (size_t i = 2; i < argc; i++)
+        args.push_back(argv[i]);
+
+    for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment())
+    {
+        if (Utilities::startsWith(pair.first,"andromeda_"))
+        {
+            const std::string key { Utilities::split(pair.first,"_").second };
+            if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
+        }
+    }
 
     // see andromeda-server CLI::GetInput()
-    for (size_t i = 0; i < iargc; i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
-        std::string param { iargv[i] };
+        std::string param { args[i] };
         if (param.size() < 2 || !Utilities::startsWith(param,"--"))
             throw BaseOptions::BadUsageException(
                 "expected key at action arg "+std::to_string(i));
@@ -82,13 +95,9 @@ void CommandLine::ParseArgs(size_t argc, const char* const* argv)
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty @ key at action arg "+std::to_string(i));
 
-            std::string val { getNextValue(iargc, iargv, i) };
+            std::string val { getNextValue(args, i) };
             if (val.empty()) throw BaseOptions::BadUsageException(
                 "expected @ value at action arg "+std::to_string(i));
-
-            /** if (!is_file($val) || ($fdat = file_get_contents($val)) === false) 
-                    throw new Exceptions\InvalidFileException($val);
-                $params->AddParam($param, trim($fdat));*/
 
             if (!std::filesystem::exists(val) || std::filesystem::is_directory(val))
                 throw BaseOptions::Exception("Inaccessible file: "+val);
@@ -114,7 +123,7 @@ void CommandLine::ParseArgs(size_t argc, const char* const* argv)
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty % key at action arg "+std::to_string(i));
                 
-            std::string val { getNextValue(iargc, iargv, i) };
+            std::string val { getNextValue(args, i) };
             if (val.empty()) throw BaseOptions::BadUsageException(
                 "expected % value at action arg "+std::to_string(i));
 
@@ -129,7 +138,7 @@ void CommandLine::ParseArgs(size_t argc, const char* const* argv)
         }
         else // plain argument
         {
-            mInput.params[param] = getNextValue(iargc, iargv, i);
+            mInput.params[param] = getNextValue(args, i);
         }
     }
 }

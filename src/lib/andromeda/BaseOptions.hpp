@@ -80,6 +80,12 @@ public:
      */
     void ParseFile(const std::filesystem::path& path);
 
+    /**
+     * Finds and parses arguments from a config file
+     * @param prefix the name of the config file to find
+     */
+    void ParseConfig(const std::string& prefix);
+
     /** Parses optional arguments from URL variables */
     void ParseUrl(const std::string& url);
 

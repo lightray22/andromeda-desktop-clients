@@ -1,6 +1,7 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -11,7 +12,6 @@ class Utilities
 {
 public:
 
-    /** A vector of strings */
     typedef std::vector<std::string> StringList;
 
     /**
@@ -27,7 +27,6 @@ public:
         const size_t skip = 0, const bool reverse = false,
         const size_t max = static_cast<size_t>(-1));
 
-    /** A pair of two strings */
     typedef std::pair<std::string,std::string> StringPair;
 
     /** 
@@ -57,7 +56,15 @@ public:
      * Silently read a line of input from stdin
      * @param retval reference to string to fill
      */
-    static void SilentReadConsole(std::string& retval);    
+    static void SilentReadConsole(std::string& retval);
+
+    typedef std::map<std::string,std::string> StringMap;
+
+    /** Returns a string map of the process environment variables */
+    static StringMap GetEnvironment();
+
+    /** Returns the user's home directory path if found */
+    static std::string GetHomeDirectory();
 };
 
 } // namespace Andromeda
