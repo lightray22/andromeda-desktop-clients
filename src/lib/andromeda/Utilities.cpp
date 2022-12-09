@@ -85,12 +85,20 @@ bool Utilities::endsWith(const std::string& str, const std::string& end)
 }
 
 /*****************************************************/
-bool Utilities::stringToBool(std::string str)
+std::string Utilities::trim(const std::string& str)
 {
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), 
-        [](unsigned char c) { return !std::isspace(c); }
-    ));
+    const size_t size { str.size() };
 
+    size_t start = 0; while (start < size && std::isspace(str[start])) start++;
+    size_t end = size; while (end > 0 && std::isspace(str[end-1])) end--;
+
+    return str.substr(start, end-start);
+}
+
+/*****************************************************/
+bool Utilities::stringToBool(const std::string& stri)
+{
+    const std::string str { trim(stri) };
     return (str != "" && str != "0" && str != "false" && str != "off" && str != "no");
 }
 

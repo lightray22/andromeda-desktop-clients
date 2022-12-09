@@ -1,9 +1,11 @@
 
 * [Overview](#overview)
 * [libandromeda](#libandromeda)
+* [CLI Client](#cli-client)
 * [FUSE Client](#fuse-client)
 * [Qt GUI Client](#qt-gui-client)
 * [Development](#development)
+
 
 # Overview
 
@@ -16,6 +18,7 @@ There are several binaries and libraries in the full suite.  By default, all tar
 To build one individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 - `src/lib/andromeda` the core library that implements communication with the server
+- `src/bin/andromeda-cli` allows manual CLI communication with the backend
 - `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
 - FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
 - `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
@@ -37,11 +40,23 @@ Cmake will automatically clone in-tree dependencies.
 - Python3 (>= 3.8?)
 - Bash (if running tools/)
 
+
 # libandromeda
 
-### Common Usage
+## Common Usage
 
-Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying "https://" ensures TLS is always used.
+Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying `https://` ensures TLS is always used.
+
+### Debug
+
+Using the `-d int` or `--debug int` option turns on debug.
+
+1. Runs the app in the foreground and reports errors
+2. Reports all calls to the backend
+3. Shows many function calls and extra info (a lot!)
+4. With each print shows the time, thread ID, and object ID  
+  
+## Building
 
 ### Libraries
 
@@ -78,7 +93,27 @@ The following platforms are targeted for support and should work:
   - You will need to add `OPENSSL_ROOT_DIR` to your system environment
 
 
+# CLI Client
+
+The CLI client emulates using the command-line Andromeda server API, but over a remote HTTP connection and in JSON mode.
+
+Any features that rely on the higher privileges of the real CLI interface are not available. Examples:
+* Changing the database configuration file
+* PHP printr format (JSON only)
+* Changing debug/metrics output
+* Doing a request dry-run
+
+The general usage is the same as the real CLI interface, with an added URL and different global options.  
+Parameter syntax, attaching/uploading files and using environment variables is the same. Batching is not yet supported.
+
+Run `./andromeda-cli --help` to see the available options.  
+
+Example that shows the available API calls: `./andromeda-cli -a (url) core usage`
+
+
 # FUSE Client
+
+The FUSE client allows mounting Andromeda storage as local storage using FUSE.
 
 Run `./andromeda-fuse-cli --help` to see the available options.
 Authentication details (password, twofactor) will be prompted for interactively as required.
@@ -128,13 +163,6 @@ Note for FreeBSD to allow FUSE mounting by regular users, you will need to add y
 
 ## Debug
 
-Using the `-d int` or `--debug int` option turns on debug.
-
-1. Runs the app in the foreground and reports errors
-2. Reports all calls to the backend
-3. Shows many function calls and extra info (a lot!)
-4. With each print shows the time, thread ID, and object ID
-
 The `--cachemode enum` option is also useful for debugging caching.
 
 - none - turns off caching and sends every read/write to the server (slow!)
@@ -162,6 +190,7 @@ Official OS support for the GUI is more narrow than the other targets.  Reminder
 - Ubuntu 22.10: `apt install qt6-base-dev`
 - Arch/Manjaro: `pacman -S qt6-base`
 - Windows: [Qt Framework](https://www.qt.io/download)
+
 
 # Development
 

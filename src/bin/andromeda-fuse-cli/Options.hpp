@@ -1,10 +1,7 @@
 #ifndef A2FUSE_OPTIONS_H_
 #define A2FUSE_OPTIONS_H_
 
-#include <filesystem>
-#include <list>
 #include <string>
-#include <utility>
 
 #include "andromeda-fuse/FuseAdapter.hpp"
 #include "andromeda-fuse/FuseOptions.hpp"
@@ -23,7 +20,7 @@ public:
 
     /**
      * @param configOptions Config options ref to fill
-     * @param httpOptions HTTPRunner options ref to fill (if applicable)
+     * @param httpOptions HTTPRunner options ref to fill
      * @param fuseOptions FUSE options ref to fill
      */
     Options(Andromeda::Backend::ConfigOptions& configOptions, 

@@ -2,6 +2,7 @@
 #define LIBA2_RUNNERINPUT_H_
 
 #include <chrono>
+#include <map>
 
 namespace Andromeda {
 namespace Backend {

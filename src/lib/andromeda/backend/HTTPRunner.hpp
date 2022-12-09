@@ -25,15 +25,15 @@ class HTTPRunner : public BaseRunner
 public:
 
     /** Exception indicating the HTTP library had an error */
-    class Exception : public EndpointException { 
+    class LibraryException : public EndpointException { 
         /** @param error the library error code */
-        public: explicit Exception(httplib::Error error) : 
+        public: explicit LibraryException(httplib::Error error) : 
             EndpointException(httplib::to_string(error)) {} };
 
     /** Exception indicating that the connection to the server failed */
-    class ConnectionException : public Exception {
+    class ConnectionException : public LibraryException {
         public: explicit ConnectionException() : 
-            Exception(httplib::Error::Connection) {} };
+            LibraryException(httplib::Error::Connection) {} };
 
     /**
      * @param protoHost (protocol://)hostname
@@ -75,6 +75,9 @@ private:
 
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
+
+    /** Throws a redirect exception with the repsonse headers */
+    void RedirectException(const httplib::Headers& headers);
 
     /** Handles an HTTP redirect to a new location */
     void HandleRedirect(const std::string& location);

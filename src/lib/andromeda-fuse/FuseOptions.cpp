@@ -19,7 +19,7 @@ std::string FuseOptions::HelpText()
 
     using std::endl;
 
-    output << "FUSE Advanced:   [--no-chmod] [--no-chown] [-o fuseoption]+"; 
+    output << "FUSE Advanced:    [--no-chmod] [--no-chown] [-o fuseoption]+"; 
     
 #if !LIBFUSE2
     output << " [--dump-fuse-options]" << endl;

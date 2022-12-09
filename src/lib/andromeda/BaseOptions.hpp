@@ -33,8 +33,8 @@ public:
 
     /** Exception indicating the command usage was bad */
     class BadUsageException : public Exception { 
-        public: BadUsageException() : 
-            Exception("Invalid Usage") {} };
+        public: explicit BadUsageException(const std::string& details) : 
+            Exception("Invalid Usage: "+details) {} };
 
     /** Exception indicating the given flag is unknown */
     class BadFlagException : public Exception { 
@@ -68,13 +68,15 @@ public:
      * @throws BadUsageException if invalid arguments
      * @throws BadFlagException if a invalid flag is used
      * @throws BadOptionException if an invalid option is used
+     * @param noerr if true, stop processing on unexpected non-key instead of exception
+     * @return number of arguments consumed (matches argc if noerr is false)
      */
-    void ParseArgs(int argc, const char* const* argv);
+    size_t ParseArgs(size_t argc, const char* const* argv, bool noerr = false);
 
     /** 
      * Parses arguments from a config file 
-     * @throws BadUsageException if invalid arguments
      * @throws BadFlagException if a invalid flag is used
+     * @throws BadOptionException if an invalid option is used
      */
     void ParseFile(const std::filesystem::path& path);
 

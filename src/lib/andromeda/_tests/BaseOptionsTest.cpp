@@ -58,6 +58,29 @@ TEST_CASE("ParseArgs", "[BaseOptions]")
         REQUIRE(options.flags == BaseOptions::Flags{"a","test"});
         REQUIRE(options.options == BaseOptions::Options{{"b","1"},{"c","2"},{"test2","val"},{"test3",""}});
     }
+
+    {
+        const char* args[] { "test", "-a", "test1", "" };
+        TestOptions options; 
+        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(4, args, true), BaseOptions::BadUsageException);
+    }
+
+    {
+        const char* args[] { "test", "--a", "test1", "--" };
+        TestOptions options; 
+        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(4, args, true), BaseOptions::BadUsageException);
+    }
+
+    {
+        const char* args[] { "test", "-a", "test1", "test2" };
+        TestOptions options; 
+        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
+        REQUIRE(options.ParseArgs(4, args, true) == 3);
+        REQUIRE(options.flags == BaseOptions::Flags{});
+        REQUIRE(options.options == BaseOptions::Options{{"a","test1"}});
+    }
 }
 
 /*****************************************************/

@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
     try
     {
-        options.ParseArgs(argc, argv);
+        options.ParseArgs(static_cast<size_t>(argc), argv);
 
         options.Validate();
     }

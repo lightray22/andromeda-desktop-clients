@@ -1,8 +1,5 @@
 #include <chrono>
-#include <list>
-#include <map>
 #include <sstream>
-#include <vector>
 
 #include "Options.hpp"
 
@@ -25,20 +22,21 @@ std::string Options::HelpText()
 
     using std::endl;
 
-    output << "Usage Syntax: " << endl
-           << "andromeda-fuse   " << CoreBaseHelpText() << endl << endl
+    output 
+        << "Usage Syntax: " << endl
+        << "andromeda-fuse " << CoreBaseHelpText() << endl << endl
            
-           << "Local Mount:     -m|--mountpath path" << endl
-           << "Remote Endpoint: (-a|--apiurl url) | (-p|--apipath [path])" << endl << endl
+        << "Local Mount:     -m|--mountpath path" << endl
+        << "Remote Endpoint: (-a|--apiurl url) | (-p|--apipath [path])" << endl << endl
 
-           << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
-           << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl << endl
+        << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
+        << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl << endl
        
-           << HTTPOptions::HelpText() << endl << endl
-           << FuseOptions::HelpText() << endl << endl
-           << ConfigOptions::HelpText() << endl << endl
+        << HTTPOptions::HelpText() << endl << endl
+        << FuseOptions::HelpText() << endl << endl
+        << ConfigOptions::HelpText() << endl << endl
            
-           << OtherBaseHelpText() << endl;
+        << OtherBaseHelpText() << endl;
 
     return output.str();
 }

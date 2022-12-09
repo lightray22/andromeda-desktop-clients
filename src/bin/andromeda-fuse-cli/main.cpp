@@ -86,7 +86,7 @@ int main(int argc, char** argv)
                 options.ParseFile(path);
         }
 
-        options.ParseArgs(argc, argv);
+        options.ParseArgs(static_cast<size_t>(argc), argv);
 
         options.Validate();
     }

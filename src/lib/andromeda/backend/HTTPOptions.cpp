@@ -22,8 +22,9 @@ std::string HTTPOptions::HelpText()
 
     using std::endl;
 
-    output << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
-           << "HTTP Advanced:   [--http-redirect bool(" << defaultO.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << defaultO.maxRetries << ")] [--retry-time secs(" << defRetry << ")]";
+    output 
+        << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
+        << "HTTP Advanced:   [--http-redirect bool(" << defaultO.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << defaultO.maxRetries << ")] [--retry-time secs(" << defRetry << ")]";
 
     return output.str();
 }

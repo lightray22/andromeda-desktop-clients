@@ -135,6 +135,17 @@ TEST_CASE("endsWith", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("trim", "[Utilities]") 
+{
+    REQUIRE(Utilities::trim("") == "");
+    REQUIRE(Utilities::trim("test") == "test");
+    REQUIRE(Utilities::trim(" test") == "test");
+    REQUIRE(Utilities::trim("test1  ") == "test1");
+    REQUIRE(Utilities::trim("\ttest\n") == "test");
+    REQUIRE(Utilities::trim("test\ntest") == "test\ntest");
+}
+
+/*****************************************************/
 TEST_CASE("stringToBool", "[Utilities]") 
 {
     REQUIRE(Utilities::stringToBool("") == false);

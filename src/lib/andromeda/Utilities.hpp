@@ -47,8 +47,11 @@ public:
     /** Returns true iff str ends with end */
     static bool endsWith(const std::string& str, const std::string& end);
 
+    /** Returns the string with leading/trailing whitespace stripped */
+    static std::string trim(const std::string& str);
+
     /** Returns false if the trimmed string is a false-like value */
-    static bool stringToBool(std::string str);
+    static bool stringToBool(const std::string& stri);
 
     /**
      * Silently read a line of input from stdin

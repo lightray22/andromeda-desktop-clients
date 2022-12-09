@@ -30,26 +30,33 @@ std::string BaseOptions::OtherBaseHelpText()
 }
 
 /*****************************************************/
-void BaseOptions::ParseArgs(int argc, const char* const* argv)
+size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool noerr)
 {
     Flags flags; Options options;
 
-    for (int i { 1 }; i < argc; i++)
+    size_t i { 1 }; for (; i < argc; i++)
     {
-        if (strlen(argv[i]) < 2 || argv[i][0] != '-')
-            throw BadUsageException();
+        std::string key { argv[i] };
+        if (key.empty())
+            throw BadUsageException(
+                "empty key at arg "+std::to_string(i));
+        if (key[0] != '-') { 
+            if (noerr) break; else throw BadUsageException(
+                "expected key at arg "+std::to_string(i)); }
 
-        const char* flag { argv[i]+1 };
-        bool ext { (flag[0] == '-') };
-        if (ext) flag++; // --opt
+        key.erase(0, 1); // key++
+        bool ext { (key[0] == '-') };
+        if (ext) key.erase(0, 1); // --opt
 
-        if (!ext && strlen(flag) > 1)
-            options.emplace(std::string(1,flag[0]), flag+1); // -x3
-
-        else if (argc-1 > i && argv[i+1][0] != '-')
-            options.emplace(flag, argv[++i]); // -x 3
-
-        else flags.push_back(flag); // -x
+        if (key.empty() || std::isspace(key[0]))
+            throw BadUsageException(
+                "empty key at arg "+std::to_string(i));
+        
+        if (!ext && key.size() > 1)
+            options.emplace(key.substr(0, 1), key.substr(1)); // -x3
+        else if (argc > i+1 && argv[i+1][0] != '-')
+            options.emplace(key, argv[++i]); // -x 3
+        else flags.push_back(key); // -x
     }
 
     for (const decltype(flags)::value_type& flag : flags) 
@@ -57,6 +64,8 @@ void BaseOptions::ParseArgs(int argc, const char* const* argv)
 
     for (const decltype(options)::value_type& pair : options)
         if (!AddOption(pair.first, pair.second)) throw BadOptionException(pair.first);
+
+    return i;
 }
 
 /*****************************************************/

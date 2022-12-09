@@ -1,0 +1,4 @@
+INPUT = src/bin/andromeda-cli
+OUTPUT_DIRECTORY = docs/bin/andromeda-cli
+PROJECT_NAME = andromeda-cli
+@INCLUDE = tools/Doxyfile.inc

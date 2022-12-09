@@ -117,7 +117,7 @@ std::string HTTPRunner::RunAction(const RunnerInput& input)
                 throw EndpointException(response->status);
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
-            else throw Exception(response.error());
+            else throw LibraryException(response.error());
         }
 
         mDebug << __func__ << "... HTTP:" << response->status; mDebug.Info();
@@ -130,19 +130,33 @@ std::string HTTPRunner::RunAction(const RunnerInput& input)
             case 200: return std::move(response->body);
             
             case 301: case 302: // HTTP redirect
-            {
-                std::string extext { "Redirected" };
-                auto location { response->headers.find("Location") };
-                if (location != response->headers.end())
-                    extext += ": "+location->second;
-                throw EndpointException(extext);
-            }
-
+                RedirectException(response->headers); break;
+            
             case 403: throw EndpointException("Access Denied");
             case 404: throw EndpointException("Not Found");
             default:  throw EndpointException(response->status);
         }
     }
+}
+
+/*****************************************************/
+void HTTPRunner::RedirectException(const httplib::Headers& headers)
+{
+    std::string extext { "Redirected" };
+
+    auto locationIt { headers.find("Location") };
+    if (locationIt != headers.end())
+    {
+        std::string location { locationIt->second };
+        
+        const size_t paramsPos { location.find("?") };
+        if (paramsPos != std::string::npos) // remove URL params
+            location.erase(paramsPos);
+
+        extext += ": "+location;
+    }
+
+    throw EndpointException(extext);
 }
 
 /*****************************************************/
@@ -158,14 +172,14 @@ void HTTPRunner::HandleRedirect(const std::string& location)
     
     if (newPair.first != GetProtoHost())
     {
-        mDebug << __func__ << "... newProtoHost:" << newPair.first; mDebug.Info();
+        mDebug << __func__ << "... new protoHost:" << newPair.first; mDebug.Info();
         mProtoHost = newPair.first;
         InitializeClient(mProtoHost);
     }
 
     if (newPair.second != mBaseURL)
     {
-        mDebug << __func__ << "... newBaseURL:" << newPair.second; mDebug.Info();
+        mDebug << __func__ << "... new baseURL:" << newPair.second; mDebug.Info();
         mBaseURL = newPair.second;
     }
 }

@@ -13,10 +13,11 @@ std::string Options::HelpText()
 
     using std::endl;
 
-    output << "Usage Syntax: " << endl
-           << "andromeda-gui   " << CoreBaseHelpText() << endl << endl
+    output 
+        << "Usage Syntax: " << endl
+        << "andromeda-gui " << CoreBaseHelpText() << endl << endl
            
-           << OtherBaseHelpText() << endl;
+        << OtherBaseHelpText() << endl;
 
     return output.str();
 }
