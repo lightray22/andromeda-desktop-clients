@@ -18,6 +18,10 @@ if (BUILD_TESTING)
         GIT_TAG        v3.1.1)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    
+    if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/_tests)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/_tests)
+    endif()
 endif()
 
 # define compiler warnings

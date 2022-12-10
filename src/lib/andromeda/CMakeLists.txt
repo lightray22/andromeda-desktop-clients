@@ -3,10 +3,6 @@ project(libandromeda VERSION 1.0.0)
 
 include(../../../andromeda.cmake)
 
-if (BUILD_TESTING)
-    add_subdirectory(_tests)
-endif()
-
 # build the Andromeda library
 
 add_library(andromeda)
@@ -47,7 +43,7 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
 FetchContent_Declare(cpp-httplib
     GIT_REPOSITORY  https://github.com/stingray-11/cpp-httplib.git
-    GIT_TAG         ab81850b
+    GIT_TAG         5d3109a0
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 

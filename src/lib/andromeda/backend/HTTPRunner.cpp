@@ -85,9 +85,7 @@ std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
     // set up the URL parameters and query string
     httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
 
-    std::string sep(mBaseURL.find("?") != std::string::npos ? "&" : "?");
-
-    std::string url(mBaseURL + sep + 
+    std::string url(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
         httplib::detail::params_to_query_str(urlParams));
 
     // set up POST body parameters and files
@@ -115,7 +113,8 @@ std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
     // do the request some number of times
     for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        httplib::Result response { streamParams.empty() ? mHttpClient->Post(url.c_str(), postParams)
+        httplib::Result response { streamParams.empty() 
+            ? mHttpClient->Post(url.c_str(), httplib::Headers(), postParams)
             : mHttpClient->Post(url.c_str(), httplib::Headers(), postParams, streamParams) };
 
         // if no response or got 503, potentially retry
@@ -132,9 +131,9 @@ std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
 
                 std::this_thread::sleep_for(mOptions.retryTime); continue;
             }
-            // got a response, threat this like any other error below
+            // got a response, treat like any other error below
             else if (response) { }
-            // otherwise throw an exception based on response.error()
+            // otherwise throw an exception based on the error
             else if (response.error() == httplib::Error::Connection)
                  throw ConnectionException();
             else throw LibraryException(response.error());
@@ -185,26 +184,6 @@ httplib::ContentProviderWithoutLength HTTPRunner::GetStreamFunc(
 }
 
 /*****************************************************/
-void HTTPRunner::RedirectException(const httplib::Headers& headers)
-{
-    std::string extext { "Redirected" };
-
-    auto locationIt { headers.find("Location") };
-    if (locationIt != headers.end())
-    {
-        std::string location { locationIt->second };
-        
-        const size_t paramsPos { location.find("?") };
-        if (paramsPos != std::string::npos) // remove URL params
-            location.erase(paramsPos);
-
-        extext += ": "+location;
-    }
-
-    throw EndpointException(extext);
-}
-
-/*****************************************************/
 void HTTPRunner::HandleRedirect(const std::string& location)
 {
     mDebug << __func__ << "(location:" << location << ")"; mDebug.Info();
@@ -227,6 +206,26 @@ void HTTPRunner::HandleRedirect(const std::string& location)
         mDebug << __func__ << "... new baseURL:" << newPair.second; mDebug.Info();
         mBaseURL = newPair.second;
     }
+}
+
+/*****************************************************/
+void HTTPRunner::RedirectException(const httplib::Headers& headers)
+{
+    std::string extext { "Redirected" };
+
+    auto locationIt { headers.find("Location") };
+    if (locationIt != headers.end())
+    {
+        std::string location { locationIt->second };
+        
+        const size_t paramsPos { location.find("?") };
+        if (paramsPos != std::string::npos) // remove URL params
+            location.erase(paramsPos);
+
+        extext += ": "+location;
+    }
+
+    throw EndpointException(extext);
 }
 
 } // namespace Backend

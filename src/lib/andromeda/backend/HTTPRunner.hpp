@@ -84,11 +84,11 @@ private:
     httplib::ContentProviderWithoutLength GetStreamFunc(
         char* const& buf, const size_t& bufSize, std::istream& in);
 
-    /** Throws a redirect exception with the repsonse headers */
-    void RedirectException(const httplib::Headers& headers);
-
     /** Handles an HTTP redirect to a new location */
     void HandleRedirect(const std::string& location);
+
+    /** Throws a redirect exception with the repsonse headers */
+    void RedirectException(const httplib::Headers& headers);
 
     Debug mDebug;
 
