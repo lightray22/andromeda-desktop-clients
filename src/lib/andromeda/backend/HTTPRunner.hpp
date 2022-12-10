@@ -54,18 +54,22 @@ public:
     virtual std::string GetHostname() const override;
 
     /** Returns the proto://hostname string */
-    virtual std::string GetProtoHost() const;
+    virtual std::string GetProtoHost() const final;
 
     /** Returns the base URL being used */
-    virtual const std::string& GetBaseURL() const { return mBaseURL; }
+    virtual const std::string& GetBaseURL() const final { return mBaseURL; }
 
-    virtual std::string RunAction(const RunnerInput& input) override;
+    inline virtual std::string RunAction(const RunnerInput& input) override { 
+        bool isJson; return RunAction(input,isJson); };
+
+    /** @param isJson if the response is JSON, set to true */
+    virtual std::string RunAction(const RunnerInput& input, bool& isJson);
 
     /** Allows automatic retry on HTTP failure */
-    virtual void EnableRetry(bool enable = true) { mCanRetry = enable; }
+    virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
 
     /** Returns whether retry is enabled or disabled */
-    virtual bool GetCanRetry() const { return mCanRetry; }
+    virtual bool GetCanRetry() const final { return mCanRetry; }
 
     virtual bool RequiresSession() override { return true; }
 
@@ -75,6 +79,10 @@ private:
 
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
+
+    /** Returns an httplib function that reads in to buf */
+    httplib::ContentProviderWithoutLength GetStreamFunc(
+        char* const& buf, const size_t& bufSize, std::istream& in);
 
     /** Throws a redirect exception with the repsonse headers */
     void RedirectException(const httplib::Headers& headers);

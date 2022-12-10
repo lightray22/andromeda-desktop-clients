@@ -24,7 +24,7 @@ std::string HTTPOptions::HelpText()
 
     output 
         << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint] [--hproxy-user str --hproxy-pass str]]" << endl
-        << "HTTP Advanced:   [--http-redirect bool(" << defaultO.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << defaultO.maxRetries << ")] [--retry-time secs(" << defRetry << ")]";
+        << "HTTP Advanced:   [--http-redirect bool(" << defaultO.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << defaultO.maxRetries << ")] [--retry-time secs(" << defRetry << ")] [--stream-buffer-size bytes(" << defaultO.streamBufferSize << ")]";
 
     return output.str();
 }
@@ -65,6 +65,14 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
     {
         try { retryTime = seconds(stoul(value)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+    }
+    else if (option == "stream-buffer-size")
+    {
+        try { streamBufferSize = stoul(value); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
+
+        if (!streamBufferSize) throw BaseOptions::BadValueException(option);
     }
     else return false; // not used
 

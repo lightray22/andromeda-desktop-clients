@@ -48,9 +48,6 @@ std::string getNextValue(Utilities::StringList& argv, size_t& i)
     return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
 }
 
-#include "andromeda/Debug.hpp"
-Andromeda::Debug sDebug("CommandLine"); // TODO tmp
-
 /*****************************************************/
 void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
 {
@@ -127,14 +124,22 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             if (val.empty()) throw BaseOptions::BadUsageException(
                 "expected % value at action arg "+std::to_string(i));
 
-            // TODO implement file input
+            if (!std::filesystem::exists(val) || std::filesystem::is_directory(val))
+                throw BaseOptions::Exception("Inaccessible file: "+val);
+
+            std::ifstream& file { mOpenFiles.emplace_back(val, std::ios::binary) };
+
+            std::string filename { getNextValue(args, i) }; 
+            if (filename.empty()) filename = val;
+
+            mInput.sfiles.emplace(param, RunnerInput::FileStream{ filename, file });
         }
         else if (special == '-')
         {
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty - key at action arg "+std::to_string(i));
 
-            // TODO implement file input
+            mInput.sfiles.emplace(param, RunnerInput::FileStream{ "data", std::cin });
         }
         else // plain argument
         {

@@ -75,11 +75,15 @@ int main(int argc, char** argv)
 
     try
     {
-        std::string resp { runner.RunAction(commandLine.GetRunnerInput()) };
+        bool isJson = false; std::string resp { 
+            runner.RunAction(commandLine.GetRunnerInput(), isJson) };
 
-        // TODO how to tell if response is JSON or not?
-
-        try
+        if (!isJson)
+        {
+            std::cout << resp;
+            return static_cast<int>(ExitCode::SUCCESS);
+        }
+        else try
         {
             nlohmann::json val(nlohmann::json::parse(resp));
             std::cout << val.dump(4) << std::endl;
@@ -95,7 +99,6 @@ int main(int argc, char** argv)
                 return static_cast<int>(ExitCode::BACKEND_RESP);
             }
         }
-
         catch (const nlohmann::json::exception& ex)
         {
             std::cerr << "JSON Error: " << ex.what() << std::endl;

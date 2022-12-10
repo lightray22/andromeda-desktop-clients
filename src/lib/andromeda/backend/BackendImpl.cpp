@@ -69,6 +69,9 @@ std::string BackendImpl::RunAction(RunnerInput& input)
         for (const auto& [key,file] : input.files)
             mDebug << " " << key << ":" << file.name << ":" << file.data.size();
 
+        for (const auto& [key,file] : input.sfiles)
+            mDebug << " " << key << ":" << file.name;
+
         mDebug.Backend();
     }
 

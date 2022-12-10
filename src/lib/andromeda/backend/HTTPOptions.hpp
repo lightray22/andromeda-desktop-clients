@@ -39,6 +39,8 @@ struct HTTPOptions
     std::string proxyUsername;
     /** HTTP proxy server basic-auth password */
     std::string proxyPassword;
+    /** Buffer/chunk size when reading file streams */
+    size_t streamBufferSize { 1024*1024 };
 };
 
 } // namespace Backend

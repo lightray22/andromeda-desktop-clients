@@ -44,11 +44,13 @@ std::string CLIRunner::RunAction(const RunnerInput& input)
     if (input.files.size() > 0)
     {
         if (input.files.size() > 1) throw Exception("Multiple Files");
-        const RunnerInput::Files::value_type& infile(*(input.files.begin()));
+        const RunnerInput::FileDatas::value_type& infile(*(input.files.begin()));
 
         arguments.push_back("--"+infile.first+"-");
         inputPtr = &(infile.second.data);
     }
+
+    // TODO support file stream inputs
 
     std::ostringstream command; 
     for (const std::string& str : arguments) 

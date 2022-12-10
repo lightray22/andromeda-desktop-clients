@@ -1,6 +1,8 @@
 #ifndef A2CLI_COMMANDLINE_H_
 #define A2CLI_COMMANDLINE_H_
 
+#include <fstream>
+#include <list>
 #include <string>
 
 #include "andromeda/backend/RunnerInput.hpp"
@@ -31,6 +33,7 @@ public:
 private:
 
     Options& mOptions;
+    std::list<std::ifstream> mOpenFiles;
     Andromeda::Backend::RunnerInput mInput;
 };
 

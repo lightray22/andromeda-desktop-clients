@@ -72,7 +72,7 @@ protected:
 private:
 
     /** Checks the FS and account limits for the allowed write mode */
-    virtual FSConfig::WriteMode GetWriteMode() const;
+    virtual FSConfig::WriteMode GetWriteMode() const final;
 
     size_t mPageSize;
 
