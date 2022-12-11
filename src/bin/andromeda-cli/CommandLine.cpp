@@ -25,7 +25,7 @@ std::string CommandLine::HelpText()
     output 
         << "Usage Syntax: " << endl
         << "andromeda-cli " << Options::CoreHelpText() << endl
-        << "andromeda-cli [global flags+] (-a|--apiurl url) app action [action params+]" << endl
+        << "andromeda-cli [global flags+] -a|--apiurl url app action [action params+]" << endl
         << "... NOTE a flag without a value cannot be the last argument before app/action" << endl << endl
            
         << "action params: [--$param value] [--$param@ file] [--$param!] [--$param% file [name]] [--$param-]" << endl
