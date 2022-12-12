@@ -25,7 +25,7 @@ To build one individually, configure cmake targeted at the directory you desire 
 
 ### Building
 
-Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build, including static analysis and unit tests.  Or the manual steps:
+Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build including unit tests.  Or the manual steps:
 
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
