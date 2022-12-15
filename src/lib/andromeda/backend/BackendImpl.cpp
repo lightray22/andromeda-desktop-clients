@@ -54,9 +54,9 @@ std::string BackendImpl::GetName(bool human) const
 }
 
 /*****************************************************/
-std::string BackendImpl::RunAction(RunnerInput& input)
+RunnerInput& BackendImpl::FinalizeInput(RunnerInput& input)
 {
-    mReqCount++;
+    ++mReqCount;
 
     if (mDebug)
     {
@@ -66,11 +66,10 @@ std::string BackendImpl::RunAction(RunnerInput& input)
         for (const auto& [key,val] : input.params)
             mDebug << " " << key << ":" << val;
 
-        for (const auto& [key,file] : input.files)
-            mDebug << " " << key << ":" << file.name << ":" << file.data.size();
-
-        for (const auto& [key,file] : input.sfiles)
-            mDebug << " " << key << ":" << file.name;
+        /*for (const auto& [key,file] : input.files)
+            mDebug << " " << key << ":" << file.name << ":" << file.data.size();*/ 
+            // TODO would be good to still print this somewhere? probably separate printing above from auth stuff below
+            // or the print function could even be moved to RunnerInput?
 
         mDebug.Backend();
     }
@@ -85,7 +84,7 @@ std::string BackendImpl::RunAction(RunnerInput& input)
         input.params["auth_sudouser"] = mUsername;
     }
 
-    return mRunner.RunAction(input);
+    return input;
 }
 
 /*****************************************************/
@@ -138,7 +137,8 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
 
     if (!twofactor.empty()) input.params["auth_twofactor"] = twofactor;
 
-    nlohmann::json resp(GetJSON(RunAction(input)));
+    nlohmann::json resp(GetJSON(
+        mRunner.RunAction(FinalizeInput(input))));
 
     try
     {
@@ -203,7 +203,8 @@ void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::strin
 
     RunnerInput input {"accounts", "getaccount"};
 
-    nlohmann::json resp(GetJSON(RunAction(input)));
+    nlohmann::json resp(GetJSON(
+        mRunner.RunAction(FinalizeInput(input))));
 
     try
     {
@@ -223,7 +224,7 @@ void BackendImpl::CloseSession()
     {
         RunnerInput input {"accounts", "deleteclient"};
 
-        GetJSON(RunAction(input));
+        GetJSON(mRunner.RunAction(FinalizeInput(input)));
     }
 
     mCreatedSession = false;
@@ -262,12 +263,12 @@ nlohmann::json BackendImpl::GetConfigJ()
 
     {
         RunnerInput input {"core", "getconfig"};
-        configJ["core"] = GetJSON(RunAction(input));
+        configJ["core"] = GetJSON(mRunner.RunAction(FinalizeInput(input)));
     }
 
     {
         RunnerInput input {"files", "getconfig"};
-        configJ["files"] = GetJSON(RunAction(input));
+        configJ["files"] = GetJSON(mRunner.RunAction(FinalizeInput(input)));
     }
 
     return configJ;
@@ -281,7 +282,7 @@ nlohmann::json BackendImpl::GetAccountLimits()
 
     RunnerInput input {"files", "getlimits", {{"account", mAccountID}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -303,7 +304,7 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
     
     if (!id.empty()) input.params["folder"] = id;
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -315,7 +316,7 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
     
     if (!id.empty()) input.params["filesystem"] = id;
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -329,7 +330,7 @@ nlohmann::json BackendImpl::GetFilesystem(const std::string& id)
 
     if (!id.empty()) input.params["filesystem"] = id;
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -341,7 +342,7 @@ nlohmann::json BackendImpl::GetFSLimits(const std::string& id)
 
     RunnerInput input {"files", "getlimits", {{"filesystem", id}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -351,7 +352,7 @@ nlohmann::json BackendImpl::GetFilesystems()
 
     RunnerInput input {"files", "getfilesystems"};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -361,7 +362,7 @@ nlohmann::json BackendImpl::GetAdopted()
 
     RunnerInput input {"files", "listadopted"};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -378,9 +379,9 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         return retval;
     }
 
-    RunnerInput input {"files", "upload", {{"parent", parent}, {"name", name}}, {{"file", {name, ""}}}};
+    RunnerInput_FilesIn input {"files", "upload", {{"parent", parent}, {"name", name}}, {{"file", {name, ""}}}};
 
-    return GetJSON(RunAction(input));
+    FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
 }
 
 /*****************************************************/
@@ -402,7 +403,7 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
 
     RunnerInput input {"files", "createfolder", {{"parent", parent},{"name", name}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -414,7 +415,7 @@ void BackendImpl::DeleteFile(const std::string& id)
 
     RunnerInput input {"files", "deletefile", {{"file", id}}};
     
-    try { GetJSON(RunAction(input)); }
+    try { GetJSON(mRunner.RunAction(FinalizeInput(input))); }
     catch (const NotFoundException&) { }
 }
 
@@ -427,7 +428,7 @@ void BackendImpl::DeleteFolder(const std::string& id)
 
     RunnerInput input {"files", "deletefolder", {{"folder", id}}}; 
     
-    try { GetJSON(RunAction(input)); }
+    try { GetJSON(mRunner.RunAction(FinalizeInput(input))); }
     catch (const NotFoundException&) { }
 }
 
@@ -440,7 +441,7 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 
     RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -452,7 +453,7 @@ nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::strin
 
     RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -464,7 +465,7 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 
     RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -476,7 +477,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 
     RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -490,12 +491,33 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
     if (isMemory()) return std::string(length,'\0');
 
     RunnerInput input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
-
-    std::string data(RunAction(input));
+    std::string data(mRunner.RunAction(FinalizeInput(input)));
 
     if (data.size() != length) throw ReadSizeException(length, data.size());
 
     return data;
+}
+
+/*****************************************************/
+void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
+{
+    std::string fstart(std::to_string(offset));
+    std::string flast(std::to_string(offset+length-1));
+
+    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast; mDebug.Info();
+
+    if (isMemory()) { std::string ret(length,'\0'); func(0,ret.data(),length); }
+
+    size_t read = 0; RunnerInput_StreamOut input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}, 
+        [&](const size_t soffset, const char* buf, const size_t buflen)->void
+    {
+        func(soffset, buf, buflen); read += buflen;
+    }};
+
+    FinalizeInput(input);
+    mRunner.RunAction(input);
+
+    if (read != length) throw ReadSizeException(length, read);
 }
 
 /*****************************************************/
@@ -505,9 +527,9 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     if (isMemory()) return nullptr;
 
-    RunnerInput input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
+    RunnerInput_FilesIn input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
 
-    return GetJSON(RunAction(input));
+    FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
 }
 
 /*****************************************************/
@@ -519,7 +541,7 @@ nlohmann::json BackendImpl::TruncateFile(const std::string& id, const uint64_t s
 
     RunnerInput input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}};
 
-    return GetJSON(RunAction(input));
+    return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
 } // namespace Backend

@@ -1,4 +1,5 @@
 
+#include <functional>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -6,6 +7,7 @@
 
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
+#include "andromeda/base64.hpp"
 #include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
@@ -80,111 +82,210 @@ std::string HTTPRunner::GetProtoHost() const
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
+std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Headers& headers)
 {
+    // set up params as base64-encoded X-Andromeda headers
+    for (const decltype(input.params)::value_type& it : input.params)
+    {
+        std::string key { it.first };
+        std::replace(key.begin(), key.end(), '_', '-');
+        headers.emplace("X-Andromeda-"+key, base64::encode(it.second));
+    }
+
     // set up the URL parameters and query string
     httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
 
-    std::string url(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
+    return std::string(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
         httplib::detail::params_to_query_str(urlParams));
+}
 
-    // set up POST body parameters and files
-    httplib::MultipartFormDataItems postParams;
-
+/*****************************************************/
+std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::MultipartFormDataItems& postParams)
+{
+    // set up params as POST body inputs
     for (const decltype(input.params)::value_type& it : input.params)
         postParams.push_back({it.first, it.second, {}, {}});
+
+    // set up the URL parameters and query string
+    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
+
+    return std::string(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
+        httplib::detail::params_to_query_str(urlParams));
+}
+
+/*****************************************************/
+void HTTPRunner::DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry)
+{
+    // do the request some number of times until success
+    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
+    {
+        canRetry = (mCanRetry && attempt <= mOptions.maxRetries);
+        httplib::Result result { getResult() };
+        if (result != nullptr && !doRetry) return; // break
+        else HandleNonResponse(result, canRetry, attempt);
+    }
+}
+
+/*****************************************************/
+std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson)
+{
+    // do the request some number of times until success
+    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
+    {
+        bool canRetry = (mCanRetry && attempt <= mOptions.maxRetries);
+        httplib::Result result { getResult() };
+        if (result != nullptr)
+        {
+            bool doRetry = false; std::string retval { 
+                HandleResponse(*result, isJson, canRetry, doRetry) }; 
+            if (!doRetry) return retval; // break
+        }
+
+        HandleNonResponse(result, canRetry, attempt);
+    }
+}
+
+/*****************************************************/
+void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt)
+{
+    mDebug << __func__ << "(retry:" << retry << ")"; mDebug.Info();
+
+    if (retry)
+    {
+        mDebug << __func__ << "... ";
+        
+        if (result != nullptr) mDebug << "HTTP " << result->status;
+        else mDebug << httplib::to_string(result.error());
+
+        mDebug << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1; mDebug.Error();
+
+        std::this_thread::sleep_for(mOptions.retryTime);
+    }
+    else if (result.error() == httplib::Error::Connection)
+            throw ConnectionException();
+    else throw LibraryException(result.error());
+}
+
+/*****************************************************/
+std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& isJson, const bool& canRetry, bool& doRetry)
+{
+    mDebug << __func__ << "() HTTP:" << response.status; mDebug.Info();
+
+    doRetry = (canRetry && response.status == 503); 
+    if (doRetry) return ""; // early return
+
+    // if redirected, should remember it for next time
+    if (mOptions.followRedirects && !response.location.empty()) 
+        RegisterRedirect(response.location);
+
+    switch (response.status)
+    {
+        case 200: // OK
+        {
+            isJson = (response.has_header("Content-type") && 
+                response.get_header_value("Content-type") == "application/json");
+            return std::move(response.body);
+        }
+        
+        case 301: case 302: // HTTP redirect
+            throw GetRedirectException(response); break;
+        
+        case 403: throw EndpointException("Access Denied");
+        case 404: throw EndpointException("Not Found");
+        default:  throw EndpointException(response.status);
+    }
+}
+
+/*****************************************************/
+std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
+{
+    mDebug << __func__ << "()"; mDebug.Info();
+
+    httplib::Headers headers; std::string url(SetupRequest(input, headers));
+
+    return DoRequestsFull([&](){ return mHttpClient->Get(url.c_str(), headers); }, isJson);
+}
+
+/*****************************************************/
+std::string HTTPRunner::RunAction(const RunnerInput_FilesIn& input, bool& isJson)
+{
+    mDebug << __func__ << "(FilesIn)"; mDebug.Info();
+
+    // set up the POST body as multipart files
+    httplib::MultipartFormDataItems postParams;
+    std::string url(SetupRequest(input, postParams));
 
     for (const decltype(input.files)::value_type& it : input.files)
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
 
-    // set up POST body files being done via a chunked stream
+    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), postParams); }, isJson);
+}
+
+/*****************************************************/
+std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJson)
+{
+    mDebug << __func__ << "(StreamIn)"; mDebug.Info();
+
+    httplib::MultipartFormDataItems postParams;
+    std::string url(SetupRequest(input, postParams));
+
+    for (const decltype(input.files)::value_type& it : input.files)
+        postParams.push_back({it.first, it.second.data, it.second.name, {}});
+
+    // set up the POST body as files being done via a chunked stream
     httplib::MultipartFormDataProviderItems streamParams;
 
-    std::unique_ptr<char[]> streamBuffer { !input.sfiles.empty()
-        ? std::make_unique<char[]>(mOptions.streamBufferSize) : nullptr };
+    const size_t bufSize { mOptions.streamBufferSize }; // copy
+    std::unique_ptr<char[]> streamBuffer { !input.fstreams.empty()
+        ? std::make_unique<char[]>(bufSize) : nullptr };
 
-    for (const decltype(input.sfiles)::value_type& it : input.sfiles)
+    for (const decltype(input.fstreams)::value_type& it : input.fstreams)
     {
-        httplib::ContentProviderWithoutLength sfunc { GetStreamFunc(
-            streamBuffer.get(), mOptions.streamBufferSize, it.second.data) };
+        // callback that reads from the provided file stream into our buffer then httplib's buffer
+        httplib::ContentProviderWithoutLength sfunc { [&](size_t offset, httplib::DataSink& sink)->bool
+        {
+            size_t read; bool hasMore { it.second.streamer(offset, streamBuffer.get(), bufSize, read) };
+            sink.os.write(streamBuffer.get(), static_cast<std::streamsize>(read));
+            if (!hasMore) sink.done(); 
+            return true;
+        }};
+
         streamParams.push_back({it.first, sfunc, it.second.name, {}});
     }
-
-    // do the request some number of times
-    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
-    {
-        httplib::Result response { streamParams.empty() 
-            ? mHttpClient->Post(url.c_str(), httplib::Headers(), postParams)
-            : mHttpClient->Post(url.c_str(), httplib::Headers(), postParams, streamParams) };
-
-        // if no response or got 503, potentially retry
-        if (!response || response->status == 503)
-        {
-            if (mCanRetry && attempt <= mOptions.maxRetries)
-            {
-                mDebug << __func__ << "... ";
-                
-                if (response) mDebug << "HTTP " << response->status;
-                else mDebug << httplib::to_string(response.error());
-
-                mDebug << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1; mDebug.Error();
-
-                std::this_thread::sleep_for(mOptions.retryTime); continue;
-            }
-            // got a response, treat like any other error below
-            else if (response) { }
-            // otherwise throw an exception based on the error
-            else if (response.error() == httplib::Error::Connection)
-                 throw ConnectionException();
-            else throw LibraryException(response.error());
-        }
-
-        mDebug << __func__ << "... HTTP:" << response->status; mDebug.Info();
-
-        // if redirected, should remember it for next time
-        if (mOptions.followRedirects && !response->location.empty()) 
-            HandleRedirect(response->location);
-
-        switch (response->status)
-        {
-            case 200: // OK
-            {
-                auto contentIt { response->headers.find("Content-type") };
-                isJson = (contentIt != response->headers.end() 
-                    && contentIt->second == "application/json");
-                return std::move(response->body);
-            }
-            
-            case 301: case 302: // HTTP redirect
-                RedirectException(response->headers); break;
-            
-            case 403: throw EndpointException("Access Denied");
-            case 404: throw EndpointException("Not Found");
-            default:  throw EndpointException(response->status);
-        }
-    }
+    
+    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), { }, postParams, streamParams); }, isJson);
 }
 
 /*****************************************************/
-httplib::ContentProviderWithoutLength HTTPRunner::GetStreamFunc(
-    char* const& buf, const size_t& bufSize, std::istream& in)
+void HTTPRunner::RunAction(const RunnerInput_StreamOut& input, bool& isJson)
 {
-    return [&](size_t offset, httplib::DataSink& sink)->bool
-    {
-        in.read(buf, static_cast<std::streamsize>(bufSize));
-        sink.os.write(buf, in.gcount());
+    mDebug << __func__ << "(StreamOut)"; mDebug.Info();
 
-        mDebug << __func__ << "... read " << in.gcount() << " bytes into " << bufSize << " buffer"; mDebug.Info();
-        mDebug << __func__ << "... eof=" << in.eof() << " fail=" << in.fail() << " bad=" << in.bad(); mDebug.Info();
+    // httplib only supports ContentReceiver with Get() so use headers instead of MultiPart
+    httplib::Headers headers; std::string url(SetupRequest(input, headers));
 
-        if (in.eof()) sink.done();
+    bool canRetry, doRetry; size_t offset;
 
-        return !in.bad() && (!in.fail() || in.eof());
-    };
+    // Separate ResponseHandler callback as we need to check the response before streaming
+    httplib::ResponseHandler respFunc { [&](const httplib::Response& response)->bool {
+        HandleResponse(response, isJson, canRetry, doRetry); 
+        offset = 0; return true;
+    }};
+
+    httplib::ContentReceiver recvFunc { [&](const char* data, size_t length)->bool {
+        input.streamer(offset, data, length); 
+        offset += length; return true;
+    }};
+
+    // First we call DoRequests which will set canRetry (by ref), then runs the httplib Get(). 
+    // httplib then calls our ResponseHandler, which checks the response and canRetry, then sets doRetry if needed.  
+    // httplib then returns to DoRequests which checks the doRetry and starts over if set.
+
+    DoRequests([&](){ return mHttpClient->Get(url.c_str(), headers, respFunc, recvFunc); }, canRetry, doRetry);
 }
 
 /*****************************************************/
-void HTTPRunner::HandleRedirect(const std::string& location)
+void HTTPRunner::RegisterRedirect(const std::string& location)
 {
     mDebug << __func__ << "(location:" << location << ")"; mDebug.Info();
 
@@ -209,23 +310,19 @@ void HTTPRunner::HandleRedirect(const std::string& location)
 }
 
 /*****************************************************/
-void HTTPRunner::RedirectException(const httplib::Headers& headers)
+HTTPRunner::RedirectException HTTPRunner::GetRedirectException(const httplib::Response& response)
 {
-    std::string extext { "Redirected" };
-
-    auto locationIt { headers.find("Location") };
-    if (locationIt != headers.end())
+    if (response.has_header("Location"))
     {
-        std::string location { locationIt->second };
+        std::string location { response.get_header_value("Location") };
         
         const size_t paramsPos { location.find("?") };
         if (paramsPos != std::string::npos) // remove URL params
             location.erase(paramsPos);
 
-        extext += ": "+location;
+        return RedirectException(location);
     }
-
-    throw EndpointException(extext);
+    else return RedirectException();
 }
 
 } // namespace Backend

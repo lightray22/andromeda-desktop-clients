@@ -31,6 +31,12 @@ public:
 
     virtual std::string RunAction(const RunnerInput& input) override;
 
+    virtual std::string RunAction(const RunnerInput_FilesIn& input) override;
+    
+    virtual std::string RunAction(const RunnerInput_StreamIn& input) override;
+    
+    virtual void RunAction(const RunnerInput_StreamOut& input) override;
+
     virtual bool RequiresSession() override { return false; }
 
 private:

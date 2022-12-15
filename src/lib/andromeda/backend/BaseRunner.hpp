@@ -11,6 +11,9 @@ namespace Andromeda {
 namespace Backend {
 
 struct RunnerInput;
+struct RunnerInput_FilesIn;
+struct RunnerInput_StreamIn;
+struct RunnerInput_StreamOut;
 
 /** Implements the actual external call to the API */
 class BaseRunner
@@ -36,6 +39,26 @@ public:
      * @return result string from API
      */
     virtual std::string RunAction(const RunnerInput& input) = 0;
+
+    /**
+     * Runs an API call and returns the result
+     * @param input input params struct with files
+     * @return result string from API
+     */
+    virtual std::string RunAction(const RunnerInput_FilesIn& input) = 0;
+    
+    /**
+     * Runs an API call and returns the result
+     * @param input input params struct with file streams
+     * @return result string from API
+     */
+    virtual std::string RunAction(const RunnerInput_StreamIn& input) = 0;
+    
+    /**
+     * Runs an API call and streams the result
+     * @param input input params struct with streamer
+     */
+    virtual void RunAction(const RunnerInput_StreamOut& input) = 0;
 
     /** Returns true if the backend requires sessions */
     virtual bool RequiresSession() = 0;

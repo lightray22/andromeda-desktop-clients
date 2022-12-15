@@ -41,16 +41,14 @@ std::string CLIRunner::RunAction(const RunnerInput& input)
 
     const std::string* inputPtr { nullptr };
 
-    if (input.files.size() > 0)
+    /*if (input.files.size() > 0)
     {
         if (input.files.size() > 1) throw Exception("Multiple Files");
         const RunnerInput::FileDatas::value_type& infile(*(input.files.begin()));
 
         arguments.push_back("--"+infile.first+"-");
         inputPtr = &(infile.second.data);
-    }
-
-    // TODO support file stream inputs
+    }*/ // TODO move to FilesIn
 
     std::ostringstream command; 
     for (const std::string& str : arguments) 
@@ -82,6 +80,26 @@ std::string CLIRunner::RunAction(const RunnerInput& input)
     if (error) { process.terminate(); throw Exception(error.message()); }
 
     return output;
+}
+
+/*****************************************************/
+std::string CLIRunner::RunAction(const RunnerInput_FilesIn& input)
+{
+    throw Exception("not implemented");
+    // TODO implement me (commonize above)
+}
+
+/*****************************************************/
+std::string CLIRunner::RunAction(const RunnerInput_StreamIn& input)
+{
+    throw Exception("not implemented");
+    // TODO implement me (commonize above)
+}
+
+void CLIRunner::RunAction(const RunnerInput_StreamOut& input)
+{
+    throw Exception("not implemented");
+    // TODO implement me (commonize above)
 }
 
 } // namespace Backend

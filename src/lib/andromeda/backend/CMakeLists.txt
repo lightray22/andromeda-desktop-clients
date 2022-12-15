@@ -6,6 +6,7 @@ set(SOURCE_FILES
     ConfigOptions.cpp
     HTTPOptions.cpp
     HTTPRunner.cpp
+    RunnerInput.cpp
     )
 
 target_sources(andromeda PRIVATE ${SOURCE_FILES})

@@ -125,11 +125,11 @@ apiurl=myserv.tld
 read-only
 ```
 
-The ID of a folder to mount can also be specified in the `-s` URL.
+The ID of a folder to mount can also be specified in the `-a` URL.
 If no folder/filesystem ID is provided, the "SuperRoot" will be mounted
 containing all filesystems and other special folders.
 
-The FUSE client can either connect to a remote server via HTTP by specifying a URL with `-s`,
+The FUSE client can either connect to a remote server via HTTP by specifying a URL with `-a`,
 or it can run the server as a local program by specifying the path with `-p`.  Using `-p` as a 
 flag rather than an option will attempt to use $PATH to find the server.
 

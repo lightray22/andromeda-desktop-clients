@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     try
     {
         bool isJson = false; std::string resp { 
-            runner.RunAction(commandLine.GetRunnerInput(), isJson) };
+            commandLine.RunInputAction(runner, isJson) };
 
         if (!isJson)
         {

@@ -50,7 +50,6 @@ void AccountTab::Mount(bool autoMount)
 
     BackendImpl& backend { mBackendContext->GetBackend() };
     std::string mountPath { backend.GetName(false) };
-    // TODO replace / in mountPath just in case
 
     try
     {

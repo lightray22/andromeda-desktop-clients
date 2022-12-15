@@ -1,6 +1,7 @@
 #ifndef LIBA2_BACKENDIMPL_H_
 #define LIBA2_BACKENDIMPL_H_
 
+#include <functional>
 #include <map>
 #include <string>
 
@@ -221,6 +222,23 @@ public:
      */
     std::string ReadFile(const std::string& id, const uint64_t offset, const size_t length);
 
+    /** 
+     * A function that supplies a buffer to read output data out of
+     * @param offset offset of the current output data 
+     * @param data pointer to buffer containing data
+     * @param length length of the data buffer
+     */
+    typedef std::function<void(const size_t offset, const char* buf, const size_t length)> ReadFunc;
+
+    /**
+     * Streams data from a file
+     * @param id file ID
+     * @param offset offset to read from
+     * @param length number of bytes to read
+     * @param func data handler function
+     */
+    void ReadFile(const std::string& id, const uint64_t offset, const size_t length, ReadFunc func);
+
     /**
      * Writes data to a file
      * @param id file ID
@@ -243,11 +261,8 @@ private:
         APIException(int code, const std::string& message) : 
             Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
 
-    /**
-     * Runs an action with authentication details 
-     * @see BaseRunner::RunAction()
-     */
-    std::string RunAction(RunnerInput& input);
+    /** Augment input with authentication details */
+    RunnerInput& FinalizeInput(RunnerInput& input);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
