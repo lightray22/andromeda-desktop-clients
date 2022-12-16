@@ -48,7 +48,7 @@ std::string CommandLine::HelpText()
 CommandLine::CommandLine(Options& options) : mOptions(options) { }
 
 /*****************************************************/
-CommandLine::~CommandLine() { }
+CommandLine::~CommandLine() { } // for unique_ptr
 
 /*****************************************************/
 std::string getNextValue(Utilities::StringList& argv, size_t& i)

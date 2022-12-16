@@ -1,6 +1,7 @@
 #ifndef LIBA2_BACKENDIMPL_H_
 #define LIBA2_BACKENDIMPL_H_
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <string>
@@ -278,7 +279,7 @@ private:
     std::string mSessionID;
     std::string mSessionKey;
     
-    uint64_t mReqCount { 0 };
+    std::atomic<uint64_t> mReqCount { 0 };
 
     ConfigOptions mOptions;
     BaseRunner& mRunner;

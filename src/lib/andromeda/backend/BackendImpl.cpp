@@ -486,7 +486,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
-    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast; mDebug.Info();
+    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast << ")"; mDebug.Info();
 
     if (isMemory()) return std::string(length,'\0');
 
@@ -504,7 +504,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
-    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast; mDebug.Info();
+    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast << ")"; mDebug.Info();
 
     if (isMemory()) { std::string ret(length,'\0'); func(0,ret.data(),length); }
 

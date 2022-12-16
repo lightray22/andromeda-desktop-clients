@@ -46,6 +46,8 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folde
 
         mFsConfig = &FSConfig::LoadByID(backend, fsid);
     }
+
+    mDebug << __func__ << "... ID:" << GetID() << " name:" << mName; mDebug.Info();
 }
 
 /*****************************************************/

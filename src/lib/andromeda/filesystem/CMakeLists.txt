@@ -8,4 +8,5 @@ set(SOURCE_FILES
 
 target_sources(andromeda PRIVATE ${SOURCE_FILES})
 
+add_subdirectory(filedata)
 add_subdirectory(folders)

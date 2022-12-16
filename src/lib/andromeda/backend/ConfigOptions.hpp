@@ -33,7 +33,7 @@ struct ConfigOptions
     /** The client cache type (debug) */
     CacheType cacheType { CacheType::NORMAL };
     /** The file data page size */
-    size_t pageSize { 1024*1024 }; // 1M
+    size_t pageSize { 128*1024 }; // 128K
     /** The time period to use for refreshing API data */
     std::chrono::seconds refreshTime { std::chrono::seconds(15) };
 };

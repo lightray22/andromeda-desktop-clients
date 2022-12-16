@@ -45,19 +45,38 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    mDebug << __func__ << "() " << GetID(); mDebug.Info();
 
     try
     {
-        data.at("name").get_to(mName);
-
-        mDebug << __func__ << "... newName:" << mName; mDebug.Info();
+        decltype(mName) newName; data.at("name").get_to(newName);
+        if (newName != mName)
+        {
+            mName = newName;
+            mDebug << __func__ << "... newName:" << mName; mDebug.Info();
+        }
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
-        if (!modifiedJ.is_null()) modifiedJ.get_to(mModified);
+        if (!modifiedJ.is_null())
+        {
+            decltype(mModified) newModified; modifiedJ.get_to(newModified);
+            if (newModified != mModified)
+            {
+                mModified = newModified;
+                mDebug << __func__ << "... newModified:" << mModified; mDebug.Info();
+            }
+        }
 
         const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
-        if (!accessedJ.is_null()) accessedJ.get_to(mAccessed);
+        if (!accessedJ.is_null())
+        {
+            decltype(mAccessed) newAccessed; accessedJ.get_to(newAccessed);
+            if (newAccessed != mAccessed)
+            {
+                mAccessed = newAccessed;
+                mDebug << __func__ << "... newAccessed:" << mAccessed; mDebug.Info();
+            }
+        }
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

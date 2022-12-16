@@ -28,7 +28,7 @@ public:
         explicit EndpointException(const std::string& message) :
             Exception("Endpoint: "+message) {}; };
 
-    virtual ~BaseRunner(){ };
+    virtual ~BaseRunner(){ }; // for unique_ptr
 
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;

@@ -2,6 +2,7 @@
 #ifndef LIBA2_FILE_H_
 #define LIBA2_FILE_H_
 
+#include <memory>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
@@ -16,6 +17,8 @@ namespace Backend { class BackendImpl; }
 namespace Filesystem {
 class Folder;
 
+namespace Filedata { class PageManager; }
+
 /** An Andromeda file */
 class File : public Item
 {
@@ -25,7 +28,7 @@ public:
     class WriteTypeException : public Exception { public:
         WriteTypeException() : Exception("Write Type Unsupported") {}; };
 
-    virtual ~File() { }
+    virtual ~File();
 
     virtual void Refresh(const nlohmann::json& data) override;
 
@@ -61,6 +64,8 @@ public:
 
     virtual void FlushCache(bool nothrow = false) override;
 
+    uint64_t GetBackendSize() { return mBackendSize; };
+
 protected:
 
     virtual void SubDelete() override;
@@ -74,31 +79,15 @@ private:
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const final;
 
-    size_t mPageSize;
-
-    struct Page
-    {
-        explicit Page(size_t pageSize) : data(pageSize){}
-        typedef std::vector<std::byte> Data; Data data;
-        bool dirty { false };
-    };
-
-    typedef std::map<uint64_t, Page> PageMap; PageMap mPages;
-
-    /** 
-     * Returns a reference to a data page
-     * @param index index of the page to load
-     * @param minsize minimum size of the page for writing
-     */
-    virtual Page& GetPage(const uint64_t index, const size_t minsize = 0) final;
-
     /** Reads data from the given page index */
     virtual void ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     /** Writes data to the given page index */
     virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
-    /* file size as far as the backend knows */
+    std::unique_ptr<Filedata::PageManager> mPageManager;
+
+    /* file size as far as the backend knows - may have dirty writes that extend the file */
     uint64_t mBackendSize;
 
     /** true if the file was deleted */
