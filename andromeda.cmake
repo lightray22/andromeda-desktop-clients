@@ -48,7 +48,6 @@ else()
         -Wcast-qual 
         -Wconversion 
         -Wdouble-promotion
-        -Wfloat-equal
         -Wformat=2 
         -Wimplicit-fallthrough
         -Wnon-virtual-dtor 

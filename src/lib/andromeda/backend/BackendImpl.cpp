@@ -523,7 +523,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    mDebug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size(); mDebug.Info();
+    mDebug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size() << ")"; mDebug.Info();
 
     if (isMemory()) return nullptr;
 

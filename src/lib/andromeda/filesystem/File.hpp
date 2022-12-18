@@ -64,8 +64,6 @@ public:
 
     virtual void FlushCache(bool nothrow = false) override;
 
-    uint64_t GetBackendSize() { return mBackendSize; };
-
 protected:
 
     virtual void SubDelete() override;
@@ -86,9 +84,6 @@ private:
     virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
-
-    /* file size as far as the backend knows - may have dirty writes that extend the file */
-    uint64_t mBackendSize;
 
     /** true if the file was deleted */
     bool mDeleted { false };

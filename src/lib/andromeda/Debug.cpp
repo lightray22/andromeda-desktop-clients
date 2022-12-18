@@ -23,16 +23,12 @@ Debug::operator bool() const
 void Debug::Info(const std::string& str)
 {
     if (sLevel >= Level::INFO) Error(str);
-
-    if (str.empty()) mBuffer.str(std::string());
 }
 
 /*****************************************************/
 void Debug::Backend(const std::string& str)
 {
     if (sLevel >= Level::BACKEND) Error(str);
-
-    if (str.empty()) mBuffer.str(std::string());
 }
 
 /*****************************************************/
@@ -40,7 +36,7 @@ void Debug::Error(const std::string& str)
 {
     if (sLevel < Level::ERRORS) return;
 
-    const std::lock_guard<std::mutex> lock(sMutex);
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
     if (sLevel >= Level::DETAILS)
     {
@@ -66,6 +62,8 @@ void Debug::Error(const std::string& str)
 /*****************************************************/
 void Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
 {
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+    
     mBuffer << "printing " << bytes << " bytes at " 
         << std::hex << ptr << std::endl;
 

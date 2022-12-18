@@ -65,6 +65,8 @@ public:
     /** Append to an internal buffer that can be shown with an empty Print */
     template <class T> Debug& operator<<(const T& dat)
     {
+        const std::lock_guard<decltype(sMutex)> lock(sMutex);
+        
         if (static_cast<bool>(sLevel))
             mBuffer << dat;
         return *this;

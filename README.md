@@ -1,4 +1,6 @@
 
+!!! Andromeda is in early development - do not use in production! !!!
+
 * [Overview](#overview)
 * [libandromeda](#libandromeda)
 * [CLI Client](#cli-client)

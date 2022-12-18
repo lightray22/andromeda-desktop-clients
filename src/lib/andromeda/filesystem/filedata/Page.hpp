@@ -12,32 +12,41 @@ namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
 
+typedef std::vector<std::byte> Bytes;
+
+/** return the size_t min of a (uint64_t and size_t) */
+static inline size_t min64st(uint64_t s1, size_t s2)
+{
+    return static_cast<size_t>(std::min(s1, static_cast<uint64_t>(s2)));
+}
+
 /** A file data page */
 struct Page
 {
-    explicit Page(size_t pageSize) : data(pageSize) { }
+    explicit Page(size_t pageSize) : mData(pageSize) { }
 
-    typedef std::vector<std::byte> Data; Data data;
-    
-    bool dirty { false };
-    std::shared_mutex mutex;
+    typedef Bytes Data; 
+
+    Data mData;
+    bool mDirty { false };
+    std::shared_mutex mMutex;
 };
-
-typedef std::shared_ptr<Page> SharedPage;
 
 /** A shared-locked read-only page reference */
 class PageReader
 {
 public:
-    explicit PageReader(SharedPage& page) : 
-        mPage(page), mLock(page->mutex) { }
+    explicit PageReader(Page& page) : 
+        mPage(page), mLock(page.mMutex) { }
 
-    const Page::Data& GetData() const { return mPage->data; }
-    const Page::Data& operator*() const { return mPage->data; }
-    const Page::Data* operator->() const { return &mPage->data; }
+    const Page::Data& operator*() const { return mPage.mData; }
+    const Page::Data* operator->() const { return &mPage.mData; }
+
+    /** Reset the page's dirty flag to false */
+    void ResetDirty() { mPage.mDirty = false; }
 
 private:
-    SharedPage mPage;
+    Page& mPage;
     std::shared_lock<std::shared_mutex> mLock;
 };
 
@@ -45,15 +54,16 @@ private:
 class PageWriter
 {
 public:
-    explicit PageWriter(SharedPage& page) : 
-        mPage(page), mLock(page->mutex) { }
+    explicit PageWriter(Page& page) : 
+        mPage(page), mLock(page.mMutex) { page.mDirty = true; }
 
-    Page::Data& GetData() { return mPage->data; }
-    Page::Data& operator*() { return mPage->data; }
-    Page::Data* operator->() { return &mPage->data; }
+    Page::Data& operator*() { return mPage.mData; }
+    Page::Data* operator->() { return &mPage.mData; }
+    const Page::Data& operator*() const { return mPage.mData; }
+    const Page::Data* operator->() const { return &mPage.mData; }
 
 private:
-    SharedPage mPage;
+    Page& mPage;
     std::unique_lock<std::shared_mutex> mLock;
 };
 

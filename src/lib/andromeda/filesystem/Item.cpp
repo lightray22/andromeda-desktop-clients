@@ -49,7 +49,8 @@ void Item::Refresh(const nlohmann::json& data)
 
     try
     {
-        decltype(mName) newName; data.at("name").get_to(newName);
+        decltype(mName) newName; 
+        data.at("name").get_to(newName);
         if (newName != mName)
         {
             mName = newName;
@@ -59,7 +60,8 @@ void Item::Refresh(const nlohmann::json& data)
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
         if (!modifiedJ.is_null())
         {
-            decltype(mModified) newModified; modifiedJ.get_to(newModified);
+            decltype(mModified) newModified; 
+            modifiedJ.get_to(newModified);
             if (newModified != mModified)
             {
                 mModified = newModified;
@@ -70,7 +72,8 @@ void Item::Refresh(const nlohmann::json& data)
         const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
         if (!accessedJ.is_null())
         {
-            decltype(mAccessed) newAccessed; accessedJ.get_to(newAccessed);
+            decltype(mAccessed) newAccessed; 
+            accessedJ.get_to(newAccessed);
             if (newAccessed != mAccessed)
             {
                 mAccessed = newAccessed;
