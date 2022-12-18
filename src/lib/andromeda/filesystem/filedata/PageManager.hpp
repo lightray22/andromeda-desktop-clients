@@ -46,36 +46,39 @@ public:
     /** Returns the current size on the backend (we may have dirty writes) */
     uint64_t GetBackendSize() const { return mBackendSize; }
 
-    /** Returns a locked read page at the given index - must exist */
-    const PageReader GetPageReader(const uint64_t index);
+    typedef std::shared_lock<std::shared_mutex> SharedLockR;
+    typedef std::unique_lock<std::shared_mutex> SharedLockW;
+
+    /** Returns a read lock for page data */
+    SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
+    
+    /** Returns a write lock for page data */
+    SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
+
+    /** Returns the buffer for the page at the given index - use GetReadLock() first! */
+    const std::byte* GetPageRead(const uint64_t index);
 
     /**
-     * Returns a locked write page at the given index - can be a new index
+     * Returns the buffer for the page at the given index - use GetWriteLock() first!
      * @param offset page offset of the intended write
      * @param length length of the intended write
      */
-    PageWriter GetPageWriter(const uint64_t index, const size_t offset, const size_t length);
+    std::byte* GetPageWrite(const uint64_t index, const size_t offset, const size_t length);
 
     /** Returns true if the page at the given index is dirty */
-    bool isDirty(const uint64_t index);
+    bool isDirty(const uint64_t index) const;
 
-    /** Removes the page at the given index, writing it if dirty */
+    /** Removes the page at the given index, writing it if dirty - THREAD SAFE */
     bool EvictPage(const uint64_t index);
 
     /**
-     * Removes all non-dirty pages
-     * @return uint64_t the max dirty offset + 1
-     */
-    uint64_t EvictReadPages();
-
-    /**
-     * Writes back all dirty pages
+     * Writes back all dirty pages - THREAD SAFE
      * @param nothrow if true, don't throw on failure
      */
     void FlushPages(bool nothrow = false);
 
     /**
-     * Informs us of the file changing on the backend
+     * Informs us of the file changing on the backend - THREAD SAFE
      * 
      * @param backendSize new size according to the backend
      * @param reset if true, invalidate/dump all pages
@@ -83,24 +86,19 @@ public:
      */
     uint64_t RemoteChanged(const uint64_t backendSize, bool reset = true);
 
-    /** Truncate pages according to the given size and inform the backend */
+    /** Truncate pages according to the given size and inform the backend - THREAD SAFE */
     void Truncate(const uint64_t newSize);
 
 private:
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
-    typedef std::shared_lock<std::shared_mutex> SharedLockR;
-    typedef std::unique_lock<std::shared_mutex> SharedLockW;
-
-    /** A unique_ptr to a page - Page cannot be moved due to mutex */
-    typedef std::unique_ptr<Page> PagePtr;
     /** Map of page index to page */
-    typedef std::map<uint64_t, PagePtr> PageMap;
+    typedef std::map<uint64_t, Page> PageMap;
+    /** Map of page index to page reference */
+    typedef std::map<uint64_t, Page&> PageRefMap;
     /** List of <index,length> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
 
-    /** Returns true if the page at the given index is dirty */
-    bool isDirty(const uint64_t index, UniqueLock& pagesLock);
+    typedef std::unique_lock<std::mutex> UniqueLock;
 
     /** Returns true if the page at the given index is pending download */
     bool isPending(const uint64_t index, UniqueLock& pagesLock);
@@ -120,11 +118,8 @@ private:
     /** Removes the given index from the pending-read list */
     void RemovePending(const uint64_t index, UniqueLock& pagesLock);
 
-    /** A map of page offset to a locked page */
-    typedef std::map<uint64_t, PageReader> LockedPageMap;
-
-    /** Writes a series of consecutive locked pages */
-    void WritePages(LockedPageMap& pages);
+    /** Writes a series of consecutive pages */
+    void WritePages(PageRefMap& pages, SharedLockR& dataLock);
 
     /** Reference to the parent file */
     File& mFile;
@@ -144,8 +139,11 @@ private:
     PendingMap mPendingPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
-    /** Mutex that protects mPages and mPendingPages */
-    std::mutex mPagesMutex;
+    /** Mutex that protects the page maps */
+    mutable std::mutex mPagesMutex;
+
+    /** Mutex that protects page content and mBackendSize */
+    std::shared_mutex mDataMutex;
 
     /** Mutex held by background threads to keep this in scope */
     std::shared_mutex mClassMutex;

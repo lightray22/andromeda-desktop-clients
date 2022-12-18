@@ -11,8 +11,6 @@ using Andromeda::Backend::BackendImpl;
 using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/filedata/Page.hpp"
 using Andromeda::Filesystem::Filedata::Page;
-using Andromeda::Filesystem::Filedata::PageReader;
-using Andromeda::Filesystem::Filedata::PageWriter;
 #include "andromeda/filesystem/filedata/PageManager.hpp"
 using Andromeda::Filesystem::Filedata::PageManager;
 
@@ -134,12 +132,12 @@ void File::ReadPage(std::byte* buffer, const uint64_t index, const size_t offset
 {
     if (mDebug) { mDebug << __func__ << "() " << GetID() << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
-    const PageReader page { mPageManager->GetPageReader(index) };
+    const std::byte* pageBuf { mPageManager->GetPageRead(index) };
 
     const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
     const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
 
-    std::copy(page->cbegin()+iOffset, page->cbegin()+iOffset+iLength, buffer);
+    std::copy(pageBuf+iOffset, pageBuf+iOffset+iLength, buffer); 
 }
 
 /*****************************************************/
@@ -147,12 +145,12 @@ void File::WritePage(const std::byte* buffer, const uint64_t index, const size_t
 {
     if (mDebug) { mDebug << __func__ << "() " << GetID() << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
-    PageWriter page { mPageManager->GetPageWriter(index, offset, length) };
-        
+    std::byte* pageBuf { mPageManager->GetPageWrite(index, offset, length) };
+    
     const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
     const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
 
-    std::copy(buffer, buffer+iLength, page->begin()+iOffset);
+    std::copy(buffer, buffer+iLength, pageBuf+iOffset);
 }
 
 /*****************************************************/
@@ -161,6 +159,8 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
     if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
     if (offset >= mSize) return 0;
+
+    PageManager::SharedLockR lock { mPageManager->GetReadLock() };
 
     length = Filedata::min64st(mSize-offset, length);
 
@@ -198,6 +198,8 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
 
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
+
+    PageManager::SharedLockW lock { mPageManager->GetWriteLock() };
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
