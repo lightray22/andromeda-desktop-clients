@@ -21,7 +21,7 @@ enum class ExitCode
 /*****************************************************/
 int main(int argc, char** argv)
 {
-    Debug debug("main"); 
+    Debug debug("main",nullptr); 
 
     // if foreground, you must want debug
     Debug::SetLevel(Debug::Level::ERRORS); 

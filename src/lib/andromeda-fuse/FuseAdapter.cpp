@@ -12,7 +12,7 @@ using Andromeda::Debug;
 using Andromeda::Filesystem::Folder;
 
 static a2fuse_operations a2fuse_ops;
-static Debug sDebug("FuseAdapter");
+static Debug sDebug("FuseAdapter",nullptr);
 
 namespace AndromedaFuse {
 

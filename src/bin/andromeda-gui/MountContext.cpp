@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 
 /*****************************************************/
 MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
-    mDebug("MountContext") 
+    mDebug("MountContext",this) 
 {
     mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();
 

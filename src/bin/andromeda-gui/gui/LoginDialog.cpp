@@ -10,7 +10,7 @@ using Andromeda::BaseException;
 /*****************************************************/
 LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
     mQtUi(std::make_unique<Ui::LoginDialog>()),
-    mDebug("LoginDialog")
+    mDebug("LoginDialog",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 

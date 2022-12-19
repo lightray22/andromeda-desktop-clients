@@ -12,7 +12,7 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     mActionExit("Exit"),
     mApplication(application),
     mMainWindow(mainWindow),
-    mDebug("SystemTray")
+    mDebug("SystemTray",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 

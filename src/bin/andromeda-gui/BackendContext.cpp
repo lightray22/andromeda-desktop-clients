@@ -10,7 +10,7 @@ using Andromeda::Backend::HTTPRunner;
 BackendContext::BackendContext(
     const std::string& url, const std::string& username, 
     const std::string& password, const std::string& twofactor) : 
-    mDebug("BackendContext") 
+    mDebug("BackendContext",this) 
 {
     mDebug << __func__ << "(url:" << url << ", username:" << username << ")"; mDebug.Info();
 

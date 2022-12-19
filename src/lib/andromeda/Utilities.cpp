@@ -38,7 +38,7 @@ Utilities::StringList Utilities::explode(
             retval.push_back(segment); 
             segment.clear(); 
         }
-        else { skipped++; segment += delim; }
+        else { ++skipped; segment += delim; }
 
         str.erase(0, segEnd + delim.length());
     }
@@ -89,8 +89,8 @@ std::string Utilities::trim(const std::string& str)
 {
     const size_t size { str.size() };
 
-    size_t start = 0; while (start < size && std::isspace(str[start])) start++;
-    size_t end = size; while (end > 0 && std::isspace(str[end-1])) end--;
+    size_t start = 0; while (start < size && std::isspace(str[start])) ++start;
+    size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
 
     return str.substr(start, end-start);
 }

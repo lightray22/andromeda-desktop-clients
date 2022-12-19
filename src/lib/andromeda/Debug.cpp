@@ -23,12 +23,22 @@ Debug::operator bool() const
 void Debug::Info(const std::string& str)
 {
     if (sLevel >= Level::INFO) Error(str);
+    else
+    {
+        const std::lock_guard<decltype(sMutex)> lock(sMutex);
+        mBuffer.str(std::string()); // reset buffer
+    }
 }
 
 /*****************************************************/
 void Debug::Backend(const std::string& str)
 {
     if (sLevel >= Level::BACKEND) Error(str);
+    else
+    {
+        const std::lock_guard<decltype(sMutex)> lock(sMutex);
+        mBuffer.str(std::string()); // reset buffer
+    }
 }
 
 /*****************************************************/

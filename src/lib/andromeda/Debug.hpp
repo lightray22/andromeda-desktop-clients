@@ -27,7 +27,7 @@ public:
      * @param prefix to use for all prints
      * @param addr address to print with details
      */
-    explicit Debug(const std::string& prefix, void* addr = nullptr) : 
+    explicit Debug(const std::string& prefix, void* addr) : 
         mAddr(addr), mPrefix(prefix) { }
 
     /** Returns the configured global debug level */

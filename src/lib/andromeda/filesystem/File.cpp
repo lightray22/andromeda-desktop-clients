@@ -62,10 +62,7 @@ void File::Refresh(const nlohmann::json& data)
         decltype(mSize) newSize;
         data.at("size").get_to(newSize);
         if (newSize != mPageManager->GetBackendSize())
-        {
-            const uint64_t maxDirty { mPageManager->RemoteChanged(newSize) };
-            mSize = std::max(newSize, maxDirty);
-        }
+            mPageManager->RemoteChanged(newSize);
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
@@ -151,12 +148,15 @@ void File::WritePage(const std::byte* buffer, const uint64_t index, const size_t
     const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
 
     std::copy(buffer, buffer+iLength, pageBuf+iOffset);
+
+    mSize = mPageManager->GetFileSize();
 }
 
 /*****************************************************/
 size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
 {    
-    if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset 
+        << " length:" << length << ") mSize:" << mSize; mDebug.Info(); }
 
     if (offset >= mSize) return 0;
 
@@ -175,8 +175,8 @@ size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
         const size_t pageSize { mPageManager->GetPageSize() };
 
         const uint64_t index { byte / pageSize };
-        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) };
-        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) };
+        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
+        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
         if (mDebug) { mDebug << __func__ << "... size:" << mSize << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
@@ -204,14 +204,13 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
         if (writeMode == FSConfig::WriteMode::APPEND 
-            && offset != mPageManager->GetBackendSize()) throw WriteTypeException();
+            && offset != mSize) throw WriteTypeException();
 
         const std::string data(reinterpret_cast<const char*>(buffer), length);
 
         mBackend.WriteFile(GetID(), offset, data);
 
-        mSize = std::max(mSize, offset+length); 
-        mPageManager->RemoteChanged(mSize, false);
+        mSize = std::max(mSize, offset+length);
     }
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
@@ -225,15 +224,13 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
         }
 
         const uint64_t index { byte / pageSize };
-        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) };
-        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) };
+        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
+        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
         if (mDebug) { mDebug << __func__ << "... mSize:" << mSize << " byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
 
-        WritePage(buffer, index, pOffset, pLength);   
-    
-        mSize = std::max(mSize, byte+pLength);
+        WritePage(buffer, index, pOffset, pLength);
         
         buffer += pLength; byte += pLength;
     }
@@ -249,7 +246,7 @@ void File::Truncate(const uint64_t newSize)
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 
     mPageManager->Truncate(newSize);
-    mSize = newSize;
+    mSize = mPageManager->GetFileSize();
 }
 
 } // namespace Filesystem

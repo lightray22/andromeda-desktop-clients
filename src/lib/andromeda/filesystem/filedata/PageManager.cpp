@@ -19,7 +19,7 @@ namespace Filedata {
 /*****************************************************/
 PageManager::PageManager(File& file, BackendImpl& backend, const size_t pageSize) : 
     mFile(file), mBackend(backend), mPageSize(pageSize), 
-    mBackendSize(file.GetSize()), mDebug("PageManager") 
+    mFileSize(file.GetSize()), mBackendSize(file.GetSize()), mDebug("PageManager",this) 
 { 
     mDebug << __func__ << "(file: " << file.GetName() << " pageSize:" << pageSize << ")"; mDebug.Info();
 }
@@ -38,7 +38,7 @@ PageManager::~PageManager()
 /*****************************************************/
 const std::byte* PageManager::GetPageRead(const uint64_t index)
 {
-    mDebug << __func__ << "(index:" << index << ")"; mDebug.Info();
+    mDebug << __func__ << "() " << mFile.GetID() << " (index:" << index << ")"; mDebug.Info();
 
     UniqueLock pagesLock(mPagesMutex);
 
@@ -64,63 +64,71 @@ const std::byte* PageManager::GetPageRead(const uint64_t index)
 }
 
 /*****************************************************/
-std::byte* PageManager::GetPageWrite(const uint64_t index, const size_t offset, const size_t length)
+std::byte* PageManager::GetPageWrite(const uint64_t index, const size_t pwOffset, const size_t pwLength)
 {
-    mDebug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info();
+    mDebug << __func__ << "() " << mFile.GetID() << " (index:" << index 
+        << " pwOffset:" << pwOffset << " pwLength:" << pwLength << ")"; mDebug.Info();
 
     UniqueLock pagesLock(mPagesMutex);
 
-    const uint64_t pageStart { index*mPageSize };
-    const uint64_t pageMax { (mBackendSize < pageStart) 
-        ? offset+length : std::max(mBackendSize-pageStart, offset+length) };
+    const uint64_t pageStart { index*mPageSize }; // offset of the page start
+    mFileSize = std::max(mFileSize, pageStart+pwOffset+pwLength);
+    const size_t pageSize { min64st(mFileSize-pageStart, mPageSize) };
 
-    const size_t pageSize { min64st(pageMax, mPageSize) };
-    mDebug << __func__ << "... pageSize:" << pageSize; mDebug.Info();
+    mDebug << __func__ << "... pageSize:" << pageSize 
+        << " mFileSize:" << mFileSize; mDebug.Info();
 
-    PageMap::iterator it = mPages.find(index);
+    { PageMap::iterator it = mPages.find(index);
     if (it != mPages.end())
     {
-        Page::Data& pageData { it->second.mData };
-        if (pageData.size() < offset+length) 
-            pageData.resize(offset+length);
+        ResizePage(it->second, pageSize);
 
         mDebug << __func__ << "... returning existing page"; mDebug.Info();
 
         it->second.mDirty = true;
-        return pageData.data();
-    }
+        return it->second.mData.data();
+    } }
 
     bool pending { isPending(index, pagesLock) };
-    if (pending || (offset || length < pageSize)) // partial write
+    
+    if (!pending && mBackendSize > pageStart &&
+        (pwOffset != 0 || pwLength < pageSize)) // partial write of existing page, read first
     {
-        if (!pending)
-        {
-            mDebug << __func__ << "... partial write, reading single"; mDebug.Info();
-            StartRead1(index, pagesLock); // background thread 
-        }
+        mDebug << __func__ << "... partial write, reading single"; mDebug.Info();
+        StartRead1(index, pagesLock); // background thread
+        pending = true;
+    }
 
+    if (pending)
+    {
         mDebug << __func__ << "... waiting for pending"; mDebug.Info();
 
+        PageMap::iterator it;
         while ((it = mPages.find(index)) == mPages.end())
             mPagesCV.wait(pagesLock);
 
-        Page::Data& pageData { it->second.mData };
-        if (pageData.size() < offset+length) 
-            pageData.resize(offset+length);
+        ResizePage(it->second, pageSize);
 
         mDebug << __func__ << "... returning pended page"; mDebug.Info();
 
         it->second.mDirty = true;
-        return pageData.data();
+        return it->second.mData.data();
     }
-    else // just create an empty page
+    else // create a new empty page
     {
-        mDebug << __func__ << " created page! returning"; mDebug.Info();
+        for (uint64_t curIndex { mBackendSize/mPageSize }; curIndex < index; ++curIndex)
+        {
+            PageMap::iterator it { mPages.find(curIndex) };
+            if (it != mPages.end() && it->second.mData.size() != mPageSize)
+            {
+                mDebug << __func__ << " resizing page index:" << curIndex; mDebug.Info();
+
+                ResizePage(it->second, mPageSize);
+            }
+        }
 
         Page& page { mPages.emplace(index, Page(pageSize)).first->second };
-        
-        page.mDirty = true;
-        return page.mData.data();
+        page.mDirty = true; return page.mData.data();
     }
 }
 
@@ -193,14 +201,14 @@ void PageManager::StartReadN(const uint64_t index, PageManager::UniqueLock& page
 /*****************************************************/
 uint64_t PageManager::GetReadSize(const uint64_t index, PageManager::UniqueLock& pagesLock)
 {
-    const uint64_t lastPage { (mBackendSize-1)/mPageSize };
+    const uint64_t lastPage { (mFileSize-1)/mPageSize }; // the last valid page index
     const size_t maxReadCount { min64st(lastPage-index+1, mReadSize) };
 
-    mDebug << __func__ << "(index:" << index << ") backendSize:" << mBackendSize
+    mDebug << __func__ << "(index:" << index << ") fileSize:" << mFileSize
         << " lastPage:" << lastPage << " maxReadCount:" << maxReadCount; mDebug.Info();
 
     size_t readCount { maxReadCount };
-    for (const PageMap::value_type& page : mPages) // check existing
+    for (const PageMap::value_type& page : mPages) // stop before next existing
     {
         if (page.first >= index)
         {
@@ -210,12 +218,12 @@ uint64_t PageManager::GetReadSize(const uint64_t index, PageManager::UniqueLock&
         }
     }
 
-    for (uint64_t idx { index }; idx < index+readCount; ++idx) // check pending
+    for (uint64_t curIndex { index }; curIndex < index+readCount; ++curIndex) // stop before next pending
     {
-        if (isPending(idx, pagesLock))
+        if (isPending(curIndex, pagesLock))
         {
-            mDebug << __func__ << "... pending page at:" << idx; mDebug.Info();
-            readCount = idx - index;
+            mDebug << __func__ << "... pending page at:" << curIndex; mDebug.Info();
+            readCount = curIndex - index;
             break; // pages are in order
         }
     }
@@ -230,18 +238,21 @@ void PageManager::ReadPages(const uint64_t index, const size_t count, PageManage
     SharedLockR readersLock(mReadersMutex);
     SemaphorLock threadSem(sBackendSem);
 
-    SharedLockR dataLock(mDataMutex);
+    SharedLockR dataLock; // empty
+    // if count is 1, waiter's dataLock has us covered
+    if (count > 1) dataLock = SharedLockR(mDataMutex);
 
-    const uint64_t offset { index*mPageSize };
-    const size_t readsize { min64st(mBackendSize-offset, mPageSize*count) };
+    const uint64_t pageStart { index*mPageSize }; // offset of the page start
+    const size_t readSize { pageStart > mBackendSize ? 0 : 
+        min64st(mBackendSize-pageStart, mPageSize*count) }; // length of data to fetch
 
     mDebug << __func__ << "... threads:" << sBackendSem.get_count() << " index:" << index 
-        << " count:" << count << " offset:" << offset << " readsize:" << readsize; mDebug.Info();
+        << " count:" << count << " pageStart:" << pageStart << " readSize:" << readSize; mDebug.Info();
 
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
 
-    mBackend.ReadFile(mFile.GetID(), offset, readsize, 
+    if (readSize) mBackend.ReadFile(mFile.GetID(), pageStart, readSize, 
         [&](const size_t roffset, const char* rbuf, const size_t rlength)->void
     {
         // this is basically the same as the File::WriteBytes() algorithm
@@ -249,33 +260,54 @@ void PageManager::ReadPages(const uint64_t index, const size_t count, PageManage
         {
             if (!curPage) 
             {
-                const size_t pageSize { min64st(mFile.GetSize() - curIndex*mPageSize, mPageSize) };
+                const uint64_t curPageStart { curIndex*mPageSize };
+                const size_t pageSize { min64st(mFileSize-curPageStart, mPageSize) };
                 curPage = std::make_unique<Page>(pageSize);
+
+                if (mBackendSize-curPageStart < pageSize)
+                {
+                    mDebug << __func__ << "... partial page:" << curIndex; mDebug.Info();
+                    std::memset(curPage->mData.data(), 0, pageSize);
+                }
             }
 
-            const uint64_t rindex { rbyte / mPageSize };
-            const size_t pOffset { static_cast<size_t>(rbyte - rindex*mPageSize) };
-            const size_t pLength { min64st(rlength+roffset-rbyte, mPageSize-pOffset) };
+            const uint64_t rindex { rbyte / mPageSize }; // page index for this data
+            const size_t pwOffset { static_cast<size_t>(rbyte - rindex*mPageSize) }; // offset within the page
+            const size_t pwLength { min64st(rlength+roffset-rbyte, mPageSize-pwOffset) }; // length within the page
 
             if (rindex == curIndex-index)
             {
                 char* pageBuf { reinterpret_cast<char*>(curPage->mData.data()) };
-                memcpy(pageBuf+pOffset, rbuf, pLength);
+                memcpy(pageBuf+pwOffset, rbuf, pwLength);
 
-                if (pOffset+pLength == curPage->mData.size()) // page is done
+                if (pwOffset+pwLength == curPage->mData.size()) // page is done
                 {
                     UniqueLock pagesLock(mPagesMutex);
 
                     mPages.emplace(curIndex, std::move(*curPage));
                     RemovePending(curIndex, pagesLock); 
-                    curPage.reset(); curIndex++;
+                    curPage.reset(); ++curIndex;
                 }
             }
             else { mDebug << __func__ << "... old read, ignoring"; mDebug.Info(); }
 
-            rbuf += pLength; rbyte += pLength;
+            rbuf += pwLength; rbyte += pwLength;
         }
     });
+
+    for (; curIndex < index+count; curIndex++) // maybe reading beyond mBackendSize
+    {
+        mDebug << __func__ << " creating empty page:" << curIndex; mDebug.Info();
+
+        UniqueLock pagesLock(mPagesMutex);
+
+        const uint64_t curPageStart { curIndex*mPageSize };
+        const size_t pageSize { min64st(mFileSize-curPageStart, mPageSize) };
+        
+        Page& page { mPages.emplace(curIndex, Page(pageSize)).first->second };
+        std::memset(page.mData.data(), 0, pageSize);
+        RemovePending(curIndex, pagesLock);
+    }
 
     mDebug << __func__ << "... thread returning!"; mDebug.Info();
 }
@@ -291,20 +323,22 @@ void PageManager::WritePages(PageManager::PageRefMap& pages, PageManager::Shared
     for (const PageRefMap::value_type& it : pages)
         totalSize += it.second.mData.size();
 
-    mDebug << __func__ << "... totalSize:" << totalSize << ")"; mDebug.Info();
-
     Bytes buf(totalSize);
     uint64_t curOffset { 0 }; 
     for (const PageRefMap::value_type& it : pages)
     {
         const Page::Data& pageData { it.second.mData };
         const auto iCurOffset { static_cast<Page::Data::iterator::difference_type>(curOffset) };
+
         std::copy(pageData.cbegin(), pageData.cend(), buf.begin()+iCurOffset);
         curOffset += pageData.size();
     }
 
-    uint64_t writeStart { pages.begin()->first };
+    uint64_t writeStart { pages.begin()->first*mPageSize };
     std::string data(reinterpret_cast<const char*>(buf.data()), totalSize);
+
+    mDebug << __func__ << "... WRITING " << data.size() << " to " << writeStart; mDebug.Info();
+
     mBackend.WriteFile(mFile.GetID(), writeStart, data);
 
     for (PageRefMap::value_type& it : pages)
@@ -341,7 +375,7 @@ void PageManager::FlushPages(bool nothrow)
                 curMap->emplace(it.first, it.second);
             }
             else if (curMap != writelist.end())
-                curMap = writelist.end();
+                curMap = writelist.end(); // end run
         }
     }
 
@@ -377,7 +411,7 @@ bool PageManager::EvictPage(const uint64_t index)
             mDebug << __func__ << "... page is dirty, writing"; mDebug.Info();
 
             std::string data(reinterpret_cast<const char*>(page.mData.data()), page.mData.size());
-            mBackend.WriteFile(mFile.GetID(), it->first, data);
+            mBackend.WriteFile(mFile.GetID(), it->first*mPageSize, data);
             // TODO !! return bool based on success/fail (don't throw)
         }
 
@@ -390,7 +424,7 @@ bool PageManager::EvictPage(const uint64_t index)
 }
 
 /*****************************************************/
-uint64_t PageManager::RemoteChanged(const uint64_t backendSize, bool reset)
+void PageManager::RemoteChanged(const uint64_t backendSize)
 {    
     // TODO add ability to interrupt in-progress reads (same as destructor)
     // since the download is streamed you should be able to just set a flag to have it reply false to httplib
@@ -398,12 +432,6 @@ uint64_t PageManager::RemoteChanged(const uint64_t backendSize, bool reset)
 
     mDebug << __func__ << "(newSize:" << backendSize << ")" 
         << " oldSize:" << mBackendSize << ")"; mDebug.Info();
-
-    if (!reset)
-    {
-        mBackendSize = backendSize;
-        return 0;
-    }
 
     SharedLockW readersLock(mReadersMutex); // stop downloads
 
@@ -422,14 +450,14 @@ uint64_t PageManager::RemoteChanged(const uint64_t backendSize, bool reset)
         }
         else
         {
-            uint64_t pageMax { it->first + page.mData.size() };
+            uint64_t pageMax { it->first*mPageSize + page.mData.size() };
             maxDirty = std::max(maxDirty, pageMax);
             ++it; // move to next page
         }
     }
 
     mBackendSize = backendSize;
-    return maxDirty;
+    mFileSize = std::max(backendSize, maxDirty);
 }
 
 /*****************************************************/
@@ -447,6 +475,7 @@ void PageManager::Truncate(const uint64_t newSize)
     mBackend.TruncateFile(mFile.GetID(), newSize); 
 
     mBackendSize = newSize;
+    mFileSize = newSize;
 
     for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); )
     {
@@ -464,12 +493,22 @@ void PageManager::Truncate(const uint64_t newSize)
             mDebug << __func__<< "... resize page:" << it->first 
                 << " size:" << pageSize; mDebug.Info();
 
-            it->second.mData.resize(pageSize);
+            ResizePage(it->second, pageSize);
 
             mDebug << __func__ << "... page resized!"; mDebug.Info();
         }
-        else it++;
+        else ++it;
     }
+}
+
+/*****************************************************/
+void PageManager::ResizePage(Page& page, uint64_t pageSize)
+{
+    const uint64_t oldSize { page.mData.size() };
+    page.mData.resize(pageSize);
+
+    if (pageSize > oldSize) std::memset(
+        page.mData.data()+oldSize, 0, pageSize-oldSize);
 }
 
 } // namespace Filedata

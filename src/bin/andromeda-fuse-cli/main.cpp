@@ -52,7 +52,7 @@ enum class ExitCode
 
 int main(int argc, char** argv)
 {
-    Debug debug("main"); 
+    Debug debug("main",nullptr); 
     
     ConfigOptions configOptions;
     HTTPOptions httpOptions;

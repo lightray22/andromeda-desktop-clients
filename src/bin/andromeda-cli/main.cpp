@@ -31,7 +31,7 @@ using Andromeda::Utilities;
 
 int main(int argc, char** argv)
 {
-    Debug debug("main");
+    Debug debug("main",nullptr);
     
     HTTPOptions httpOptions;
     httpOptions.followRedirects = false;

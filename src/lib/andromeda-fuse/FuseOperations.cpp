@@ -28,7 +28,7 @@ using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
-static Debug debug("FuseOperations");
+static Debug debug("FuseOperations",nullptr);
 
 namespace AndromedaFuse {
 

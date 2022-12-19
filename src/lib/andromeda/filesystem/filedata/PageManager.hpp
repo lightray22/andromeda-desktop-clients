@@ -43,6 +43,9 @@ public:
     /** Returns the page size in use */
     size_t GetPageSize() const { return mPageSize; }
 
+    /** Returns the current file size including dirty writes */
+    uint64_t GetFileSize() const { return mFileSize; }
+
     /** Returns the current size on the backend (we may have dirty writes) */
     uint64_t GetBackendSize() const { return mBackendSize; }
 
@@ -60,10 +63,10 @@ public:
 
     /**
      * Returns the buffer for the page at the given index - use GetWriteLock() first!
-     * @param offset page offset of the intended write
-     * @param length length of the intended write
+     * @param pwOffset page offset of the intended write
+     * @param pwLength length of the intended write
      */
-    std::byte* GetPageWrite(const uint64_t index, const size_t offset, const size_t length);
+    std::byte* GetPageWrite(const uint64_t index, const size_t pwOffset, const size_t pwLength);
 
     /** Returns true if the page at the given index is dirty */
     bool isDirty(const uint64_t index) const;
@@ -79,12 +82,9 @@ public:
 
     /**
      * Informs us of the file changing on the backend - THREAD SAFE
-     * 
      * @param backendSize new size according to the backend
-     * @param reset if true, invalidate/dump all pages
-     * @return uint64_t the max dirty offset + 1
      */
-    uint64_t RemoteChanged(const uint64_t backendSize, bool reset = true);
+    void RemoteChanged(const uint64_t backendSize);
 
     /** Truncate pages according to the given size and inform the backend - THREAD SAFE */
     void Truncate(const uint64_t newSize);
@@ -103,13 +103,13 @@ private:
     /** Returns true if the page at the given index is pending download */
     bool isPending(const uint64_t index, UniqueLock& pagesLock);
 
-    /** Spawns a thread to read a single page at the given index */
+    /** Spawns a thread to read a single page at the given VALID (mBackendSize) index */
     void StartRead1(const uint64_t index, UniqueLock& pagesLock);
 
-    /** Spawns a thread to read some # of pages at the given index */
+    /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
     void StartReadN(const uint64_t index, UniqueLock& pagesLock);
 
-    /** Returns the read-ahead size to be used for the given indxe */
+    /** Returns the read-ahead size to be used for the given VALID (mBackendSize) index */
     uint64_t GetReadSize(const uint64_t index, UniqueLock& pagesLock);
 
     /** Reads count# pages from the backend at the given index */
@@ -121,6 +121,9 @@ private:
     /** Writes a series of consecutive pages */
     void WritePages(PageRefMap& pages, SharedLockR& dataLock);
 
+    /** Resizes an existing page */
+    void ResizePage(Page& page, uint64_t pageSize);
+
     /** Reference to the parent file */
     File& mFile;
     /** Reference to the backend */
@@ -128,8 +131,11 @@ private:
     /** The size of each page */
     const size_t mPageSize;
     
-    /* file size as far as the backend knows - may have dirty writes that extend the file */
-    uint64_t mBackendSize { 0 };
+    /** The current size of the file including dirty extending writes */
+    uint64_t mFileSize;
+    /** file size as far as the backend knows - may have dirty writes that extend the file */
+    uint64_t mBackendSize;
+
     /** The current read-ahead window including current */
     size_t mReadSize { 100 };
 

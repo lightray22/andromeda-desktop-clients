@@ -483,6 +483,8 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
+    if (!length) { mDebug << __func__ << "() WARNING length 0"; mDebug.Error(); return ""; }
+
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
@@ -501,6 +503,8 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
+    if (!length) { mDebug << __func__ << "() WARNING length 0"; mDebug.Error(); return; }
+
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 

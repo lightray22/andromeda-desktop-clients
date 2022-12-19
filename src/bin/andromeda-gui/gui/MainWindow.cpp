@@ -12,7 +12,7 @@
 /*****************************************************/
 MainWindow::MainWindow() : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
-    mDebug("MainWindow")
+    mDebug("MainWindow",this)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
