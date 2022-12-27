@@ -45,9 +45,9 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folde
             throw BackendImpl::JSONErrorException(ex.what()); }
 
         mFsConfig = &FSConfig::LoadByID(backend, fsid);
+        
+        mDebug << __func__ << "... ID:" << GetID() << " name:" << mName; mDebug.Info();
     }
-
-    mDebug << __func__ << "... ID:" << GetID() << " name:" << mName; mDebug.Info();
 }
 
 /*****************************************************/
