@@ -34,6 +34,8 @@ target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_WARNINGS})
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+target_compile_definitions(andromeda-gui PRIVATE QTVER=${QT_VERSION_MAJOR})
+
 set_target_properties(andromeda-gui PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE

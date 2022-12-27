@@ -13,8 +13,8 @@ target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(andromeda-fuse
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_compile_options(andromeda-fuse PRIVATE ${ANDROMEDA_WARNINGS}
-    -D_FILE_OFFSET_BITS=64)
+target_compile_options(andromeda-fuse PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_definitions(andromeda-fuse PRIVATE _FILE_OFFSET_BITS=64)
 
 install(TARGETS andromeda-fuse
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
