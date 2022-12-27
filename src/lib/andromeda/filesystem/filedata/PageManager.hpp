@@ -15,6 +15,7 @@
 
 #include "andromeda/Debug.hpp"
 #include "andromeda/Semaphor.hpp"
+#include "andromeda/typedefs.hpp"
 
 namespace Andromeda {
 
@@ -34,9 +35,10 @@ public:
      * Construct a new file page manager
      * @param file reference to the parent file
      * @param backend reference to the backend
+     * @param fileSize current file size
      * @param pageSize size of pages to use (const)
      */
-    PageManager(File& file, Backend::BackendImpl& backend, const size_t pageSize);
+    PageManager(File& file, Backend::BackendImpl& backend, const uint64_t fileSize, const size_t pageSize);
 
     virtual ~PageManager();
 
@@ -49,24 +51,17 @@ public:
     /** Returns the current size on the backend (we may have dirty writes) */
     uint64_t GetBackendSize() const { return mBackendSize; }
 
-    typedef std::shared_lock<std::shared_mutex> SharedLockR;
-    typedef std::unique_lock<std::shared_mutex> SharedLockW;
-
     /** Returns a read lock for page data */
     SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
     
     /** Returns a write lock for page data */
     SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
 
-    /** Returns the buffer for the page at the given index - use GetReadLock() first! */
-    const std::byte* GetPageRead(const uint64_t index);
+    /** Reads data from the given page index into buffer */
+    virtual void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock) final;
 
-    /**
-     * Returns the buffer for the page at the given index - use GetWriteLock() first!
-     * @param pwOffset page offset of the intended write
-     * @param pwLength length of the intended write
-     */
-    std::byte* GetPageWrite(const uint64_t index, const size_t pwOffset, const size_t pwLength);
+    /** Writes data to the given page index from buffer */
+    virtual void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock) final;
 
     /** Returns true if the page at the given index is dirty */
     bool isDirty(const uint64_t index) const;
@@ -98,31 +93,35 @@ private:
     /** List of <index,length> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    /** Returns the page at the given index - use GetReadLock() first! */
+    const Page& GetPageRead(const uint64_t index, const SharedLockR& dataLock);
+
+    /** 
+     * Returns the page at the given index - use GetWriteLock() first! 
+     * @param partial if true, pre-populate the page with backend data
+     */
+    Page& GetPageWrite(const uint64_t index, const bool partial, const SharedLockW& dataLock);
+
+    /** Resizes an existing page to the given size */
+    void ResizePage(Page& page, uint64_t pageSize, const SharedLockW& dataLock);
 
     /** Returns true if the page at the given index is pending download */
-    bool isPending(const uint64_t index, UniqueLock& pagesLock);
-
-    /** Spawns a thread to read a single page at the given VALID (mBackendSize) index */
-    void StartRead1(const uint64_t index, UniqueLock& pagesLock);
-
-    /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
-    void StartReadN(const uint64_t index, UniqueLock& pagesLock);
+    bool isPending(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Returns the read-ahead size to be used for the given VALID (mBackendSize) index */
-    uint64_t GetReadSize(const uint64_t index, UniqueLock& pagesLock);
+    size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
+
+    /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
+    void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
 
     /** Reads count# pages from the backend at the given index */
-    void ReadPages(const uint64_t index, const size_t count, SharedLockR threadsLock);
+    void FetchPages(const uint64_t index, const size_t count, SharedLockR threadsLock);
 
     /** Removes the given index from the pending-read list */
-    void RemovePending(const uint64_t index, UniqueLock& pagesLock);
+    void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Writes a series of consecutive pages */
-    void WritePages(PageRefMap& pages, SharedLockR& dataLock);
-
-    /** Resizes an existing page */
-    void ResizePage(Page& page, uint64_t pageSize);
+    void FlushPageList(PageRefMap& pages, const SharedLockR& dataLock);
 
     /** Reference to the parent file */
     File& mFile;
@@ -136,8 +135,8 @@ private:
     /** file size as far as the backend knows - may have dirty writes that extend the file */
     uint64_t mBackendSize;
 
-    /** The current read-ahead window including current */
-    size_t mReadSize { 100 };
+    /** The current read-ahead window */
+    size_t mFetchSize { 100 };
 
     /** The index based map of pages */
     PageMap mPages;
@@ -153,9 +152,7 @@ private:
 
     /** Mutex held by background threads to keep this in scope */
     std::shared_mutex mClassMutex;
-    /** Mutex held by background threads to allow running */
-    std::shared_mutex mReadersMutex;
-
+    
     Andromeda::Debug mDebug;
 };
 

@@ -5,6 +5,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "typedefs.hpp"
+
 namespace Andromeda {
 
 /** 
@@ -19,42 +21,42 @@ public:
 
     bool try_lock()
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
         if (mCount+1 < mMaxCount) { ++mCount; return true; } 
         else return false;
     }
 
     void lock()
     {
-        std::unique_lock<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
         while (mCount+1 >= mMaxCount) mCV.wait(llock); 
         ++mCount;
     }
 
     void unlock()
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
         --mCount; mCV.notify_one();
     }
 
     /** Returns the current # of locks */
     size_t get_count()
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
         return mCount;
     }
 
     /** Returns the max semaphor count */
     size_t get_max()
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
         return mMaxCount;
     }
 
     /** Change the semaphor max count */
     void set_max(size_t max)
     {
-        std::unique_lock<std::mutex> llock(mMutex);
+        UniqueLock llock(mMutex);
 
         while (max > mMaxCount)
         {

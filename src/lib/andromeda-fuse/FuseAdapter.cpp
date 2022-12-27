@@ -8,6 +8,8 @@
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/typedefs.hpp"
+using Andromeda::UniqueLock;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
@@ -214,7 +216,7 @@ struct FuseLoop
         sDebug << __func__ << "() fuse_loop()"; sDebug.Info();
 
         { // scoped lock
-            const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
+            const UniqueLock lock(mAdapter.mFuseLoopMutex);
             mAdapter.mFuseLoop = this; // register with adapter
         }
         
@@ -226,7 +228,7 @@ struct FuseLoop
 
     ~FuseLoop()
     {
-        const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
+        const UniqueLock lock(mAdapter.mFuseLoopMutex);
         mAdapter.mFuseLoop = nullptr;
     }
 
@@ -254,7 +256,7 @@ FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseO
 
         sDebug << __func__ << "... waiting for init"; sDebug.Info();
 
-        std::unique_lock<std::mutex> initLock(mInitMutex);
+        UniqueLock initLock(mInitMutex);
         while (!mInitialized) mInitCV.wait(initLock);
 
         sDebug << __func__ << "... init complete!"; sDebug.Info();
@@ -312,7 +314,7 @@ void FuseAdapter::SignalInit()
 {
     sDebug << __func__ << "()"; sDebug.Info();
 
-    std::unique_lock<std::mutex> initLock(mInitMutex);
+    UniqueLock initLock(mInitMutex);
     mInitialized = true; mInitCV.notify_all();
 }
 
@@ -322,7 +324,7 @@ FuseAdapter::~FuseAdapter()
     sDebug << __func__ << "()"; sDebug.Info();
     
     { // scoped lock
-        const std::lock_guard<std::mutex> lock(mFuseLoopMutex);
+        const UniqueLock lock(mFuseLoopMutex);
         if (mFuseLoop) mFuseLoop->ExitLoop();
     }
 

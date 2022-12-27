@@ -54,9 +54,6 @@ public:
     /** Returns the FS name */
     virtual const std::string& GetName() const final { return mName; }
 
-    /** Returns the total size */
-    virtual uint64_t GetSize() const final { return mSize; }
-
     /** Get the created time stamp */
     virtual Date GetCreated() const final { return mCreated; } 
 
@@ -133,9 +130,6 @@ protected:
 
     /** Name of the item */
     std::string mName;
-
-    /** Size of the item in bytes */
-    uint64_t mSize { 0 };
 
     /** Item creation timestamp */
     Date mCreated { 0 };

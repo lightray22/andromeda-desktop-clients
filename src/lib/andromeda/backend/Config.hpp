@@ -56,7 +56,7 @@ public:
     uint64_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
 
     /** Returns the max # of files allowed in an upload */
-    uint64_t GetUploadMaxFiles() const { return mUploadMaxFiles; }
+    size_t GetUploadMaxFiles() const { return mUploadMaxFiles; }
 
 private:
     Debug mDebug;
@@ -66,7 +66,7 @@ private:
     bool mRandWrite { true };
 
     uint64_t mUploadMaxBytes { 0 };
-    uint64_t mUploadMaxFiles { 0 };
+    size_t mUploadMaxFiles { 0 };
 };
 
 } // namespace Backend

@@ -9,6 +9,7 @@
 #include "Item.hpp"
 #include "FSConfig.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/typedefs.hpp"
 
 namespace Andromeda {
 
@@ -24,6 +25,10 @@ class File : public Item
 {
 public:
 
+    /** Exception indicating that the read goes out of bounds */
+    class ReadBoundsException : public Exception { public:
+        ReadBoundsException() : Exception("Read Out of Range") {}; };
+
     /** Exception indicating that the filesystem does not support writing */
     class WriteTypeException : public Exception { public:
         WriteTypeException() : Exception("Write Type Unsupported") {}; };
@@ -33,6 +38,9 @@ public:
     virtual void Refresh(const nlohmann::json& data) override;
 
     virtual Type GetType() const override { return Type::FILE; }
+
+    /** Returns the total file size */
+    virtual uint64_t GetSize() const final;
 
     /**
      * @brief Construct a File using backend data
@@ -49,7 +57,17 @@ public:
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual size_t ReadBytes(std::byte* buffer, const uint64_t offset, size_t length) final;
+    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength) final;
+
+    /**
+     * Read data from the file
+     * @param buffer pointer to buffer to fill
+     * @param offset byte offset in file to read
+     * @param length exact number of bytes to read
+     * @return the number of bytes read (may be < length if EOF)
+     */
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length) final;
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
 
     /**
      * Writes data to a file
@@ -57,7 +75,7 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const std::byte* buffer, const uint64_t offset, const size_t length) final;
+    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length) final;
 
     /** Set the file size to the given value */
     virtual void Truncate(uint64_t newSize) final;
@@ -76,12 +94,6 @@ private:
 
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const final;
-
-    /** Reads data from the given page index */
-    virtual void ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
-
-    /** Writes data to the given page index */
-    virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
 

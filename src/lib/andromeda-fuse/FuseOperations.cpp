@@ -183,9 +183,12 @@ static void item_stat(const Item& item, struct stat* stbuf)
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
     
     if (item.isReadOnly()) stbuf->st_mode &= 
-        static_cast<decltype(stbuf->st_mode)>(~S_IWUSR & ~S_IWGRP & ~S_IWOTH); // -Wsign-conversion
+        static_cast<decltype(stbuf->st_mode)>(  // -Wsign-conversion
+            ~S_IWUSR & ~S_IWGRP & ~S_IWOTH);
 
-    stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
+    stbuf->st_size = (item.GetType() == Item::Type::FILE) ? 
+        static_cast<decltype(stbuf->st_size)>(
+            dynamic_cast<const File&>(item).GetSize()) : 0;
 
     #if WIN32
         auto created { item.GetCreated() };
@@ -193,6 +196,7 @@ static void item_stat(const Item& item, struct stat* stbuf)
         auto accessed { item.GetAccessed() };
 
         get_timespec(created, stbuf->st_birthtim);
+        
         get_timespec(created, stbuf->st_ctim);
         get_timespec(modified, stbuf->st_mtim);
         get_timespec(accessed, stbuf->st_atim);
@@ -439,7 +443,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
     {
         File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), static_cast<uint64_t>(off), size));
+        return static_cast<int>(file.ReadBytesMax(buf, static_cast<uint64_t>(off), size));
     });
 }
 
@@ -455,7 +459,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
     {
         File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), static_cast<uint64_t>(off), size); 
+        file.WriteBytes(buf, static_cast<uint64_t>(off), size); 
         
         return static_cast<int>(size);
     });

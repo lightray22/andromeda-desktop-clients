@@ -1,4 +1,5 @@
 
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <string>
@@ -483,7 +484,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
-    if (!length) { mDebug << __func__ << "() WARNING length 0"; mDebug.Error(); return ""; }
+    assert((length > 0));
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -493,7 +494,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
     if (isMemory()) return std::string(length,'\0');
 
     RunnerInput input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}};
-    std::string data(mRunner.RunAction(FinalizeInput(input)));
+    std::string data { mRunner.RunAction(FinalizeInput(input)) };
 
     if (data.size() != length) throw ReadSizeException(length, data.size());
 
@@ -503,14 +504,14 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
-    if (!length) { mDebug << __func__ << "() WARNING length 0"; mDebug.Error(); return; }
+    assert((length > 0));
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
     mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast << ")"; mDebug.Info();
 
-    if (isMemory()) { std::string ret(length,'\0'); func(0,ret.data(),length); }
+    if (isMemory()) { func(0, std::string(length,'\0').data(), length); return; }
 
     size_t read = 0; RunnerInput_StreamOut input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}, 
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
@@ -527,6 +528,8 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
+    assert((!data.empty()));
+
     mDebug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size() << ")"; mDebug.Info();
 
     if (isMemory()) return nullptr;
