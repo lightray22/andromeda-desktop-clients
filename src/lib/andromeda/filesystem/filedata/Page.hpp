@@ -20,7 +20,19 @@ struct Page
     explicit Page(size_t pageSize) : mData(pageSize) { }
     std::vector<char> mData;
     bool mDirty { false };
+
+    char* data() { return mData.data(); }
+    const char* data() const { return mData.data(); }
+    size_t size() const { return mData.size(); }
+
+    // allow moving but not copying
+    Page(const Page&) = delete;
+    Page& operator=(const Page&) = delete;
+    Page(Page&&) = default;
+    Page& operator=(Page&&) = default;
 };
+
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 } // namespace Filedata
 } // namespace Filesystem

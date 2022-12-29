@@ -1,8 +1,8 @@
 
-#include <cassert>
 #include <cstring>
 #include <nlohmann/json.hpp>
 
+#include "CacheManager.hpp"
 #include "PageManager.hpp"
 #include "andromeda/Semaphor.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
@@ -18,9 +18,9 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-PageManager::PageManager(File& file, BackendImpl& backend, const uint64_t fileSize, const size_t pageSize) : 
-    mFile(file), mBackend(backend), mPageSize(pageSize), 
-    mFileSize(fileSize), mBackendSize(fileSize), 
+PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize) : 
+    mFile(file), mBackend(file.GetBackend()), mCacheMgr(mBackend.GetCacheManager()),
+    mPageSize(pageSize), mFileSize(fileSize), mBackendSize(fileSize), 
     mDebug("PageManager",this) 
 { 
     mDebug << __func__ << "(file: " << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")"; mDebug.Info();
@@ -32,7 +32,13 @@ PageManager::~PageManager()
     mDebug << __func__ << "() waiting for threads"; mDebug.Info();
 
     // TODO interrupt existing threads? could set stream failbit to stop HTTPRunner
-    SharedLockW classLock(mClassMutex);
+    SharedLockW dataLock(mDataMutex);
+
+    if (mCacheMgr != nullptr)
+    {
+        for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); it++)
+            mCacheMgr->ErasePage(it->second);
+    }
 
     mDebug << __func__ << "... returning!"; mDebug.Info();
 }
@@ -40,12 +46,15 @@ PageManager::~PageManager()
 /*****************************************************/
 void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock)
 {
-    if (mDebug) { mDebug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "(" << mFile.GetName() << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
-    assert((index*mPageSize+offset+length <= mFileSize && length > 0));
+    if (index*mPageSize+offset+length > mFileSize || !length) 
+        throw std::invalid_argument(__func__);
 
     const Page& page { GetPageRead(index, dataLock) };
-    const char* pageBuf { page.mData.data() };
+    const char* pageBuf { page.data() };
+
+    if (mCacheMgr) mCacheMgr->InformPage(*this, index, page);
 
     const auto iOffset { static_cast<decltype(Page::mData)::iterator::difference_type>(offset) };
     const auto iLength { static_cast<decltype(Page::mData)::iterator::difference_type>(length) };
@@ -56,9 +65,9 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
 /*****************************************************/
 void PageManager::WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock)
 {
-    if (mDebug) { mDebug << __func__ << "(index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "(" << mFile.GetName() << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
-    assert((length > 0));
+    if (!length) throw std::invalid_argument(__func__);
 
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const uint64_t newFileSize = std::max(mFileSize, pageStart+offset+length);
@@ -69,12 +78,15 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
     mDebug << __func__ << "... pageSize:" << pageSize << " newFileSize:" << newFileSize; mDebug.Info();
 
     Page& page { GetPageWrite(index, partial, dataLock) };
-    page.mDirty = true;
 
-    ResizePage(page, pageSize, dataLock);
+    // false to not inform cacheMgr here - will below
+    ResizePage(page, pageSize, false);
     mFileSize = newFileSize; // extend file
 
-    char* pageBuf { page.mData.data() }; // AFTER resize
+    char* pageBuf { page.data() };
+    page.mDirty = true;
+
+    if (mCacheMgr) mCacheMgr->InformPage(*this, index, page);
     
     const auto iOffset { static_cast<decltype(Page::mData)::iterator::difference_type>(offset) };
     const auto iLength { static_cast<decltype(Page::mData)::iterator::difference_type>(length) };
@@ -85,16 +97,17 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
 /*****************************************************/
 const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& dataLock)
 {
-    mDebug << __func__ << "() " << mFile.GetID() << " (index:" << index << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << mFile.GetName() << ")" << " (index:" << index << ")"; mDebug.Info();
 
-    assert((index*mPageSize < mFileSize));
+    if (index*mPageSize >= mFileSize) throw std::invalid_argument(__func__);
 
     UniqueLock pagesLock(mPagesMutex);
 
     // TODO optimize - maybe even if this index exists, always make sure at least the NEXT one is ready?
     // could generalize that with like a minPopulated or something, configurable?
+    // FetchPages will need to take actual "haveLock" param not assume not to lock if size 1
 
-    { PageMap::iterator it { mPages.find(index) };
+    { PageMap::const_iterator it { mPages.find(index) };
     if (it != mPages.end()) 
     {
         mDebug << __func__ << "... return existing page"; mDebug.Info();
@@ -108,7 +121,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
         if (!fetchSize) // bigger than backend, create empty
         {
             mDebug << __func__ << "... create empty page"; mDebug.Info();
-            return mPages.emplace(index, Page(mPageSize)).first->second;
+            return mPages.emplace(index, mPageSize).first->second;
         }
 
         StartFetch(index, fetchSize, pagesLock);
@@ -116,7 +129,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
 
     mDebug << __func__ << "... waiting for pending " << index; mDebug.Info();
 
-    PageMap::iterator it;
+    PageMap::const_iterator it;
     while ((it = mPages.find(index)) == mPages.end())
         mPagesCV.wait(pagesLock);
 
@@ -127,7 +140,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
 /*****************************************************/
 Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const SharedLockW& dataLock)
 {
-    mDebug << __func__ << "() " << mFile.GetID() << " (index:" << index << " partial:" << partial << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << mFile.GetName() << ")" << " (index:" << index << " partial:" << partial << ")"; mDebug.Info();
 
     UniqueLock pagesLock(mPagesMutex);
 
@@ -146,11 +159,11 @@ Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const 
             if (pageStart > mFileSize && mFileSize > 0)
             {
                 PageMap::iterator it { mPages.find((mFileSize-1)/mPageSize) };
-                if (it != mPages.end()) ResizePage(it->second, mPageSize, dataLock);
+                if (it != mPages.end()) ResizePage(it->second, mPageSize);
             }
 
             mDebug << __func__ << "... create empty page"; mDebug.Info();
-            return mPages.emplace(index, Page(0)).first->second; // will be resized
+            return mPages.emplace(index, 0).first->second; // will be resized
         }
 
         mDebug << __func__ << "... partial write, reading single"; mDebug.Info();
@@ -168,15 +181,19 @@ Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const 
 }
 
 /*****************************************************/
-void PageManager::ResizePage(Page& page, const uint64_t pageSize, const SharedLockW& dataLock)
+void PageManager::ResizePage(Page& page, const uint64_t pageSize, bool inform)
 {
-    mDebug << __func__ << "(pageSize:" << pageSize << ")"; mDebug.Info();
+    const uint64_t oldSize { page.size() };
+    if (oldSize == pageSize) return; // no-op
 
-    const uint64_t oldSize { page.mData.size() };
+    mDebug << __func__ << "(pageSize:" << pageSize << ") oldSize:" << oldSize; mDebug.Info();
+
     page.mData.resize(pageSize);
 
     if (pageSize > oldSize) std::memset(
-        page.mData.data()+oldSize, 0, pageSize-oldSize);
+        page.data()+oldSize, 0, pageSize-oldSize);
+
+    if (inform && mCacheMgr) mCacheMgr->ResizePage(page, pageSize);
 }
 
 /*****************************************************/
@@ -201,6 +218,8 @@ bool PageManager::isPending(const uint64_t index, const UniqueLock& pagesLock)
 /*****************************************************/
 void PageManager::RemovePending(const uint64_t index, const UniqueLock& pagesLock)
 {
+    mDebug << __func__ << "(index:" << index << ")"; mDebug.Info();
+
     for (PendingMap::iterator pend { mPendingPages.begin() }; 
         pend != mPendingPages.end(); ++pend)
     {
@@ -220,7 +239,7 @@ void PageManager::RemovePending(const uint64_t index, const UniqueLock& pagesLoc
 /*****************************************************/
 size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLock)
 {
-    assert((index*mPageSize < mFileSize));
+    if (index*mPageSize >= mFileSize) throw std::invalid_argument(__func__);
 
     if (!mBackendSize) return 0;
     const uint64_t lastPage { (mBackendSize-1)/mPageSize }; // the last valid page index
@@ -261,26 +280,27 @@ void PageManager::StartFetch(const uint64_t index, const size_t readCount, const
 {
     mDebug << __func__ << "(index:" << index << ", readCount:" << readCount << ")"; mDebug.Info();
 
-    assert((index*mPageSize < mFileSize && readCount > 0));
+    if (index*mPageSize >= mFileSize) throw std::invalid_argument(__func__);
 
     mPendingPages.emplace_back(index, readCount);
 
-    SharedLockR classLock(mClassMutex); // grab before creating
-    std::thread(&PageManager::FetchPages, this, index, readCount, 
-        std::move(classLock)).detach();
+    std::thread(&PageManager::FetchPages, this, index, readCount).detach();
 }
 
 /*****************************************************/
-void PageManager::FetchPages(const uint64_t index, const size_t count, SharedLockR classLock)
+void PageManager::FetchPages(const uint64_t index, const size_t count)
 {
     SemaphorLock backendSem(sBackendSem);
+
+    mDebug << __func__ << "()"; mDebug.Info();
 
     SharedLockR dataLock; // empty
     // if count is 1, waiter's dataLock has us covered
     if (count > 1) dataLock = SharedLockR(mDataMutex);
 
-    assert((count > 0 && (index+count-1)*mPageSize < mBackendSize));
-    
+    if (!count || (index+count-1)*mPageSize >= mBackendSize) 
+        throw std::invalid_argument(__func__);
+
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const size_t readSize { min64st(mBackendSize-pageStart, mPageSize*count) }; // length of data to fetch
 
@@ -296,18 +316,10 @@ void PageManager::FetchPages(const uint64_t index, const size_t count, SharedLoc
         // this is basically the same as the File::WriteBytes() algorithm
         for (uint64_t rbyte { roffset }; rbyte < roffset+rlength; )
         {
-            if (!curPage) 
-            {
-                const uint64_t curPageStart { curIndex*mPageSize };
-                const size_t pageSize { min64st(mFileSize-curPageStart, mPageSize) };
-                curPage = std::make_unique<Page>(pageSize);
+            const uint64_t curPageStart { curIndex*mPageSize };
+            const size_t pageSize { min64st(mBackendSize-curPageStart, mPageSize) };
 
-                if (mBackendSize-curPageStart < pageSize)
-                {
-                    mDebug << __func__ << "... partial page:" << curIndex; mDebug.Info();
-                    std::memset(curPage->mData.data(), 0, pageSize);
-                }
-            }
+            if (!curPage) curPage = std::make_unique<Page>(pageSize);
 
             const uint64_t rindex { rbyte / mPageSize }; // page index for this data
             const size_t pwOffset { static_cast<size_t>(rbyte - rindex*mPageSize) }; // offset within the page
@@ -315,14 +327,20 @@ void PageManager::FetchPages(const uint64_t index, const size_t count, SharedLoc
 
             if (rindex == curIndex-index) // relevant read
             {
-                char* pageBuf { curPage->mData.data() };
+                char* pageBuf { curPage->data() };
                 memcpy(pageBuf+pwOffset, rbuf, pwLength);
 
-                if (pwOffset+pwLength == curPage->mData.size()) // page is done
+                if (pwOffset+pwLength == curPage->size()) // page is done
                 {
                     UniqueLock pagesLock(mPagesMutex);
 
-                    mPages.emplace(curIndex, std::move(*curPage));
+                    // if we are reading a page that is smaller on the backend (dirty writes), might need to resize
+                    const size_t realSize { min64st(mFileSize-curPageStart, mPageSize) };
+                    if (pageSize < realSize) ResizePage(*curPage, realSize, false);
+
+                    PageMap::const_iterator newIt { mPages.emplace(curIndex, std::move(*curPage)).first };
+                    if (mCacheMgr) mCacheMgr->InformPage(*this, curIndex, newIt->second);
+
                     RemovePending(curIndex, pagesLock); 
                     curPage.reset(); ++curIndex;
                 }
@@ -333,6 +351,8 @@ void PageManager::FetchPages(const uint64_t index, const size_t count, SharedLoc
         }
     });
 
+    if (curPage != nullptr) { assert(false); mDebug << __func__ << "() unfinished read!"; mDebug.Error(); } // stop only in debug builds
+
     mDebug << __func__ << "... thread returning!"; mDebug.Info();
 }
 
@@ -341,9 +361,10 @@ void PageManager::FlushPages(bool nothrow)
 {
     mDebug << __func__ << "()"; mDebug.Info();
 
-    // create a list of pages to write separate from mPages
+    // create runs of pages to write separate from mPages
     // so we don't have to hold pagesLock while sending
-    std::list<PageRefMap> writelist;
+    // ... map iterators stay valid after other operations
+    std::map<uint64_t, PagePtrList> writeLists;
 
     SharedLockR dataLock(mDataMutex);
 
@@ -352,93 +373,83 @@ void PageManager::FlushPages(bool nothrow)
 
         mDebug << __func__ << "... have locks"; mDebug.Info();
 
-        decltype(writelist)::iterator curMap = writelist.end();
-        for (decltype(mPages)::value_type& it : mPages)
+        uint64_t lastIndex { 0 };
+        PagePtrList* curList { nullptr };
+        for (PageMap::value_type& pagePair : mPages)
         {
-            if (it.second.mDirty)
+            if (pagePair.second.mDirty)
             {
-                if (curMap == writelist.end())
+                if (!curList || lastIndex+1 != pagePair.first)
                 {
-                    mDebug << __func__ << "... new write run!"; mDebug.Info();
-                    writelist.emplace_front(); curMap = writelist.begin();
+                    mDebug << __func__ << "... new write run at " << pagePair.first; mDebug.Info();
+                    curList = &(writeLists.emplace(pagePair.first, PagePtrList()).first->second);
                 }
 
-                curMap->emplace(it.first, it.second);
+                lastIndex = pagePair.first;
+                curList->push_back(&pagePair.second);
             }
-            else if (curMap != writelist.end())
-                curMap = writelist.end(); // end run
+            else curList = nullptr; // end run
         }
     }
 
-    while (!writelist.empty())
+    for (const decltype(writeLists)::value_type& writePair : writeLists)
     {
-        auto writeFunc { [&]()->void { FlushPageList(writelist.back(), dataLock); } };
+        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second, dataLock); } };
 
         if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
             mDebug << __func__ << "... Ignoring Error: " << e.what(); mDebug.Error(); }
-
-        writelist.pop_back();
     }
 
     mDebug << __func__ << "... returning!"; mDebug.Info();
 }
 
 /*****************************************************/
-void PageManager::FlushPageList(PageManager::PageRefMap& pages, const SharedLockR& dataLock)
+void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages, const SharedLockR& dataLock)
 {
     SemaphorLock backendSem(sBackendSem);
 
-    mDebug << __func__ << "(pages:" << pages.size() << ")"; mDebug.Info();
+    mDebug << __func__ << "(index:" << index << " pages:" << pages.size() << ")"; mDebug.Info();
 
     uint64_t totalSize { 0 };
-    for (const PageRefMap::value_type& it : pages)
-        totalSize += it.second.mData.size();
+    for (const Page* pagePtr : pages)
+        totalSize += pagePtr->size();
 
-    uint64_t curOffset { 0 }; 
-    std::string buf; buf.resize(totalSize);
-    for (const PageRefMap::value_type& it : pages)
+    std::string buf; buf.resize(totalSize); char* curBuf { buf.data() };
+    for (const Page* pagePtr : pages)
     {
-        const decltype(Page::mData)& pageData { it.second.mData };
-        std::copy(pageData.cbegin(), pageData.cend(), buf.begin() +
-            static_cast<decltype(Page::mData)::iterator::difference_type>(curOffset));
-        curOffset += pageData.size();
+        std::copy(pagePtr->mData.cbegin(), pagePtr->mData.cend(), curBuf);
+        curBuf += pagePtr->size();
     }
 
-    uint64_t writeStart { pages.begin()->first*mPageSize };
+    uint64_t writeStart { index*mPageSize };
     mDebug << __func__ << "... WRITING " << buf.size() << " to " << writeStart; mDebug.Info();
 
     mBackend.WriteFile(mFile.GetID(), writeStart, buf);
 
-    for (PageRefMap::value_type& it : pages)
-        it.second.mDirty = false;
+    for (Page* pagePtr : pages)
+        pagePtr->mDirty = false;
 
     mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 }
 
 /*****************************************************/
-bool PageManager::EvictPage(const uint64_t index)
+bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 {
-    mDebug << __func__ << "(index:" << index << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << mFile.GetName() << ") (index:" << index << ")"; mDebug.Info();
 
-    SharedLockW dataLock(mDataMutex); 
-    // TODO if CacheManager is synchronous then can't grab this, File will have it
-    // it actually seems a bit problematic that this even requires the writeLock...
-    // but there may not be much choice, need to make sure nobody is accessing the page...
-    // maybe CacheManager will have no choice but to be in a background thread...
     UniqueLock pagesLock(mPagesMutex);
-    
-    mDebug << __func__ << "... have locks"; mDebug.Info();
 
-    PageMap::iterator it { mPages.find(index) };
-    if (it != mPages.end()) 
+    PageMap::const_iterator pageIt { mPages.find(index) };
+    if (pageIt != mPages.end())
     {
-        Page& page { it->second };
+        const Page& page { pageIt->second };
+        
         if (page.mDirty)
         {
             mDebug << __func__ << "... page is dirty, writing"; mDebug.Info();
 
-            const uint64_t writeStart { it->first*mPageSize };
-            const std::string data(reinterpret_cast<const char*>(page.mData.data()), page.mData.size());
+            const uint64_t writeStart { pageIt->first*mPageSize };
+            const std::string data(reinterpret_cast<const char*>(page.data()), page.size());
 
             mBackend.WriteFile(mFile.GetID(), writeStart, data);
             // TODO return bool based on success/fail (don't throw)
@@ -446,10 +457,11 @@ bool PageManager::EvictPage(const uint64_t index)
             mBackendSize = std::max(mBackendSize, writeStart+data.size());
         }
 
-        mPages.erase(it);
-        
-        mDebug << __func__ << "... page removed, returning"; mDebug.Info();
+        mPages.erase(pageIt);
+
+        mDebug << __func__ << "... page removed, numPages:" << mPages.size(); mDebug.Info();
     }
+    else { mDebug << __func__ << " ... page not found"; mDebug.Info(); }
 
     return true;
 }
@@ -474,11 +486,14 @@ void PageManager::RemoteChanged(const uint64_t backendSize)
         Page& page { it->second };
         if (!page.mDirty)
         {
+            if (mCacheMgr) mCacheMgr->ErasePage(page);
             it = mPages.erase(it);
         }
         else
         {
-            uint64_t pageMax { it->first*mPageSize + page.mData.size() };
+            mDebug << __func__ << "... WARNING remote changed while we have dirty pages!"; mDebug.Error();
+
+            uint64_t pageMax { it->first*mPageSize + page.size() };
             maxDirty = std::max(maxDirty, pageMax);
             ++it; // move to next page
         }
@@ -509,6 +524,7 @@ void PageManager::Truncate(const uint64_t newSize)
         {
             mDebug << __func__ << "... erase page:" << it->first; mDebug.Info();
 
+            if (mCacheMgr) mCacheMgr->ErasePage(it->second);
             it = mPages.erase(it); 
 
             mDebug << __func__ << "... page removed!" << it->first; mDebug.Info();
@@ -518,7 +534,7 @@ void PageManager::Truncate(const uint64_t newSize)
             uint64_t pageSize { newSize - it->first*mPageSize };
             mDebug << __func__<< "... resize page:" << it->first << " size:" << pageSize; mDebug.Info();
 
-            ResizePage(it->second, pageSize, dataLock);
+            ResizePage(it->second, pageSize);
 
             mDebug << __func__ << "... page resized!"; mDebug.Info();
         }

@@ -11,13 +11,19 @@
 #include "BaseRunner.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/Utilities.hpp"
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 
 namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, BaseRunner& runner) : 
-    mOptions(options), mRunner(runner), mConfig(*this), mDebug("Backend",this) { }
+    mOptions(options), mRunner(runner),
+    mConfig(*this), mDebug("Backend",this) 
+{ 
+    mDebug << __func__ << "()"; mDebug.Info();
+}
 
 /*****************************************************/
 BackendImpl::~BackendImpl()
@@ -484,7 +490,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
-    assert((length > 0));
+    if (!length) { assert(false); mDebug << __func__ << "() ERROR 0 length"; mDebug.Error(); return ""; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -504,7 +510,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
-    assert((length > 0));
+    if (!length) { assert(false); mDebug << __func__ << "() ERROR 0 length"; mDebug.Error(); return; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -528,7 +534,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    assert((!data.empty()));
+    if (data.empty()) { assert(false); mDebug << __func__ << "() ERROR no data"; mDebug.Error(); } // stop only in debug builds
 
     mDebug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size() << ")"; mDebug.Info();
 

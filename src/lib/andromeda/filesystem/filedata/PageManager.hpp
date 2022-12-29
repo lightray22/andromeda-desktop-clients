@@ -8,14 +8,13 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include <shared_mutex>
 #include <thread>
 
 #include "Page.hpp"
 
 #include "andromeda/Debug.hpp"
 #include "andromeda/Semaphor.hpp"
-#include "andromeda/typedefs.hpp"
+#include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
 
@@ -26,6 +25,8 @@ class File;
 
 namespace Filedata {
 
+class CacheManager;
+
 /** File page data manager */
 class PageManager
 {
@@ -34,11 +35,10 @@ public:
     /** 
      * Construct a new file page manager
      * @param file reference to the parent file
-     * @param backend reference to the backend
      * @param fileSize current file size
      * @param pageSize size of pages to use (const)
      */
-    PageManager(File& file, Backend::BackendImpl& backend, const uint64_t fileSize, const size_t pageSize);
+    PageManager(File& file, const uint64_t fileSize, const size_t pageSize);
 
     virtual ~PageManager();
 
@@ -57,17 +57,17 @@ public:
     /** Returns a write lock for page data */
     SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
 
-    /** Reads data from the given page index into buffer */
+    /** Reads data from the given page index into buffer - get lock first! */
     virtual void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock) final;
 
-    /** Writes data to the given page index from buffer */
+    /** Writes data to the given page index from buffer - get lock first! */
     virtual void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock) final;
 
     /** Returns true if the page at the given index is dirty */
     bool isDirty(const uint64_t index) const;
 
-    /** Removes the page at the given index, writing it if dirty - THREAD SAFE */
-    bool EvictPage(const uint64_t index);
+    /** Removes the given page, writing it if dirty - get lock first! */
+    bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
 
     /**
      * Writes back all dirty pages - THREAD SAFE
@@ -86,13 +86,6 @@ public:
 
 private:
 
-    /** Map of page index to page */
-    typedef std::map<uint64_t, Page> PageMap;
-    /** Map of page index to page reference */
-    typedef std::map<uint64_t, Page&> PageRefMap;
-    /** List of <index,length> pending reads */
-    typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
-
     /** Returns the page at the given index - use GetReadLock() first! */
     const Page& GetPageRead(const uint64_t index, const SharedLockR& dataLock);
 
@@ -102,8 +95,11 @@ private:
      */
     Page& GetPageWrite(const uint64_t index, const bool partial, const SharedLockW& dataLock);
 
-    /** Resizes an existing page to the given size */
-    void ResizePage(Page& page, uint64_t pageSize, const SharedLockW& dataLock);
+    /** 
+     * Resizes an existing page to the given size, informing the CacheManager if inform 
+     * CALLER MUST LOCK the DataLockW if operating on an existing page!
+     */
+    void ResizePage(Page& page, uint64_t pageSize, bool inform = true);
 
     /** Returns true if the page at the given index is pending download */
     bool isPending(const uint64_t index, const UniqueLock& pagesLock);
@@ -115,18 +111,23 @@ private:
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
 
     /** Reads count# pages from the backend at the given index */
-    void FetchPages(const uint64_t index, const size_t count, SharedLockR threadsLock);
+    void FetchPages(const uint64_t index, const size_t count);
 
     /** Removes the given index from the pending-read list */
     void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Writes a series of consecutive pages */
-    void FlushPageList(PageRefMap& pages, const SharedLockR& dataLock);
+    /** Map of page index to page pointers */
+    typedef std::list<Page*> PagePtrList;
+
+    /** Writes a series of **consecutive** pages starting at the given index */
+    void FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockR& dataLock);
 
     /** Reference to the parent file */
     File& mFile;
     /** Reference to the backend */
     Backend::BackendImpl& mBackend;
+    /** Pointer to the cache manager to use */
+    CacheManager* mCacheMgr { nullptr };
     /** The size of each page */
     const size_t mPageSize;
     
@@ -138,6 +139,11 @@ private:
     /** The current read-ahead window */
     size_t mFetchSize { 100 };
 
+    /** Map of page index to page */
+    typedef std::map<uint64_t, Page> PageMap;
+    /** List of <index,length> pending reads */
+    typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
+
     /** The index based map of pages */
     PageMap mPages;
     /** Unique set of page ranges being downloaded */
@@ -147,13 +153,15 @@ private:
     /** Mutex that protects the page maps */
     mutable std::mutex mPagesMutex;
 
-    /** Mutex that protects page content and mBackendSize */
-    std::shared_mutex mDataMutex;
+    /** 
+     * Mutex that protects page content and mBackendSize 
+     * Specifically we must use a reader-preference lock - when doing ReadPage with the R lock, we
+     * spawn the background FetchPages thread which also gets its own R lock until the read-ahead is done.
+     * If someone were to acquire a W lock (W2) after ReadPage (R1) but before FetchPages (R3) then we would deadlock
+     */
+    Andromeda::SharedMutex mDataMutex;
 
-    /** Mutex held by background threads to keep this in scope */
-    std::shared_mutex mClassMutex;
-    
-    Andromeda::Debug mDebug;
+    Debug mDebug;
 };
 
 } // namespace Filedata

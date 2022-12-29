@@ -5,6 +5,7 @@
 #include "File.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
+#include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/ConfigOptions.hpp"
@@ -43,7 +44,7 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
     const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
-    mPageManager = std::make_unique<PageManager>(*this, backend, fileSize, pageSize);
+    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize);
 
     mDebug << __func__ << "... ID:" << GetID() << " name:" << mName 
         << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk; mDebug.Info();
@@ -77,7 +78,7 @@ void File::Refresh(const nlohmann::json& data)
 /*****************************************************/
 void File::SubDelete()
 {
-    mDebug << __func__ << "() " << GetID(); mDebug.Info();
+    mDebug << __func__ << "(" << GetName() << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -89,7 +90,7 @@ void File::SubDelete()
 /*****************************************************/
 void File::SubRename(const std::string& newName, bool overwrite)
 {
-    mDebug << __func__ << "() " << GetID() << " (name:" << newName << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << GetName() << ")" << " (name:" << newName << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -99,7 +100,7 @@ void File::SubRename(const std::string& newName, bool overwrite)
 /*****************************************************/
 void File::SubMove(Folder& newParent, bool overwrite)
 {
-    mDebug << __func__ << "() " << GetID() << " (parent:" << newParent.GetName() << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << GetName() << ")" << " (parent:" << newParent.GetName() << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -125,7 +126,7 @@ void File::FlushCache(bool nothrow)
 {
     if (mDeleted) return;
 
-    mDebug << __func__ << "() " << GetID(); mDebug.Info();
+    mDebug << __func__ << "(" << GetName() << ")"; mDebug.Info();
 
     mPageManager->FlushPages(nothrow);
 }
@@ -133,7 +134,7 @@ void File::FlushCache(bool nothrow)
 /*****************************************************/
 size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength)
 {    
-    if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset << " maxLength:" << maxLength << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " maxLength:" << maxLength << ")"; mDebug.Info(); }
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
@@ -151,7 +152,7 @@ size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxL
 /*****************************************************/
 void File::ReadBytes(char* buffer, const uint64_t offset, size_t length)
 {    
-    if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
@@ -190,7 +191,7 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
 /*****************************************************/
 void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length)
 {
-    if (mDebug) { mDebug << __func__ << "() " << GetID() << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -238,7 +239,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
 /*****************************************************/
 void File::Truncate(const uint64_t newSize)
 {    
-    mDebug << __func__ << "() " << GetID() << " (size:" << newSize << ")"; mDebug.Info();
+    mDebug << __func__ << "(" << GetName() << ")" << " (size:" << newSize << ")"; mDebug.Info();
 
     if (isReadOnly()) throw ReadOnlyException();
 

@@ -5,8 +5,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "typedefs.hpp"
-
 namespace Andromeda {
 
 /** 
@@ -19,44 +17,44 @@ public:
 
     Semaphor(size_t max = 1) : mMaxCount(max) { }
 
-    bool try_lock()
+    inline bool try_lock()
     {
-        UniqueLock llock(mMutex);
-        if (mCount+1 < mMaxCount) { ++mCount; return true; } 
+        std::unique_lock<std::mutex> llock(mMutex);
+        if (mCount+1 <= mMaxCount) { ++mCount; return true; } 
         else return false;
     }
 
-    void lock()
+    inline void lock()
     {
-        UniqueLock llock(mMutex);
-        while (mCount+1 >= mMaxCount) mCV.wait(llock); 
+        std::unique_lock<std::mutex> llock(mMutex);
+        while (mCount+1 > mMaxCount) mCV.wait(llock); 
         ++mCount;
     }
 
-    void unlock()
+    inline void unlock()
     {
-        UniqueLock llock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
         --mCount; mCV.notify_one();
     }
 
     /** Returns the current # of locks */
     size_t get_count()
     {
-        UniqueLock llock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
         return mCount;
     }
 
     /** Returns the max semaphor count */
     size_t get_max()
     {
-        UniqueLock llock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
         return mMaxCount;
     }
 
     /** Change the semaphor max count */
     void set_max(size_t max)
     {
-        UniqueLock llock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
 
         while (max > mMaxCount)
         {
@@ -65,7 +63,7 @@ public:
         }
         while (max < mMaxCount)
         {
-            while (mCount+1 >= mMaxCount) mCV.wait(llock); 
+            while (mCount+1 > mMaxCount) mCV.wait(llock); 
             --mMaxCount;
         }
 

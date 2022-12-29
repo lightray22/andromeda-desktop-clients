@@ -6,6 +6,7 @@
 #include <QtWidgets/QMainWindow>
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 class AccountTab;
 
@@ -49,6 +50,9 @@ private:
     AccountTab* GetCurrentTab();
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
+
+    /** Global cache manager to apply to all mounts */
+    Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
 
     Andromeda::Debug mDebug;
 };

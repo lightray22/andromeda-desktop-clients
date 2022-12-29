@@ -8,13 +8,13 @@
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
-#include "andromeda/typedefs.hpp"
-using Andromeda::UniqueLock;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
 static a2fuse_operations a2fuse_ops;
 static Debug sDebug("FuseAdapter",nullptr);
+
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 namespace AndromedaFuse {
 

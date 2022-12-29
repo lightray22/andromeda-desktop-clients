@@ -19,6 +19,9 @@
 #endif
 
 namespace Andromeda {
+
+namespace Filesystem { namespace Filedata { class CacheManager; } }
+
 namespace Backend {
 
 class BaseRunner;
@@ -81,16 +84,28 @@ public:
         /** @param which string describing what is read-only */
         explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
-    /** @param runner the BaseRunner to use */
-    explicit BackendImpl(const ConfigOptions& options, BaseRunner& runner);
+    /**
+     * @param options configuration options
+     * @param runner the BaseRunner to use 
+     */
+    BackendImpl(const ConfigOptions& options, BaseRunner& runner);
 
     virtual ~BackendImpl();
 
     /** Initializes the backend by loading config */
     void Initialize();
 
+    /** Gets the server config object */
+    const Config& GetConfig() { return mConfig; }
+
     /** Returns the backend options in use */
     const ConfigOptions& GetOptions() const { return mOptions; }
+
+    /** Returns the cache manager if set or nullptr */
+    Andromeda::Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
+
+    /** Sets the cache manager to use (or nullptr) */
+    void SetCacheManager(Andromeda::Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const;
@@ -118,17 +133,20 @@ public:
     /** Closes the existing session */
     void CloseSession();
 
-    /** Throws if a session is not in use */
+    /** 
+     * Throws if a session is not in use 
+     * @throws AuthRequiredException if no session
+     */
     void RequireAuthentication() const;
+
+    /*****************************************************/
+    // ---- Actual backend functions below here ---- //
 
     /**
      * Loads server config
      * @return loaded config as JSON with "core" and "files" keys
      */
     nlohmann::json GetConfigJ();
-
-    /** Gets the server config object */
-    const Config& GetConfig() { return mConfig; }
 
     /** Load limits for the current account */
     nlohmann::json GetAccountLimits();
@@ -283,6 +301,8 @@ private:
 
     ConfigOptions mOptions;
     BaseRunner& mRunner;
+
+    Andromeda::Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
     Config mConfig;
     Debug mDebug;

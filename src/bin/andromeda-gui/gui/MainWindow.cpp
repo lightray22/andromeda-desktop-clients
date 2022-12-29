@@ -7,6 +7,7 @@
 #include "AccountTab.hpp"
 #include "LoginDialog.hpp"
 
+#include "andromeda/backend/BackendImpl.hpp"
 #include "andromeda-gui/BackendContext.hpp"
 
 /*****************************************************/
@@ -63,7 +64,10 @@ void MainWindow::AddAccount()
     LoginDialog loginDialog(*this);
     if (loginDialog.exec())
     {
-        AccountTab* accountTab { new AccountTab(*this, loginDialog.TakeBackend()) };
+        std::unique_ptr<BackendContext> backendCtx { loginDialog.TakeBackend() };
+        backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+
+        AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
         mQtUi->tabAccounts->setCurrentIndex(
             mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));

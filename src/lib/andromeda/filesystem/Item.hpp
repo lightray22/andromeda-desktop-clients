@@ -54,6 +54,9 @@ public:
     /** Returns the FS name */
     virtual const std::string& GetName() const final { return mName; }
 
+    /** Returns a reference to the backend for this item */
+    virtual Backend::BackendImpl& GetBackend() const final { return mBackend; }
+
     /** Get the created time stamp */
     virtual Date GetCreated() const final { return mCreated; } 
 

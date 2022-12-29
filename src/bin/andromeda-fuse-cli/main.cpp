@@ -37,6 +37,8 @@ using Andromeda::Filesystem::Folders::PlainFolder;
 using Andromeda::Filesystem::Folders::Filesystem;
 #include "andromeda/filesystem/folders/SuperRoot.hpp"
 using Andromeda::Filesystem::Folders::SuperRoot;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 
 #define VERSION "0.1-alpha"
 
@@ -109,8 +111,10 @@ int main(int argc, char** argv)
     }
 
     BackendImpl backend(configOptions, *runner);
-    std::unique_ptr<Folder> folder;
+    CacheManager cacheMgr; backend.SetCacheManager(&cacheMgr);
 
+    std::unique_ptr<Folder> folder;
+    
     try
     {
         backend.Initialize();

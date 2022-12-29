@@ -70,7 +70,7 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     }
     catch (const Item::ReadOnlyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
+        debug << fname << "... " << e.what(); debug.Info(); return -EROFS; // TODO this is wrong, fix code
     }
 
     // Backend exceptions
