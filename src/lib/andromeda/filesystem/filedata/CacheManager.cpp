@@ -153,8 +153,8 @@ void CacheManager::CleanupThread()
             PrintStatus(__func__, lock);
         }
 
-        // we cannot hold the local lock here while evicting a page as it can deadlock
-        // if we are evicting a page from file A then we need its dataLockW, but if it's
+        // we cannot hold the local lock here while evicting a page as it can deadlock -
+        // if we are evicting a page from a file then we need its dataLockW, but if it's
         // currently reading (has dataLockR) it will do InformPage() here and wait for our lock
 
         mDebug << __func__ << "... numEvicts:" << mCurrentEvicts.size(); mDebug.Info();

@@ -29,13 +29,13 @@ public:
 
     inline void lock_shared() noexcept
     {
-        std::unique_lock<std::mutex> lock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
         if (++mReaders == 1) mResource.lock();
     }
 
     inline void unlock_shared() noexcept
     {
-        std::unique_lock<std::mutex> lock(mMutex);
+        std::unique_lock<std::mutex> llock(mMutex);
         if (--mReaders == 0) mResource.unlock();
     }
 
