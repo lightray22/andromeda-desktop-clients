@@ -386,7 +386,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         return retval;
     }
 
-    RunnerInput_FilesIn input {"files", "upload", {{"parent", parent}, {"name", name}}, {{"file", {name, ""}}}};
+    RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}}}, {{"file", {name, ""}}}};
 
     FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
 }
@@ -519,7 +519,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 
     if (isMemory()) { func(0, std::string(length,'\0').data(), length); return; }
 
-    size_t read = 0; RunnerInput_StreamOut input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}, 
+    size_t read = 0; RunnerInput_StreamOut input {{"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}, 
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
         func(soffset, buf, buflen); read += buflen;
@@ -540,7 +540,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     if (isMemory()) return nullptr;
 
-    RunnerInput_FilesIn input {"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}, {{"data", {"data", data}}}};
+    RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}}, {{"data", {"data", data}}}};
 
     FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
 }

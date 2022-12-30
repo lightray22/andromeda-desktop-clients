@@ -17,23 +17,23 @@ namespace Andromeda {
 class SharedMutex
 {
 public:
-    inline void lock()
+    inline void lock() noexcept
     {
         mResource.lock();
     }
 
-    inline void unlock()
+    inline void unlock() noexcept
     {
         mResource.unlock();
     }
 
-    inline void lock_shared()
+    inline void lock_shared() noexcept
     {
         std::unique_lock<std::mutex> lock(mMutex);
         if (++mReaders == 1) mResource.lock();
     }
 
-    inline void unlock_shared()
+    inline void unlock_shared() noexcept
     {
         std::unique_lock<std::mutex> lock(mMutex);
         if (--mReaders == 0) mResource.unlock();

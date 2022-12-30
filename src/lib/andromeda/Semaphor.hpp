@@ -17,42 +17,42 @@ public:
 
     Semaphor(size_t max = 1) : mMaxCount(max) { }
 
-    inline bool try_lock()
+    inline bool try_lock() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
         if (mCount+1 <= mMaxCount) { ++mCount; return true; } 
         else return false;
     }
 
-    inline void lock()
+    inline void lock() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
         while (mCount+1 > mMaxCount) mCV.wait(llock); 
         ++mCount;
     }
 
-    inline void unlock()
+    inline void unlock() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
         --mCount; mCV.notify_one();
     }
 
     /** Returns the current # of locks */
-    size_t get_count()
+    size_t get_count() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
         return mCount;
     }
 
     /** Returns the max semaphor count */
-    size_t get_max()
+    size_t get_max() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
         return mMaxCount;
     }
 
     /** Change the semaphor max count */
-    void set_max(size_t max)
+    void set_max(size_t max) noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
 

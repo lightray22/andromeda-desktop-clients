@@ -174,12 +174,12 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
     if (readfunc)
     {
         mInput_StreamOut = std::make_unique<RunnerInput_StreamOut>(
-            RunnerInput_StreamOut{app, action, params, readfunc});
+            RunnerInput_StreamOut{{app, action, params}, readfunc});
     }
     else if (!streams.empty())
     {
         mInput_StreamIn = std::make_unique<RunnerInput_StreamIn>(
-            RunnerInput_StreamIn{app, action, params, { }, streams});
+            RunnerInput_StreamIn{{{app, action, params}, { }}, streams});
     }
     else
     {
