@@ -525,18 +525,14 @@ void PageManager::Truncate(const uint64_t newSize)
             mDebug << __func__ << "... erase page:" << it->first; mDebug.Info();
 
             if (mCacheMgr) mCacheMgr->ErasePage(it->second);
-            it = mPages.erase(it); 
-
-            mDebug << __func__ << "... page removed!" << it->first; mDebug.Info();
+            it = mPages.erase(it);
         }
         else if (it->first == (newSize-1)/mPageSize) // resize last page
         {
             uint64_t pageSize { newSize - it->first*mPageSize };
             mDebug << __func__<< "... resize page:" << it->first << " size:" << pageSize; mDebug.Info();
 
-            ResizePage(it->second, pageSize);
-
-            mDebug << __func__ << "... page resized!"; mDebug.Info();
+            ResizePage(it->second, pageSize); ++it;
         }
         else ++it;
     }
