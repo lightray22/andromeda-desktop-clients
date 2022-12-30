@@ -181,9 +181,9 @@ Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const 
 }
 
 /*****************************************************/
-void PageManager::ResizePage(Page& page, const uint64_t pageSize, bool inform)
+void PageManager::ResizePage(Page& page, const size_t pageSize, bool inform)
 {
-    const uint64_t oldSize { page.size() };
+    const size_t oldSize { page.size() };
     if (oldSize == pageSize) return; // no-op
 
     mDebug << __func__ << "(pageSize:" << pageSize << ") oldSize:" << oldSize; mDebug.Info();
@@ -261,12 +261,12 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
         }
     }
 
-    for (uint64_t curIndex { index }; curIndex < index+readCount; ++curIndex) // stop before next pending
+    for (size_t curCount { 0 }; curCount < readCount; ++curCount) // stop before next pending
     {
-        if (isPending(curIndex, pagesLock))
+        if (isPending(curCount+index, pagesLock))
         {
-            mDebug << __func__ << "... pending page at:" << curIndex; mDebug.Info();
-            readCount = curIndex - index;
+            mDebug << __func__ << "... pending page at:" << curCount+index; mDebug.Info();
+            readCount = curCount;
             break; // pages are in order
         }
     }
@@ -373,20 +373,27 @@ void PageManager::FlushPages(bool nothrow)
 
         mDebug << __func__ << "... have locks"; mDebug.Info();
 
+        size_t curSize { 0 };
         uint64_t lastIndex { 0 };
         PagePtrList* curList { nullptr };
         for (PageMap::value_type& pagePair : mPages)
         {
             if (pagePair.second.mDirty)
             {
-                if (!curList || lastIndex+1 != pagePair.first)
+                size_t pageSize { pagePair.second.size() };
+
+                if (curList == nullptr
+                    || lastIndex+1 != pagePair.first // not contiguous
+                    || curSize + pageSize < curSize) // size_t overflow!
                 {
                     mDebug << __func__ << "... new write run at " << pagePair.first; mDebug.Info();
                     curList = &(writeLists.emplace(pagePair.first, PagePtrList()).first->second);
+                    curSize = 0;
                 }
 
                 lastIndex = pagePair.first;
                 curList->push_back(&pagePair.second);
+                curSize += pagePair.second.size();
             }
             else curList = nullptr; // end run
         }
@@ -410,7 +417,7 @@ void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtr
 
     mDebug << __func__ << "(index:" << index << " pages:" << pages.size() << ")"; mDebug.Info();
 
-    uint64_t totalSize { 0 };
+    size_t totalSize { 0 };
     for (const Page* pagePtr : pages)
         totalSize += pagePtr->size();
 
@@ -529,7 +536,7 @@ void PageManager::Truncate(const uint64_t newSize)
         }
         else if (it->first == (newSize-1)/mPageSize) // resize last page
         {
-            uint64_t pageSize { newSize - it->first*mPageSize };
+            size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
             mDebug << __func__<< "... resize page:" << it->first << " size:" << pageSize; mDebug.Info();
 
             ResizePage(it->second, pageSize); ++it;

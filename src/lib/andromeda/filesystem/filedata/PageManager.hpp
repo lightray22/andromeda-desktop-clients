@@ -99,7 +99,7 @@ private:
      * Resizes an existing page to the given size, informing the CacheManager if inform 
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
      */
-    void ResizePage(Page& page, uint64_t pageSize, bool inform = true);
+    void ResizePage(Page& page, const size_t pageSize, bool inform = true);
 
     /** Returns true if the page at the given index is pending download */
     bool isPending(const uint64_t index, const UniqueLock& pagesLock);
@@ -119,7 +119,7 @@ private:
     /** Map of page index to page pointers */
     typedef std::list<Page*> PagePtrList;
 
-    /** Writes a series of **consecutive** pages starting at the given index */
+    /** Writes a series of **consecutive** pages (total < size_t) starting at the given index */
     void FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockR& dataLock);
 
     /** Reference to the parent file */

@@ -14,7 +14,7 @@ namespace Andromeda { namespace Backend {
     struct RunnerInput; 
     struct RunnerInput_StreamIn;
     struct RunnerInput_StreamOut;
-} };
+} }
 
 /** Gets options and a remote Input from the command line */
 class CommandLine
