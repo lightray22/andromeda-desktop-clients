@@ -2,10 +2,19 @@
 #include <algorithm>
 #include <iostream>
 
+// SilentReadConsole()
 #if WIN32
 #include <windows.h>
 #else // !WIN32
 #include <termios.h>
+#endif // WIN32
+
+// GetEnvironment()
+#if WIN32
+#include <stdlib.h>
+#else // !WIN32
+#include <unistd.h>
+extern char** environ;
 #endif // WIN32
 
 #include "Utilities.hpp"
@@ -129,12 +138,6 @@ void Utilities::SilentReadConsole(std::string& retval)
     std::cout << std::endl;
 }
 
-#if WIN32
-#include <stdlib.h>
-#else // !WIN32
-#include <unistd.h>
-#endif // WIN32
-
 /*****************************************************/
 Utilities::StringMap Utilities::GetEnvironment()
 {
@@ -142,7 +145,6 @@ Utilities::StringMap Utilities::GetEnvironment()
 #if WIN32
     env = *__p__environ();
 #else // !WIN32
-    extern char** environ;
     env = environ;
 #endif // WIN32
 
