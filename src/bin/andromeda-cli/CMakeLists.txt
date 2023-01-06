@@ -8,7 +8,8 @@ include(../../../andromeda.cmake)
 set(SOURCE_FILES main.cpp Options.cpp CommandLine.cpp)
 add_executable(andromeda-cli ${SOURCE_FILES})
 
-target_compile_options(andromeda-cli PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(andromeda-cli PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_link_options(andromeda-cli PRIVATE ${ANDROMEDA_LINK_OPTS})
 
 install(TARGETS andromeda-cli
     BUNDLE  DESTINATION .

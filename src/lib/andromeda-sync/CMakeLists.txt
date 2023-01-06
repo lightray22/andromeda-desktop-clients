@@ -14,7 +14,7 @@ include(../../../andromeda.cmake)
 #target_include_directories(libandromeda-sync
 #    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-#target_compile_options(libandromeda-sync PRIVATE ${ANDROMEDA_WARNINGS})
+#target_compile_options(libandromeda-sync PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
 
 # include/link libandromeda
 

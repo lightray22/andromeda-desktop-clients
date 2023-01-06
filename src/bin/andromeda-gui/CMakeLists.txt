@@ -30,7 +30,8 @@ else()
     add_executable(andromeda-gui ${SOURCE_FILES})
 endif()
     
-target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_link_options(andromeda-gui PRIVATE ${ANDROMEDA_LINK_OPTS})
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

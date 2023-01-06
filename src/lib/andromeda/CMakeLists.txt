@@ -18,7 +18,7 @@ target_sources(libandromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(libandromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_compile_options(libandromeda PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(libandromeda PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(libandromeda PRIVATE -Wno-psabi)
@@ -48,6 +48,8 @@ FetchContent_Declare(cpp-httplib
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 
+target_compile_options(httplib PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
+
 target_link_libraries(libandromeda PUBLIC httplib)
 
 # include/link reproc++
@@ -60,6 +62,9 @@ FetchContent_Declare(reproc
     GIT_TAG         c1edf03 # master
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
+
+target_compile_options(reproc PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
+target_compile_options(reproc++ PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
 
 target_link_libraries(libandromeda PRIVATE reproc++)
 

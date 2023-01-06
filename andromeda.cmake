@@ -30,7 +30,7 @@ endif()
 # https://github.com/cpp-best-practices/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 
 if (MSVC)
-    set(ANDROMEDA_WARNINGS /W4 /WX /permissive-
+    set(ANDROMEDA_CXX_WARNS /W4 /WX /permissive-
         /wd4100 # NO unreferenced formal parameter
         /wd4101 # NO unreferenced local variable
         /wd4702 # NO unreachable code (Qt)
@@ -40,8 +40,14 @@ if (MSVC)
         /w14555 /w14619 /w14640 /w14826
         /w14905 /w14906 /w14928
     )
+
+    # security options
+    set(ANDROMEDA_CXX_OPTS)
+    set(ANDROMEDA_LINK_OPTS 
+        /NXCOMPAT /DYNAMICBASE
+    )
 else()
-    set(ANDROMEDA_WARNINGS -Wall -Wextra -Werror
+    set(ANDROMEDA_CXX_WARNS -Wall -Wextra -Werror
         -pedantic -pedantic-errors -Wpedantic
         -Wno-unused-parameter # NO unused parameter
         -Wcast-align
@@ -56,9 +62,8 @@ else()
         -Wsign-conversion
         -Wshadow
     )
-
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        list(APPEND ANDROMEDA_WARNINGS 
+        list(APPEND ANDROMEDA_CXX_WARNS 
             -Wduplicated-branches
             -Wduplicated-cond
             -Wlogical-op 
@@ -66,8 +71,24 @@ else()
             -Wnull-dereference
         )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        list(APPEND ANDROMEDA_WARNINGS 
+        list(APPEND ANDROMEDA_CXX_WARNS 
             -Wnewline-eof
         )
     endif()
+
+    # https://wiki.ubuntu.com/ToolChain/CompilerFlags
+    # https://developers.redhat.com/blog/2018/03/21/compiler-and-linker-flags-gcc
+
+    # security options
+    set(ANDROMEDA_CXX_OPTS
+        -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
+        -D_GLIBCXX_ASSERTIONS
+        -fexceptions -fPIE
+        -fstack-protector-strong --param=ssp-buffer-size=4
+    )
+    set(ANDROMEDA_LINK_OPTS
+        -Wl,-pie
+        -Wl,-z,relro -Wl,-z,now
+        -Wl,-z,noexecstack
+    )
 endif()

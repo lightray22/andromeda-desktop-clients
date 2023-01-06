@@ -10,7 +10,7 @@ target_sources(libandromeda_tests PRIVATE ${SOURCE_FILES})
 target_include_directories(libandromeda_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_compile_options(libandromeda_tests PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(libandromeda_tests PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
 target_link_libraries(libandromeda_tests PRIVATE libandromeda)
 target_link_libraries(libandromeda_tests PRIVATE Catch2::Catch2WithMain)
 
