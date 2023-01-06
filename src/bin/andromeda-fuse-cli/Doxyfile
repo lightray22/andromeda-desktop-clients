@@ -1,4 +1,0 @@
-INPUT = src/bin/andromeda-fuse-cli
-OUTPUT_DIRECTORY = docs/bin/andromeda-fuse-cli
-PROJECT_NAME = andromeda-fuse-cli
-@INCLUDE = tools/Doxyfile.inc

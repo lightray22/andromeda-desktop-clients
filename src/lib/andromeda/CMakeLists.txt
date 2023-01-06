@@ -5,7 +5,8 @@ include(../../../andromeda.cmake)
 
 # build the Andromeda library
 
-add_library(andromeda)
+add_library(libandromeda)
+set_target_properties(libandromeda PROPERTIES PREFIX "")
 
 set(SOURCE_FILES 
     BaseOptions.cpp
@@ -13,17 +14,17 @@ set(SOURCE_FILES
     Utilities.cpp
     )
 
-target_sources(andromeda PRIVATE ${SOURCE_FILES})
-target_include_directories(andromeda
+target_sources(libandromeda PRIVATE ${SOURCE_FILES})
+target_include_directories(libandromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_compile_options(andromeda PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(libandromeda PRIVATE ${ANDROMEDA_WARNINGS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(andromeda PRIVATE -Wno-psabi)
+    target_compile_options(libandromeda PRIVATE -Wno-psabi)
 endif()
 
-install(TARGETS andromeda
+install(TARGETS libandromeda
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
@@ -47,7 +48,7 @@ FetchContent_Declare(cpp-httplib
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 
-target_link_libraries(andromeda PUBLIC httplib)
+target_link_libraries(libandromeda PUBLIC httplib)
 
 # include/link reproc++
 
@@ -60,7 +61,7 @@ FetchContent_Declare(reproc
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
 
-target_link_libraries(andromeda PRIVATE reproc++)
+target_link_libraries(libandromeda PRIVATE reproc++)
 
 # include nlohmann (header-only)
 
@@ -73,4 +74,4 @@ FetchContent_Declare(nlohmann_json
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(nlohmann_json)
 
-target_link_libraries(andromeda PUBLIC nlohmann_json)
+target_link_libraries(libandromeda PUBLIC nlohmann_json)

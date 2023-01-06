@@ -10,7 +10,7 @@ target_include_directories(andromeda-cli_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(andromeda-cli_tests PRIVATE ${ANDROMEDA_WARNINGS})
-target_link_libraries(andromeda-cli_tests PRIVATE andromeda)
+target_link_libraries(andromeda-cli_tests PRIVATE libandromeda)
 target_link_libraries(andromeda-cli_tests PRIVATE Catch2::Catch2WithMain)
 
 # Run the test - if it fails and you don't want it deleted, comment this line

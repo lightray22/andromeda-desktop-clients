@@ -17,8 +17,8 @@ install(TARGETS andromeda-cli
 
 # include/link libandromeda
 
-if (NOT TARGET andromeda)
+if (NOT TARGET libandromeda)
     add_subdirectory(../../lib/andromeda lib/andromeda)
 endif()
 
-target_link_libraries(andromeda-cli PRIVATE andromeda)
+target_link_libraries(andromeda-cli PRIVATE libandromeda)

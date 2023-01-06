@@ -1,4 +1,0 @@
-INPUT = src/bin/andromeda-sync-cli
-OUTPUT_DIRECTORY = docs/bin/andromeda-sync-cli
-PROJECT_NAME = andromeda-sync-cli
-@INCLUDE = tools/Doxyfile.inc

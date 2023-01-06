@@ -4,4 +4,4 @@ set(SOURCE_FILES
     PageManager.cpp
     )
 
-target_sources(andromeda PRIVATE ${SOURCE_FILES})
+target_sources(libandromeda PRIVATE ${SOURCE_FILES})

@@ -9,4 +9,4 @@ set(SOURCE_FILES
     RunnerInput.cpp
     )
 
-target_sources(andromeda PRIVATE ${SOURCE_FILES})
+target_sources(libandromeda PRIVATE ${SOURCE_FILES})

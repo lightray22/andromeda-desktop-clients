@@ -68,16 +68,16 @@ add_subdirectory(gui)
 
 # include/link libandromeda
 
-if (NOT TARGET andromeda-fuse)
+if (NOT TARGET libandromeda-fuse)
     add_subdirectory(../../lib/andromeda-fuse lib/andromeda-fuse)
 endif()
 
-if (NOT TARGET andromeda-sync)
+if (NOT TARGET libandromeda-sync)
     add_subdirectory(../../lib/andromeda-sync lib/andromeda-sync)
 endif()
 
-target_link_libraries(andromeda-gui PRIVATE andromeda-fuse)
-#target_link_libraries(andromeda-gui PRIVATE andromeda-sync)
+target_link_libraries(andromeda-gui PRIVATE libandromeda-fuse)
+#target_link_libraries(andromeda-gui PRIVATE libandromeda-sync)
 
 # include/link Qt libraries
 
