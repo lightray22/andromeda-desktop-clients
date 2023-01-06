@@ -81,10 +81,10 @@ else()
 
     # security options
     set(ANDROMEDA_CXX_OPTS
-        -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
-        -D_GLIBCXX_ASSERTIONS
-        -fexceptions -fPIE
+        $<IF:$<CONFIG:Debug>,,-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
         -fstack-protector-strong --param=ssp-buffer-size=4
+        -fexceptions -fPIE
+        -D_GLIBCXX_ASSERTIONS
     )
     set(ANDROMEDA_LINK_OPTS
         -Wl,-pie
