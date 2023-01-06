@@ -17,12 +17,12 @@ This repo contains the desktop applications and common libraries for Andromeda's
 
 There are several binaries and libraries in the full suite.  By default, all targets will be built (see the preqrequisites sections for each!).  
 
-To build one individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse-cli; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
+To build one individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-cli` allows manual CLI communication with the backend
-- `src/bin/andromeda-fuse-cli` and `src/lib/andromeda-fuse` for mounting with FUSE
-- FUTURE `src/bin/andromeda-sync-cli` and `src/lib/andromeda-sync` for running directory sync operations
+- `src/bin/andromeda-fuse` and `src/lib/andromeda-fuse` for mounting with FUSE
+- FUTURE `src/bin/andromeda-sync` and `src/lib/andromeda-sync` for running directory sync operations
 - `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
 
 ### Building
@@ -117,7 +117,7 @@ Example that shows the available API calls: `./andromeda-cli -a (url) core usage
 
 The FUSE client allows mounting Andromeda storage as local storage using FUSE.
 
-Run `./andromeda-fuse-cli --help` to see the available options.
+Run `./andromeda-fuse --help` to see the available options.
 Authentication details (password, twofactor) will be prompted for interactively as required.
 Any option or flag can also be listed in a config file named `andromeda-fuse.conf`. 
 Example:
