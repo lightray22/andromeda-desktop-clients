@@ -22,6 +22,10 @@ if (BUILD_TESTING)
     if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/_tests)
         add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/_tests)
     endif()
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(Catch2 PRIVATE -Wno-psabi)
+    endif()
 endif()
 
 # define compiler warnings
@@ -68,7 +72,8 @@ else()
             -Wduplicated-cond
             -Wlogical-op 
             -Wmisleading-indentation
-            -Wnull-dereference
+            -Wnull-dereference # effective with -O3
+            -Wno-psabi # ignore GCC 7.1 armhf ABI change
         )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         list(APPEND ANDROMEDA_CXX_WARNS 

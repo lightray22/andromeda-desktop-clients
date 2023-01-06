@@ -20,10 +20,6 @@ target_include_directories(libandromeda
 
 target_compile_options(libandromeda PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(libandromeda PRIVATE -Wno-psabi)
-endif()
-
 install(TARGETS libandromeda
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
