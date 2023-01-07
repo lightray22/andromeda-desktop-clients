@@ -34,6 +34,8 @@ else()
    set(FUSE_MAJOR_VERSION 2)
 endif()
 
+message(STATUS "Found FUSE version ${FUSE_MAJOR_VERSION}")
+
 include("FindPackageHandleStandardArgs")
 find_package_handle_standard_args("FUSE" DEFAULT_MSG
     FUSE_INCLUDE_DIR FUSE_LIBRARY)

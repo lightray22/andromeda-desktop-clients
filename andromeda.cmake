@@ -88,12 +88,17 @@ else()
     set(ANDROMEDA_CXX_OPTS
         $<IF:$<CONFIG:Debug>,,-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
         -fstack-protector-strong --param=ssp-buffer-size=4
-        -fexceptions -fPIE
-        -D_GLIBCXX_ASSERTIONS
+        -D_GLIBCXX_ASSERTIONS -fexceptions
     )
     set(ANDROMEDA_LINK_OPTS
-        -Wl,-pie
         -Wl,-z,relro -Wl,-z,now
         -Wl,-z,noexecstack
     )
+
+    option(WITHOUT_PIE "Disable position independent executable" OFF)
+
+    if (NOT ${WITHOUT_PIE})
+        list(APPEND ANDROMEDA_CXX_OPTS -fPIE)
+        list(APPEND ANDROMEDA_LINK_OPTS -Wl,-pie -pie)
+    endif()
 endif()

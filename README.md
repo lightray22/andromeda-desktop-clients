@@ -33,7 +33,7 @@ Run `tools/buildrel` for a release build.  Run `tools/builddev` for a developmen
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 3. Run compile `cmake --build .`
 
-Cmake will automatically clone in-tree dependencies.
+Cmake will automatically clone in-tree dependencies.  By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
 
 ### Build System
 
