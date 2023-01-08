@@ -14,7 +14,7 @@ namespace Folders {
 SuperRoot::SuperRoot(BackendImpl& backend) : 
     Folder(backend), mDebug("SuperRoot",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     backend.RequireAuthentication();
 
@@ -26,7 +26,7 @@ void SuperRoot::LoadItems()
 {
     if (HaveItems()) return; // never refresh
 
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
     mItemMap[adopted->GetName()] = std::move(adopted);

@@ -24,7 +24,7 @@ AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendC
     mQtUi(std::make_unique<Ui::AccountTab>()),
     mDebug("AccountTab",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mQtUi->setupUi(this);
 }
@@ -32,7 +32,7 @@ AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendC
 /*****************************************************/
 AccountTab::~AccountTab()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
@@ -44,7 +44,7 @@ std::string AccountTab::GetTabName() const
 /*****************************************************/
 void AccountTab::Mount(bool autoMount)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     FuseOptions fuseOptions;
 
@@ -58,7 +58,7 @@ void AccountTab::Mount(bool autoMount)
     }
     catch (const BaseException& ex)
     {
-        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
+        MDBG_ERROR("... " << ex.what());
 
         QMessageBox::critical(this, "Mount Error", ex.what()); return;
     }
@@ -73,7 +73,7 @@ void AccountTab::Mount(bool autoMount)
 /*****************************************************/
 void AccountTab::Unmount()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mMountContext.reset();
 
@@ -89,7 +89,7 @@ void AccountTab::Browse()
 
     std::string homeRoot { mMountContext->GetMountPath() };
 
-    mDebug << __func__ << "(homeRoot: " << homeRoot << ")"; mDebug.Info();
+    MDBG_INFO("(homeRoot: " << homeRoot << ")");
 
     homeRoot.insert(0, "file:///"); QDesktopServices::openUrl(QUrl(homeRoot.c_str()));
 }

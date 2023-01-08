@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     HTTPRunner::HostUrlPair urlPair {
         HTTPRunner::ParseURL(options.GetApiUrl()) };
@@ -90,19 +90,20 @@ int main(int argc, char** argv)
 
             if (val.at("ok").get<bool>())
             {
-                debug.Info("returning success...");
+                DDBG_INFO("returning success...");
                 return static_cast<int>(ExitCode::SUCCESS);
             }
             else
             {
-                debug.Info("returning API error...");
+                DDBG_INFO("returning API error...");
                 return static_cast<int>(ExitCode::BACKEND_RESP);
             }
         }
         catch (const nlohmann::json::exception& ex)
         {
             std::cerr << "JSON Error: " << ex.what() << std::endl;
-            debug << "... json body: " << resp; debug.Error();
+            DDBG_ERROR("... json body: " << resp);
+            // TODO fix this, shouldn't print to cerr directly?? default level should always be errors
             return static_cast<int>(ExitCode::BACKEND_JSON);
         }
     }

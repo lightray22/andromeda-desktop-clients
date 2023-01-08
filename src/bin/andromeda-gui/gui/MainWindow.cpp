@@ -15,7 +15,7 @@ MainWindow::MainWindow() : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
     mDebug("MainWindow",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mQtUi->setupUi(this);
 }
@@ -23,13 +23,13 @@ MainWindow::MainWindow() : QMainWindow(),
 /*****************************************************/
 MainWindow::~MainWindow()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 void MainWindow::show()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     QMainWindow::show(); // base class
     activateWindow(); // bring to front
@@ -40,18 +40,16 @@ void MainWindow::show()
 /*****************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     if (!event->spontaneous() || GetCurrentTab() == nullptr)
     {
-        mDebug << __func__ << "... closing"; mDebug.Info();
-
+        MDBG_INFO("... closing");
         QMainWindow::closeEvent(event);
     }
     else
     {
-        mDebug << __func__ << "... hiding"; mDebug.Info();
-
+        MDBG_INFO("... hiding");
         event->ignore(); hide();
     }
 }
@@ -59,7 +57,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 /*****************************************************/
 void MainWindow::AddAccount()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     LoginDialog loginDialog(*this);
     if (loginDialog.exec())
@@ -82,10 +80,10 @@ void MainWindow::AddAccount()
 /*****************************************************/
 void MainWindow::RemoveAccount()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     if (QMessageBox::question(this, "Remove Account", "Are you sure?") == QMessageBox::Yes)
-        { mDebug << __func__ << "... confirmed"; mDebug.Info(); }
+        { MDBG_INFO("... confirmed"); }
     else return; // early return!
 
     AccountTab* accountTab { GetCurrentTab() };
@@ -114,7 +112,7 @@ AccountTab* MainWindow::GetCurrentTab()
 /*****************************************************/
 void MainWindow::MountCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Mount();
@@ -123,7 +121,7 @@ void MainWindow::MountCurrent()
 /*****************************************************/
 void MainWindow::UnmountCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Unmount();
@@ -132,7 +130,7 @@ void MainWindow::UnmountCurrent()
 /*****************************************************/
 void MainWindow::BrowseCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Browse();

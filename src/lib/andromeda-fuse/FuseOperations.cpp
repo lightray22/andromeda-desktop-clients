@@ -46,59 +46,59 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     // Item exceptions
     catch (const Folder::NotFileException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EISDIR;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTDIR;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EEXIST;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EROFS; // TODO this is wrong, fix code
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EROFS; // TODO this is wrong, fix code
     }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const BackendImpl::ReadOnlyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EROFS;
     }
     catch (const BackendImpl::DeniedException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EACCES;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EACCES;
     }
     catch (const BackendImpl::NotFoundException& e)  
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
+        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOENT;
     }
 
     // Error exceptions
     catch (const HTTPRunner::ConnectionException& e)
     {
-        debug << fname << "... " << e.what(); debug.Error(); return -EHOSTDOWN;
+        DDBG_ERROR("... " << fname << "... " << e.what()); return -EHOSTDOWN;
     }
     catch (const BaseException& e)
     {
-        debug << fname << "... " << e.what(); debug.Error(); return -EIO;
+        DDBG_ERROR("... " << fname << "... " << e.what()); return -EIO;
     }
 }
 
@@ -109,7 +109,7 @@ void* FuseOperations::init(struct fuse_conn_info* conn)
 void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 #endif // LIBFUSE2
 {
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
 #if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
@@ -126,7 +126,7 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 int FuseOperations::statfs(const char *path, struct statvfs* buf)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     buf->f_namemax = 255;
     
@@ -217,7 +217,9 @@ static void item_stat(const Item& item, struct stat* stbuf)
 int FuseOperations::access(const char* path, int mask)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
+
+    const char* fname { __func__ };
+    DDBG_INFO("(path:" << path << ", mask: " << mask << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -226,7 +228,9 @@ int FuseOperations::access(const char* path, int mask)
 
             if ((mask & W_OK) && item.isReadOnly()) 
             {
-                debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+                debug.Info([&](std::ostream& str){ 
+                    str << fname << "... read-only!"; });
+                return -EROFS;
             }
         #endif // W_OK
             
@@ -240,7 +244,9 @@ int FuseOperations::access(const char* path, int mask)
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    const char* fname { __func__ };
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -248,7 +254,9 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 
         if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && item.isReadOnly())
         {
-            debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... read-only!"; });
+            return -EROFS;
         }
 
         return FUSE_SUCCESS;
@@ -269,7 +277,7 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
 #endif
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -285,19 +293,23 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #endif
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+
+    const char* fname { __func__ };
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
         const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
 
-        debug << __func__ << "... #items:" << items.size(); debug.Info();
+        debug.Info([&](std::ostream& str){ 
+            str << fname << "... #items:" << items.size(); });
 
         for (const Folder::ItemMap::value_type& pair : items)
         {
             const std::unique_ptr<Item>& item { pair.second };
 
-            debug << __func__ << "... subitem: " << item->GetName(); debug.Info();
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... subitem: " << item->GetName(); });
             
 #if LIBFUSE2
             int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
@@ -310,7 +322,8 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             }
             else retval = filler(buf, item->GetName().c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif
-            if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
+            if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
+                str << fname << "... filler() failed"; }); return -EIO; }
         }
 
         for (const char* name : {".",".."})
@@ -320,7 +333,8 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #else
             int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
 #endif
-            if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
+            if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
+                str << fname << "... filler() failed"; }); return -EIO; }
         }
 
         return FUSE_SUCCESS;
@@ -335,7 +349,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
-    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << " name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -353,7 +367,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
-    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << " name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -367,7 +381,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 int FuseOperations::unlink(const char* path)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -379,7 +393,7 @@ int FuseOperations::unlink(const char* path)
 int FuseOperations::rmdir(const char* path)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -404,7 +418,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
     const std::string& newPath { pair1.first };
     const std::string& newName { pair1.second };
 
-    debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
+    DDBG_INFO("(oldpath:" << oldpath << " newpath:" << newpath << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -414,7 +428,9 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
         {
             //Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
-            debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO implement me
+            DDBG_ERROR("NOT SUPPORTED YET!");
+            
+            return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
@@ -435,7 +451,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << " offset:" << off << " size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -451,7 +467,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << " offset:" << off << " size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -469,7 +485,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -483,7 +499,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -497,7 +513,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -510,7 +526,7 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 /*****************************************************/
 void FuseOperations::destroy(void* private_data)
 {
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     standardTry(__func__,[&]()->int
     {
@@ -527,7 +543,7 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 #endif
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << " size:" << size << ")");
 
     if (size < 0) return -EINVAL;
 
@@ -546,14 +562,15 @@ int FuseOperations::chmod(const char* path, mode_t mode)
 int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif
 {
-    if (!GetFuseAdapter().GetOptions().fakeChmod) return -ENOTSUP;
+    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 
@@ -564,14 +581,15 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif
 {
-    if (!GetFuseAdapter().GetOptions().fakeChown) return -ENOTSUP;
+    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 

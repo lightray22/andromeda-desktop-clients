@@ -14,7 +14,7 @@ namespace Filedata {
 CacheManager::CacheManager() : 
     mDebug("CacheManager",this) 
 { 
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mThread = std::thread(&CacheManager::CleanupThread, this);
 }
@@ -22,19 +22,19 @@ CacheManager::CacheManager() :
 /*****************************************************/
 CacheManager::~CacheManager()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mRunCleanup = false;
     mThreadCV.notify_one();
     mThread.join();
 
-    mDebug << __func__ << "... return"; mDebug.Info();
+    MDBG_INFO("... return");
 }
 
 /*****************************************************/
 void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const Page& page)
 {
-    mDebug << __func__ << "(page:" << index << " " << &page << ")"; mDebug.Info();
+    MDBG_INFO("(page:" << index << " " << &page << ")");
 
     UniqueLock lock(mMutex);
 
@@ -42,7 +42,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
         for (const PageInfo& pageInfo : pair.second)
             if (&pageMgr == &pageInfo.mPageMgr && index == pageInfo.mPageIndex)
             {
-                mDebug << __func__ << "... already being evicted! return"; mDebug.Info();
+                MDBG_INFO("... already being evicted! return");
                 return; // do not re-add pages currently being evicted
             }
 
@@ -56,7 +56,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 
     if (mCurrentMemory > mMemoryLimit)
     {
-        mDebug << __func__ << "... memory limit! signal"; mDebug.Info();
+        MDBG_INFO("... memory limit! signal");
         if (!mCleanupActive) mThreadCV.notify_one();
     }
 }
@@ -64,7 +64,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 /*****************************************************/
 void CacheManager::ResizePage(const Page& page, const size_t newSize)
 {
-    mDebug << __func__ << "(page:" << &page << ", newSize:" << newSize << ")"; mDebug.Info();
+    MDBG_INFO("(page:" << &page << ", newSize:" << newSize << ")");
 
     UniqueLock lock(mMutex);
 
@@ -79,7 +79,7 @@ void CacheManager::ResizePage(const Page& page, const size_t newSize)
 
         PrintStatus(__func__, lock);
     }
-    else { mDebug << __func__ << "... page not found"; mDebug.Info(); }
+    else { MDBG_INFO("... page not found"); }
 }
 
 /*****************************************************/
@@ -94,7 +94,7 @@ void CacheManager::ErasePage(const Page& page)
 /*****************************************************/
 void CacheManager::ErasePage(const Page& page, const UniqueLock& lock)
 {
-    mDebug << __func__ << "(page:" << &page << ")"; mDebug.Info();
+    MDBG_INFO("(page:" << &page << ")");
 
     PageItMap::iterator itLookup { mPageItMap.find(&page) };
     if (itLookup != mPageItMap.end()) 
@@ -105,20 +105,20 @@ void CacheManager::ErasePage(const Page& page, const UniqueLock& lock)
         mPageItMap.erase(itLookup);
         mPageQueue.erase(itQueue);
     }
-    else { mDebug << __func__ << "... page not found"; mDebug.Info(); }
+    else { MDBG_INFO("... page not found"); }
 }
 
 /*****************************************************/
-void CacheManager::PrintStatus(const std::string& func, const UniqueLock& lock)
+void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
 {
-    mDebug << func << "() pages:" << mPageItMap.size() 
-        << ", memory:" << mCurrentMemory; mDebug.Info();
+    mDebug.Info([&](std::ostream& str){ str << fname << 
+        "() pages:" << mPageItMap.size() << ", memory:" << mCurrentMemory; });
 }
 
 /*****************************************************/
 void CacheManager::CleanupThread()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     while (mRunCleanup)
     {
@@ -127,14 +127,14 @@ void CacheManager::CleanupThread()
 
             while (mRunCleanup && mCurrentMemory <= mMemoryLimit)
             {
-                mDebug << __func__ << "... waiting"; mDebug.Info();
+                MDBG_INFO("... waiting");
                 mCleanupActive = false;
                 mThreadCV.wait(lock);
             }
             if (!mRunCleanup) break;
             mCleanupActive = true;
 
-            mDebug << __func__ << "... doing cleanup!"; mDebug.Info();
+            MDBG_INFO("... doing cleanup!");
 
             PrintStatus(__func__, lock);
             
@@ -157,7 +157,7 @@ void CacheManager::CleanupThread()
         // if we are evicting a page from a file then we need its dataLockW, but if it's
         // currently reading (has dataLockR) it will do InformPage() here and wait for our lock
 
-        mDebug << __func__ << "... numEvicts:" << mCurrentEvicts.size(); mDebug.Info();
+        MDBG_INFO("... numEvicts:" << mCurrentEvicts.size());
 
         while (!mCurrentEvicts.empty())
         {
@@ -172,7 +172,7 @@ void CacheManager::CleanupThread()
         }
     }
 
-    mDebug << __func__ << "... exiting"; mDebug.Info();
+    MDBG_INFO("... exiting");
 }
 
 } // namespace Filedata

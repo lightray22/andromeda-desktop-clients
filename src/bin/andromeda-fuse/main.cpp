@@ -90,7 +90,7 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     std::unique_ptr<BaseRunner> runner;
     switch (options.GetApiType())
@@ -154,6 +154,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
-    debug.Info("returning success...");
+    DDBG_INFO("returning success...");
     return static_cast<int>(ExitCode::SUCCESS);
 }

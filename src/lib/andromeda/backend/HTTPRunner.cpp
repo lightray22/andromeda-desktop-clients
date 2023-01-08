@@ -19,7 +19,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 {
     if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
-    mDebug << __func__ << "(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")"; mDebug.Info();
+    MDBG_INFO("(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")");
 
     InitializeClient(mProtoHost);
 }
@@ -148,16 +148,20 @@ std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResul
 /*****************************************************/
 void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt)
 {
-    mDebug << __func__ << "(retry:" << retry << ")"; mDebug.Info();
+    MDBG_INFO("(retry:" << retry << ")");
 
     if (retry)
     {
-        mDebug << __func__ << "... ";
-        
-        if (result != nullptr) mDebug << "HTTP " << result->status;
-        else mDebug << httplib::to_string(result.error());
+        const char* fname { __func__ };
+        mDebug.Error([&](std::ostream& str)
+        { 
+            str << fname << "... ";
+            
+            if (result != nullptr) str << "HTTP " << result->status;
+            else str << httplib::to_string(result.error());
 
-        mDebug << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1; mDebug.Error();
+            str << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1;
+        });
 
         std::this_thread::sleep_for(mOptions.retryTime);
     }
@@ -169,7 +173,7 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
 /*****************************************************/
 std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& isJson, const bool& canRetry, bool& doRetry)
 {
-    mDebug << __func__ << "() HTTP:" << response.status; mDebug.Info();
+    MDBG_INFO("() HTTP:" << response.status);
 
     doRetry = (canRetry && response.status == 503); 
     if (doRetry) return ""; // early return
@@ -199,7 +203,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
 /*****************************************************/
 std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     httplib::Headers headers; std::string url(SetupRequest(input, headers));
 
@@ -209,7 +213,7 @@ std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
 /*****************************************************/
 std::string HTTPRunner::RunAction(const RunnerInput_FilesIn& input, bool& isJson)
 {
-    mDebug << __func__ << "(FilesIn)"; mDebug.Info();
+    MDBG_INFO("(FilesIn)");
 
     // set up the POST body as multipart files
     httplib::MultipartFormDataItems postParams;
@@ -224,7 +228,7 @@ std::string HTTPRunner::RunAction(const RunnerInput_FilesIn& input, bool& isJson
 /*****************************************************/
 std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJson)
 {
-    mDebug << __func__ << "(StreamIn)"; mDebug.Info();
+    MDBG_INFO("(StreamIn)");
 
     httplib::MultipartFormDataItems postParams;
     std::string url(SetupRequest(input, postParams));
@@ -259,7 +263,7 @@ std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJso
 /*****************************************************/
 void HTTPRunner::RunAction(const RunnerInput_StreamOut& input, bool& isJson)
 {
-    mDebug << __func__ << "(StreamOut)"; mDebug.Info();
+    MDBG_INFO("(StreamOut)");
 
     // httplib only supports ContentReceiver with Get() so use headers instead of MultiPart
     httplib::Headers headers; std::string url(SetupRequest(input, headers));
@@ -287,7 +291,7 @@ void HTTPRunner::RunAction(const RunnerInput_StreamOut& input, bool& isJson)
 /*****************************************************/
 void HTTPRunner::RegisterRedirect(const std::string& location)
 {
-    mDebug << __func__ << "(location:" << location << ")"; mDebug.Info();
+    MDBG_INFO("(location:" << location << ")");
 
     HTTPRunner::HostUrlPair newPair { HTTPRunner::ParseURL(location) };
 
@@ -297,14 +301,14 @@ void HTTPRunner::RegisterRedirect(const std::string& location)
     
     if (newPair.first != GetProtoHost())
     {
-        mDebug << __func__ << "... new protoHost:" << newPair.first; mDebug.Info();
+        MDBG_INFO("... new protoHost:" << newPair.first);
         mProtoHost = newPair.first;
         InitializeClient(mProtoHost);
     }
 
     if (newPair.second != mBaseURL)
     {
-        mDebug << __func__ << "... new baseURL:" << newPair.second; mDebug.Info();
+        MDBG_INFO("... new baseURL:" << newPair.second);
         mBaseURL = newPair.second;
     }
 }

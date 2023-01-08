@@ -2,8 +2,9 @@
 #define LIBA2_DEBUG_H_
 
 #include <chrono>
+#include <functional>
+#include <iostream>
 #include <mutex>
-#include <sstream>
 #include <string>
 
 namespace Andromeda {
@@ -23,13 +24,6 @@ public:
         /** Show extra details */ DETAILS  
     };
 
-    /**
-     * @param prefix to use for all prints
-     * @param addr address to print with details
-     */
-    explicit Debug(const std::string& prefix, void* addr) : 
-        mAddr(addr), mPrefix(prefix) { }
-
     /** Returns the configured global debug level */
     static Level GetLevel() { return sLevel; }
 
@@ -37,49 +31,64 @@ public:
     static void SetLevel(Level level){ sLevel = level; }
 
     /**
-     * Shows the given debug string with minlevel=INFO
-     * @param str the string to show, or "" to use the buffer
+     * @param prefix to use for all prints
+     * @param addr address to print with details
      */
-    void Info(const std::string& str = "");
+    explicit Debug(const std::string& prefix, void* addr) : 
+        mAddr(addr), mPrefix(prefix) { }
+
+    /** Function to send debug text to a given output stream */
+    typedef std::function<void(std::ostream& str)> StreamFunc;
+
+    /** Prints func to cerr if the level is >= ERRORS */
+    inline void Error(StreamFunc strfunc)
+    {
+        if (sLevel >= Level::ERRORS) Print(strfunc);
+    }
+
+    /** Prints func to cerr if the level is >= BACKEND */
+    inline void Backend(StreamFunc strfunc)
+    {
+        if (sLevel >= Level::BACKEND) Print(strfunc);
+    }
+
+    /** Prints func to cerr if the level is >= INFO */
+    inline void Info(StreamFunc strfunc)
+    {
+        if (sLevel >= Level::INFO) Print(strfunc);
+    }
+
+    /** Syntactic sugar to send the current function name and strcode to debug (error) */
+    #define DBG_ERROR(debug, strcode) { const char* myfname { __func__ }; \
+        debug.Error([&](std::ostream& str){ str << myfname << strcode; }); }
+
+    /** Syntactic sugar to send the current function name and strcode to debug (info) */
+    #define DBG_INFO(debug, strcode) { const char* myfname { __func__ }; \
+        debug.Info([&](std::ostream& str){ str << myfname << strcode; }); }
+
+    #define DDBG_ERROR(strfunc) DBG_ERROR(debug, strfunc)
+    #define MDBG_ERROR(strfunc) DBG_ERROR(mDebug, strfunc)
+    #define SDBG_ERROR(strfunc) DBG_ERROR(sDebug, strfunc)
+    
+    #define DDBG_INFO(strfunc) DBG_INFO(debug, strfunc)
+    #define MDBG_INFO(strfunc) DBG_INFO(mDebug, strfunc)
+    #define SDBG_INFO(strfunc) DBG_INFO(sDebug, strfunc)
 
     /**
-     * Shows the given debug string with minlevel=BACKEND
-     * @param str the string to show, or "" to use the buffer
-     */
-    void Backend(const std::string& str = "");
-
-    /**
-     * Shows the given debug string with minlevel=ERRORS
-     * @param str string to show, or "" to use the buffer
-     */
-    void Error(const std::string& str = "");
-
-    /**
-     * Adds a struct as hex bytes to the buffer
+     * Returns a StreamFunc to print a struct as hex to the buffer
      * @param ptr address of struct to print
      * @param bytes number of bytes to print
      * @param width number of bytes per line
      */
-    void DumpBytes(const void* ptr, uint64_t bytes, uint8_t width = 16);
-
-    /** Append to an internal buffer that can be shown with an empty Print */
-    template <class T> Debug& operator<<(const T& dat)
-    {
-        const std::lock_guard<decltype(sMutex)> lock(sMutex);
-        
-        if (static_cast<bool>(sLevel))
-            mBuffer << dat;
-        return *this;
-    }
-
-    /** Returns true iff debug is enabled */
-    operator bool() const;
+    static StreamFunc DumpBytes(const void* ptr, uint64_t bytes, uint8_t width = 16);
 
 private:
 
+    /** Prints func to cerr with other info - THREAD SAFE */
+    void Print(StreamFunc& getDebug);
+
     void* mAddr;
     std::string mPrefix;
-    std::ostringstream mBuffer;
 
     static Level sLevel;
     static std::mutex sMutex;

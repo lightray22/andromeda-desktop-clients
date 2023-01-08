@@ -22,25 +22,25 @@ BackendImpl::BackendImpl(const ConfigOptions& options, BaseRunner& runner) :
     mOptions(options), mRunner(runner),
     mConfig(*this), mDebug("Backend",this) 
 { 
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 BackendImpl::~BackendImpl()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     try { CloseSession(); }
     catch(const BaseException& ex) 
     { 
-        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
+        MDBG_ERROR("... " << ex.what());
     }
 }
 
 /*****************************************************/
 void BackendImpl::Initialize()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mConfig.Initialize();
 }
@@ -65,21 +65,20 @@ RunnerInput& BackendImpl::FinalizeInput(RunnerInput& input)
 {
     ++mReqCount;
 
-    if (mDebug)
-    {
-        mDebug << __func__ << "() " << mReqCount
+    const char* fname { __func__ };
+    mDebug.Backend([&](std::ostream& str)
+    { 
+        str << fname << "() " << mReqCount
             << " app:" << input.app << " action:" << input.action;
 
         for (const auto& [key,val] : input.params)
-            mDebug << " " << key << ":" << val;
+            str << " " << key << ":" << val;
+    });
 
-        /*for (const auto& [key,file] : input.files)
-            mDebug << " " << key << ":" << file.name << ":" << file.data.size();*/ 
-            // TODO would be good to still print this somewhere? probably separate printing above from auth stuff below
-            // or the print function could even be moved to RunnerInput?
-
-        mDebug.Backend();
-    }
+    /*for (const auto& [key,file] : input.files)
+        mDebug << " " << key << ":" << file.name << ":" << file.data.size();*/ 
+        // TODO would be good to still print this somewhere? probably separate printing above from auth stuff below
+        // or the print function could even be moved to RunnerInput?
 
     if (!mSessionID.empty())
     {
@@ -100,7 +99,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
     try {
         nlohmann::json val(nlohmann::json::parse(resp));
 
-        mDebug << __func__ << "... json:" << val.dump(4); mDebug.Info();
+        MDBG_INFO("... json:" << val.dump(4));
 
         if (val.at("ok").get<bool>())
             return val.at("appdata");
@@ -110,7 +109,8 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             const auto [message, details] { Utilities::split(
                 val.at("message").get<std::string>(),":") };
             
-            mDebug << __func__ << "... message:" << message; mDebug.Backend();
+            const char* fname { __func__ };
+            mDebug.Backend([&](std::ostream& str){ str << fname << "... message:" << message; });
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
@@ -136,7 +136,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
 /*****************************************************/
 void BackendImpl::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
-    mDebug << __func__ << "(username:" << username << ")"; mDebug.Info();
+    MDBG_INFO("(username:" << username << ")");
 
     CloseSession();
 
@@ -155,7 +155,7 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
         resp.at("client").at("session").at("id").get_to(mSessionID);
         resp.at("client").at("session").at("authkey").get_to(mSessionKey);
 
-        mDebug << __func__ << "... sessionID:" << mSessionID; mDebug.Info();
+        MDBG_INFO("... sessionID:" << mSessionID);
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
@@ -167,7 +167,7 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
 /*****************************************************/
 void BackendImpl::AuthInteractive(const std::string& username, std::string password, bool forceSession)
 {
-    mDebug << __func__ << "(username:" << username << ")"; mDebug.Info();
+    MDBG_INFO("(username:" << username << ")");
 
     CloseSession();
 
@@ -201,7 +201,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
 /*****************************************************/
 void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::string& sessionKey)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     CloseSession();
 
@@ -225,7 +225,7 @@ void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::strin
 /*****************************************************/
 void BackendImpl::CloseSession()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
     
     if (mCreatedSession)
     {
@@ -264,7 +264,7 @@ bool BackendImpl::isMemory() const
 /*****************************************************/
 nlohmann::json BackendImpl::GetConfigJ()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json configJ;
 
@@ -295,7 +295,7 @@ nlohmann::json BackendImpl::GetAccountLimits()
 /*****************************************************/
 nlohmann::json BackendImpl::GetFolder(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     if (isMemory() && id.empty())
     {
@@ -317,7 +317,7 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
 /*****************************************************/
 nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     RunnerInput input {"files", "getfolder"}; 
     
@@ -329,7 +329,7 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 /*****************************************************/
 nlohmann::json BackendImpl::GetFilesystem(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     if (isMemory() && id.empty()) return nullptr;
 
@@ -343,7 +343,7 @@ nlohmann::json BackendImpl::GetFilesystem(const std::string& id)
 /*****************************************************/
 nlohmann::json BackendImpl::GetFSLimits(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     if (isMemory() && id.empty()) return nullptr;
 
@@ -355,7 +355,7 @@ nlohmann::json BackendImpl::GetFSLimits(const std::string& id)
 /*****************************************************/
 nlohmann::json BackendImpl::GetFilesystems()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     RunnerInput input {"files", "getfilesystems"};
 
@@ -365,7 +365,7 @@ nlohmann::json BackendImpl::GetFilesystems()
 /*****************************************************/
 nlohmann::json BackendImpl::GetAdopted()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     RunnerInput input {"files", "listadopted"};
 
@@ -375,7 +375,7 @@ nlohmann::json BackendImpl::GetAdopted()
 /*****************************************************/
 nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::string& name)
 {
-    mDebug << __func__ << "(parent:" << parent << " name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(parent:" << parent << " name:" << name << ")");
 
     if (isMemory())
     {
@@ -394,7 +394,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
 /*****************************************************/
 nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::string& name)
 {
-    mDebug << __func__ << "(parent:" << parent << " name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(parent:" << parent << " name:" << name << ")");
 
     if (isMemory())
     {
@@ -416,7 +416,7 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
 /*****************************************************/
 void BackendImpl::DeleteFile(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     if (isMemory()) return;
 
@@ -429,7 +429,7 @@ void BackendImpl::DeleteFile(const std::string& id)
 /*****************************************************/
 void BackendImpl::DeleteFolder(const std::string& id)
 {
-    mDebug << __func__ << "(id:" << id << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << ")");
 
     if (isMemory()) return;
 
@@ -442,7 +442,7 @@ void BackendImpl::DeleteFolder(const std::string& id)
 /*****************************************************/
 nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string& name, bool overwrite)
 {
-    mDebug << __func__ << "(id:" << id << " name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " name:" << name << ")");
 
     if (isMemory()) return nullptr;
 
@@ -454,7 +454,7 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 /*****************************************************/
 nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
 {
-    mDebug << __func__ << "(id:" << id << " name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " name:" << name << ")");
 
     if (isMemory()) return nullptr;
 
@@ -466,7 +466,7 @@ nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::strin
 /*****************************************************/
 nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& parent, bool overwrite)
 {
-    mDebug << __func__ << "(id:" << id << " parent:" << parent << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " parent:" << parent << ")");
 
     if (isMemory()) return nullptr;
 
@@ -478,7 +478,7 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 /*****************************************************/
 nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
 {
-    mDebug << __func__ << "(id:" << id << " parent:" << parent << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " parent:" << parent << ")");
 
     if (isMemory()) return nullptr;
 
@@ -490,12 +490,12 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
-    if (!length) { assert(false); mDebug << __func__ << "() ERROR 0 length"; mDebug.Error(); return ""; } // stop only in debug builds
+    if (!length) { assert(false); MDBG_ERROR("() ERROR 0 length"); return ""; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
-    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
     if (isMemory()) return std::string(length,'\0');
 
@@ -510,12 +510,12 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
-    if (!length) { assert(false); mDebug << __func__ << "() ERROR 0 length"; mDebug.Error(); return; } // stop only in debug builds
+    if (!length) { assert(false); MDBG_ERROR("() ERROR 0 length"); return; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
 
-    mDebug << __func__ << "(id:" << id << " fstart:" << fstart << " flast:" << flast << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
     if (isMemory()) { func(0, std::string(length,'\0').data(), length); return; }
 
@@ -534,9 +534,9 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    if (data.empty()) { assert(false); mDebug << __func__ << "() ERROR no data"; mDebug.Error(); } // stop only in debug builds
+    if (data.empty()) { assert(false); MDBG_ERROR("() ERROR no data"); } // stop only in debug builds
 
-    mDebug << __func__ << "(id:" << id << " offset:" << offset << " size:" << data.size() << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 
     if (isMemory()) return nullptr;
 
@@ -548,7 +548,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 /*****************************************************/
 nlohmann::json BackendImpl::TruncateFile(const std::string& id, const uint64_t size)
 {
-    mDebug << __func__ << "(id:" << id << " size:" << size << ")"; mDebug.Info();
+    MDBG_INFO("(id:" << id << " size:" << size << ")");
 
     if (isMemory()) return nullptr;
 

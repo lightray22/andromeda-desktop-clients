@@ -22,7 +22,7 @@ CLIRunner::CLIRunner(const std::string& apiPath) :
     else if (std::filesystem::is_directory(mApiPath))
         mApiPath += "/andromeda-server";
 
-    mDebug << __func__ << "(apiPath:" << mApiPath << ")"; mDebug.Info();
+    MDBG_INFO("(apiPath:" << mApiPath << ")");
 }
 
 /*****************************************************/
@@ -54,7 +54,7 @@ std::string CLIRunner::RunAction(const RunnerInput& input)
     for (const std::string& str : arguments) 
         command << str << " ";
 
-    mDebug << __func__ << "... command:" << command.str(); mDebug.Info();
+    MDBG_INFO("... command:" << command.str());
     
     std::error_code error; reproc::process process;
     error = process.start(arguments);

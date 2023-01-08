@@ -14,13 +14,13 @@ namespace Filesystem {
 Item::Item(BackendImpl& backend) : 
     mBackend(backend), mDebug("Item",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 void Item::Initialize(const nlohmann::json& data)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     try
     {
@@ -45,7 +45,7 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
-    mDebug << __func__ << "() " << GetID(); mDebug.Info();
+    MDBG_INFO("(" << mName << ")" << " ()");
 
     try
     {
@@ -54,7 +54,7 @@ void Item::Refresh(const nlohmann::json& data)
         if (newName != mName)
         {
             mName = newName;
-            mDebug << __func__ << "... newName:" << mName; mDebug.Info();
+            MDBG_INFO("... newName:" << mName);
         }
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
@@ -65,7 +65,7 @@ void Item::Refresh(const nlohmann::json& data)
             if (newModified != mModified)
             {
                 mModified = newModified;
-                mDebug << __func__ << "... newModified:" << mModified; mDebug.Info();
+                MDBG_INFO("... newModified:" << mModified);
             }
         }
 
@@ -77,7 +77,7 @@ void Item::Refresh(const nlohmann::json& data)
             if (newAccessed != mAccessed)
             {
                 mAccessed = newAccessed;
-                mDebug << __func__ << "... newAccessed:" << mAccessed; mDebug.Info();
+                MDBG_INFO("... newAccessed:" << mAccessed);
             }
         }
     }

@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
     mDebug("MountContext",this) 
 {
-    mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();
+    MDBG_INFO("(mountPath:" << mountPath << ")");
 
     if (home) mountPath = InitHomeRoot()+"/"+mountPath;
 
@@ -42,7 +42,7 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
     }
     catch (const fs::filesystem_error& err)
     {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
+        MDBG_ERROR("... " << err.what());
         throw FilesystemErrorException(err);
     }
 
@@ -55,7 +55,7 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
 /*****************************************************/
 MountContext::~MountContext()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     const std::string mountPath { GetMountPath() }; // copy
 
@@ -67,20 +67,20 @@ MountContext::~MountContext()
         {
             if (fs::is_directory(mountPath) && fs::is_empty(mountPath))
             {
-                mDebug << __func__ << "... remove mountPath"; mDebug.Info();
+                MDBG_INFO("... remove mountPath");
                 fs::remove(mountPath);
             }
 
             if (fs::is_directory(mHomeRoot) && fs::is_empty(mHomeRoot))
             {
-                mDebug << __func__ << "... remove homeRoot"; mDebug.Info();
+                MDBG_INFO("... remove homeRoot");
                 fs::remove(mHomeRoot);
             }
         }
     }
     catch (const fs::filesystem_error& err)
     {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
+        MDBG_ERROR("... " << err.what());
     }
 }
 
@@ -93,13 +93,13 @@ const std::string& MountContext::GetMountPath() const
 /*****************************************************/
 const std::string& MountContext::InitHomeRoot()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
     if (locations.empty()) throw UnknownHomeException();
 
     mHomeRoot = locations.at(0).toStdString()+"/Andromeda";
-    mDebug << __func__ << "... homeRoot:" << mHomeRoot; mDebug.Info();
+    MDBG_INFO("... homeRoot:" << mHomeRoot);
     
     try
     {
@@ -108,7 +108,7 @@ const std::string& MountContext::InitHomeRoot()
     }
     catch (const fs::filesystem_error& err)
     {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
+        MDBG_ERROR("... " << err.what());
         throw FilesystemErrorException(err);
     }
 

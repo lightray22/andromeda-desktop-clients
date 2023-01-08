@@ -14,7 +14,7 @@ Config::Config(BackendImpl& backend) : mDebug("Config",this), mBackend(backend) 
 /*****************************************************/
 void Config::Initialize()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json config(mBackend.GetConfigJ());
 
@@ -41,7 +41,7 @@ void Config::Initialize()
 /*****************************************************/
 void Config::LoadAccountLimits(BackendImpl& backend)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json limits(backend.GetAccountLimits());
 

@@ -14,7 +14,7 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     mMainWindow(mainWindow),
     mDebug("SystemTray",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mContextMenu.addAction(&mActionShow);
     mContextMenu.addAction(&mActionExit);
@@ -33,5 +33,5 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
 /*****************************************************/
 SystemTray::~SystemTray()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }

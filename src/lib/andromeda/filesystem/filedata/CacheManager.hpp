@@ -48,7 +48,7 @@ private:
     void ErasePage(const Page& page, const UniqueLock& lock);
 
     /** Send some stats to debug */
-    void PrintStatus(const std::string& func, const UniqueLock& lock);
+    void PrintStatus(const char* const fname, const UniqueLock& lock);
 
     /** Run the main cache management loop */
     void CleanupThread();

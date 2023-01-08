@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 
     Debug::SetLevel(options.GetDebugLevel());
 
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     QApplication application(argc, argv);
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
 
     int retval = application.exec();
 
-    debug << __func__ << "... return " << retval; debug.Info();
+    DDBG_INFO("... return " << retval);
 
     return retval;
 }

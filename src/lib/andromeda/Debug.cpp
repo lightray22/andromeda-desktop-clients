@@ -2,7 +2,6 @@
 #include "Debug.hpp"
 
 #include <iomanip>
-#include <iostream>
 #include <thread>
 
 using namespace std::chrono;
@@ -14,38 +13,8 @@ Debug::Level Debug::sLevel { Debug::Level::NONE };
 high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
 
 /*****************************************************/
-Debug::operator bool() const
+void Debug::Print(Debug::StreamFunc& func)
 {
-    return static_cast<bool>(sLevel);
-}
-
-/*****************************************************/
-void Debug::Info(const std::string& str)
-{
-    if (sLevel >= Level::INFO) Error(str);
-    else
-    {
-        const std::lock_guard<decltype(sMutex)> lock(sMutex);
-        mBuffer.str(std::string()); // reset buffer
-    }
-}
-
-/*****************************************************/
-void Debug::Backend(const std::string& str)
-{
-    if (sLevel >= Level::BACKEND) Error(str);
-    else
-    {
-        const std::lock_guard<decltype(sMutex)> lock(sMutex);
-        mBuffer.str(std::string()); // reset buffer
-    }
-}
-
-/*****************************************************/
-void Debug::Error(const std::string& str)
-{
-    if (sLevel < Level::ERRORS) return;
-
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
     if (sLevel >= Level::DETAILS)
@@ -58,38 +27,31 @@ void Debug::Error(const std::string& str)
         if (mAddr != nullptr) std::cerr << "obj:" << mAddr << " ";
     }
 
-    std::cerr << mPrefix << ": ";
-
-    if (str.empty())
-    {
-        std::cerr << mBuffer.str() << std::endl; 
-        
-        mBuffer.str(std::string()); // reset buffer
-    }
-    else std::cerr << str << std::endl;
+    std::cerr << mPrefix << ": "; func(std::cerr); std::cerr << std::endl;
 }
 
 /*****************************************************/
-void Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
+Debug::StreamFunc Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
 {
-    const std::lock_guard<decltype(sMutex)> lock(sMutex);
-    
-    mBuffer << "printing " << bytes << " bytes at " 
-        << std::hex << ptr << std::endl;
-
-    for (decltype(bytes) i { 0 }; i < bytes; i++)
+    return [&](std::ostream& str)
     {
-        const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
-        
-        if (i % width == 0) mBuffer << static_cast<const void*>(byte) << ": ";
-        
-        // need to cast to a 16-bit integer so it gets printed as a number not a character
-        mBuffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
+        str << "printing " << bytes << " bytes at " 
+            << std::hex << ptr << std::endl;
 
-        if ((i % width) + 1 == width) mBuffer << std::endl;
-    }
+        for (decltype(bytes) i { 0 }; i < bytes; i++)
+        {
+            const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
+            
+            if (i % width == 0) str << static_cast<const void*>(byte) << ": ";
+            
+            // need to cast to a 16-bit integer so it gets printed as a number not a character
+            str << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
 
-    mBuffer << std::endl;
+            if ((i % width) + 1 == width) str << std::endl;
+        }
+
+        str << std::endl;
+    };
 }
 
 } // namespace Andromeda

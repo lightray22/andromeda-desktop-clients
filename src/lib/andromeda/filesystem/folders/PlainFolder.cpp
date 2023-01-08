@@ -27,7 +27,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const s
 PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
     Folder(backend), mDebug("PlainFolder",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mParent = parent;
     
@@ -46,14 +46,14 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folde
 
         mFsConfig = &FSConfig::LoadByID(backend, fsid);
         
-        mDebug << __func__ << "... ID:" << GetID() << " name:" << mName; mDebug.Info();
+        MDBG_INFO("... ID:" << GetID() << " name:" << mName);
     }
 }
 
 /*****************************************************/
 void PlainFolder::LoadItems()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     Folder::LoadItemsFrom(mBackend.GetFolder(GetID()));
 }
@@ -61,7 +61,7 @@ void PlainFolder::LoadItems()
 /*****************************************************/
 void PlainFolder::SubCreateFile(const std::string& name)
 {
-    mDebug << __func__ << "(name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -75,7 +75,7 @@ void PlainFolder::SubCreateFile(const std::string& name)
 /*****************************************************/
 void PlainFolder::SubCreateFolder(const std::string& name)
 {
-    mDebug << __func__ << "(name:" << name << ")"; mDebug.Info();
+    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -107,7 +107,7 @@ void PlainFolder::SubMoveItem(Item& item, Folder& newParent, bool overwrite)
 /*****************************************************/
 void PlainFolder::SubDelete()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -117,7 +117,7 @@ void PlainFolder::SubDelete()
 /*****************************************************/
 void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 {
-    mDebug << __func__ << "(name:" << newName << ")"; mDebug.Info();
+    MDBG_INFO("(" << mName << ")" << " (name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -127,7 +127,7 @@ void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 /*****************************************************/
 void PlainFolder::SubMove(Folder& newParent, bool overwrite)
 {
-    mDebug << __func__ << "(parent:" << newParent.GetName() << ")"; mDebug.Info();
+    MDBG_INFO("(" << mName << ")" << " (parent:" << newParent.GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 

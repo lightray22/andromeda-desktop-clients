@@ -12,7 +12,7 @@ BackendContext::BackendContext(
     const std::string& password, const std::string& twofactor) : 
     mDebug("BackendContext",this) 
 {
-    mDebug << __func__ << "(url:" << url << ", username:" << username << ")"; mDebug.Info();
+    MDBG_INFO("(url:" << url << ", username:" << username << ")");
 
     HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
 
@@ -31,5 +31,5 @@ BackendContext::BackendContext(
 /*****************************************************/
 BackendContext::~BackendContext()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }

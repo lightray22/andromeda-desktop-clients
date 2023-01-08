@@ -23,7 +23,7 @@ namespace Filesystem {
 File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) : 
     Item(backend), mDebug("File",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     Initialize(data); mParent = &parent;
 
@@ -46,8 +46,8 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
     const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
     mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize);
 
-    mDebug << __func__ << "... ID:" << GetID() << " name:" << mName 
-        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk; mDebug.Info();
+    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
+        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
 }
 
 /*****************************************************/
@@ -78,7 +78,7 @@ void File::Refresh(const nlohmann::json& data)
 /*****************************************************/
 void File::SubDelete()
 {
-    mDebug << __func__ << "(" << GetName() << ")"; mDebug.Info();
+    MDBG_INFO("(" << GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -90,7 +90,7 @@ void File::SubDelete()
 /*****************************************************/
 void File::SubRename(const std::string& newName, bool overwrite)
 {
-    mDebug << __func__ << "(" << GetName() << ")" << " (name:" << newName << ")"; mDebug.Info();
+    MDBG_INFO("(" << GetName() << ")" << " (name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -100,7 +100,7 @@ void File::SubRename(const std::string& newName, bool overwrite)
 /*****************************************************/
 void File::SubMove(Folder& newParent, bool overwrite)
 {
-    mDebug << __func__ << "(" << GetName() << ")" << " (parent:" << newParent.GetName() << ")"; mDebug.Info();
+    MDBG_INFO("(" << GetName() << ")" << " (parent:" << newParent.GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -126,7 +126,7 @@ void File::FlushCache(bool nothrow)
 {
     if (mDeleted) return;
 
-    mDebug << __func__ << "(" << GetName() << ")"; mDebug.Info();
+    MDBG_INFO("(" << GetName() << ")");
 
     mPageManager->FlushPages(nothrow);
 }
@@ -134,12 +134,12 @@ void File::FlushCache(bool nothrow)
 /*****************************************************/
 size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength)
 {    
-    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " maxLength:" << maxLength << ")"; mDebug.Info(); }
+    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " maxLength:" << maxLength << ")");
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
     const uint64_t fileSize { mPageManager->GetFileSize() };
-    mDebug << __func__ << "... fileSize:" << fileSize; mDebug.Info();
+    MDBG_INFO("... fileSize:" << fileSize);
 
     if (offset >= fileSize) return 0;
     const size_t length { Filedata::min64st(fileSize-offset, maxLength) };
@@ -152,7 +152,7 @@ size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxL
 /*****************************************************/
 void File::ReadBytes(char* buffer, const uint64_t offset, size_t length)
 {    
-    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")");
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
@@ -179,8 +179,8 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
-        if (mDebug) { mDebug << __func__ << "... byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
+        MDBG_INFO("... byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->ReadPage(buffer, index, pOffset, pLength, dataLock);
 
@@ -191,7 +191,7 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
 /*****************************************************/
 void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length)
 {
-    if (mDebug) { mDebug << __func__ << "(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -201,7 +201,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     SharedLockW dataLock { mPageManager->GetWriteLock() };
 
     const uint64_t fileSize { mPageManager->GetFileSize() };
-    mDebug << __func__ << "... fileSize:" << fileSize; mDebug.Info();
+    MDBG_INFO("... fileSize:" << fileSize);
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
@@ -227,8 +227,8 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
-        if (mDebug) { mDebug << __func__ << "... byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
+        MDBG_INFO("... byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->WritePage(buffer, index, pOffset, pLength, dataLock);
         
@@ -239,7 +239,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
 /*****************************************************/
 void File::Truncate(const uint64_t newSize)
 {    
-    mDebug << __func__ << "(" << GetName() << ")" << " (size:" << newSize << ")"; mDebug.Info();
+    MDBG_INFO("(" << GetName() << ")" << " (size:" << newSize << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
