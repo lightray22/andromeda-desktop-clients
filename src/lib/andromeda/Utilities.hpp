@@ -1,8 +1,9 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
-#include <map>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace Andromeda {
@@ -58,7 +59,7 @@ public:
      */
     static void SilentReadConsole(std::string& retval);
 
-    typedef std::map<std::string,std::string> StringMap;
+    typedef std::unordered_map<std::string,std::string> StringMap;
 
     /** Returns a string map of the process environment variables */
     static StringMap GetEnvironment();

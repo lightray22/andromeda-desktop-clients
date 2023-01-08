@@ -4,7 +4,6 @@
 
 #include <condition_variable>
 #include <list>
-#include <map>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -74,7 +73,7 @@ private:
     typedef std::unordered_map<const Page*, PageList::iterator> PageItMap; PageItMap mPageItMap;
 
     /** List of pages currently being evicted (per-page manager) to ignore adding */
-    typedef std::map<PageManager*, PageList> PageMgrLists; PageMgrLists mCurrentEvicts;
+    typedef std::unordered_map<PageManager*, PageList> PageMgrLists; PageMgrLists mCurrentEvicts;
 
     /** Background cleanup thread */
     std::thread mThread;
