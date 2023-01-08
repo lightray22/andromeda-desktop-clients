@@ -19,6 +19,7 @@ target_include_directories(libandromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(libandromeda PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_compile_definitions(libandromeda PRIVATE ${ANDROMEDA_CXX_DEFS})
 
 install(TARGETS libandromeda
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

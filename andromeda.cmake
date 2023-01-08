@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(ANDROMEDA_VERSION "0.1-alpha")
+set(ANDROMEDA_CXX_DEFS ANDROMEDA_VERSION="${ANDROMEDA_VERSION}")
+
 include(GNUInstallDirs)
 
 # include and setup FetchContent

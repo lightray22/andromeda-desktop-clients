@@ -40,8 +40,6 @@ using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
 
-#define VERSION "0.1-alpha"
-
 using AndromedaFuse::FuseAdapter;
 
 enum class ExitCode
@@ -77,7 +75,7 @@ int main(int argc, char** argv)
     }
     catch (const Options::ShowVersionException& ex)
     {
-        std::cout << "version: " << VERSION << std::endl;
+        std::cout << "version: " << ANDROMEDA_VERSION << std::endl;
         FuseAdapter::ShowVersionText();
         return static_cast<int>(ExitCode::SUCCESS);
     }

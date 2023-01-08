@@ -44,6 +44,9 @@ public slots:
     /** GUI action to browse the current account's files */
     void BrowseCurrent();
 
+    /** Show the About popup window */
+    void ShowAbout();
+
 private:
 
     /** Returns the current AccountTab or nullptr if none */

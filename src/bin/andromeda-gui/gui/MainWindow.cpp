@@ -1,4 +1,5 @@
 
+#include <sstream>
 #include <QtWidgets/QMessageBox>
 
 #include "MainWindow.hpp"
@@ -134,4 +135,14 @@ void MainWindow::BrowseCurrent()
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Browse();
+}
+
+/*****************************************************/
+void MainWindow::ShowAbout()
+{
+    std::stringstream str;
+    str << "Andromeda GUI v" << ANDROMEDA_VERSION << std::endl;
+    str << "License: GNU GPLv3" << std::endl;
+
+    QMessageBox::about(this, "Andromeda GUI", str.str().c_str());
 }

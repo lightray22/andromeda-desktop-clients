@@ -15,8 +15,6 @@ using Andromeda::Backend::HTTPOptions;
 #include "andromeda/backend/HTTPRunner.hpp"
 using Andromeda::Backend::HTTPRunner;
 
-#define VERSION "0.1-alpha"
-
 enum class ExitCode
 {
     SUCCESS,
@@ -54,7 +52,7 @@ int main(int argc, char** argv)
     }
     catch (const Options::ShowVersionException& ex)
     {
-        std::cout << "version: " << VERSION << std::endl;
+        std::cout << "version: " << ANDROMEDA_VERSION << std::endl;
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::Exception& ex)

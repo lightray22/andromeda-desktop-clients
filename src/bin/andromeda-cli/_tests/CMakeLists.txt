@@ -10,6 +10,7 @@ target_include_directories(andromeda-cli_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_compile_options(andromeda-cli_tests PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_compile_definitions(andromeda-cli_tests PRIVATE ${ANDROMEDA_CXX_DEFS})
 target_link_options(andromeda-cli_tests PRIVATE ${ANDROMEDA_LINK_OPTS})
 
 target_link_libraries(andromeda-cli_tests PRIVATE libandromeda)
