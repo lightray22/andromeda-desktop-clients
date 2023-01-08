@@ -351,7 +351,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
         }
     });
 
-    if (curPage != nullptr) { assert(false); MDBG_ERROR("() unfinished read!"); } // stop only in debug builds
+    if (curPage != nullptr) { assert(false); MDBG_ERROR("() ERROR unfinished read!"); } // stop only in debug builds
 
     MDBG_INFO("... thread returning!");
 }

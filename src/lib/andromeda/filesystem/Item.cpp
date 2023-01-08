@@ -45,7 +45,7 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
-    MDBG_INFO("(" << mName << ")" << " ()");
+    ITDBG_INFO("()");
 
     try
     {

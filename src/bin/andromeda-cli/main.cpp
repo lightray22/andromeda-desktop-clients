@@ -64,8 +64,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
-    Debug::SetLevel(options.GetDebugLevel());
-
     DDBG_INFO("()");
 
     HTTPRunner::HostUrlPair urlPair {
@@ -101,15 +99,14 @@ int main(int argc, char** argv)
         }
         catch (const nlohmann::json::exception& ex)
         {
-            std::cerr << "JSON Error: " << ex.what() << std::endl;
+            DDBG_ERROR("JSON Error: " << ex.what());
             DDBG_ERROR("... json body: " << resp);
-            // TODO fix this, shouldn't print to cerr directly?? default level should always be errors
             return static_cast<int>(ExitCode::BACKEND_JSON);
         }
     }
     catch (const BaseRunner::EndpointException& ex)
     {
-        std::cerr << "HTTP Error: " << ex.what() << std::endl;
+        DDBG_ERROR("HTTP Error: " << ex.what());
         return static_cast<int>(ExitCode::ENDPOINT);
     }
 }

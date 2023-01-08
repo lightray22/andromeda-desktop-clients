@@ -429,7 +429,6 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
             //Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
             DDBG_ERROR("NOT SUPPORTED YET!");
-            
             return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)

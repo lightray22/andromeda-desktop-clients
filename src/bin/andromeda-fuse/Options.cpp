@@ -52,9 +52,7 @@ Options::Options(ConfigOptions& configOptions,
 /*****************************************************/
 bool Options::AddFlag(const std::string& flag)
 {
-    if (BaseOptions::AddFlag(flag)) { }
-
-    else if (flag == "p" || flag == "apipath")
+    if (flag == "p" || flag == "apipath")
         mApiType = ApiType::API_PATH;
 
     else if (flag == "force-session")
@@ -64,7 +62,11 @@ bool Options::AddFlag(const std::string& flag)
         mMountRootType = RootType::FILESYSTEM;
     else if (flag == "folder")
         mMountRootType = RootType::FOLDER;
+
+    else if (flag == "d" || flag == "debug")
+        mForeground = true;
     
+    else if (BaseOptions::AddFlag(flag)) { }
     else if (mConfigOptions.AddFlag(flag)) { }
     else if (mHttpOptions.AddFlag(flag)) { }
     else if (mFuseOptions.AddFlag(flag)) { }
@@ -77,10 +79,8 @@ bool Options::AddFlag(const std::string& flag)
 /*****************************************************/
 bool Options::AddOption(const std::string& option, const std::string& value)
 {
-    if (BaseOptions::AddOption(option, value)) { }
-
     /** Backend endpoint selection */
-    else if (option == "a" || option == "apiurl")
+    if (option == "a" || option == "apiurl")
     {
         mApiPath = value;
         mApiType = ApiType::API_URL;
@@ -115,12 +115,16 @@ bool Options::AddOption(const std::string& option, const std::string& value)
         mMountItemID = value;
         mMountRootType = RootType::FOLDER;
     }
-
     else if (option == "m" || option == "mountpath")
-    {
         mMountPath = value;
+
+    else if (option == "d" || option == "debug")
+    {
+        mForeground = true;
+        BaseOptions::AddOption(option, value);
     }
 
+    else if (BaseOptions::AddOption(option, value)) { }
     else if (mConfigOptions.AddOption(option, value)) { }
     else if (mHttpOptions.AddOption(option, value)) { }
     else if (mFuseOptions.AddOption(option, value)) { }

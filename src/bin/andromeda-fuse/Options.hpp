@@ -89,6 +89,9 @@ public:
     /** Returns the specified mount item ID */
     std::string GetMountItemID() const { return mMountItemID; }
 
+    /** Returns true if we should run in the foreground */
+    bool isForeground() const { return mForeground; }
+
 private:
 
     Andromeda::Backend::ConfigOptions& mConfigOptions;
@@ -108,6 +111,8 @@ private:
     
     RootType mMountRootType { RootType::SUPERROOT };
     std::string mMountItemID;
+
+    bool mForeground { false };
 };
 
 #endif // A2FUSE_OPTIONS_H_

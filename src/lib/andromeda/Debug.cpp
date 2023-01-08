@@ -9,13 +9,16 @@ using namespace std::chrono;
 namespace Andromeda {
 
 std::mutex Debug::sMutex;
-Debug::Level Debug::sLevel { Debug::Level::NONE };
+Debug::Level Debug::sLevel { Debug::Level::ERRORS };
+std::unordered_set<std::string> Debug::sPrefixes;
 high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
 
 /*****************************************************/
 void Debug::Print(Debug::StreamFunc& func)
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    if (!sPrefixes.empty() && sPrefixes.find(mPrefix) == sPrefixes.end()) return;
 
     if (sLevel >= Level::DETAILS)
     {
@@ -24,7 +27,8 @@ void Debug::Print(Debug::StreamFunc& func)
 
         std::cerr << "tid:" << std::this_thread::get_id() << " ";
 
-        if (mAddr != nullptr) std::cerr << "obj:" << mAddr << " ";
+        if (mAddr == nullptr) { std::cerr << "static "; }
+        else { std::cerr << "obj:" << mAddr << " "; }
     }
 
     std::cerr << mPrefix << ": "; func(std::cerr); std::cerr << std::endl;

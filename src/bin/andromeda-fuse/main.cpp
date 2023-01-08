@@ -88,8 +88,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
-    Debug::SetLevel(options.GetDebugLevel());
-
     DDBG_INFO("()");
 
     std::unique_ptr<BaseRunner> runner;
@@ -146,7 +144,7 @@ int main(int argc, char** argv)
     try
     {
         FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions, 
-            static_cast<bool>(Debug::GetLevel()) ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
+            options.isForeground() ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
     }
     catch (const FuseAdapter::Exception& ex)
     {

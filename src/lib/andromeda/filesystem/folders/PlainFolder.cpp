@@ -61,7 +61,7 @@ void PlainFolder::LoadItems()
 /*****************************************************/
 void PlainFolder::SubCreateFile(const std::string& name)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
+    ITDBG_INFO("(name:" << name << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -75,7 +75,7 @@ void PlainFolder::SubCreateFile(const std::string& name)
 /*****************************************************/
 void PlainFolder::SubCreateFolder(const std::string& name)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
+    ITDBG_INFO("(name:" << name << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -117,7 +117,7 @@ void PlainFolder::SubDelete()
 /*****************************************************/
 void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << newName << ")");
+    ITDBG_INFO("(name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -127,7 +127,7 @@ void PlainFolder::SubRename(const std::string& newName, bool overwrite)
 /*****************************************************/
 void PlainFolder::SubMove(Folder& newParent, bool overwrite)
 {
-    MDBG_INFO("(" << mName << ")" << " (parent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(parent:" << newParent.GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 

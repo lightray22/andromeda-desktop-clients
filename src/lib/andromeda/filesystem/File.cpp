@@ -78,7 +78,7 @@ void File::Refresh(const nlohmann::json& data)
 /*****************************************************/
 void File::SubDelete()
 {
-    MDBG_INFO("(" << GetName() << ")");
+    ITDBG_INFO("()")
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -90,7 +90,7 @@ void File::SubDelete()
 /*****************************************************/
 void File::SubRename(const std::string& newName, bool overwrite)
 {
-    MDBG_INFO("(" << GetName() << ")" << " (name:" << newName << ")");
+    ITDBG_INFO("(name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -100,7 +100,7 @@ void File::SubRename(const std::string& newName, bool overwrite)
 /*****************************************************/
 void File::SubMove(Folder& newParent, bool overwrite)
 {
-    MDBG_INFO("(" << GetName() << ")" << " (parent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(parent:" << newParent.GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -126,7 +126,7 @@ void File::FlushCache(bool nothrow)
 {
     if (mDeleted) return;
 
-    MDBG_INFO("(" << GetName() << ")");
+    ITDBG_INFO("()")
 
     mPageManager->FlushPages(nothrow);
 }
@@ -134,7 +134,7 @@ void File::FlushCache(bool nothrow)
 /*****************************************************/
 size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength)
 {    
-    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " maxLength:" << maxLength << ")");
+    ITDBG_INFO("(offset:" << offset << " maxLength:" << maxLength << ")");
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
@@ -152,7 +152,7 @@ size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxL
 /*****************************************************/
 void File::ReadBytes(char* buffer, const uint64_t offset, size_t length)
 {    
-    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")");
+    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
@@ -191,7 +191,7 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
 /*****************************************************/
 void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length)
 {
-    MDBG_INFO("(" << GetName() << ")" << " (offset:" << offset << " length:" << length << ")");
+    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
@@ -239,7 +239,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
 /*****************************************************/
 void File::Truncate(const uint64_t newSize)
 {    
-    MDBG_INFO("(" << GetName() << ")" << " (size:" << newSize << ")");
+    ITDBG_INFO("(size:" << newSize << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 

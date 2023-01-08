@@ -23,9 +23,6 @@ int main(int argc, char** argv)
 {
     Debug debug("main",nullptr); 
 
-    // if foreground, you must want debug
-    Debug::SetLevel(Debug::Level::ERRORS); 
-
     Options options;
 
     try
@@ -52,8 +49,6 @@ int main(int argc, char** argv)
         std::cout << Options::HelpText() << std::endl;
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
-
-    Debug::SetLevel(options.GetDebugLevel());
 
     DDBG_INFO("()");
 

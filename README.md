@@ -51,13 +51,15 @@ Given HTTP server URLs can optionally include the protocol, the port number, and
 
 ### Debug
 
-Using the `-d int` or `--debug int` option turns on debug.
+Using the `-d int` or `--debug int` option turns on debug.  Errors are always printed.
 
-1. Runs the app in the foreground and reports errors
-2. Reports all calls to the backend
-3. Shows many function calls and extra info (a lot!)
-4. With each print shows the time, thread ID, and object ID  
-  
+0. Runs the app in the foreground (if applicable)
+1. Reports all calls to the backend
+2. Shows many function calls and extra info (a lot!)
+3. With each print shows the time, thread ID, and object ID  
+
+Use `--debug-filter` to show debug only from the component names given, e.g. `--debug-filter FuseOperations,FuseAdapter`.  
+
 ## Building
 
 ### Libraries

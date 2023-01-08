@@ -27,7 +27,7 @@ Folder::Folder(BackendImpl& backend) :
 /*****************************************************/
 Item& Folder::GetItemByPath(std::string path)
 {
-    MDBG_INFO("(" << mName << ")" << " (path:" << path << ")");
+    ITDBG_INFO("(path:" << path << ")");
 
     if (path[0] == '/') path.erase(0,1);
 
@@ -99,7 +99,7 @@ const Folder::ItemMap& Folder::GetItems()
 /*****************************************************/
 void Folder::LoadItemsFrom(const nlohmann::json& data)
 {
-    MDBG_INFO("(" << mName << ")" << " ()");
+    ITDBG_INFO("()");
 
     Folder::NewItemMap newItems;
 
@@ -131,7 +131,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
 /*****************************************************/
 void Folder::SyncContents(const Folder::NewItemMap& newItems)
 {
-    MDBG_INFO("(" << mName << ")" << " ()");
+    ITDBG_INFO("()");
 
     for (const NewItemMap::value_type& newIt : newItems)
     {
@@ -162,7 +162,7 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 /*****************************************************/
 void Folder::CreateFile(const std::string& name)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
+    ITDBG_INFO("(name:" << name << ")");
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
@@ -174,7 +174,7 @@ void Folder::CreateFile(const std::string& name)
 /*****************************************************/
 void Folder::CreateFolder(const std::string& name)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
+    ITDBG_INFO("(name:" << name << ")");
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
@@ -186,7 +186,7 @@ void Folder::CreateFolder(const std::string& name)
 /*****************************************************/
 void Folder::DeleteItem(const std::string& name)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << ")");
+    ITDBG_INFO("(name:" << name << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
@@ -197,7 +197,7 @@ void Folder::DeleteItem(const std::string& name)
 /*****************************************************/
 void Folder::RenameItem(const std::string& oldName, const std::string& newName, bool overwrite)
 {
-    MDBG_INFO("(" << mName << ")" << " (oldName:" << oldName << " newName:" << newName << ")");
+    ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
@@ -217,7 +217,7 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
 /*****************************************************/
 void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite)
 {
-    MDBG_INFO("(" << mName << ")" << " (name:" << name << " parent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(name:" << name << " parent:" << newParent.GetName() << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();

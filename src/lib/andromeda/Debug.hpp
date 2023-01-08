@@ -6,6 +6,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <unordered_set>
 
 namespace Andromeda {
 
@@ -17,18 +18,21 @@ public:
     /** Debug verbosity */
     enum class Level
     {
-        /** Debug off */          NONE,    
         /** Only show Error()s */ ERRORS,  
         /** Also show Backend */  BACKEND, 
         /** Everything else */    INFO,    
-        /** Show extra details */ DETAILS  
+        /** Show extra details */ DETAILS,
+        LAST = DETAILS
     };
 
     /** Returns the configured global debug level */
-    static Level GetLevel() { return sLevel; }
+    static Level GetLevel(){ return sLevel; }
 
     /** Sets the configured global debug level */
     static void SetLevel(Level level){ sLevel = level; }
+
+    /** Adds the given component name to the filter set */
+    static void AddFilter(const std::string& name){ sPrefixes.emplace(name); }
 
     /**
      * @param prefix to use for all prints
@@ -69,7 +73,7 @@ public:
     #define DDBG_ERROR(strfunc) DBG_ERROR(debug, strfunc)
     #define MDBG_ERROR(strfunc) DBG_ERROR(mDebug, strfunc)
     #define SDBG_ERROR(strfunc) DBG_ERROR(sDebug, strfunc)
-    
+
     #define DDBG_INFO(strfunc) DBG_INFO(debug, strfunc)
     #define MDBG_INFO(strfunc) DBG_INFO(mDebug, strfunc)
     #define SDBG_INFO(strfunc) DBG_INFO(sDebug, strfunc)
@@ -87,12 +91,20 @@ private:
     /** Prints func to cerr with other info - THREAD SAFE */
     void Print(StreamFunc& getDebug);
 
+    /** The address this debug instance belongs to */
     void* mAddr;
+    /** The module name this debug instance belongs to */
     std::string mPrefix;
 
+    /** Global debug level */
     static Level sLevel;
+    /** Global output lock */
     static std::mutex sMutex;
 
+    /** Set of prefixes to filter printing */
+    static std::unordered_set<std::string> sPrefixes;
+
+    /** timestamp when the program started */
     static std::chrono::high_resolution_clock::time_point sStart;
 };
 

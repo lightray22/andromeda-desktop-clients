@@ -37,6 +37,9 @@ public:
     class ReadOnlyException : public Exception { public:
         ReadOnlyException() : Exception("Read Only Backend") {}; };
 
+    /** Macro to print the file name at the beginning of debug */
+    #define ITDBG_INFO(strfunc) MDBG_INFO("(" << mName << ")" << strfunc)
+
     virtual ~Item(){};
 
     /** API date format */
