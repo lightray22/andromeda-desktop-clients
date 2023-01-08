@@ -217,10 +217,11 @@ static void item_stat(const Item& item, struct stat* stbuf)
 int FuseOperations::access(const char* path, int mask)
 {
     while (path[0] == '/') path++;
-
-    const char* fname { __func__ };
     DDBG_INFO("(path:" << path << ", mask: " << mask << ")");
 
+    #if defined(W_OK)
+        const char* fname { __func__ };
+    #endif
     return standardTry(__func__,[&]()->int
     {
         #if defined(W_OK)
@@ -244,10 +245,9 @@ int FuseOperations::access(const char* path, int mask)
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-
-    const char* fname { __func__ };
     DDBG_INFO("(path:" << path << ")");
 
+    const char* fname { __func__ };
     return standardTry(__func__,[&]()->int
     {
         const Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
@@ -293,10 +293,9 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #endif
 {
     while (path[0] == '/') path++;
-
-    const char* fname { __func__ };
     DDBG_INFO("(path:" << path << ")");
 
+    const char* fname { __func__ };
     return standardTry(__func__,[&]()->int
     {
         const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
