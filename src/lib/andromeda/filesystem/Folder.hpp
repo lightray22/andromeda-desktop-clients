@@ -14,7 +14,7 @@
 #if WIN32 && defined(CreateFile)
 // thanks for nothing, Windows >:(
 #undef CreateFile
-#endif
+#endif // WIN32
 
 namespace Andromeda {
 
@@ -148,4 +148,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_FOLDER_H_

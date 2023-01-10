@@ -33,7 +33,7 @@ struct FuseOperations
     static int truncate(const char* path, off_t size);
     static int chmod(const char* path, mode_t mode);
     static int chown(const char* path, uid_t uid, gid_t gid);
-    #else
+    #else // !LIBFUSE2
     static void* init(struct fuse_conn_info* conn, struct fuse_config* cfg);
     static int getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi);
     static int readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags);
@@ -41,7 +41,7 @@ struct FuseOperations
     static int truncate(const char* path, off_t size, struct fuse_file_info* fi);
     static int chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
     static int chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi);
-    #endif
+    #endif // LIBFUSE2
 };
 
 } // namespace AndromedaFuse

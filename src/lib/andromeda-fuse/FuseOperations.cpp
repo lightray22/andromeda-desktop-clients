@@ -137,7 +137,7 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
         buf->f_blocks = 1024*1024*1024;
         buf->f_bfree = 1024*1024*1024;
         buf->f_bavail = 1024*1024*1024;
-    #endif
+    #endif // WIN32
         
     // The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored   // TODO implement me
 //           struct statvfs {
@@ -203,14 +203,14 @@ static void item_stat(const Item& item, struct stat* stbuf)
         
         if (!modified) stbuf->st_mtim = stbuf->st_ctim;
         if (!accessed) stbuf->st_atim = stbuf->st_ctim;
-    #else
+    #else // !WIN32
         stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
         stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(item.GetModified());
         stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
         
         if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
         if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
-    #endif
+    #endif // WIN32
 }
 
 /*****************************************************/
@@ -221,7 +221,7 @@ int FuseOperations::access(const char* path, int mask)
 
     #if defined(W_OK)
         const char* fname { __func__ };
-    #endif
+    #endif // W_OK
     return standardTry(__func__,[&]()->int
     {
         #if defined(W_OK)
@@ -274,7 +274,7 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 int FuseOperations::getattr(const char* path, struct stat* stbuf)
 #else
 int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
     DDBG_INFO("(path:" << path << ")");
@@ -290,7 +290,7 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
     DDBG_INFO("(path:" << path << ")");
@@ -320,7 +320,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
             else retval = filler(buf, item->GetName().c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
-#endif
+#endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed"; }); return -EIO; }
         }
@@ -331,7 +331,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             int retval { filler(buf, name, NULL, 0) };
 #else
             int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
-#endif
+#endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed"; }); return -EIO; }
         }
@@ -405,7 +405,7 @@ int FuseOperations::rmdir(const char* path)
 int FuseOperations::rename(const char* oldpath, const char* newpath)
 #else
 int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
-#endif
+#endif // LIBFUSE2
 {
     while (oldpath[0] == '/') oldpath++; 
     const Utilities::StringPair pair0(Utilities::split(oldpath,"/",0,true));
@@ -538,7 +538,7 @@ void FuseOperations::destroy(void* private_data)
 int FuseOperations::truncate(const char* path, off_t size)
 #else
 int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
     DDBG_INFO("(path:" << path << " size:" << size << ")");
@@ -558,7 +558,7 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 int FuseOperations::chmod(const char* path, mode_t mode)
 #else
 int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
@@ -577,7 +577,7 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 #else
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;

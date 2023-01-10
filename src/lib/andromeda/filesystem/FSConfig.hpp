@@ -58,4 +58,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_FSCONFIG_H_

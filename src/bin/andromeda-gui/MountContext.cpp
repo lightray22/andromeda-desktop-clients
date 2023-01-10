@@ -17,6 +17,8 @@ using AndromedaFuse::FuseOptions;
 
 namespace fs = std::filesystem;
 
+namespace AndromedaGui {
+
 /*****************************************************/
 MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
     mDebug("MountContext",this) 
@@ -34,11 +36,11 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
         #if WIN32
             // Windows auto-creates the directory and fails if it already exists
             fs::remove(mountPath);
-        #endif
+        #endif // WIN32
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
         else if (home) fs::create_directory(mountPath);
-    #endif
+    #endif // !WIN32
     }
     catch (const fs::filesystem_error& err)
     {
@@ -114,3 +116,5 @@ const std::string& MountContext::InitHomeRoot()
 
     return mHomeRoot;
 }
+
+} // namespace AndromedaGui

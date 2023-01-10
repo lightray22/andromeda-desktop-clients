@@ -6,6 +6,8 @@ using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/HTTPRunner.hpp"
 using Andromeda::Backend::HTTPRunner;
 
+namespace AndromedaGui {
+
 /*****************************************************/
 BackendContext::BackendContext(
     const std::string& url, const std::string& username, 
@@ -33,3 +35,5 @@ BackendContext::~BackendContext()
 {
     MDBG_INFO("()");
 }
+
+} // namespace AndromedaGui

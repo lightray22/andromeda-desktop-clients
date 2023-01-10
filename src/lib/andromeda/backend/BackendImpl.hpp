@@ -16,7 +16,7 @@
 #if WIN32 && defined(CreateFile)
 // thanks for nothing, Windows >:(
 #undef CreateFile
-#endif
+#endif // WIN32
 
 namespace Andromeda {
 

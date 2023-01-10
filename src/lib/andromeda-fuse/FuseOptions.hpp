@@ -15,7 +15,7 @@ struct FuseOptions
 #if !LIBFUSE2
     /** Shows the full FUSE lib help */
     static void ShowFuseHelpText();
-#endif
+#endif // !LIBFUSE2
 
     /** Adds the given argument, returning true iff it was used */
     bool AddFlag(const std::string& flag);

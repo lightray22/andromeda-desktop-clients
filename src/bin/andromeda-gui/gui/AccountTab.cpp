@@ -18,6 +18,9 @@ using AndromedaFuse::FuseOptions;
 #include "andromeda-gui/BackendContext.hpp"
 #include "andromeda-gui/MountContext.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
 AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext) : QWidget(&parent),
     mBackendContext(std::move(backendContext)),
@@ -93,3 +96,6 @@ void AccountTab::Browse()
 
     homeRoot.insert(0, "file:///"); QDesktopServices::openUrl(QUrl(homeRoot.c_str()));
 }
+
+} // namespace Gui
+} // namespace AndromedaGui

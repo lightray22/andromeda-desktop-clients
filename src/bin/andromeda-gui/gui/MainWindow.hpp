@@ -8,6 +8,9 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 class AccountTab;
 
 namespace Ui { class MainWindow; }
@@ -59,5 +62,8 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // A2GUI_MAINWINDOW_H

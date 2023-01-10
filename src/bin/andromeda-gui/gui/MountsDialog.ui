@@ -2,7 +2,7 @@
  <author/>
  <comment/>
  <exportmacro/>
- <class>MountsDialog</class>
+ <class>AndromedaGui::Gui::MountsDialog</class>
  <widget name="MountsDialog" class="QDialog">
   <property name="geometry">
    <rect>

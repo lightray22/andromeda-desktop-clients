@@ -72,4 +72,4 @@ private:
 } // namespace Backend
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_CONFIG_H_

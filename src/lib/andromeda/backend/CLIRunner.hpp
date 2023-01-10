@@ -51,5 +51,4 @@ private:
 } // namespace Backend
 } // namespace Andromeda
 
-#endif
-
+#endif // LIBA2_CLIRUNNER_H_

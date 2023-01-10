@@ -52,4 +52,4 @@ private:
 } // namespace Filesystem
 } // namespace Folders
 
-#endif
+#endif // LIBA2_FILESYSTEMS_H_

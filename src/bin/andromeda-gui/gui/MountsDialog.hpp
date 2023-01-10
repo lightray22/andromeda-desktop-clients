@@ -3,9 +3,10 @@
 
 #include <QtWidgets/QDialog>
 
-namespace Ui {
-class MountsDialog;
-}
+namespace AndromedaGui {
+namespace Gui {
+
+namespace Ui { class MountsDialog; }
 
 class MountsDialog : public QDialog
 {
@@ -18,5 +19,8 @@ public:
 private:
     Ui::MountsDialog *ui;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // MOUNTSDIALOG_HPP

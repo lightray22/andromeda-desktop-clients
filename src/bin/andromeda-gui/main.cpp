@@ -5,7 +5,9 @@
 #include "Options.hpp"
 
 #include "gui/MainWindow.hpp"
+using AndromedaGui::Gui::MainWindow;
 #include "gui/SystemTray.hpp"
+using AndromedaGui::Gui::SystemTray;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;

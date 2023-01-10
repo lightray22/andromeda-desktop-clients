@@ -14,6 +14,8 @@ namespace Andromeda {
     namespace Filesystem { class Folder; }
 }
 
+namespace AndromedaGui {
+
 /** Encapsulates a FUSE mount and root folder */
 class MountContext
 {
@@ -68,5 +70,7 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace AndromedaGui
 
 #endif // A2GUI_MOUNTCONTEXT_H

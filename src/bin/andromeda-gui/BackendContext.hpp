@@ -9,6 +9,8 @@
 
 namespace Andromeda { namespace Backend { class BackendImpl; class HTTPRunner; } }
 
+namespace AndromedaGui {
+
 /** Encapsulates a backend and its resources */
 class BackendContext
 {
@@ -36,5 +38,7 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace AndromedaGui
 
 #endif // A2GUI_BACKENDCONTEXT_H

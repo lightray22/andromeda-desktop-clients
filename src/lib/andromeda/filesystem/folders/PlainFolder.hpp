@@ -68,4 +68,4 @@ private:
 } // namespace Filesystem
 } // namespace Folders
 
-#endif
+#endif // LIBA2_PLAINFOLDER_H_

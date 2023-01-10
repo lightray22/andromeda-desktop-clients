@@ -11,6 +11,9 @@
 #include "andromeda/backend/BackendImpl.hpp"
 #include "andromeda-gui/BackendContext.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
 MainWindow::MainWindow() : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
@@ -146,3 +149,6 @@ void MainWindow::ShowAbout()
 
     QMessageBox::about(this, "Andromeda GUI", str.str().c_str());
 }
+
+} // namespace Gui
+} // namespace AndromedaGui

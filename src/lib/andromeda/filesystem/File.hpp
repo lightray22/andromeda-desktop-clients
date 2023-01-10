@@ -106,4 +106,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_FILE_H_

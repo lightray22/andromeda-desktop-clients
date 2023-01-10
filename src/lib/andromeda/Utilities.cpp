@@ -125,7 +125,7 @@ void Utilities::SilentReadConsole(std::string& retval)
         nflags = oflags;
         nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
         tcsetattr(fileno(stdin), TCSANOW, &nflags);
-    #endif
+    #endif // WIN32
 
     std::getline(std::cin, retval);
     
@@ -133,7 +133,7 @@ void Utilities::SilentReadConsole(std::string& retval)
         SetConsoleMode(hStdin, mode);
     #else // !WIN32
         tcsetattr(fileno(stdin), TCSANOW, &oflags);
-    #endif
+    #endif // WIN32
 
     std::cout << std::endl;
 }
@@ -162,7 +162,7 @@ std::string Utilities::GetHomeDirectory()
     #if WIN32
         #pragma warning(push)
         #pragma warning(disable:4996) // getenv is safe in C++11
-    #endif
+    #endif // WIN32
 
     for (const char* env : { "HOME", "HOMEDIR", "HOMEPATH" })
     {
@@ -172,7 +172,7 @@ std::string Utilities::GetHomeDirectory()
 
     #if WIN32
         #pragma warning(pop)
-    #endif
+    #endif // WIN32
 
     return ""; // not found
 }

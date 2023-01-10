@@ -5,6 +5,9 @@
 #include "SystemTray.hpp"
 #include "MainWindow.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
 SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     QSystemTrayIcon(QIcon(QPixmap(32,32))),
@@ -35,3 +38,6 @@ SystemTray::~SystemTray()
 {
     MDBG_INFO("()");
 }
+
+} // namespace Gui
+} // namespace AndromedaGui

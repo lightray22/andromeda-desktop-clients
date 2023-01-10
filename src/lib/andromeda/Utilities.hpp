@@ -70,5 +70,4 @@ public:
 
 } // namespace Andromeda
 
-#endif
-
+#endif // LIBA2_UTILITIES_H_
