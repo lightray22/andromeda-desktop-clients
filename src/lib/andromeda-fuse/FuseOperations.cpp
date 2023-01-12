@@ -4,8 +4,8 @@
 #define EHOSTDOWN EIO
 #endif // WIN32
 
-#include <functional>
 #include <bitset>
+#include <functional>
 
 #include "FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
@@ -70,7 +70,7 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     }
     catch (const Item::ReadOnlyException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EROFS; // TODO this is wrong, fix code
+        DDBG_INFO("... " << fname << "... " << e.what()); return -EACCES;
     }
 
     // Backend exceptions
@@ -115,6 +115,11 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     conn->time_gran = 1000; // PHP microseconds
     cfg->negative_timeout = 1;
 #endif // !LIBFUSE2
+
+    DDBG_INFO("... conn->caps: " << std::bitset<32>(conn->capable));
+    DDBG_INFO("... conn->want: " << std::bitset<32>(conn->want));
+
+    conn->want &= static_cast<decltype(conn->want)>(~FUSE_CAP_HANDLE_KILLPRIV); // don't support setuid and setgid flags
 
     FuseAdapter& adapter { GetFuseAdapter() };
 
@@ -217,10 +222,10 @@ static void item_stat(const Item& item, struct stat* stbuf)
 int FuseOperations::access(const char* path, int mask)
 {
     while (path[0] == '/') path++;
-    DDBG_INFO("(path:" << path << ", mask: " << mask << ")");
+    DDBG_INFO("(path:" << path << ", mask:" << mask << ")");
 
     #if defined(W_OK)
-        const char* fname { __func__ };
+        static const std::string fname(__func__);
     #endif // W_OK
     return standardTry(__func__,[&]()->int
     {
@@ -231,7 +236,7 @@ int FuseOperations::access(const char* path, int mask)
             {
                 debug.Info([&](std::ostream& str){ 
                     str << fname << "... read-only!"; });
-                return -EROFS;
+                return -EACCES;
             }
         #endif // W_OK
             
@@ -239,24 +244,33 @@ int FuseOperations::access(const char* path, int mask)
     });
 }
 
-// TODO should close() be implemented and flush cache?
+// TODO use -o default_permissions and get rid of both of these?
 
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    DDBG_INFO("(path:" << path << ")");
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
-    const char* fname { __func__ };
+    static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        const Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && item.isReadOnly())
+        // TODO need to handle O_APPEND?
+
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file.isReadOnly())
         {
             debug.Info([&](std::ostream& str){ 
                 str << fname << "... read-only!"; });
-            return -EROFS;
+            return -EACCES;
+        }
+
+        if (fi->flags & O_TRUNC)
+        {
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... truncating!"; });
+            file.Truncate(0);
         }
 
         return FUSE_SUCCESS;
@@ -266,7 +280,23 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
-    return open(path, fi);
+    while (path[0] == '/') path++;
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+
+    static const std::string fname(__func__);
+    return standardTry(__func__,[&]()->int
+    {
+        const Folder& folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder.isReadOnly())
+        {
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... read-only!"; });
+            return -EACCES;
+        }
+
+        return FUSE_SUCCESS;
+    });
 }
 
 /*****************************************************/
@@ -295,7 +325,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     while (path[0] == '/') path++;
     DDBG_INFO("(path:" << path << ")");
 
-    const char* fname { __func__ };
+    static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
         const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
@@ -348,7 +378,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
-    DDBG_INFO("(path:" << path << " name:" << name << ")");
+    DDBG_INFO("(path:" << path << ", name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -366,7 +396,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
-    DDBG_INFO("(path:" << path << " name:" << name << ")");
+    DDBG_INFO("(path:" << path << ", name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -417,7 +447,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
     const std::string& newPath { pair1.first };
     const std::string& newName { pair1.second };
 
-    DDBG_INFO("(oldpath:" << oldpath << " newpath:" << newpath << ")");
+    DDBG_INFO("(oldpath:" << oldpath << ", newpath:" << newpath << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -449,7 +479,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    DDBG_INFO("(path:" << path << " offset:" << off << " size:" << size << ")");
+    DDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -465,7 +495,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    DDBG_INFO("(path:" << path << " offset:" << off << " size:" << size << ")");
+    DDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -478,6 +508,9 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
         return static_cast<int>(size);
     });
 }
+
+// TODO maybe should only FlushCache() on fsync, not flush? seems to be flush
+// is only for applications->OS and has nothing to do with the storage "media"
 
 /*****************************************************/
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
@@ -522,6 +555,20 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 }
 
 /*****************************************************/
+int FuseOperations::release(const char* path, struct fuse_file_info* fi)
+{
+    while (path[0] == '/') path++;
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+
+    return standardTry(__func__,[&]()->int
+    {
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+
+        file.FlushCache(); return FUSE_SUCCESS;
+    });
+}
+
+/*****************************************************/
 void FuseOperations::destroy(void* private_data)
 {
     DDBG_INFO("()");
@@ -541,7 +588,7 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 #endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
-    DDBG_INFO("(path:" << path << " size:" << size << ")");
+    DDBG_INFO("(path:" << path << ", size:" << size << ")");
 
     if (size < 0) return -EINVAL;
 

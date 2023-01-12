@@ -65,7 +65,7 @@ RunnerInput& BackendImpl::FinalizeInput(RunnerInput& input)
 {
     ++mReqCount;
 
-    const char* fname { __func__ };
+    static const std::string fname(__func__);
     mDebug.Backend([&](std::ostream& str)
     { 
         str << fname << "() " << mReqCount
@@ -109,7 +109,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             const auto [message, details] { Utilities::split(
                 val.at("message").get<std::string>(),":") };
             
-            const char* fname { __func__ };
+            const std::string fname(__func__);
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
                 str << fname << "... message:" << message; });
 

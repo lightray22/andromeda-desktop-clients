@@ -152,7 +152,7 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
 
     if (retry)
     {
-        const char* fname { __func__ };
+        static const std::string fname(__func__);
         mDebug.Error([&](std::ostream& str)
         { 
             str << fname << "... ";
