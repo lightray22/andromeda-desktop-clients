@@ -46,7 +46,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
                 return; // do not re-add pages currently being evicted
             }
 
-    ErasePage(page, lock);
+    RemovePage(page, lock);
 
     mPageQueue.emplace_back(PageInfo{pageMgr, index, &page, page.size()});
     mPageItMap[&page] = std::prev(mPageQueue.end());
@@ -83,16 +83,16 @@ void CacheManager::ResizePage(const Page& page, const size_t newSize)
 }
 
 /*****************************************************/
-void CacheManager::ErasePage(const Page& page)
+void CacheManager::RemovePage(const Page& page)
 {
     UniqueLock lock(mMutex);
-    ErasePage(page, lock);
+    RemovePage(page, lock);
 
     PrintStatus(__func__, lock);
 }
 
 /*****************************************************/
-void CacheManager::ErasePage(const Page& page, const UniqueLock& lock)
+void CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 {
     MDBG_INFO("(page:" << &page << ")");
 

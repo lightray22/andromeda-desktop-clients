@@ -37,7 +37,7 @@ PageManager::~PageManager()
     if (mCacheMgr != nullptr)
     {
         for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); it++)
-            mCacheMgr->ErasePage(it->second);
+            mCacheMgr->RemovePage(it->second);
     }
 
     MDBG_INFO("... returning!");
@@ -493,7 +493,7 @@ void PageManager::RemoteChanged(const uint64_t backendSize)
         Page& page { it->second };
         if (!page.mDirty)
         {
-            if (mCacheMgr) mCacheMgr->ErasePage(page);
+            if (mCacheMgr) mCacheMgr->RemovePage(page);
             it = mPages.erase(it);
         }
         else
@@ -531,7 +531,7 @@ void PageManager::Truncate(const uint64_t newSize)
         {
             MDBG_INFO("... erase page:" << it->first);
 
-            if (mCacheMgr) mCacheMgr->ErasePage(it->second);
+            if (mCacheMgr) mCacheMgr->RemovePage(it->second);
             it = mPages.erase(it);
         }
         else if (it->first == (newSize-1)/mPageSize) // resize last page

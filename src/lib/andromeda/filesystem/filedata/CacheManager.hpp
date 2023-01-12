@@ -39,12 +39,12 @@ public:
     void ResizePage(const Page& page, const size_t newSize);
 
     /** Inform us that a page has been erased */
-    void ErasePage(const Page& page);
+    void RemovePage(const Page& page);
     
 private:
 
     /** Inform us that a page has been erased (already have the lock) */
-    void ErasePage(const Page& page, const UniqueLock& lock);
+    void RemovePage(const Page& page, const UniqueLock& lock);
 
     /** Send some stats to debug */
     void PrintStatus(const char* const fname, const UniqueLock& lock);
