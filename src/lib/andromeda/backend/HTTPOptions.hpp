@@ -14,7 +14,7 @@ struct HTTPOptions
     static std::string HelpText();
 
     /** Adds the given argument, returning true iff it was used */
-    bool AddFlag(const std::string& flag) { return false; }
+    bool AddFlag(const std::string& flag);
 
     /** Adds the given option/value, returning true iff it was used */
     bool AddOption(const std::string& option, const std::string& value);
@@ -27,6 +27,8 @@ struct HTTPOptions
     std::chrono::seconds timeout { std::chrono::seconds(120) };
     /** Whether or not redirects are allowed */
     bool followRedirects { true };
+    /** Whether or not TLS cert verification is required */
+    bool tlsCertVerify { true };
     /** HTTP basic-auth username */
     std::string username;
     /** HTTP basic-auth password */

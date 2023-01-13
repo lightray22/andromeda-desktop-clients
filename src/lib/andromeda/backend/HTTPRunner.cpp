@@ -36,6 +36,8 @@ void HTTPRunner::InitializeClient(const std::string& protoHost)
     mHttpClient->set_read_timeout(mOptions.timeout);
     mHttpClient->set_write_timeout(mOptions.timeout);
 
+    mHttpClient->enable_server_certificate_verification(mOptions.tlsCertVerify);
+
     if (!mOptions.username.empty())
     {
         mHttpClient->set_basic_auth(
@@ -137,7 +139,7 @@ std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResul
         if (result != nullptr)
         {
             bool doRetry = false; std::string retval { 
-                HandleResponse(*result, isJson, canRetry, doRetry) }; 
+                HandleResponse(*result, isJson, canRetry, doRetry) };
             if (!doRetry) return retval; // break
         }
 
