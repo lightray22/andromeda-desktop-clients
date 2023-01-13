@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 which scan-build || (echo "can't find clang scan-build"; exit 1)
 which cppcheck || (echo "can't find cppcheck"; exit 1)

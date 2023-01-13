@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 if ! [ -e build ]; then mkdir build; fi; cd build
 
