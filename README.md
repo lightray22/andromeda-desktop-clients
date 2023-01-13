@@ -49,22 +49,21 @@ Cmake will automatically clone in-tree dependencies.  By default, position-indep
 
 - libandromeda
   - OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
-    - dynamically linked - must be available at runtime
 - libandromeda-fuse
   - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
-    - dynamically linked - must be available at runtime
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 - andromeda-gui
   - Qt (Windows/macOS: >= 6.4, Linux: >= 5.12)
 
+These libraries are dynamically linked and must be available at runtime.
 Some other dependencies will be fetched by cmake and built in-tree.
 
 ### Supported Platforms
 
 The following platforms are targeted for support and should work:
 
-- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/)), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download)
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/, [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/)), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download))
   - You will need to add `OPENSSL_ROOT_DIR` to your system environment
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
@@ -73,7 +72,7 @@ The following platforms are targeted for support and should work:
   - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev` (GCC 10.2)
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base` (GCC 12.2 or Clang 14)
 
-The following platforms are supported minus the Qt GUI:
+The following platforms are supported minus the Qt GUI (it likely works, just not tested):
 
 - Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev` (GCC 11.2)
 - FreeBSD amd64: `pkg install cmake python fusefs-libs3`
@@ -95,7 +94,7 @@ Any features that rely on the higher privileges of the real CLI interface are no
 * Doing a request dry-run
 
 The general usage is the same as the real CLI interface, with an added URL and different global options.  
-Parameter syntax, attaching/uploading files and using environment variables is the same. Batching is not yet supported.
+Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage). Batching is not yet supported.
 
 Run `./andromeda-cli --help` to see the available options.  
 
@@ -175,4 +174,6 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## Testing
 
-Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTING=1`, then build, and the tests will be run.  Static analysis is done with cppcheck (must be installed).  Both unit tests and static analysis are part of `tools/builddev`.  Static analysis can be run standalone with `tools/analyze`.
+Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTING=1`, then build, and the tests will be run.  Unit tests are run as part of `tools/builddev`.
+
+Static analysis is done with clang scan-build then cppcheck (must be installed). Static analysis can be run standalone with `tools/analyze`.
