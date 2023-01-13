@@ -78,7 +78,7 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     {
         DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
     }
-    catch (const BackendImpl::ReadOnlyException& e)
+    catch (const BackendImpl::ReadOnlyFSException& e)
     {
         DDBG_INFO("... " << fname << "... " << e.what()); return -EROFS;
     }
@@ -96,7 +96,9 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     {
         DDBG_ERROR("... " << fname << "... " << e.what()); return -EHOSTDOWN;
     }
-    catch (const BaseException& e)
+    catch (const BaseException& e) 
+    // BaseRunner::EndpointException (HTTP endpoint errors)
+    // BackendImpl::Exception (others should not happen)
     {
         DDBG_ERROR("... " << fname << "... " << e.what()); return -EIO;
     }

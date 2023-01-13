@@ -118,8 +118,8 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message);
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
-            else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyException("Database");
-            else if (code == 403 && message == "READ_ONLY_FILESYSTEM") throw ReadOnlyException("Filesystem");
+            else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyFSException("Database");
+            else if (code == 403 && message == "READ_ONLY_FILESYSTEM") throw ReadOnlyFSException("Filesystem");
 
             else if (code == 403) throw DeniedException(message); 
             else if (code == 404) throw NotFoundException(message);
@@ -378,6 +378,8 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
 {
     MDBG_INFO("(parent:" << parent << " name:" << name << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     if (isMemory())
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}, {"filesystem", ""}};
@@ -396,6 +398,8 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
 nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::string& name)
 {
     MDBG_INFO("(parent:" << parent << " name:" << name << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     if (isMemory())
     {
@@ -419,6 +423,8 @@ void BackendImpl::DeleteFile(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     if (isMemory()) return;
 
     RunnerInput input {"files", "deletefile", {{"file", id}}};
@@ -431,6 +437,8 @@ void BackendImpl::DeleteFile(const std::string& id)
 void BackendImpl::DeleteFolder(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     if (isMemory()) return;
 
@@ -445,6 +453,8 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 {
     MDBG_INFO("(id:" << id << " name:" << name << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     if (isMemory()) return nullptr;
 
     RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
@@ -456,6 +466,8 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::string& name, bool overwrite)
 {
     MDBG_INFO("(id:" << id << " name:" << name << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     if (isMemory()) return nullptr;
 
@@ -469,6 +481,8 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 {
     MDBG_INFO("(id:" << id << " parent:" << parent << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     if (isMemory()) return nullptr;
 
     RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
@@ -480,6 +494,8 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string& parent, bool overwrite)
 {
     MDBG_INFO("(id:" << id << " parent:" << parent << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     if (isMemory()) return nullptr;
 
@@ -539,6 +555,8 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     if (isMemory()) return nullptr;
 
     RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}}, {{"data", {"data", data}}}};
@@ -550,6 +568,8 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 nlohmann::json BackendImpl::TruncateFile(const std::string& id, const uint64_t size)
 {
     MDBG_INFO("(id:" << id << " size:" << size << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     if (isMemory()) return nullptr;
 

@@ -4,7 +4,6 @@
 #include <map>
 #include <string>
 
-#include "BackendImpl.hpp"
 #include "andromeda/BaseException.hpp"
 
 namespace Andromeda {
@@ -20,13 +19,13 @@ class BaseRunner
 {
 public:
     /** Indicates an inability to reach the API endpoint */
-    class EndpointException : public BackendImpl::Exception { public:
+    class EndpointException : public BaseException { public:
         /** @param code HTTP code returned by the server */
         explicit EndpointException(int code) : 
-            Exception("Endpoint: Code "+std::to_string(code)) {};
+            BaseException("Endpoint Error: Code "+std::to_string(code)) {};
         /** @param message formatted error message if known */
         explicit EndpointException(const std::string& message) :
-            Exception("Endpoint: "+message) {}; };
+            BaseException("Endpoint Error: "+message) {}; };
 
     virtual ~BaseRunner(){ }; // for unique_ptr
 

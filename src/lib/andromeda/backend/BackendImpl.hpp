@@ -55,21 +55,25 @@ public:
         explicit ReadSizeException(size_t wanted, size_t got) : Exception(
             "Wanted "+std::to_string(wanted)+" bytes, got "+std::to_string(got)) {}; };
 
+    /** Exception indicating we set the backend as read-only */
+    class ReadOnlyException : public Exception { public:
+        explicit ReadOnlyException() : Exception("Read Only Backend") {}; };
+
+    /** Base exception for Andromeda-returned errors */
+    class APIException : public Exception { public:
+        using Exception::Exception; // string constructor
+        APIException(int code, const std::string& message) : 
+            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
+
     /** Andromeda exception indicating the requested operation is invalid */
-    class UnsupportedException : public Exception { public:
-        UnsupportedException() : Exception("Invalid Operation") {}; };
+    class UnsupportedException : public APIException { public:
+        UnsupportedException() : APIException("Invalid Operation") {}; };
 
     /** Base exception for Andromeda-returned 403 errors */
-    class DeniedException : public Exception { public:
-        DeniedException() : Exception("Access Denied") {};
+    class DeniedException : public APIException { public:
+        DeniedException() : APIException("Access Denied") {};
         /** @param message message from backend */
-        explicit DeniedException(const std::string& message) : Exception(message) {}; };
-
-    /** Base exception for Andromeda-returned 404 errors */
-    class NotFoundException : public Exception { public:
-        NotFoundException() : Exception("Not Found") {};
-        /** @param message message from backend */
-        explicit NotFoundException(const std::string& message) : Exception(message) {}; };
+        explicit DeniedException(const std::string& message) : APIException(message) {}; };
 
     /** Andromeda exception indicating authentication failed */
     class AuthenticationFailedException : public DeniedException { public:
@@ -80,9 +84,15 @@ public:
         TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
 
     /** Andromeda exception indicating the server or FS are read only */
-    class ReadOnlyException : public DeniedException { public:
+    class ReadOnlyFSException : public DeniedException { public:
         /** @param which string describing what is read-only */
-        explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
+        explicit ReadOnlyFSException(const std::string& which) : DeniedException("Read Only "+which) {}; };
+
+    /** Base exception for Andromeda-returned 404 errors */
+    class NotFoundException : public APIException { public:
+        NotFoundException() : APIException("Not Found") {};
+        /** @param message message from backend */
+        explicit NotFoundException(const std::string& message) : APIException(message) {}; };
 
     /**
      * @param options configuration options
@@ -275,11 +285,6 @@ public:
 
 private:
     
-    /** Base exception for Andromeda-returned errors */
-    class APIException : public Exception { public:
-        APIException(int code, const std::string& message) : 
-            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
-
     /** Augment input with authentication details */
     RunnerInput& FinalizeInput(RunnerInput& input);
 
