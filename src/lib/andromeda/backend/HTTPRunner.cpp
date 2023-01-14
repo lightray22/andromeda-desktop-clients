@@ -196,8 +196,12 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
         case 301: case 302: // HTTP redirect
             throw GetRedirectException(response); break;
         
-        case 403: throw EndpointException("Access Denied");
-        case 404: throw EndpointException("Not Found");
+        case 400: throw EndpointException("400 Bad Request");
+        case 403: throw EndpointException("403 Access Denied");
+        case 404: throw EndpointException("404 Not Found");
+        case 413: throw InputSizeException(); // can be handled
+        case 500: throw EndpointException("500 Server Error");
+        case 503: throw EndpointException("503 Server Overloaded");
         default:  throw EndpointException(response.status);
     }
 }

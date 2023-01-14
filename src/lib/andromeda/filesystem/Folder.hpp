@@ -11,11 +11,6 @@
 #include "Item.hpp"
 #include "andromeda/Debug.hpp"
 
-#if WIN32 && defined(CreateFile)
-// thanks for nothing, Windows >:(
-#undef CreateFile
-#endif // WIN32
-
 namespace Andromeda {
 
 namespace Backend { class BackendImpl; }

@@ -9,6 +9,7 @@
 
 #include "BackendImpl.hpp"
 #include "BaseRunner.hpp"
+#include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/Utilities.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
@@ -548,6 +549,11 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
     if (read != length) throw ReadSizeException(length, read);
 }
 
+// if we get a 413 this small the server must be bugged
+constexpr size_t UPLOAD_MINSIZE { 4*1024 };
+// multiply the failed by this to get the next attempt size
+constexpr uint64_t ADJUST_ATTEMPT(uint64_t maxSize){ return maxSize/2; }
+
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
@@ -559,9 +565,36 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     if (isMemory()) return nullptr;
 
-    RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, {"offset", std::to_string(offset)}}}, {{"data", {"data", data}}}};
+    nlohmann::json retval; // return last retval
+    for (size_t byte { 0 }; byte < data.size(); ) // chunk by maxSize
+    {
+        bool retry { true }; while (retry) // may need to retry a smaller maxSize
+        {
+            const uint64_t maxSize { mConfig.GetUploadMaxBytes() };
+            MDBG_INFO("... maxSize:" << maxSize);
+            
+            const RunnerInput_FilesIn::FileData infile { "data", 
+                maxSize ? data.substr(byte, maxSize) : data };
+            MDBG_INFO("... byte:" << byte << " size:" << infile.data.size());
 
-    FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
+            RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, 
+                {"offset", std::to_string(offset+byte)}}}, {{"data", infile}}};
+            FinalizeInput(input); 
+
+            try
+            {
+                retval = GetJSON(mRunner.RunAction(input));
+                byte += infile.data.size(); retry = false;
+            }
+            catch (const HTTPRunner::InputSizeException& e)
+            {
+                MDBG_INFO("... caught InputSizeException! retry");
+                if (maxSize && maxSize < UPLOAD_MINSIZE) throw;
+                mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(infile.data.size()));
+            }
+        }
+    }
+    return retval;
 }
 
 /*****************************************************/

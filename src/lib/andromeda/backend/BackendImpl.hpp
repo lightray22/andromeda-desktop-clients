@@ -13,11 +13,6 @@
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 
-#if WIN32 && defined(CreateFile)
-// thanks for nothing, Windows >:(
-#undef CreateFile
-#endif // WIN32
-
 namespace Andromeda {
 
 namespace Filesystem { namespace Filedata { class CacheManager; } }

@@ -6,8 +6,16 @@
 #include <string>
 
 // TODO should not include this here - use PRIVATE cmake link
+// probably need just an interface here then a separate HTTPRunnerImpl
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
+
+#if WIN32 // httplib adds windows.h
+// thanks for nothing, Windows >:(
+#undef CreateFile
+#undef DeleteFile
+#undef MoveFile
+#endif // WIN32
 
 #include "BaseRunner.hpp"
 #include "HTTPOptions.hpp"
@@ -39,7 +47,11 @@ public:
     class RedirectException : public EndpointException { public:
         RedirectException() : EndpointException("Redirected") {}
         explicit RedirectException(const std::string& location) :
-            EndpointException("Redirected: "+location) {}; };
+            EndpointException("30X Redirected: "+location) {}; };
+
+    /** Exception indicating the input request size is too big */
+    class InputSizeException : public EndpointException { public:
+        InputSizeException() : EndpointException("413 Request Too Large") {} };
 
     /**
      * @param protoHost (protocol://)hostname
