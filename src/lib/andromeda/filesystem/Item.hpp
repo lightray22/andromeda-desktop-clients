@@ -87,13 +87,13 @@ public:
     /** Refresh the item given updated server JSON data */
     virtual void Refresh(const nlohmann::json& data);
 
-    /** Remove this item from its parent */
-    virtual void Delete(bool internal = false) final;
+    /** Delete this item (and its contents if a folder) */
+    virtual void Delete(bool internal = false) final; // TODO refactor to get rid of "internal"
 
-    /** Set this item's name to the given name, optionally overwrite */
+    /** Set this item's name to the given name, optionally overwrite existing */
     virtual void Rename(const std::string& newName, bool overwrite = false, bool internal = false) final;
 
-    /** Move this item to the given parent folder, optionally overwrite */
+    /** Move this item to the given parent folder, optionally overwrite existing */
     virtual void Move(Folder& newParent, bool overwrite = false, bool internal = false) final;
 
     /** 

@@ -26,6 +26,7 @@
     #define uid_t fuse_uid_t
     #define stat fuse_stat
     #define statvfs fuse_statvfs
+    #define timespec fuse_timespec
     
     #define S_IRUSR 0400
     #define S_IWUSR 0200

@@ -170,13 +170,25 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
     return FUSE_SUCCESS;
 }
 
-#if WIN32
-static void get_timespec(double time, fuse_timespec& spec)
-{
-    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time);
-    spec.tv_nsec = static_cast<decltype(spec.tv_sec)>((time-spec.tv_sec)*1e9);
+// TODO if Windows calls utimens then the conversion of timespec->double->timespec will not match
+// maybe the server will need to actually store timespec sec/nsec...? may be important for syncing
+
+/*****************************************************/
+constexpr Item::Date timespec_to_date(const timespec& t)
+{ 
+    return static_cast<Item::Date>(t.tv_sec) 
+            + static_cast<Item::Date>(t.tv_nsec)/1e9; 
 }
-#endif // WIN32
+
+/*****************************************************/
+constexpr void date_to_timespec(const Item::Date time, timespec& spec)
+{
+    // convert double->int->double so tv_sec exactly matches the nsec subtractor
+    const Item::Date secs { static_cast<Item::Date>(static_cast<decltype(spec.tv_nsec)>(time)) }; // trunc
+
+    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(secs);
+    spec.tv_nsec = static_cast<decltype(spec.tv_nsec)>(time-secs*1e9);
+}
 
 /*****************************************************/
 static void item_stat(const Item& item, struct stat* stbuf)
@@ -202,11 +214,11 @@ static void item_stat(const Item& item, struct stat* stbuf)
         auto modified { item.GetModified() };
         auto accessed { item.GetAccessed() };
 
-        get_timespec(created, stbuf->st_birthtim);
+        date_to_timespec(created, stbuf->st_birthtim);
         
-        get_timespec(created, stbuf->st_ctim);
-        get_timespec(modified, stbuf->st_mtim);
-        get_timespec(accessed, stbuf->st_atim);
+        date_to_timespec(created, stbuf->st_ctim);
+        date_to_timespec(modified, stbuf->st_mtim);
+        date_to_timespec(accessed, stbuf->st_atim);
         
         if (!modified) stbuf->st_mtim = stbuf->st_ctim;
         if (!accessed) stbuf->st_atim = stbuf->st_ctim;
@@ -214,7 +226,8 @@ static void item_stat(const Item& item, struct stat* stbuf)
         stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
         stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(item.GetModified());
         stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
-        
+        // TODO why is FUSE only letting us return the seconds, not nanoseconds...?
+
         if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
         if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
     #endif // WIN32
@@ -339,9 +352,6 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
         {
             const std::unique_ptr<Item>& item { pair.second };
 
-            debug.Info([&](std::ostream& str){ 
-                str << fname << "... subitem: " << item->GetName(); });
-            
 #if LIBFUSE2
             int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
 #else
@@ -428,7 +438,11 @@ int FuseOperations::rmdir(const char* path)
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFolderByPath(path).Delete(); return FUSE_SUCCESS;
+        Folder& folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
+
+        if (folder.GetItems().size()) return -ENOTEMPTY;
+
+        folder.Delete(); return FUSE_SUCCESS;
     });
 }
 
