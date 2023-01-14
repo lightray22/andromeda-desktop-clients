@@ -121,7 +121,9 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     DDBG_INFO("... conn->caps: " << std::bitset<32>(conn->capable));
     DDBG_INFO("... conn->want: " << std::bitset<32>(conn->want));
 
+#if !LIBFUSE2
     conn->want &= static_cast<decltype(conn->want)>(~FUSE_CAP_HANDLE_KILLPRIV); // don't support setuid and setgid flags
+#endif // !LIBFUSE2
 
     FuseAdapter& adapter { GetFuseAdapter() };
 
