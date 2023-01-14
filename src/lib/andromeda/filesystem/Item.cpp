@@ -54,7 +54,7 @@ void Item::Refresh(const nlohmann::json& data)
         if (newName != mName)
         {
             mName = newName;
-            MDBG_INFO("... newName:" << mName);
+            ITDBG_INFO("... newName:" << mName);
         }
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
@@ -65,7 +65,7 @@ void Item::Refresh(const nlohmann::json& data)
             if (newModified != mModified)
             {
                 mModified = newModified;
-                MDBG_INFO("... newModified:" << mModified);
+                ITDBG_INFO("... newModified:" << mModified);
             }
         }
 
@@ -77,7 +77,7 @@ void Item::Refresh(const nlohmann::json& data)
             if (newAccessed != mAccessed)
             {
                 mAccessed = newAccessed;
-                MDBG_INFO("... newAccessed:" << mAccessed);
+                ITDBG_INFO("... newAccessed:" << mAccessed);
             }
         }
     }

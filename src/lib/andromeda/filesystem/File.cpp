@@ -139,7 +139,7 @@ size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxL
     SharedLockR dataLock { mPageManager->GetReadLock() };
 
     const uint64_t fileSize { mPageManager->GetFileSize() };
-    MDBG_INFO("... fileSize:" << fileSize);
+    ITDBG_INFO("... fileSize:" << fileSize);
 
     if (offset >= fileSize) return 0;
     const size_t length { Filedata::min64st(fileSize-offset, maxLength) };
@@ -179,7 +179,7 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
-        MDBG_INFO("... byte:" << byte << " index:" << index 
+        ITDBG_INFO("... byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->ReadPage(buffer, index, pOffset, pLength, dataLock);
@@ -201,7 +201,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     SharedLockW dataLock { mPageManager->GetWriteLock() };
 
     const uint64_t fileSize { mPageManager->GetFileSize() };
-    MDBG_INFO("... fileSize:" << fileSize);
+    ITDBG_INFO("... fileSize:" << fileSize);
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
@@ -227,7 +227,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
-        MDBG_INFO("... byte:" << byte << " index:" << index 
+        ITDBG_INFO("... byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->WritePage(buffer, index, pOffset, pLength, dataLock);

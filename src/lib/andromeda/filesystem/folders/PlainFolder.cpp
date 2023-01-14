@@ -53,7 +53,7 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folde
 /*****************************************************/
 void PlainFolder::LoadItems()
 {
-    MDBG_INFO("()");
+    ITDBG_INFO("()");
 
     Folder::LoadItemsFrom(mBackend.GetFolder(GetID()));
 }
@@ -107,7 +107,7 @@ void PlainFolder::SubMoveItem(Item& item, Folder& newParent, bool overwrite)
 /*****************************************************/
 void PlainFolder::SubDelete()
 {
-    MDBG_INFO("()");
+    ITDBG_INFO("()");
 
     if (isReadOnly()) throw ReadOnlyException();
 

@@ -46,49 +46,49 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     // Item exceptions
     catch (const Folder::NotFileException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EISDIR;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTDIR;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOENT;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EEXIST;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EACCES;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
     }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const BackendImpl::ReadOnlyFSException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EROFS;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
     }
     catch (const BackendImpl::DeniedException& e)
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -EACCES;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EACCES;
     }
     catch (const BackendImpl::NotFoundException& e)  
     {
-        DDBG_INFO("... " << fname << "... " << e.what()); return -ENOENT;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
     }
 
     // Error exceptions
