@@ -112,10 +112,10 @@ public:
     const ConfigOptions& GetOptions() const { return mOptions; }
 
     /** Returns the cache manager if set or nullptr */
-    Andromeda::Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
+    Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
 
     /** Sets the cache manager to use (or nullptr) */
-    void SetCacheManager(Andromeda::Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
+    void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const;
@@ -307,7 +307,7 @@ private:
     ConfigOptions mOptions;
     BaseRunner& mRunner;
 
-    Andromeda::Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
+    Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
     Config mConfig;
     Debug mDebug;

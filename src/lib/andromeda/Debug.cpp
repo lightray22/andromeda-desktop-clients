@@ -14,7 +14,7 @@ std::unordered_set<std::string> Debug::sPrefixes;
 high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
 
 /*****************************************************/
-void Debug::PrintIf(Debug::StreamFunc& func)
+void Debug::PrintIf(Debug::StreamFunc& strfunc)
 {
     if (sPrefixes.empty() || sPrefixes.find(mPrefix) != sPrefixes.end())
     {
@@ -23,7 +23,7 @@ void Debug::PrintIf(Debug::StreamFunc& func)
 }
 
 /*****************************************************/
-void Debug::Print(Debug::StreamFunc& func)
+void Debug::Print(Debug::StreamFunc& strfunc)
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
@@ -38,7 +38,7 @@ void Debug::Print(Debug::StreamFunc& func)
         else { std::cerr << "obj:" << mAddr << " "; }
     }
 
-    std::cerr << mPrefix << ": "; func(std::cerr); std::cerr << std::endl;
+    std::cerr << mPrefix << ": "; strfunc(std::cerr); std::cerr << std::endl;
 }
 
 /*****************************************************/

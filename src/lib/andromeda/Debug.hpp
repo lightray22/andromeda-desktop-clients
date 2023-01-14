@@ -89,10 +89,10 @@ public:
 private:
 
     /** Prints func to cerr with other info IF the prefix is enabled - THREAD SAFE */
-    void PrintIf(StreamFunc& getDebug);
+    void PrintIf(StreamFunc& strfunc);
 
     /** Prints func to cerr with other info - THREAD SAFE */
-    void Print(StreamFunc& getDebug);
+    void Print(StreamFunc& strfunc);
 
     /** The address this debug instance belongs to */
     void* mAddr;
