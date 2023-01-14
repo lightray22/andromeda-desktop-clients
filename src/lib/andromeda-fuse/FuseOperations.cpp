@@ -219,12 +219,21 @@ static void item_stat(const Item& item, struct stat* stbuf)
     date_to_timespec(created, stbuf->st_birthtim);
 #endif // WIN32
 
+#ifdef APPLE
+    stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(created);
+    stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(modified);
+    stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(accessed);
+
+    if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
+    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_atime;
+#else // !APPLE
     date_to_timespec(created, stbuf->st_ctim);
     date_to_timespec(modified, stbuf->st_mtim);
     date_to_timespec(accessed, stbuf->st_atim);
     
-    if (!modified) stbuf->st_mtim = stbuf->st_ctim;
-    if (!accessed) stbuf->st_atim = stbuf->st_ctim;
+    if (modified == 0) stbuf->st_mtim = stbuf->st_ctim;
+    if (accessed == 0) stbuf->st_atim = stbuf->st_ctim;
+#endif // APPLE
 }
 
 /*****************************************************/

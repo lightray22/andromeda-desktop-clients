@@ -61,24 +61,22 @@ Some other dependencies will be fetched by cmake and built in-tree.
 
 ### Supported Platforms
 
-The following platforms are targeted for support and should work:
+The following platforms (GCC 9.4+, Clang 10+) are targeted for support and should work:
 
 - Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/, [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/)), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download))
   - You will need to add `OPENSSL_ROOT_DIR` to your system environment
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
-  - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev` (GCC 9.4)
-  - Ubuntu 22.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev` (GCC 12.2 or Clang 15)
-  - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev` (GCC 10.2)
-- Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base` (GCC 12.2 or Clang 14)
+  - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev`
+  - Ubuntu 22.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev`
+  - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev`
+- Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base`
+- macOS amd64: `brew install make cmake openssl qt`
 
 The following platforms are supported minus the Qt GUI (it likely works, just not tested):
 
-- Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev` (GCC 11.2)
-- FreeBSD amd64: `pkg install cmake python fusefs-libs3`
-  - FreeBSD 12.3 (Clang 10.0)
-  - FreeBSD 13.1 (Clang 13.0)
-- macOS amd64: `brew install make cmake openssl@1.1`
+- Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev`
+- FreeBSD 12.3/13.1 amd64: `pkg install cmake python fusefs-libs3`
 
 Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD also currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
 

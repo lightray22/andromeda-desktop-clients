@@ -10,6 +10,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     list(APPEND ANDROMEDA_CXX_DEFS LINUX)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     list(APPEND ANDROMEDA_CXX_DEFS FREEBSD)
+elseif (APPLE)
+    list(APPEND ANDROMEDA_CXX_DEFS APPLE)
 endif()
 
 include(GNUInstallDirs)
@@ -99,10 +101,12 @@ else()
         -fstack-protector-strong --param=ssp-buffer-size=4
         -D_GLIBCXX_ASSERTIONS -fexceptions
     )
-    set(ANDROMEDA_LINK_OPTS
-        -Wl,-z,relro -Wl,-z,now
-        -Wl,-z,noexecstack
-    )
+    if (NOT APPLE)
+        set(ANDROMEDA_LINK_OPTS
+            -Wl,-z,relro -Wl,-z,now
+            -Wl,-z,noexecstack
+        )
+    endif()
 
     option(WITHOUT_PIE "Disable position independent executable" OFF)
 
