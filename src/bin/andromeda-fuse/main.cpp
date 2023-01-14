@@ -150,6 +150,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
-    DDBG_INFO("returning success...");
+    DDBG_INFO(": returning success...");
     return static_cast<int>(ExitCode::SUCCESS);
 }

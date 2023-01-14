@@ -67,7 +67,7 @@ public:
      * @return the number of bytes read (may be < length if EOF)
      */
     virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length) final;
-    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const Andromeda::SharedLockR& dataLock) final;
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
 
     /**
      * Writes data to a file

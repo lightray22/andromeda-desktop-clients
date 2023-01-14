@@ -72,8 +72,8 @@ struct FuseMount
      * @param path filesystem path to mount */
     FuseMount(FuseArguments& fargs, const char* const path): mPath(path)
     {
-        SDBG_INFO("() fuse_mount()");
-        
+        SDBG_INFO("() fuse_mount(path:" << path << ")");
+
         mFuseChan = fuse_mount(mPath, &fargs.mFuseArgs);
         
         if (!mFuseChan) throw FuseAdapter::Exception("fuse_mount() failed");
@@ -159,9 +159,9 @@ struct FuseMount
 {
     /** @param context FuseContext reference
      * @param path filesystem path to mount */
-    FuseMount(FuseContext& context, const char* path): mContext(context)
+    FuseMount(FuseContext& context, const char* const path): mContext(context)
     {
-        SDBG_INFO("() fuse_mount()");
+        SDBG_INFO("() fuse_mount(path:" << path << ")");
 
         int retval; if ((retval = fuse_mount(mContext.mFuse, path)) != FUSE_SUCCESS)
             throw FuseAdapter::Exception("fuse_mount() failed: "+std::to_string(retval));

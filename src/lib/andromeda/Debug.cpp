@@ -14,11 +14,18 @@ std::unordered_set<std::string> Debug::sPrefixes;
 high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
 
 /*****************************************************/
+void Debug::PrintIf(Debug::StreamFunc& func)
+{
+    if (sPrefixes.empty() || sPrefixes.find(mPrefix) != sPrefixes.end())
+    {
+        Print(strfunc);
+    }
+}
+
+/*****************************************************/
 void Debug::Print(Debug::StreamFunc& func)
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
-
-    if (!sPrefixes.empty() && sPrefixes.find(mPrefix) == sPrefixes.end()) return;
 
     if (sLevel >= Level::DETAILS)
     {

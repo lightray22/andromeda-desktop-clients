@@ -86,25 +86,25 @@ int main(int argc, char** argv)
 
             if (val.at("ok").get<bool>())
             {
-                DDBG_INFO("returning success...");
+                DDBG_INFO(": returning success...");
                 return static_cast<int>(ExitCode::SUCCESS);
             }
             else
             {
-                DDBG_INFO("returning API error...");
+                DDBG_INFO(": returning API error...");
                 return static_cast<int>(ExitCode::BACKEND_RESP);
             }
         }
         catch (const nlohmann::json::exception& ex)
         {
-            DDBG_ERROR("JSON Error: " << ex.what());
+            DDBG_ERROR(": JSON Error: " << ex.what());
             DDBG_ERROR("... json body: " << resp);
             return static_cast<int>(ExitCode::BACKEND_JSON);
         }
     }
     catch (const BaseRunner::EndpointException& ex)
     {
-        DDBG_ERROR("HTTP Error: " << ex.what());
+        DDBG_ERROR(": HTTP Error: " << ex.what());
         return static_cast<int>(ExitCode::ENDPOINT);
     }
 }

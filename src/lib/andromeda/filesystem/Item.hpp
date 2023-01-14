@@ -60,6 +60,18 @@ public:
     /** Returns a reference to the backend for this item */
     virtual Backend::BackendImpl& GetBackend() const final { return mBackend; }
 
+    /** Returns true if this item has a parent */
+    virtual bool HasParent() const { return mParent != nullptr; }
+
+    /** Returns the parent folder */
+    virtual Folder& GetParent() const;
+
+    /** Returns true if this item has FSconfig */
+    virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
+
+    /** Returns the filesystem config */
+    virtual const FSConfig& GetFSConfig() const;
+
     /** Get the created time stamp */
     virtual Date GetCreated() const final { return mCreated; } 
 
@@ -100,18 +112,6 @@ protected:
 
     /** Initialize from the given JSON data */
     virtual void Initialize(const nlohmann::json& data);
-
-    /** Returns true if this item has a parent */
-    virtual bool HasParent() const { return mParent != nullptr; }
-
-    /** Returns the parent folder */
-    virtual Folder& GetParent() const;
-
-    /** Returns true if this item has FSconfig */
-    virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
-
-    /** Returns the filesystem config */
-    virtual const FSConfig& GetFSConfig() const;
 
     /** Item type-specific delete */
     virtual void SubDelete() = 0;

@@ -59,7 +59,7 @@ public:
     /** Prints func to cerr if the level is >= INFO */
     inline void Info(StreamFunc strfunc)
     {
-        if (sLevel >= Level::INFO) Print(strfunc);
+        if (sLevel >= Level::INFO) PrintIf(strfunc);
     }
 
     /** Syntactic sugar to send the current function name and strcode to debug (error) */
@@ -87,6 +87,9 @@ public:
     static StreamFunc DumpBytes(const void* ptr, uint64_t bytes, uint8_t width = 16);
 
 private:
+
+    /** Prints func to cerr with other info IF the prefix is enabled - THREAD SAFE */
+    void PrintIf(StreamFunc& getDebug);
 
     /** Prints func to cerr with other info - THREAD SAFE */
     void Print(StreamFunc& getDebug);

@@ -159,7 +159,7 @@ private:
      * spawn the background FetchPages thread which also gets its own R lock until the read-ahead is done.
      * If someone were to acquire a W lock (W2) after ReadPage (R1) but before FetchPages (R3) then we would deadlock
      */
-    Andromeda::SharedMutex mDataMutex;
+    SharedMutex mDataMutex;
 
     Debug mDebug;
 };
