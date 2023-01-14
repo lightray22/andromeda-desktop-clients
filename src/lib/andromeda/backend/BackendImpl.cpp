@@ -572,9 +572,9 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
         {
             const uint64_t maxSize { mConfig.GetUploadMaxBytes() };
             MDBG_INFO("... maxSize:" << maxSize);
-            
-            const RunnerInput_FilesIn::FileData infile { "data", 
-                maxSize ? data.substr(byte, maxSize) : data };
+
+            const std::string subdata{maxSize ? data.substr(byte, maxSize) : ""}; // infile takes a string&
+            const RunnerInput_FilesIn::FileData infile { "data", !subdata.empty() ? subdata : data };
             MDBG_INFO("... byte:" << byte << " size:" << infile.data.size());
 
             RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, 

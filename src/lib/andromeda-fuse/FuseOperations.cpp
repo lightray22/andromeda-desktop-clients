@@ -138,9 +138,10 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
     DDBG_INFO("(path:" << path << ")");
 
     buf->f_namemax = 255;
-    
+
     // TODO temporary garbage so windows writing works...
     #if WIN32
+        // TODO maybe use page size for bsize?
         buf->f_bsize = 4096;
         buf->f_frsize = 4096;
         buf->f_blocks = 1024*1024*1024;
@@ -178,18 +179,14 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
 /*****************************************************/
 constexpr Item::Date timespec_to_date(const timespec& t)
 { 
-    return static_cast<Item::Date>(t.tv_sec) 
-            + static_cast<Item::Date>(t.tv_nsec)/1e9; 
+    return static_cast<Item::Date>(t.tv_sec) + static_cast<Item::Date>(t.tv_nsec)/1e9; 
 }
 
 /*****************************************************/
 constexpr void date_to_timespec(const Item::Date time, timespec& spec)
 {
-    // convert double->int->double so tv_sec exactly matches the nsec subtractor
-    const Item::Date secs { static_cast<Item::Date>(static_cast<decltype(spec.tv_nsec)>(time)) }; // trunc
-
-    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(secs);
-    spec.tv_nsec = static_cast<decltype(spec.tv_nsec)>(time-secs*1e9);
+    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time); // truncate to int
+    spec.tv_nsec = static_cast<decltype(spec.tv_nsec)>((time-static_cast<Item::Date>(spec.tv_sec))*1e9);
 }
 
 /*****************************************************/
@@ -211,28 +208,23 @@ static void item_stat(const Item& item, struct stat* stbuf)
         static_cast<decltype(stbuf->st_size)>(
             dynamic_cast<const File&>(item).GetSize()) : 0;
 
-    #if WIN32
-        auto created { item.GetCreated() };
-        auto modified { item.GetModified() };
-        auto accessed { item.GetAccessed() };
+    stbuf->st_blocks = stbuf->st_size ? (stbuf->st_size-1)/512+1 : 0; // 512B blocks
+    //stbuf->st_blksize = 4096; // TODO what to use? page size?
 
-        date_to_timespec(created, stbuf->st_birthtim);
-        
-        date_to_timespec(created, stbuf->st_ctim);
-        date_to_timespec(modified, stbuf->st_mtim);
-        date_to_timespec(accessed, stbuf->st_atim);
-        
-        if (!modified) stbuf->st_mtim = stbuf->st_ctim;
-        if (!accessed) stbuf->st_atim = stbuf->st_ctim;
-    #else // !WIN32
-        stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
-        stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(item.GetModified());
-        stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
-        // TODO why is FUSE only letting us return the seconds, not nanoseconds...?
+    Item::Date created { item.GetCreated() };
+    Item::Date modified { item.GetModified() };
+    Item::Date accessed { item.GetAccessed() };
 
-        if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
-        if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
-    #endif // WIN32
+#if WIN32
+    date_to_timespec(created, stbuf->st_birthtim);
+#endif // WIN32
+
+    date_to_timespec(created, stbuf->st_ctim);
+    date_to_timespec(modified, stbuf->st_mtim);
+    date_to_timespec(accessed, stbuf->st_atim);
+    
+    if (!modified) stbuf->st_mtim = stbuf->st_ctim;
+    if (!accessed) stbuf->st_atim = stbuf->st_ctim;
 }
 
 /*****************************************************/
