@@ -120,10 +120,7 @@ struct FuseContext
 
     ~FuseContext()
     {
-        { // lock scope
-            UniqueLock contextLock(mAdapter.mFuseContextMutex);
-            mAdapter.mFuseContext = nullptr;
-        }
+        mAdapter.mFuseContext = nullptr;
 
         SDBG_INFO("()");
         mMount.Unmount(); 
@@ -229,10 +226,7 @@ struct FuseMount
 
     ~FuseMount() 
     {
-        { // lock scope
-            UniqueLock mountLock(mAdapter.mFuseMountMutex);
-            mAdapter.mFuseMount = nullptr;
-        }
+        mAdapter.mFuseMount = nullptr;
 
         SDBG_INFO("() fuse_unmount()");
         fuse_unmount(mContext.mFuse);
@@ -355,15 +349,13 @@ FuseAdapter::~FuseAdapter()
 {
     SDBG_INFO("()");
     
-    { // lock scope
-    #if LIBFUSE2
-        UniqueLock contextLock(mFuseContextMutex);
-        if (mFuseContext) mFuseContext->TriggerUnmount();
-    #else // !LIBFUSE2
-        UniqueLock mountLock(mFuseMountMutex);
-        if (mFuseMount) mFuseMount->TriggerUnmount();
-    #endif // LIBFUSE2
-    }
+#if LIBFUSE2
+    if (mFuseContext) 
+        mFuseContext->TriggerUnmount();
+#else // !LIBFUSE2
+    if (mFuseMount) 
+        mFuseMount->TriggerUnmount();
+#endif // LIBFUSE2
 
     if (mFuseThread.joinable())
     {
