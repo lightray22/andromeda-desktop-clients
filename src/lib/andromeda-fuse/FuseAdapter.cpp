@@ -1,6 +1,8 @@
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <sstream>
 
 #include "libfuse_Includes.h"
 #include "FuseAdapter.hpp"
@@ -79,7 +81,7 @@ struct FuseMount
     };
 
     /** Unmount the FUSE session */
-    void Unmount(const UniqueLock& mountLock)
+    void Unmount()
     {
         if (mFuseChan == nullptr) return;
         mFuseChan = nullptr;
@@ -114,26 +116,34 @@ struct FuseContext
 
     ~FuseContext()
     {
-        UniqueLock mountLock(mAdapter.mUnmountMutex);
+        mMounted = false;
         mAdapter.mFuseContext = nullptr;
 
         SDBG_INFO("()");
-        mMount.Unmount(mountLock); 
+        mMount.Unmount(); 
 
         SDBG_INFO("... fuse_destroy()");
         fuse_destroy(mFuse);
     };
 
     /** Exit and unmount the FUSE session */
-    void Unmount(const UniqueLock& mountLock)
+    void TriggerUnmount()
     {
         if (!mMounted) return;
+        mMounted = false;
 
         SDBG_INFO("() fuse_exit()");
-
         fuse_exit(mFuse); // flag loop to stop
-        mMount.Unmount(mountLock); // interrupt
-        mMounted = false;
+
+        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent it hanging until the next FS operation
+        // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
+        // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
+        
+        std::stringstream cmd;
+        cmd << "umount \"" << mMount.mPath << "\"";
+
+        SDBG_INFO("... " << cmd.str());
+        std::system(cmd.str().c_str()); // can fail
     }
 
     FuseAdapter& mAdapter;
@@ -163,7 +173,6 @@ struct FuseContext
     ~FuseContext()
     {
         SDBG_INFO("() fuse_destroy()");
-
         fuse_destroy(mFuse);
     };
 
@@ -178,7 +187,7 @@ struct FuseMount
     /** @param context FuseContext reference
       * @param path filesystem path to mount */
     FuseMount(FuseAdapter& adapter, FuseContext& context, const char* const path): 
-        mAdapter(adapter), mContext(context)
+        mAdapter(adapter), mContext(context), mPath(path)
     {
         SDBG_INFO("() fuse_mount(path:" << path << ")");
 
@@ -188,31 +197,41 @@ struct FuseMount
     };
 
     /** Exit and unmount the FUSE session */
-    void Unmount(const UniqueLock& mountLock)
+    void TriggerUnmount()
     {
         if (!mMounted) return;
-
-        SDBG_INFO("() fuse_exit() fuse_unmount()");
-        
-        fuse_exit(mContext.mFuse);// flag loop to stop
-    #if !WIN32 // causes a crash
-        fuse_unmount(mContext.mFuse); // interrupt
-    #endif
         mMounted = false;
+
+        SDBG_INFO("() fuse_exit()");
+        fuse_exit(mContext.mFuse);// flag loop to stop
+
+        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent it hanging until the next FS operation
+        // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
+        // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
+        
+        #if !WIN32
+            std::stringstream cmd;
+            cmd << "umount \"" << mPath << "\"";
+
+            SDBG_INFO("... " << cmd.str());
+            std::system(cmd.str().c_str()); // can fail
+        #endif
     }
 
     ~FuseMount() 
-    { 
-        UniqueLock mountLock(mAdapter.mUnmountMutex);
+    {
+        mMounted = false;
         mAdapter.mFuseMount = nullptr;
 
-        SDBG_INFO("()");
-        Unmount(mountLock);
+        SDBG_INFO("() fuse_unmount()");
+        fuse_unmount(mContext.mFuse);
     }
 
     bool mMounted { true };
     FuseAdapter& mAdapter;
     FuseContext& mContext;
+    /** mounted path */
+    const char* const mPath;
 };
 
 #endif // LIBFUSE2
@@ -326,16 +345,13 @@ FuseAdapter::~FuseAdapter()
 {
     SDBG_INFO("()");
     
-    { // lock scope
-        UniqueLock mountLock(mUnmountMutex);
-    #if LIBFUSE2
-        if (mFuseContext) 
-            mFuseContext->Unmount(mountLock);
-    #else // !LIBFUSE2
-        if (mFuseMount) 
-            mFuseMount->Unmount(mountLock);
-    #endif // LIBFUSE2
-    }
+#if LIBFUSE2
+    if (mFuseContext) 
+        mFuseContext->TriggerUnmount();
+#else // !LIBFUSE2
+    if (mFuseMount) 
+        mFuseMount->TriggerUnmount();
+#endif // LIBFUSE2
 
     SDBG_INFO("... waiting");
 

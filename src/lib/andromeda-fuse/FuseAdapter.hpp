@@ -87,12 +87,6 @@ private:
     FuseOptions mOptions;
 
     std::thread mFuseThread;
-    /** 
-     * Calling exit() can cause two simultaneous unmounts 
-     * as we call unmount() ourselves then FUSE also exits 
-     * the loop triggering the destruct chain
-     */
-    std::mutex mUnmountMutex;
 
 #if LIBFUSE2
     friend struct FuseContext;
