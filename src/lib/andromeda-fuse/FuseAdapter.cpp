@@ -146,13 +146,16 @@ struct FuseContext
         #if APPLE
             // OSX hangs 60 seconds if we do a background process but 
             // fortunately it allows unmount() without being a superuser...
+            SDBG_INFO("... calling unmount(2)");
             unmount(mMount.mPath, MNT_FORCE);
+            SDBG_INFO("... unmount returned");
         #else
             std::stringstream cmd;
             cmd << "umount \"" << mMount.mPath << "\"&";
 
             SDBG_INFO("... " << cmd.str());
             std::system(cmd.str().c_str()); // can fail
+            SDBG_INFO("... system returned");
         #endif
     }
 
@@ -225,6 +228,7 @@ struct FuseMount
 
             SDBG_INFO("... " << cmd.str());
             std::system(cmd.str().c_str()); // can fail
+            SDBG_INFO("... system returned");
         #endif
     }
 
