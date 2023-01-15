@@ -91,9 +91,11 @@ private:
 #if LIBFUSE2
     friend struct FuseContext;
     FuseContext* mFuseContext { nullptr };
+    std::mutex mFuseContextMutex;
 #else // !LIBFUSE2
     friend struct FuseMount;
     FuseMount* mFuseMount { nullptr };
+    std::mutex mFuseMountMutex;
 #endif // LIBFUSE2
 
     bool mInitialized { false };

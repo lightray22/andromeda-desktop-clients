@@ -120,8 +120,10 @@ struct FuseContext
 
     ~FuseContext()
     {
-        mMounted = false;
-        mAdapter.mFuseContext = nullptr;
+        { // lock scope
+            UniqueLock contextLock(mAdapter.mFuseContextMutex);
+            mAdapter.mFuseContext = nullptr;
+        }
 
         SDBG_INFO("()");
         mMount.Unmount(); 
@@ -133,9 +135,6 @@ struct FuseContext
     /** Exit and unmount the FUSE session */
     void TriggerUnmount()
     {
-        if (!mMounted) return;
-        mMounted = false;
-
         SDBG_INFO("() fuse_exit()");
         fuse_exit(mFuse); // flag loop to stop
 
@@ -144,8 +143,8 @@ struct FuseContext
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
 
         #if APPLE
-            // OSX hangs 60 seconds if we do a background process but 
-            // fortunately it allows unmount() without being a superuser...
+            // OSX hangs our whole process (not just this thread) 60 seconds if we start a
+            // background process but fortunately it allows unmount() without being a superuser
             SDBG_INFO("... calling unmount(2)");
             unmount(mMount.mPath, MNT_FORCE);
             SDBG_INFO("... unmount returned");
@@ -164,7 +163,6 @@ struct FuseContext
     struct fuse* mFuse;
     /** Fuse mount reference */
     FuseMount& mMount;
-    bool mMounted { true };
 };
 
 #else // !LIBFUSE2
@@ -212,9 +210,6 @@ struct FuseMount
     /** Exit and unmount the FUSE session */
     void TriggerUnmount()
     {
-        if (!mMounted) return;
-        mMounted = false;
-
         SDBG_INFO("() fuse_exit()");
         fuse_exit(mContext.mFuse);// flag loop to stop
 
@@ -234,14 +229,15 @@ struct FuseMount
 
     ~FuseMount() 
     {
-        mMounted = false;
-        mAdapter.mFuseMount = nullptr;
+        { // lock scope
+            UniqueLock mountLock(mAdapter.mFuseMountMutex);
+            mAdapter.mFuseMount = nullptr;
+        }
 
         SDBG_INFO("() fuse_unmount()");
         fuse_unmount(mContext.mFuse);
     }
 
-    bool mMounted { true };
     FuseAdapter& mAdapter;
     FuseContext& mContext;
     /** mounted path */
@@ -359,13 +355,15 @@ FuseAdapter::~FuseAdapter()
 {
     SDBG_INFO("()");
     
-#if LIBFUSE2
-    if (mFuseContext) 
-        mFuseContext->TriggerUnmount();
-#else // !LIBFUSE2
-    if (mFuseMount) 
-        mFuseMount->TriggerUnmount();
-#endif // LIBFUSE2
+    { // lock scope
+    #if LIBFUSE2
+        UniqueLock contextLock(mFuseContextMutex);
+        if (mFuseContext) mFuseContext->TriggerUnmount();
+    #else // !LIBFUSE2
+        UniqueLock mountLock(mFuseMountMutex);
+        if (mFuseMount) mFuseMount->TriggerUnmount();
+    #endif // LIBFUSE2
+    }
 
     if (mFuseThread.joinable())
     {
