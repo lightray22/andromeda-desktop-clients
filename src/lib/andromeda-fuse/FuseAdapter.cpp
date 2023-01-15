@@ -150,8 +150,8 @@ struct FuseContext
             cmd << "umount \"" << mMount.mPath << "\"&";
 
             SDBG_INFO("... " << cmd.str());
-            std::system(cmd.str().c_str()); // can fail
-            SDBG_INFO("... system returned");
+            int retval { std::system(cmd.str().c_str()) }; // can fail
+            SDBG_INFO("... system returned: " << retval);
         #endif
     }
 
@@ -219,8 +219,8 @@ struct FuseMount
             cmd << "umount \"" << mPath << "\"&";
 
             SDBG_INFO("... " << cmd.str());
-            std::system(cmd.str().c_str()); // can fail
-            SDBG_INFO("... system returned");
+            int retval { std::system(cmd.str().c_str()) }; // can fail
+            SDBG_INFO("... system returned: " << retval);
         #endif
     }
 
