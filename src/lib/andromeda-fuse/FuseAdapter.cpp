@@ -65,31 +65,29 @@ static void FuseDaemonize()
 #if LIBFUSE2
 
 /*****************************************************/
-/** Scope-managed fuse_mount/fuse_unmount */
+/** fuse_mount (manual unmount, not scope-managed) */
 struct FuseMount
 {
     /** @param fargs FuseArguments reference
-     * @param path filesystem path to mount */
+      * @param path filesystem path to mount */
     FuseMount(FuseArguments& fargs, const char* const path): mPath(path)
     {
         SDBG_INFO("() fuse_mount(path:" << path << ")");
 
         mFuseChan = fuse_mount(mPath, &fargs.mFuseArgs);
-        
         if (!mFuseChan) throw FuseAdapter::Exception("fuse_mount() failed");
     };
 
-    void Unmount()
+    /** Unmount the FUSE session */
+    void Unmount(const UniqueLock& mountLock)
     {
         if (mFuseChan == nullptr) return;
+        mFuseChan = nullptr;
 
         SDBG_INFO("() fuse_unmount()");
-        
-        fuse_unmount(mPath, mFuseChan); mFuseChan = nullptr;
+        fuse_unmount(mPath, mFuseChan); 
     };
 
-    ~FuseMount(){ Unmount(); };
-    
     /** mounted path */
     const char* const mPath;
     /** fuse_chan pointer */
@@ -97,33 +95,53 @@ struct FuseMount
 };
 
 /*****************************************************/
-/** Scope-managed fuse_new/fuse_destroy */
+/** Scope-managed fuse_new/fuse_destroy (also unmounts) */
 struct FuseContext
 {
     /** @param mount FuseMount reference 
-     * @param fargs FuseArguments reference */
-    FuseContext(FuseMount& mount, FuseArguments& fargs, FuseAdapter& adapter): mMount(mount)
+      * @param fargs FuseArguments reference */
+    FuseContext(FuseAdapter& adapter, FuseMount& mount, FuseArguments& fargs): 
+        mAdapter(adapter), mMount(mount)
     { 
         SDBG_INFO("() fuse_new()");
 
         mFuse = fuse_new(mMount.mFuseChan, &(fargs.mFuseArgs), 
             &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
         if (!mFuse) throw FuseAdapter::Exception("fuse_new() failed");
+
+        mAdapter.mFuseContext = this; // register with adapter
     };
 
     ~FuseContext()
     {
-        mMount.Unmount(); 
+        UniqueLock mountLock(mAdapter.mUnmountMutex);
+        mAdapter.mFuseContext = nullptr;
 
-        SDBG_INFO("() fuse_destroy()");
+        SDBG_INFO("()");
+        mMount.Unmount(mountLock); 
 
+        SDBG_INFO("... fuse_destroy()");
         fuse_destroy(mFuse);
     };
 
+    /** Exit and unmount the FUSE session */
+    void Unmount(const UniqueLock& mountLock)
+    {
+        if (!mMounted) return;
+
+        SDBG_INFO("() fuse_exit()");
+
+        fuse_exit(mFuse); // flag loop to stop
+        mMount.Unmount(mountLock); // interrupt
+        mMounted = false;
+    }
+
+    FuseAdapter& mAdapter;
     /** Fuse context pointer */
     struct fuse* mFuse;
     /** Fuse mount reference */
     FuseMount& mMount;
+    bool mMounted { true };
 };
 
 #else // !LIBFUSE2
@@ -133,7 +151,7 @@ struct FuseContext
 struct FuseContext
 {
     /** @param fargs FuseArguments reference */
-    FuseContext(FuseArguments& fargs, FuseAdapter& adapter)
+    FuseContext(FuseAdapter& adapter, FuseArguments& fargs)
     {
         SDBG_INFO("() fuse_new()");
 
@@ -158,22 +176,42 @@ struct FuseContext
 struct FuseMount
 {
     /** @param context FuseContext reference
-     * @param path filesystem path to mount */
-    FuseMount(FuseContext& context, const char* const path): mContext(context)
+      * @param path filesystem path to mount */
+    FuseMount(FuseAdapter& adapter, FuseContext& context, const char* const path): 
+        mAdapter(adapter), mContext(context)
     {
         SDBG_INFO("() fuse_mount(path:" << path << ")");
 
         int retval; if ((retval = fuse_mount(mContext.mFuse, path)) != FUSE_SUCCESS)
             throw FuseAdapter::Exception("fuse_mount() failed: "+std::to_string(retval));
+        mAdapter.mFuseMount = this; // register with adapter
     };
 
-    ~FuseMount()
+    /** Exit and unmount the FUSE session */
+    void Unmount(const UniqueLock& mountLock)
     {
-        SDBG_INFO("() fuse_unmount()");
+        if (!mMounted) return;
+
+        SDBG_INFO("() fuse_exit() fuse_unmount()");
         
-        fuse_unmount(mContext.mFuse);
+        fuse_exit(mContext.mFuse);// flag loop to stop
+    #if !WIN32 // causes a crash
+        fuse_unmount(mContext.mFuse); // interrupt
+    #endif
+        mMounted = false;
     }
 
+    ~FuseMount() 
+    { 
+        UniqueLock mountLock(mAdapter.mUnmountMutex);
+        mAdapter.mFuseMount = nullptr;
+
+        SDBG_INFO("()");
+        Unmount(mountLock);
+    }
+
+    bool mMounted { true };
+    FuseAdapter& mAdapter;
     FuseContext& mContext;
 };
 
@@ -203,45 +241,6 @@ struct FuseSignals
 
     /** fuse_session pointer */
     struct fuse_session* mFuseSession;
-};
-
-/*****************************************************/
-/** Scope-managed fuse event loop - blocks */
-struct FuseLoop
-{
-    /** @param context FUSE context reference */
-    explicit FuseLoop(FuseContext& context, FuseAdapter& adapter): 
-        mContext(context), mAdapter(adapter)
-    {
-        SDBG_INFO("() fuse_loop()");
-
-        { // scoped lock
-            const UniqueLock lock(mAdapter.mFuseLoopMutex);
-            mAdapter.mFuseLoop = this; // register with adapter
-        }
-        
-        int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
-            throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
-
-        SDBG_INFO("() fuse_loop() returned!");
-    }
-
-    ~FuseLoop()
-    {
-        const UniqueLock lock(mAdapter.mFuseLoopMutex);
-        mAdapter.mFuseLoop = nullptr;
-    }
-
-    /** Flags the fuse session to terminate */
-    void ExitLoop() 
-    {
-        SDBG_INFO("()");
-
-        fuse_exit(mContext.mFuse); 
-    }
-
-    FuseContext& mContext;
-    FuseAdapter& mAdapter;
 };
 
 /*****************************************************/
@@ -285,10 +284,10 @@ void FuseAdapter::RunFuse(RunMode runMode)
 
     #if LIBFUSE2
         FuseMount mount(fuseArgs, mMountPath.c_str());
-        FuseContext context(mount, fuseArgs, *this);
+        FuseContext context(*this, mount, fuseArgs);
     #else // !LIBFUSE2
-        FuseContext context(fuseArgs, *this);
-        FuseMount mount(context, mMountPath.c_str());
+        FuseContext context(*this, fuseArgs);
+        FuseMount mount(*this, context, mMountPath.c_str());
     #endif // LIBFUSE2
         
         if (runMode == RunMode::DAEMON) FuseDaemonize();
@@ -297,7 +296,12 @@ void FuseAdapter::RunFuse(RunMode runMode)
         if (runMode != RunMode::THREAD) 
             signals = std::make_unique<FuseSignals>(context);
         
-        FuseLoop loop(context, *this); // blocks until done
+        SDBG_INFO("() fuse_loop()");
+
+        int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
+            throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
+
+        SDBG_INFO("() fuse_loop() returned!");
     }
     catch (const Exception& ex)
     {
@@ -305,7 +309,7 @@ void FuseAdapter::RunFuse(RunMode runMode)
         mInitError = std::current_exception();
     }
 
-    SignalInit(); // outside catch just in case fuse fails but doesn't throw
+    SignalInit(); // just in case fuse fails but doesn't throw
 }
 
 /*****************************************************/
@@ -322,9 +326,15 @@ FuseAdapter::~FuseAdapter()
 {
     SDBG_INFO("()");
     
-    { // scoped lock
-        const UniqueLock lock(mFuseLoopMutex);
-        if (mFuseLoop) mFuseLoop->ExitLoop();
+    { // lock scope
+        UniqueLock mountLock(mUnmountMutex);
+    #if LIBFUSE2
+        if (mFuseContext) 
+            mFuseContext->Unmount(mountLock);
+    #else // !LIBFUSE2
+        if (mFuseMount) 
+            mFuseMount->Unmount(mountLock);
+    #endif // LIBFUSE2
     }
 
     SDBG_INFO("... waiting");

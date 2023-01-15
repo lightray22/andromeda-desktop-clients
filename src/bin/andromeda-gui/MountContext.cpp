@@ -61,7 +61,7 @@ MountContext::~MountContext()
 
     const std::string mountPath { GetMountPath() }; // copy
 
-    mFuseAdapter.reset(); // unmount FUSE
+    mFuseAdapter.reset(); // unmount before removing dirs
 
     try
     {
@@ -82,7 +82,7 @@ MountContext::~MountContext()
     }
     catch (const fs::filesystem_error& err)
     {
-        MDBG_ERROR("... " << err.what());
+        MDBG_ERROR("... " << err.what()); // ignore
     }
 }
 

@@ -53,7 +53,7 @@ public:
     /** Prints func to cerr if the level is >= BACKEND */
     inline void Backend(StreamFunc strfunc)
     {
-        if (sLevel >= Level::BACKEND) Print(strfunc);
+        if (sLevel >= Level::BACKEND) PrintIf(strfunc);
     }
 
     /** Prints func to cerr if the level is >= INFO */

@@ -20,7 +20,8 @@ namespace Filesystem {
 
 namespace AndromedaFuse {
 
-struct FuseLoop;
+struct FuseContext;
+struct FuseMount;
 struct FuseOperations;
 
 /** Static class for FUSE operations */
@@ -73,7 +74,6 @@ public:
 
 private:
 
-    friend struct FuseLoop;
     friend struct FuseOperations;
 
     /** Runs/mounts libfuse (blocking) */
@@ -87,8 +87,20 @@ private:
     FuseOptions mOptions;
 
     std::thread mFuseThread;
-    FuseLoop* mFuseLoop { nullptr };
-    std::mutex mFuseLoopMutex;
+    /** 
+     * Calling exit() can cause two simultaneous unmounts 
+     * as we call unmount() ourselves then FUSE also exits 
+     * the loop triggering the destruct chain
+     */
+    std::mutex mUnmountMutex;
+
+#if LIBFUSE2
+    friend struct FuseContext;
+    FuseContext* mFuseContext { nullptr };
+#else // !LIBFUSE2
+    friend struct FuseMount;
+    FuseMount* mFuseMount { nullptr };
+#endif // LIBFUSE2
 
     bool mInitialized { false };
     std::mutex mInitMutex;
