@@ -4,6 +4,10 @@
 #include <memory>
 #include <sstream>
 
+#ifdef APPLE
+#include <sys/mount.h> // unmount
+#endif
+
 #include "libfuse_Includes.h"
 #include "FuseAdapter.hpp"
 #include "FuseOperations.hpp"
@@ -135,15 +139,21 @@ struct FuseContext
         SDBG_INFO("() fuse_exit()");
         fuse_exit(mFuse); // flag loop to stop
 
-        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent it hanging until the next FS operation
+        // fuse_exit does not interrupt the loop, so to prevent it hanging until the next FS operation
         // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
-        
-        std::stringstream cmd;
-        cmd << "umount \"" << mMount.mPath << "\"";
 
-        SDBG_INFO("... " << cmd.str());
-        std::system(cmd.str().c_str()); // can fail
+        #if APPLE
+            // OSX hangs 60 seconds if we do a background process but 
+            // fortunately it allows unmount() without being a superuser...
+            unmount(mMount.mPath, MNT_FORCE);
+        #else
+            std::stringstream cmd;
+            cmd << "umount \"" << mMount.mPath << "\"&";
+
+            SDBG_INFO("... " << cmd.str());
+            std::system(cmd.str().c_str()); // can fail
+        #endif
     }
 
     FuseAdapter& mAdapter;
@@ -211,7 +221,7 @@ struct FuseMount
         
         #if !WIN32
             std::stringstream cmd;
-            cmd << "umount \"" << mPath << "\"";
+            cmd << "umount \"" << mPath << "\"&";
 
             SDBG_INFO("... " << cmd.str());
             std::system(cmd.str().c_str()); // can fail
@@ -353,10 +363,11 @@ FuseAdapter::~FuseAdapter()
         mFuseMount->TriggerUnmount();
 #endif // LIBFUSE2
 
-    SDBG_INFO("... waiting");
-
     if (mFuseThread.joinable())
+    {
+        SDBG_INFO("... waiting");
         mFuseThread.join();
+    }
 
     SDBG_INFO("... return!");
 }
