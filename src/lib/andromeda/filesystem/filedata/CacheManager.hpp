@@ -87,9 +87,9 @@ private:
     // TODO max memory/limit margin configuration/real defaults
 
     /** The maximum page memory usage before evicting */
-    const uint64_t mMemoryLimit { 200*1024*1024 };
+    const uint64_t mMemoryLimit { 256*1024*1024 };
     /** Amount to below limit to get to when evicting */
-    const size_t mLimitMargin { 20*1024*1024 };
+    const size_t mLimitMargin { 32*1024*1024 };
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 

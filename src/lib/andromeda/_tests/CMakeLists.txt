@@ -6,6 +6,15 @@ set(SOURCE_FILES
     UtilitiesTest.cpp
     )
 
+option(MUTEX_TESTS "Build mutex tests" OFF)
+# These have timing assumptions, not reliable
+if (MUTEX_TESTS)
+    list(APPEND SOURCE_FILES
+        SemaphorTest.cpp
+        SharedMutexTest.cpp
+    )
+endif()
+
 target_sources(libandromeda_tests PRIVATE ${SOURCE_FILES})
 target_include_directories(libandromeda_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

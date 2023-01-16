@@ -294,9 +294,11 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
     MDBG_INFO("()");
 
-    SharedLockR dataLock; // empty
+    std::unique_ptr<SharedLockRP> dataLock;
     // if count is 1, waiter's dataLock has us covered
-    if (count > 1) dataLock = SharedLockR(mDataMutex);
+    // use a read-priority lcok since the caller is waiting on us,
+    // if another write happens in the middle we would deadlock
+    if (count > 1) dataLock = std::make_unique<SharedLockRP>(mDataMutex);
 
     if (!count || (index+count-1)*mPageSize >= mBackendSize) 
         throw std::invalid_argument(__func__);

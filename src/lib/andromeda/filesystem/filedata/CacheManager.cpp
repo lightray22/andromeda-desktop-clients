@@ -38,6 +38,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 
     UniqueLock lock(mMutex);
 
+    // we don't get the file's write lock until after building the evict list
     for (const PageMgrLists::value_type& pair : mCurrentEvicts)
         for (const PageInfo& pageInfo : pair.second)
             if (&pageMgr == &pageInfo.mPageMgr && index == pageInfo.mPageIndex)
