@@ -160,7 +160,7 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
             str << fname << "... ";
             
             if (result != nullptr) str << "HTTP " << result->status;
-            else str << httplib::to_human_string(result.error());
+            else str << httplib::to_string(result.error());
 
             str << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1;
         });

@@ -36,7 +36,7 @@ public:
     class LibraryException : public EndpointException { 
         /** @param error the library error code */
         public: explicit LibraryException(httplib::Error error) : 
-            EndpointException(httplib::to_human_string(error)) {} };
+            EndpointException(httplib::to_string(error)) {} };
 
     /** Exception indicating that the connection to the server failed */
     class ConnectionException : public LibraryException {
