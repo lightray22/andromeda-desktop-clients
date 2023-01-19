@@ -1,6 +1,7 @@
 
 #include <sstream>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QWidget>
 
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
@@ -28,6 +29,13 @@ MainWindow::MainWindow() : QMainWindow(),
 MainWindow::~MainWindow()
 {
     MDBG_INFO("()");
+
+    // need to make sure AccountTab/BackendContexts are deleted before CacheManager
+    while (mQtUi->tabAccounts->count() != 0)
+    {
+        QWidget* accountTab { mQtUi->tabAccounts->widget(0) };
+        mQtUi->tabAccounts->removeTab(0); delete accountTab;
+    }
 }
 
 /*****************************************************/
