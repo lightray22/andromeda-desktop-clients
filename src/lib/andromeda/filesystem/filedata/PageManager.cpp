@@ -367,7 +367,8 @@ uint64_t PageManager::GetWriteList(PageMap::iterator& pageIt, PageManager::PageP
 
     size_t curSize { 0 };
     uint64_t lastIndex { 0 };
-    uint64_t startIndex;
+
+    uint64_t startIndex { (mFileSize-1)/mPageSize+1 }; // invalid
 
     for (; pageIt != mPages.end(); ++pageIt)
     {
@@ -412,6 +413,7 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 
             PagePtrList writeList;
             PageMap::iterator pageItTmp { pageIt }; // copy
+            
             GetWriteList(pageItTmp, writeList, pagesLock);
             FlushPageList(index, writeList);
             // TODO return bool based on success/fail (don't throw)
@@ -448,7 +450,9 @@ void PageManager::FlushPages(bool nothrow)
         {
             PagePtrList writeList; const uint64_t startIndex { 
                 GetWriteList(pageIt, writeList, pagesLock) };
-            if (!writeList.empty()) writeLists.emplace(startIndex, std::move(writeList));
+
+            if (!writeList.empty()) 
+                writeLists.emplace(startIndex, std::move(writeList));
         }
 
         MDBG_INFO("... write runs:" << writeLists.size());
