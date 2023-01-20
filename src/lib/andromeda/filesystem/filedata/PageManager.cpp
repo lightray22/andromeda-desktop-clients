@@ -29,7 +29,7 @@ PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageS
 /*****************************************************/
 PageManager::~PageManager()
 {
-    MDBG_INFO("() waiting for threads");
+    MDBG_INFO("() waiting for lock");
 
     // TODO interrupt existing threads? could set stream failbit to stop HTTPRunner
     SharedLockW dataLock(mDataMutex);
@@ -250,7 +250,9 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
     MDBG_INFO("(index:" << index << ") backendSize:" << mBackendSize
         << " lastPage:" << lastPage << " maxReadCount:" << maxReadCount);
 
-    size_t readCount { maxReadCount };
+    // no read-ahead for the first page as file managers often read just metadata
+    size_t readCount { (index > 0) ? maxReadCount : 1 };
+
     for (const PageMap::value_type& page : mPages) // stop before next existing
     {
         if (page.first >= index)
@@ -359,6 +361,72 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 }
 
 /*****************************************************/
+uint64_t PageManager::GetWriteList(PageMap::iterator& pageIt, PageManager::PagePtrList& writeList, const UniqueLock& pagesLock)
+{
+    MDBG_INFO("(pageItIndex:" << pageIt->first << ")");
+
+    size_t curSize { 0 };
+    uint64_t lastIndex { 0 };
+    uint64_t startIndex;
+
+    for (; pageIt != mPages.end(); ++pageIt)
+    {
+        if (pageIt->second.mDirty)
+        {
+            size_t pageSize { pageIt->second.size() };
+
+            if (writeList.empty())
+            {
+                startIndex = pageIt->first;
+                MDBG_INFO("... start write run at " << startIndex);
+            }
+            else if (lastIndex+1 != pageIt->first || // not consecutive
+                     curSize + pageSize < curSize) break; // size_t overflow!
+
+            lastIndex = pageIt->first;
+            writeList.push_back(&pageIt->second);
+            curSize += pageIt->second.size();
+        }
+        else if (!writeList.empty()) break; // end run
+    }
+
+    MDBG_INFO("... return size: " << writeList.size());
+    return startIndex;
+}
+
+/*****************************************************/
+bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
+{
+    MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
+
+    UniqueLock pagesLock(mPagesMutex);
+
+    PageMap::iterator pageIt { mPages.find(index) };
+    if (pageIt != mPages.end())
+    {
+        const Page& page { pageIt->second };
+        
+        if (page.mDirty)
+        {
+            MDBG_INFO("... page is dirty, writing");
+
+            PagePtrList writeList;
+            PageMap::iterator pageItTmp { pageIt }; // copy
+            GetWriteList(pageItTmp, writeList, pagesLock);
+            FlushPageList(index, writeList);
+            // TODO return bool based on success/fail (don't throw)
+        }
+
+        mPages.erase(pageIt); // need dataLockW for this
+
+        MDBG_INFO("... page removed, numPages:" << mPages.size());
+    }
+    else { MDBG_INFO(" ... page not found"); }
+
+    return true;
+}
+
+/*****************************************************/
 void PageManager::FlushPages(bool nothrow)
 {
     MDBG_INFO("()");
@@ -375,35 +443,20 @@ void PageManager::FlushPages(bool nothrow)
 
         MDBG_INFO("... have locks");
 
-        size_t curSize { 0 };
-        uint64_t lastIndex { 0 };
-        PagePtrList* curList { nullptr };
-        for (PageMap::value_type& pagePair : mPages)
+        PageMap::iterator pageIt { mPages.begin() };
+        while (pageIt != mPages.end())
         {
-            if (pagePair.second.mDirty)
-            {
-                size_t pageSize { pagePair.second.size() };
-
-                if (curList == nullptr
-                    || lastIndex+1 != pagePair.first // not contiguous
-                    || curSize + pageSize < curSize) // size_t overflow!
-                {
-                    MDBG_INFO("... new write run at " << pagePair.first);
-                    curList = &(writeLists.emplace(pagePair.first, PagePtrList()).first->second);
-                    curSize = 0;
-                }
-
-                lastIndex = pagePair.first;
-                curList->push_back(&pagePair.second);
-                curSize += pagePair.second.size();
-            }
-            else curList = nullptr; // end run
+            PagePtrList writeList; const uint64_t startIndex { 
+                GetWriteList(pageIt, writeList, pagesLock) };
+            if (!writeList.empty()) writeLists.emplace(startIndex, std::move(writeList));
         }
+
+        MDBG_INFO("... write runs:" << writeLists.size());
     }
 
     for (const decltype(writeLists)::value_type& writePair : writeLists)
     {
-        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second, dataLock); } };
+        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second); } };
 
         if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
             MDBG_ERROR("... Ignoring Error: " << e.what()); }
@@ -413,7 +466,7 @@ void PageManager::FlushPages(bool nothrow)
 }
 
 /*****************************************************/
-void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages, const SharedLockR& dataLock)
+void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages)
 {
     SemaphorLock backendSem(sBackendSem);
 
@@ -439,40 +492,6 @@ void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtr
         pagePtr->mDirty = false;
 
     mBackendSize = std::max(mBackendSize, writeStart+totalSize);
-}
-
-/*****************************************************/
-bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
-{
-    MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
-
-    UniqueLock pagesLock(mPagesMutex);
-
-    PageMap::const_iterator pageIt { mPages.find(index) };
-    if (pageIt != mPages.end())
-    {
-        const Page& page { pageIt->second };
-        
-        if (page.mDirty)
-        {
-            MDBG_INFO("... page is dirty, writing");
-
-            const uint64_t writeStart { pageIt->first*mPageSize };
-            const std::string data(reinterpret_cast<const char*>(page.data()), page.size());
-
-            mBackend.WriteFile(mFile.GetID(), writeStart, data);
-            // TODO return bool based on success/fail (don't throw)
-
-            mBackendSize = std::max(mBackendSize, writeStart+data.size());
-        }
-
-        mPages.erase(pageIt);
-
-        MDBG_INFO("... page removed, numPages:" << mPages.size());
-    }
-    else { MDBG_INFO(" ... page not found"); }
-
-    return true;
 }
 
 /*****************************************************/

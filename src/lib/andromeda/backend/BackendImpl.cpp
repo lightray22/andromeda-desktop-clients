@@ -112,7 +112,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             
             const std::string fname(__func__);
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
-                str << fname << "... message:" << message; });
+                str << fname << "... message:" << *message; });
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();

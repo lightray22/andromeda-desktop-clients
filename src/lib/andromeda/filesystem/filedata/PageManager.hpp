@@ -116,11 +116,21 @@ private:
     /** Removes the given index from the pending-read list */
     void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Map of page index to page pointers */
+    /** Map of page index to page */
+    typedef std::map<uint64_t, Page> PageMap;
+    /** List of **consecutive** page pointers */
     typedef std::list<Page*> PagePtrList;
 
-    /** Writes a series of **consecutive** pages (total < size_t) starting at the given index */
-    void FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockR& dataLock);
+    /** 
+     * Returns a series of **consecutive** dirty pages (total < size_t)
+     * @pageIt reference to the iterator to start with - will end as the next index not used
+     * @writeList reference to a list of pages to fill out
+     * @return uint64_t the start index of the write list (not valid if writeList is empty!)
+     */
+    uint64_t GetWriteList(PageMap::iterator& pageIt, PagePtrList& writeList, const UniqueLock& pagesLock);
+
+    /** Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST have a dataLock! */
+    void FlushPageList(const uint64_t index, const PagePtrList& pages);
 
     /** Reference to the parent file */
     File& mFile;
@@ -139,8 +149,6 @@ private:
     /** The current read-ahead window */
     size_t mFetchSize { 100 };
 
-    /** Map of page index to page */
-    typedef std::map<uint64_t, Page> PageMap;
     /** List of <index,length> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
 
