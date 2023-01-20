@@ -552,7 +552,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 // if we get a 413 this small the server must be bugged
 constexpr size_t UPLOAD_MINSIZE { 4*1024 };
 // multiply the failed by this to get the next attempt size
-constexpr uint64_t ADJUST_ATTEMPT(uint64_t maxSize){ return maxSize/2; }
+constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
 
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
@@ -570,7 +570,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
     {
         bool retry { true }; while (retry) // may need to retry a smaller maxSize
         {
-            const uint64_t maxSize { mConfig.GetUploadMaxBytes() };
+            const size_t maxSize { mConfig.GetUploadMaxBytes() };
             MDBG_INFO("... maxSize:" << maxSize);
 
             const std::string subdata{maxSize ? data.substr(byte, maxSize) : ""}; // infile takes a string&

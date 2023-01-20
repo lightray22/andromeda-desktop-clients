@@ -53,10 +53,10 @@ public:
     bool canRandWrite() const { return mRandWrite; }
 
     /** Returns the max # of bytes allowed in an upload or 0 for no limit */
-    uint64_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
+    size_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
 
     /** Sets the max upload bytes in case we discover it is lower than thought */
-    void SetUploadMaxBytes(const uint64_t newMax) { mUploadMaxBytes = newMax; };
+    void SetUploadMaxBytes(const size_t newMax) { mUploadMaxBytes = newMax; };
 
     /** Returns the max # of files allowed in an upload or 0 for no limit */
     size_t GetUploadMaxFiles() const { return mUploadMaxFiles; }
@@ -68,7 +68,7 @@ private:
     bool mReadOnly { false };
     bool mRandWrite { true };
 
-    uint64_t mUploadMaxBytes { 0 }; // TODO locking
+    size_t mUploadMaxBytes { 0 }; // TODO locking
     size_t mUploadMaxFiles { 0 };
 };
 
