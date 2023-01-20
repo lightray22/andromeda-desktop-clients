@@ -12,8 +12,6 @@
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/Utilities.hpp"
-#include "andromeda/filesystem/filedata/CacheManager.hpp"
-using Andromeda::Filesystem::Filedata::CacheManager;
 
 namespace Andromeda {
 namespace Backend {
