@@ -114,7 +114,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
-            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message);
+            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); // TODO better exception? - should not happen if Authenticated? maybe for bad shares
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
             else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyFSException("Database");

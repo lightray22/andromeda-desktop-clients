@@ -20,21 +20,19 @@ There are several binaries and libraries in the full suite.
 - `src/lib/andromeda` the core library that implements communication with the server
 - `src/bin/andromeda-cli` allows manual CLI communication with the backend
 - `src/bin/andromeda-fuse` and `src/lib/andromeda-fuse` for mounting with FUSE
-- FUTURE `src/bin/andromeda-sync` and `src/lib/andromeda-sync` for running directory sync operations
+- FUTURE `src/bin/andromeda-sync` and `src/lib/andromeda-sync` for running directory sync
 - `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
 
 
 # Building
-  
-By default, all targets will be built.
-
-To build one individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build including unit tests.  Or the manual steps:
 
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 3. Run compile `cmake --build .`
+  
+By default, all targets will be built. To build one target individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
 
 Cmake will automatically clone in-tree dependencies.  By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
 
@@ -48,7 +46,7 @@ Cmake will automatically clone in-tree dependencies.  By default, position-indep
 ### Prerequisite Libraries
 
 - libandromeda
-  - OpenSSL (1.1.1 or 3.x) (libssl, libcrypto)
+  - OpenSSL (libssl, libcrypto) (1.1.1 or 3.x)
 - libandromeda-fuse
   - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://osxfuse.github.io/
@@ -63,8 +61,8 @@ Some other dependencies will be fetched by cmake and built in-tree.
 
 The following platforms (GCC 9.4+, Clang 10+) are targeted for support and should work:
 
-- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/, [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/)), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download))
-  - You will need to add `OPENSSL_ROOT_DIR` to your system environment
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download))
+  - You may need to add `OPENSSL_ROOT_DIR` to your system environment
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
   - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev`
@@ -78,7 +76,7 @@ The following platforms are supported minus the Qt GUI (it likely works, just no
 - Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev`
 - FreeBSD 12.3/13.1 amd64: `pkg install cmake python fusefs-libs3`
 
-Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD also currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
+Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
 
 
 # CLI Client
@@ -91,8 +89,7 @@ Any features that rely on the higher privileges of the real CLI interface are no
 * Changing debug/metrics output
 * Doing a request dry-run
 
-The general usage is the same as the real CLI interface, with an added URL and different global options.  
-Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage). Batching is not yet supported.
+The general usage is the same as the real CLI interface, but with different global options.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage). Batching is not yet supported.
 
 Run `./andromeda-cli --help` to see the available options.  
 
