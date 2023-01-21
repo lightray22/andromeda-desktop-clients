@@ -10,6 +10,8 @@
 #include "andromeda/backend/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 
+namespace AndromedaFuse {
+
 /** Manages command line options and config */
 class Options : public Andromeda::BaseOptions
 {
@@ -114,5 +116,7 @@ private:
 
     bool mForeground { false };
 };
+
+} // namespace AndromedaFuse
 
 #endif // A2FUSE_OPTIONS_H_

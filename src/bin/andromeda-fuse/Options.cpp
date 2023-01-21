@@ -15,6 +15,8 @@ using Andromeda::Backend::HTTPOptions;
 
 using namespace std::chrono;
 
+namespace AndromedaFuse {
+
 /*****************************************************/
 std::string Options::HelpText()
 {
@@ -152,3 +154,5 @@ void Options::Validate()
     if (mMountPath.empty())
         throw MissingOptionException("mountpath");
 }
+
+} // namespace AndromedaFuse

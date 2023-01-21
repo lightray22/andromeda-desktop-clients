@@ -7,14 +7,16 @@
 
 #include "andromeda/BaseOptions.hpp"
 
-class Options;
-
 namespace Andromeda { namespace Backend { 
     class HTTPRunner; 
     struct RunnerInput; 
     struct RunnerInput_StreamIn;
     struct RunnerInput_StreamOut;
 } }
+
+namespace AndromedaCli {
+
+class Options;
 
 /** Gets options and a remote Input from the command line */
 class CommandLine
@@ -57,5 +59,7 @@ private:
     std::unique_ptr<Andromeda::Backend::RunnerInput_StreamIn> mInput_StreamIn;
     std::unique_ptr<Andromeda::Backend::RunnerInput_StreamOut> mInput_StreamOut;
 };
+
+} // namespace AndromedaCli
 
 #endif // A2CLI_COMMANDLINE_H_

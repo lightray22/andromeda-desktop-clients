@@ -6,6 +6,8 @@
 #include "andromeda/BaseOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 
+namespace AndromedaCli {
+
 /** Manages command line options and config */
 class Options : public Andromeda::BaseOptions
 {
@@ -35,5 +37,7 @@ private:
 
     std::string mApiUrl;
 };
+
+} // namespace AndromedaCli
 
 #endif // A2CLI_OPTIONS_H_

@@ -20,6 +20,8 @@ using Andromeda::Backend::RunnerInput;
 using Andromeda::Backend::RunnerInput_StreamIn;
 using Andromeda::Backend::RunnerInput_StreamOut;
 
+namespace AndromedaCli {
+
 /*****************************************************/
 std::string CommandLine::HelpText()
 {
@@ -197,3 +199,5 @@ std::string CommandLine::RunInputAction(HTTPRunner& runner, bool& isJson)
 
     throw std::runtime_error("RunInputAction without ParseFullArgs");
 }
+
+} // namespace AndromedaCli

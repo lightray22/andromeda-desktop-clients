@@ -4,7 +4,9 @@
 #include <nlohmann/json.hpp>
 
 #include "CommandLine.hpp"
+using AndromedaCli::CommandLine;
 #include "Options.hpp"
+using AndromedaCli::Options;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;

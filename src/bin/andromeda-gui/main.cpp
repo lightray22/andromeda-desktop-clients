@@ -3,7 +3,7 @@
 #include <QtWidgets/QApplication>
 
 #include "Options.hpp"
-
+using AndromedaGui::Options;
 #include "gui/MainWindow.hpp"
 using AndromedaGui::Gui::MainWindow;
 #include "gui/SystemTray.hpp"

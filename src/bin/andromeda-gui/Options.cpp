@@ -6,6 +6,8 @@
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
 
+namespace AndromedaGui {
+
 /*****************************************************/
 std::string Options::HelpText()
 {
@@ -21,3 +23,5 @@ std::string Options::HelpText()
 
     return output.str();
 }
+
+} // namespace AndromedaGui

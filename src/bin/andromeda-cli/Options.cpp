@@ -8,6 +8,8 @@ using Andromeda::BaseOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
 
+namespace AndromedaCli {
+
 /*****************************************************/
 std::string Options::CoreHelpText()
 {
@@ -63,3 +65,5 @@ void Options::Validate()
     if (mApiUrl.empty())
         throw MissingOptionException("apiurl");
 }
+
+} // namespace AndromedaCli

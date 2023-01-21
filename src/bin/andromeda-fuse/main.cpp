@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "Options.hpp"
+using AndromedaFuse::Options;
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 #include "andromeda-fuse/FuseOptions.hpp"
