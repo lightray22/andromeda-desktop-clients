@@ -41,8 +41,6 @@ using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
 
-using AndromedaFuse::FuseAdapter;
-
 enum class ExitCode
 {
     SUCCESS,

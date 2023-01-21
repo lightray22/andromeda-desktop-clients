@@ -84,10 +84,8 @@ const Folder::ItemMap& Folder::GetItems()
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
-    bool noCache { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE }; // load always
-    bool memory  { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::MEMORY }; // load once
-
-    if (!mHaveItems || (expired && !memory) || noCache) 
+    if (!mHaveItems || (expired && !mBackend.isMemory()) ||
+        mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE) 
     {
         LoadItems(); mRefreshed = steady_clock::now();
     }

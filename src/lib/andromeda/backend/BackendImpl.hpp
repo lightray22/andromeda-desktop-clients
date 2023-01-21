@@ -112,6 +112,9 @@ public:
     /** Sets the cache manager to use (or nullptr) */
     void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
+    /** Returns true if doing memory only */
+    bool isMemory() const;
+
     /** Returns true if the backend is read-only */
     bool isReadOnly() const;
 
@@ -285,9 +288,6 @@ private:
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
-
-    /** Returns true if doing memory only */
-    bool isMemory() const;
 
     /** True if we created the session in use */
     bool mCreatedSession { false };

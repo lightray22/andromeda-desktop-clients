@@ -54,7 +54,8 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
     const Page& page { GetPageRead(index, dataLock) };
     const char* pageBuf { page.data() };
 
-    if (mCacheMgr) mCacheMgr->InformPage(*this, index, page);
+    if (mCacheMgr && !mBackend.isMemory()) 
+        mCacheMgr->InformPage(*this, index, page);
 
     const auto iOffset { static_cast<decltype(Page::mData)::iterator::difference_type>(offset) };
     const auto iLength { static_cast<decltype(Page::mData)::iterator::difference_type>(length) };
@@ -86,7 +87,8 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
     char* pageBuf { page.data() };
     page.mDirty = true;
 
-    if (mCacheMgr) mCacheMgr->InformPage(*this, index, page);
+    if (mCacheMgr && !mBackend.isMemory()) 
+        mCacheMgr->InformPage(*this, index, page);
     
     const auto iOffset { static_cast<decltype(Page::mData)::iterator::difference_type>(offset) };
     const auto iLength { static_cast<decltype(Page::mData)::iterator::difference_type>(length) };
@@ -343,7 +345,9 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
                     if (pageSize < realSize) ResizePage(*curPage, realSize, false);
 
                     PageMap::const_iterator newIt { mPages.emplace(curIndex, std::move(*curPage)).first };
-                    if (mCacheMgr) mCacheMgr->InformPage(*this, curIndex, newIt->second);
+                    
+                    if (mCacheMgr && !mBackend.isMemory()) 
+                        mCacheMgr->InformPage(*this, curIndex, newIt->second);
 
                     RemovePending(curIndex, pagesLock); 
                     curPage.reset(); ++curIndex;

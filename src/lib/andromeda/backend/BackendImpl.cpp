@@ -297,20 +297,17 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    if (isMemory() && id.empty())
+    if (isMemory())
     {
         nlohmann::json retval;
-
+        retval["id"] = id;
         retval["files"] = std::map<std::string,int>();
         retval["folders"] = std::map<std::string,int>();
-
         return retval;
     }
 
-    RunnerInput input {"files", "getfolder"}; 
+    RunnerInput input {"files", "getfolder", {{"folder", id}}}; 
     
-    if (!id.empty()) input.params["folder"] = id;
-
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
@@ -319,10 +316,17 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    RunnerInput input {"files", "getfolder"}; 
-    
-    if (!id.empty()) input.params["filesystem"] = id;
+    if (isMemory())
+    {
+        nlohmann::json retval;
+        retval["id"] = id;
+        retval["files"] = std::map<std::string,int>();
+        retval["folders"] = std::map<std::string,int>();
+        return retval;
+    }
 
+    RunnerInput input {"files", "getfolder", {{"filesystem", id}}}; 
+    
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
 
@@ -333,9 +337,7 @@ nlohmann::json BackendImpl::GetFilesystem(const std::string& id)
 
     if (isMemory() && id.empty()) return nullptr;
 
-    RunnerInput input {"files", "getfilesystem"};
-
-    if (!id.empty()) input.params["filesystem"] = id;
+    RunnerInput input {"files", "getfilesystem", {{"filesystem", id}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
