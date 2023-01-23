@@ -18,7 +18,10 @@ namespace Filedata {
 struct Page;
 class PageManager;
 
-/** Manages pages as an LRU cache to limit memory usage */
+/** 
+ * Manages pages as an LRU cache to limit memory usage 
+ * Also tracks dirty pages to limit the total dirty memory
+ */
 class CacheManager
 {
 public:
@@ -32,24 +35,37 @@ public:
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
+     * @param canWait block if memory is not available
      */
-    void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page);
+    void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool canWait = true);
 
     /** Inform us that a page has changed size */
     void ResizePage(const Page& page, const size_t newSize);
 
     /** Inform us that a page has been erased */
     void RemovePage(const Page& page);
+
+    /** Inform us that a page is no longer dirty */
+    void RemoveDirty(const Page& page);
     
 private:
 
-    /** Inform us that a page has been erased (already have the lock) */
-    void RemovePage(const Page& page, const UniqueLock& lock);
+    typedef std::unique_lock<std::mutex> UniqueLock;
+
+    /** 
+     * Inform us that a page has been erased (already have the lock) 
+     * @return size_t size of the page that was erased or 0 if didn't exist
+     */
+    size_t RemovePage(const Page& page, const UniqueLock& lock);
+
+    /** Inform us that a page is no longer dirty (already have the lock) */
+    void RemoveDirty(const Page& page, const UniqueLock& lock);
 
     /** Send some stats to debug */
     void PrintStatus(const char* const fname, const UniqueLock& lock);
+    void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
 
-    /** Run the main cache management loop */
+    /** Run the page cleanup loop */
     void CleanupThread();
 
     /** Mutex to guard writing data structures */
@@ -63,28 +79,36 @@ private:
         const uint64_t mPageIndex;
         /** Pointer to the page object */
         const Page* mPagePtr;
-        /** Size of the page when it was added, in case it changes without informing */
+        /** Size of the page when it was added */
         size_t mPageSize;
     } PageInfo;
 
     /** LIFO queue of pages ordered OLD->NEW */
-    typedef std::list<PageInfo> PageList; PageList mPageQueue;
+    typedef std::list<PageInfo> PageList;
+    PageList mPageQueue;
+    PageList mDirtyQueue;
+
     /** HashMap allowing efficient lookup of pages within the queue */
-    typedef std::unordered_map<const Page*, PageList::iterator> PageItMap; PageItMap mPageItMap;
+    typedef std::unordered_map<const Page*, PageList::iterator> PageItMap; 
+    PageItMap mPageItMap; 
+    PageItMap mDirtyItMap;
 
-    /** List of pages currently being evicted (per-page manager) to ignore adding */
-    typedef std::unordered_map<PageManager*, PageList> PageMgrLists; PageMgrLists mCurrentEvicts;
-
-    /** Background cleanup thread */
-    std::thread mThread;
-    /** CV to wait/signal cleanup thread */
-    std::condition_variable mThreadCV;
-    /** Set to false to stop the cleanup thread */
+    /** Set to false to stop the cleanup threads */
     bool mRunCleanup { true };
-    /** Indicates the cleanup thread is active */
-    bool mCleanupActive { false };
 
-    // TODO max memory/limit margin configuration/real defaults
+    /** Background page cleanup thread */
+    std::thread mThread;
+    /** CV to wait/signal page cleanup thread */
+    std::condition_variable mThreadCV;
+    /** CV to signal when memory is available */
+    std::condition_variable mMemoryCV;
+    /** CV to signal when dirty space is available */
+    std::condition_variable mDirtyCV;
+
+    /** The PageInfo currently being evicted */
+    std::unique_ptr<PageInfo> mCurrentEvict;
+    /** The PageInfo current being flushed */
+    std::unique_ptr<PageInfo> mCurrentFlush;
 
     /** The maximum page memory usage before evicting */
     const uint64_t mMemoryLimit { 256*1024*1024 };
@@ -92,6 +116,11 @@ private:
     const size_t mLimitMargin { 32*1024*1024 };
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
+
+    /** The maximum in memory dirty page usage before flushing */
+    const uint64_t mDirtyLimit { 16*1024*1024 };
+    /** The current total dirty page memory */
+    uint64_t mCurrentDirty { 0 };
 
     Debug mDebug;
 };

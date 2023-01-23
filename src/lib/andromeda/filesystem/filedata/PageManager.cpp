@@ -32,6 +32,8 @@ PageManager::~PageManager()
     MDBG_INFO("() waiting for lock");
 
     // TODO interrupt existing threads? could set stream failbit to stop HTTPRunner
+
+    mScopeMutex.lock(); // exclusive, forever
     SharedLockW dataLock(mDataMutex);
 
     if (mCacheMgr != nullptr)
@@ -300,7 +302,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
     std::unique_ptr<SharedLockRP> dataLock;
     // if count is 1, waiter's dataLock has us covered
-    // use a read-priority lcok since the caller is waiting on us,
+    // use a read-priority lock since the caller is waiting on us,
     // if another write happens in the middle we would deadlock
     if (count > 1) dataLock = std::make_unique<SharedLockRP>(mDataMutex);
 
@@ -338,18 +340,22 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
                 if (pwOffset+pwLength == curPage->size()) // page is done
                 {
-                    UniqueLock pagesLock(mPagesMutex);
-
                     // if we are reading a page that is smaller on the backend (dirty writes), might need to resize
                     const size_t realSize { min64st(mFileSize-curPageStart, mPageSize) };
                     if (pageSize < realSize) ResizePage(*curPage, realSize, false);
 
-                    PageMap::const_iterator newIt { mPages.emplace(curIndex, std::move(*curPage)).first };
+                    PageMap::const_iterator newIt;
+                    { // lock scope 
+                        UniqueLock pagesLock(mPagesMutex);
+                        newIt = mPages.emplace(curIndex, std::move(*curPage)).first;
+                        RemovePending(curIndex, pagesLock); 
+                    }
                     
                     if (mCacheMgr && !mBackend.isMemory()) 
-                        mCacheMgr->InformPage(*this, curIndex, newIt->second);
+                        mCacheMgr->InformPage(*this, curIndex, newIt->second, false);
+                        // pass false to not block - we have the httplib lock and reclaiming
+                        // memory may involve httplib flushing pages - would deadlock
 
-                    RemovePending(curIndex, pagesLock); 
                     curPage.reset(); ++curIndex;
                 }
             }
@@ -404,25 +410,22 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
-    UniqueLock pagesLock(mPagesMutex);
+    UniqueLock pagesLock(mPagesMutex); // can hold, have dataLockW anyway
 
     PageMap::iterator pageIt { mPages.find(index) };
     if (pageIt != mPages.end())
-    {
-        const Page& page { pageIt->second };
-        
-        if (page.mDirty)
+    {    
+        if (pageIt->second.mDirty)
         {
             MDBG_INFO("... page is dirty, writing");
 
             PagePtrList writeList;
             PageMap::iterator pageItTmp { pageIt }; // copy
-            
             GetWriteList(pageItTmp, writeList, pagesLock);
             FlushPageList(index, writeList);
-            // TODO return bool based on success/fail (don't throw)
         }
 
+        if (mCacheMgr) mCacheMgr->RemovePage(pageIt->second);
         mPages.erase(pageIt); // need dataLockW for this
 
         MDBG_INFO("... page removed, numPages:" << mPages.size());
@@ -430,6 +433,28 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
     else { MDBG_INFO(" ... page not found"); }
 
     return true;
+}
+
+/*****************************************************/
+void PageManager::FlushPage(const uint64_t index, const SharedLockR& dataLock)
+{
+    MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
+
+    PagePtrList writeList;
+
+    { // lock scope
+        UniqueLock pagesLock(mPagesMutex);
+
+        PageMap::iterator pageIt { mPages.find(index) };
+        if (pageIt != mPages.end() && pageIt->second.mDirty)
+        {
+            GetWriteList(pageIt, writeList, pagesLock);
+        }
+        else { MDBG_INFO(" ... page not found"); }
+    }
+
+    if (!writeList.empty()) 
+        FlushPageList(index, writeList);
 }
 
 /*****************************************************/
@@ -497,7 +522,10 @@ void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtr
     mBackend.WriteFile(mFile.GetID(), writeStart, buf);
 
     for (Page* pagePtr : pages)
+    {
         pagePtr->mDirty = false;
+        if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
+    }
 
     mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 }

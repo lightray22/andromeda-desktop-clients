@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <thread>
 
 #include "Page.hpp"
@@ -57,6 +58,11 @@ public:
     /** Returns a write lock for page data */
     SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
 
+    typedef std::shared_lock<std::shared_mutex> ScopeLock;
+
+    /** Tries to lock mScopeMutex, returns a lock object that is maybe locked */
+    ScopeLock TryGetScopeLock() { return ScopeLock(mScopeMutex, std::try_to_lock); }
+
     /** Reads data from the given page index into buffer - get lock first! */
     virtual void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock) final;
 
@@ -68,6 +74,9 @@ public:
 
     /** Removes the given page, writing it if dirty - get lock first! */
     bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
+
+    /** Flushes the given page if dirty - get lock first! */
+    void FlushPage(const uint64_t index, const SharedLockR& dataLock);
 
     /**
      * Writes back all dirty pages - THREAD SAFE
@@ -85,6 +94,8 @@ public:
     void Truncate(const uint64_t newSize);
 
 private:
+
+    typedef std::unique_lock<std::mutex> UniqueLock;
 
     /** Returns the page at the given index - use GetReadLock() first! */
     const Page& GetPageRead(const uint64_t index, const SharedLockR& dataLock);
@@ -129,7 +140,10 @@ private:
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PagePtrList& writeList, const UniqueLock& pagesLock);
 
-    /** Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST have a dataLock! */
+    /** 
+     * Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST HAVE DATALOCKR/W!
+     * Also marks each page not dirty and informs the cache manager
+     */
     void FlushPageList(const uint64_t index, const PagePtrList& pages);
 
     /** Reference to the parent file */
@@ -161,13 +175,14 @@ private:
     /** Mutex that protects the page maps */
     mutable std::mutex mPagesMutex;
 
-    /** 
-     * Mutex that protects page content and mBackendSize 
-     * Specifically we must use a reader-preference lock - when doing ReadPage with the R lock, we
-     * spawn the background FetchPages thread which also gets its own R lock until the read-ahead is done.
-     * If someone were to acquire a W lock (W2) after ReadPage (R1) but before FetchPages (R3) then we would deadlock
-     */
+    /** Mutex that protects page content/buffers and mBackendSize */
     SharedMutex mDataMutex;
+
+    /** 
+     * Mutex that is grabbed exclusively when this class is destructed
+     * Non-file actors can use this to make sure this stays in scope
+     */
+    std::shared_mutex mScopeMutex;
 
     Debug mDebug;
 };

@@ -32,8 +32,6 @@ struct Page
     Page& operator=(Page&&) = default;
 };
 
-typedef std::unique_lock<std::mutex> UniqueLock;
-
 } // namespace Filedata
 } // namespace Filesystem
 } // namespace Andromeda

@@ -69,19 +69,17 @@ private:
 typedef std::unique_lock<SharedMutex> SharedLockW;
 typedef std::shared_lock<SharedMutex> SharedLockR;
 
-/** Scope-managed read-priority lock */
+/** Scope-managed shared read-priority lock */
 class SharedLockRP
 {
 public:
-    inline SharedLockRP(SharedMutex& mutex) : mMutex(mutex) 
-    {
-        mMutex.lock_shared_priority();
-    }
+    inline SharedLockRP(SharedMutex& mutex) : 
+        mMutex(mutex){ mMutex.lock_shared_priority(); }
+    inline ~SharedLockRP() { mMutex.unlock_shared_priority(); }
 
-    inline ~SharedLockRP() 
-    { 
-        mMutex.unlock_shared_priority();
-    }
+    // disallow copying
+    SharedLockRP(const SharedLockRP&) = delete;
+    SharedLockRP& operator=(const SharedLockRP&) = delete;
 private:
     SharedMutex& mMutex;
 };
