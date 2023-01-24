@@ -61,8 +61,10 @@ private:
     /** Inform us that a page is no longer dirty (already have the lock) */
     void RemoveDirty(const Page& page, const UniqueLock& lock);
 
-    /** Send some stats to debug */
+    /** Send some stats about memory to debug */
     void PrintStatus(const char* const fname, const UniqueLock& lock);
+
+    /** Send some stats about the dirty memory to debug */
     void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
 
     /** Run the page cleanup loop */
@@ -105,15 +107,13 @@ private:
     /** CV to signal when dirty space is available */
     std::condition_variable mDirtyCV;
 
-    /** The PageInfo currently being evicted */
-    std::unique_ptr<PageInfo> mCurrentEvict;
-    /** The PageInfo current being flushed */
-    std::unique_ptr<PageInfo> mCurrentFlush;
+    /** PageManager that can skip the memory wait (need it to clear its lock queue) */
+    PageManager* mSkipMemoryWait { nullptr };
 
     /** The maximum page memory usage before evicting */
     const uint64_t mMemoryLimit { 256*1024*1024 };
     /** Amount to below limit to get to when evicting */
-    const size_t mLimitMargin { 32*1024*1024 };
+    const size_t mLimitMargin { 16*1024*1024 };
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 

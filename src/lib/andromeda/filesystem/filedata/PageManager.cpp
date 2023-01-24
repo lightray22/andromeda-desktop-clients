@@ -91,7 +91,7 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
 
     if (mCacheMgr && !mBackend.isMemory()) 
         mCacheMgr->InformPage(*this, index, page);
-    
+
     const auto iOffset { static_cast<decltype(Page::mData)::iterator::difference_type>(offset) };
     const auto iLength { static_cast<decltype(Page::mData)::iterator::difference_type>(length) };
 
@@ -301,9 +301,8 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
     MDBG_INFO("()");
 
     std::unique_ptr<SharedLockRP> dataLock;
-    // if count is 1, waiter's dataLock has us covered
-    // use a read-priority lock since the caller is waiting on us,
-    // if another write happens in the middle we would deadlock
+    // if count is 1, waiter's dataLock has us covered, use a read-priority lock since
+    // the caller is waiting on us, if another write happens in the middle we would deadlock
     if (count > 1) dataLock = std::make_unique<SharedLockRP>(mDataMutex);
 
     if (!count || (index+count-1)*mPageSize >= mBackendSize) 
@@ -349,12 +348,13 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
                         UniqueLock pagesLock(mPagesMutex);
                         newIt = mPages.emplace(curIndex, std::move(*curPage)).first;
                         RemovePending(curIndex, pagesLock); 
-                    }
-                    
-                    if (mCacheMgr && !mBackend.isMemory()) 
+                    } // unlock to let waiters proceed with page
+
+                    // assume the requesting thread will do InformPage() for the first page
+                    if (mCacheMgr && !mBackend.isMemory() && count > 1)
                         mCacheMgr->InformPage(*this, curIndex, newIt->second, false);
-                        // pass false to not block - we have the httplib lock and reclaiming
-                        // memory may involve httplib flushing pages - would deadlock
+                    // pass false to not block - we have the httplib lock and reclaiming
+                    // memory may involve httplib flushing pages - would deadlock
 
                     curPage.reset(); ++curIndex;
                 }
@@ -436,10 +436,11 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 }
 
 /*****************************************************/
-void PageManager::FlushPage(const uint64_t index, const SharedLockR& dataLock)
+void PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
+    UniqueLock flushLock(mFlushMutex);
     PagePtrList writeList;
 
     { // lock scope
@@ -462,12 +463,11 @@ void PageManager::FlushPages(bool nothrow)
 {
     MDBG_INFO("()");
 
-    // create runs of pages to write separate from mPages
-    // so we don't have to hold pagesLock while sending
-    // ... map iterators stay valid after other operations
-    std::map<uint64_t, PagePtrList> writeLists;
-
     SharedLockR dataLock(mDataMutex);
+    UniqueLock flushLock(mFlushMutex);
+
+    // create runs of pages to write separate from mPages so we don't have to hold pagesLock
+    std::map<uint64_t, PagePtrList> writeLists;
 
     { // lock scope
         UniqueLock pagesLock(mPagesMutex);

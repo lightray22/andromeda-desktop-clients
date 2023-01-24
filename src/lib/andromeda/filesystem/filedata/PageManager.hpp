@@ -55,6 +55,9 @@ public:
     /** Returns a read lock for page data */
     SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
     
+    /** Returns a priority read lock for page data */
+    SharedLockRP GetReadPriLock() { return SharedLockRP(mDataMutex); }
+    
     /** Returns a write lock for page data */
     SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
 
@@ -76,7 +79,7 @@ public:
     bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
 
     /** Flushes the given page if dirty - get lock first! */
-    void FlushPage(const uint64_t index, const SharedLockR& dataLock);
+    void FlushPage(const uint64_t index, const SharedLockRP& dataLock);
 
     /**
      * Writes back all dirty pages - THREAD SAFE
@@ -121,7 +124,10 @@ private:
     /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
 
-    /** Reads count# pages from the backend at the given index */
+    /** 
+     * Reads count# pages from the backend at the given index, adding to the page map
+     * Does NOT get a dataLock or inform the cacheManager of the new page if count is 1!
+     */
     void FetchPages(const uint64_t index, const size_t count);
 
     /** Removes the given index from the pending-read list */
@@ -183,6 +189,9 @@ private:
      * Non-file actors can use this to make sure this stays in scope
      */
     std::shared_mutex mScopeMutex;
+
+    /** Don't want overlapped flushes, could duplicate writes */
+    std::mutex mFlushMutex;
 
     Debug mDebug;
 };

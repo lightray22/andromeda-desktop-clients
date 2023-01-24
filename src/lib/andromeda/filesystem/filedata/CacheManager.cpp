@@ -58,36 +58,18 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
     const bool isDirty { page.mDirty };
     const size_t newSize { page.size() };
 
-    // if we consumed more memory and cleanup is running, WAIT so memory doesn't keep increasing
-    // BUT check currentEvict since it could be waiting on our W lock... skipping wait is fine in this
-    // case since the cleanup's W lock will prevent further accesses to this file that could add memory
-
-    if (mCurrentMemory > mMemoryLimit)
+    if (mCurrentMemory > mMemoryLimit || mCurrentDirty > mDirtyLimit)
     {
         MDBG_INFO("... memory limit! signal");
         mThreadCV.notify_one();
     }
 
-    if (canWait && newSize > oldSize)
-        while (mCurrentMemory > mMemoryLimit && mCurrentEvict
-                && &(mCurrentEvict->mPageMgr) != &pageMgr)
+    // check mSkipMemoryWait since cleanup could be waiting on our dataLock
+    if (canWait && newSize > oldSize) while (mSkipMemoryWait != &pageMgr &&
+        (mCurrentMemory > mMemoryLimit || (mCurrentDirty > mDirtyLimit && isDirty)))
     {
         MDBG_INFO("... waiting for memory");
         mMemoryCV.wait(lock);
-    }
-
-    if (mCurrentDirty > mDirtyLimit)
-    {
-        MDBG_INFO("... dirty limit! signal");
-        mThreadCV.notify_one();
-    }
-
-    if (canWait && newSize > oldSize && isDirty)
-        while (mCurrentDirty > mDirtyLimit && mCurrentFlush
-                && &(mCurrentFlush->mPageMgr) != &pageMgr)
-    {
-        MDBG_INFO("... waiting for dirty space");
-        mDirtyCV.wait(lock);
     }
 
     MDBG_INFO("... return!");
@@ -188,15 +170,27 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 /*****************************************************/
 void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
 {
-    mDebug.Info([&](std::ostream& str){ str << fname << "()"
+    mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " pages:" << mPageItMap.size() << ", memory:" << mCurrentMemory; });
+
+    if (mDebug.GetLevel() >= Debug::Level::INFO)
+    {
+        uint64_t total = 0; for (const PageInfo& pageInfo : mPageQueue) total += pageInfo.mPageSize;
+        if (total != mCurrentMemory){ MDBG_ERROR(": BAD MEMORY TRACKING! " << total << " != " << mCurrentMemory); assert(false); }
+    }
 }
 
 /*****************************************************/
 void CacheManager::PrintDirtyStatus(const char* const fname, const UniqueLock& lock)
 {
-    mDebug.Info([&](std::ostream& str){ str << fname << "()"
+    mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " dirtyPages:" << mDirtyItMap.size() << ", dirtyMemory:" << mCurrentDirty; });
+
+    if (mDebug.GetLevel() >= Debug::Level::INFO)
+    {
+        uint64_t total = 0; for (const PageInfo& pageInfo : mDirtyQueue) total += pageInfo.mPageSize;
+        if (total != mCurrentDirty){ MDBG_ERROR(": BAD DIRTY TRACKING! " << total << " != " << mCurrentDirty); assert(false); }
+    }
 }
 
 /*****************************************************/
@@ -208,6 +202,7 @@ void CacheManager::CleanupThread()
     {
         // need to make sure pageManager stays in scope between mMutex release and evict/flush
         PageManager::ScopeLock evictLock, flushLock;
+        std::unique_ptr<PageInfo> currentEvict, currentFlush;
 
         { // lock scope
             UniqueLock lock(mMutex);
@@ -219,33 +214,40 @@ void CacheManager::CleanupThread()
                 mThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
-            MDBG_INFO("... DOING CLEANUP!");
 
+            MDBG_INFO("... DOING CLEANUP!");
             PrintStatus(__func__, lock);
-            while (!mCurrentEvict && mCurrentMemory + mLimitMargin > mMemoryLimit)
+
+            while (!currentEvict && mCurrentMemory + mLimitMargin > mMemoryLimit)
             {
                 PageInfo& pageInfo { mPageQueue.front() };
                 evictLock = pageInfo.mPageMgr.TryGetScopeLock();
 
                 if (!evictLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
-                else mCurrentEvict = std::make_unique<PageInfo>(pageInfo); // copy
+                else 
+                { // let waiters on this file continue so we can lock
+                    currentEvict = std::make_unique<PageInfo>(pageInfo); // copy
+                    mSkipMemoryWait = &currentEvict->mPageMgr;
+                    mMemoryCV.notify_all();
+                }
             }
         }
 
         // don't hold the local lock the whole time we're doing evict/flush as it could deadlock... to get the 
         // dataLock we have to wait in the file's dataLock queue and threads in the queue might do InformPage()
 
-        if (mCurrentEvict)
+        if (currentEvict)
         {
             MDBG_INFO("... evicting page");
 
-            SharedLockW dataLock { mCurrentEvict->mPageMgr.GetWriteLock() };
-            mCurrentEvict->mPageMgr.EvictPage(mCurrentEvict->mPageIndex, dataLock);
+            SharedLockW dataLock { currentEvict->mPageMgr.GetWriteLock() };
+            mSkipMemoryWait = nullptr; // have the lock
+            currentEvict->mPageMgr.EvictPage(currentEvict->mPageIndex, dataLock);
 
             UniqueLock lock(mMutex);
             PrintStatus(__func__, lock);
 
-            mCurrentEvict.reset();
+            currentEvict.reset();
             mMemoryCV.notify_all();
         }
 
@@ -253,28 +255,34 @@ void CacheManager::CleanupThread()
             UniqueLock lock(mMutex);
 
             PrintDirtyStatus(__func__, lock);
-            while (!mCurrentFlush && mCurrentDirty > mDirtyLimit)
+            while (!currentFlush && mCurrentDirty > mDirtyLimit)
             {
                 PageInfo& pageInfo { mDirtyQueue.front() };
                 flushLock = pageInfo.mPageMgr.TryGetScopeLock();
 
                 if (!flushLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
-                else mCurrentFlush = std::make_unique<PageInfo>(pageInfo); // copy
+                else 
+                { // let waiters on this file continue so we can lock
+                    currentFlush = std::make_unique<PageInfo>(pageInfo); // copy
+                    mSkipMemoryWait = &currentFlush->mPageMgr;
+                    mMemoryCV.notify_all();
+                }
             }
         }
 
-        if (mCurrentFlush)
+        if (currentFlush)
         {
             MDBG_INFO("... flushing page");
 
-            SharedLockR dataLock { mCurrentFlush->mPageMgr.GetReadLock() };
-            mCurrentFlush->mPageMgr.FlushPage(mCurrentFlush->mPageIndex, dataLock);
+            SharedLockRP dataLock { currentFlush->mPageMgr.GetReadPriLock() };
+            mSkipMemoryWait = nullptr; // have the lock
+            currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock);
 
             UniqueLock lock(mMutex);
             PrintDirtyStatus(__func__, lock);
 
-            mCurrentFlush.reset();
-            mDirtyCV.notify_all();
+            currentFlush.reset();
+            mMemoryCV.notify_all();
         }
     }
 
