@@ -165,7 +165,8 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
             str << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1;
         });
 
-        std::this_thread::sleep_for(mOptions.retryTime);
+        if (attempt != 0) // retry immediately after 1st failure
+            std::this_thread::sleep_for(mOptions.retryTime);
     }
     else if (result.error() == httplib::Error::Connection)
             throw ConnectionException();
