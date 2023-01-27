@@ -45,19 +45,19 @@ public:
     typedef std::function<void(std::ostream& str)> StreamFunc;
 
     /** Prints func to cerr if the level is >= ERRORS */
-    inline void Error(StreamFunc strfunc)
+    inline void Error(const StreamFunc& strfunc)
     {
         if (sLevel >= Level::ERRORS) Print(strfunc);
     }
 
     /** Prints func to cerr if the level is >= BACKEND */
-    inline void Backend(StreamFunc strfunc)
+    inline void Backend(const StreamFunc& strfunc)
     {
         if (sLevel >= Level::BACKEND) PrintIf(strfunc);
     }
 
     /** Prints func to cerr if the level is >= INFO */
-    inline void Info(StreamFunc strfunc)
+    inline void Info(const StreamFunc& strfunc)
     {
         if (sLevel >= Level::INFO) PrintIf(strfunc);
     }
@@ -89,10 +89,10 @@ public:
 private:
 
     /** Prints func to cerr with other info IF the prefix is enabled - THREAD SAFE */
-    void PrintIf(StreamFunc& strfunc);
+    void PrintIf(const StreamFunc& strfunc);
 
     /** Prints func to cerr with other info - THREAD SAFE */
-    void Print(StreamFunc& strfunc);
+    void Print(const StreamFunc& strfunc);
 
     /** The address this debug instance belongs to */
     void* mAddr;

@@ -73,7 +73,7 @@ typedef std::shared_lock<SharedMutex> SharedLockR;
 class SharedLockRP
 {
 public:
-    inline SharedLockRP(SharedMutex& mutex) : 
+    explicit inline SharedLockRP(SharedMutex& mutex) : 
         mMutex(mutex){ mMutex.lock_shared_priority(); }
     inline ~SharedLockRP() { mMutex.unlock_shared_priority(); }
 
