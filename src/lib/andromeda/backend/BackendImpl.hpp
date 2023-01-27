@@ -193,8 +193,9 @@ public:
      * Creates a new file
      * @param parent parent folder ID
      * @param name name of new file
+     * @param overwrite whether to overwrite existing
      */
-    nlohmann::json CreateFile(const std::string& parent, const std::string& name);
+    nlohmann::json CreateFile(const std::string& parent, const std::string& name, bool overwrite = false);
 
     /**
      * Creates a new folder
@@ -273,6 +274,15 @@ public:
      * @param data file data to write
      */
     nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const std::string& data);
+    
+    /**
+     * Creates a new file with data
+     * @param parent parent folder ID
+     * @param name name of new file
+     * @param data file data to write
+     * @param overwrite whether to overwrite existing
+     */
+    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite = false);
 
     /**
      * Truncates a file

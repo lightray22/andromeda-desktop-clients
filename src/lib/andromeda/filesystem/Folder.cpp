@@ -149,7 +149,10 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
     ItemMap::const_iterator oldIt { mItemMap.begin() };
     for (; oldIt != mItemMap.end();)
     {
-        if (newItems.find(oldIt->first) == newItems.end())
+        const bool ignore { oldIt->second->GetType() == Type::FILE &&
+            !dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend() };
+
+        if (!ignore && newItems.find(oldIt->first) == newItems.end())
         {
             oldIt = mItemMap.erase(oldIt); // deleted on server
             ITDBG_INFO("... remote deleted: " << oldIt->second->GetName());

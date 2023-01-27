@@ -4,6 +4,8 @@
 #include "PlainFolder.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/ConfigOptions.hpp"
+using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/FSConfig.hpp"
 using Andromeda::Filesystem::FSConfig;
 #include "andromeda/filesystem/File.hpp"
@@ -65,9 +67,14 @@ void PlainFolder::SubCreateFile(const std::string& name)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    nlohmann::json data(mBackend.CreateFile(GetID(), name));
+    std::unique_ptr<File> file;
 
-    std::unique_ptr<File> file(std::make_unique<File>(mBackend, data, *this));
+    if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
+    {
+        nlohmann::json data(mBackend.CreateFile(GetID(), name));
+        file = std::make_unique<File>(mBackend, data, *this);
+    }
+    else file = std::make_unique<File>(mBackend, *this, name, *mFsConfig);
 
     mItemMap[file->GetName()] = std::move(file);
 }

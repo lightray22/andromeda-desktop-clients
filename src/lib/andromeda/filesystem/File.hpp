@@ -51,6 +51,18 @@ public:
     File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
     /**
+     * @brief Construct a new file in memory only
+     * @param backend backend reference
+     * @param parent reference to parent folder
+     * @param name name of the new file
+     * @param fsConfig reference to fs config
+     */
+    File(Backend::BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig);
+
+    /** Returns true iff the file exists on the backend (false if waiting for flush) */
+    virtual bool ExistsOnBackend() const;
+
+    /**
      * Read data from the file
      * @param buffer pointer to buffer to fill
      * @param offset byte offset in file to read
@@ -67,7 +79,6 @@ public:
      * @return the number of bytes read (may be < length if EOF)
      */
     virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length) final;
-    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
 
     /**
      * Writes data to a file
@@ -83,6 +94,8 @@ public:
     virtual void FlushCache(bool nothrow = false) override;
 
 protected:
+
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
 
     virtual void SubDelete() override;
 

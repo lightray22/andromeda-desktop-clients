@@ -38,8 +38,9 @@ public:
      * @param file reference to the parent file
      * @param fileSize current file size
      * @param pageSize size of pages to use (const)
+     * @param backendExists true if the file exists on the backend
      */
-    PageManager(File& file, const uint64_t fileSize, const size_t pageSize);
+    PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists);
 
     virtual ~PageManager();
 
@@ -51,6 +52,9 @@ public:
 
     /** Returns the current size on the backend (we may have dirty writes) */
     uint64_t GetBackendSize() const { return mBackendSize; }
+
+    /** Returns whether or not the file exists on the backend */
+    bool ExistsOnBackend() const { return mBackendExists; }
 
     /** Returns a read lock for page data */
     SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
@@ -165,6 +169,8 @@ private:
     uint64_t mFileSize;
     /** file size as far as the backend knows - may have dirty writes that extend the file */
     uint64_t mBackendSize;
+    /** true iff the file has been created on the backend (false if waiting for flush) */
+    bool mBackendExists;
 
     /** The current read-ahead window */
     size_t mFetchSize { 100 };

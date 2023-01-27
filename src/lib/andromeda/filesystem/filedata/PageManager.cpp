@@ -9,6 +9,8 @@
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/File.hpp"
 using Andromeda::Filesystem::File;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
 
 // globally limit the maximum number of concurrent background ops
 static Andromeda::Semaphor sBackendSem { 4 }; // TODO configurable later?
@@ -18,12 +20,12 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize) : 
+PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists) : 
     mFile(file), mBackend(file.GetBackend()), mCacheMgr(mBackend.GetCacheManager()),
-    mPageSize(pageSize), mFileSize(fileSize), mBackendSize(fileSize), 
+    mPageSize(pageSize), mFileSize(fileSize), mBackendSize(fileSize), mBackendExists(backendExists),
     mDebug("PageManager",this) 
 { 
-    MDBG_INFO("(file: " << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
+    MDBG_INFO("(file:" << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
 }
 
 /*****************************************************/
@@ -487,7 +489,13 @@ void PageManager::FlushPages(bool nothrow)
         MDBG_INFO("... write runs:" << writeLists.size());
     }
 
-    for (const decltype(writeLists)::value_type& writePair : writeLists)
+    if (!mBackendExists && writeLists.empty())
+    {
+        mFile.Refresh(mBackend.CreateFile(
+             mFile.GetParent().GetID(), mFile.GetName()));
+        mBackendExists = true;
+    }
+    else for (const decltype(writeLists)::value_type& writePair : writeLists)
     {
         auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second); } };
 
@@ -519,20 +527,35 @@ void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtr
     uint64_t writeStart { index*mPageSize };
     MDBG_INFO("... WRITING " << buf.size() << " to " << writeStart);
 
-    mBackend.WriteFile(mFile.GetID(), writeStart, buf);
+    if (!mBackendExists && index != 0) // can't use Upload()
+    {
+        mFile.Refresh(mBackend.CreateFile(
+             mFile.GetParent().GetID(), mFile.GetName()));
+        mBackendExists = true;
+    }
+
+    if (!mBackendExists)
+    {
+        mFile.Refresh(mBackend.UploadFile(
+            mFile.GetParent().GetID(), mFile.GetName(), buf));
+        mBackendExists = true;
+    }
+    else mBackend.WriteFile(mFile.GetID(), writeStart, buf);
+
+    mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 
     for (Page* pagePtr : pages)
     {
         pagePtr->mDirty = false;
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
-
-    mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 }
 
 /*****************************************************/
 void PageManager::RemoteChanged(const uint64_t backendSize)
-{    
+{
+    if (!mBackendExists) return; // called Refresh() ourselves
+
     // TODO add ability to interrupt in-progress reads (same as destructor)
     // since the download is streamed you should be able to just set a flag to have it reply false to httplib
     // then catch the httplib::Canceled and ignore it and return if that flag is set - will help error handling later
@@ -577,7 +600,8 @@ void PageManager::Truncate(const uint64_t newSize)
 
     MDBG_INFO("... have locks");
 
-    mBackend.TruncateFile(mFile.GetID(), newSize); 
+    if (mBackendExists)
+        mBackend.TruncateFile(mFile.GetID(), newSize); 
 
     mBackendSize = newSize;
     mFileSize = newSize;

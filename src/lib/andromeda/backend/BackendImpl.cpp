@@ -16,6 +16,8 @@
 namespace Andromeda {
 namespace Backend {
 
+#define BOOLSTR(x) x ? "true" : "false"
+
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, BaseRunner& runner) : 
     mOptions(options), mRunner(runner),
@@ -375,7 +377,7 @@ nlohmann::json BackendImpl::GetAdopted()
 }
 
 /*****************************************************/
-nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::string& name)
+nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::string& name, bool overwrite)
 {
     MDBG_INFO("(parent:" << parent << " name:" << name << ")");
 
@@ -390,7 +392,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         return retval;
     }
 
-    RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}}}, {{"file", {name, ""}}}};
+    RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}}, {{"file", {name, ""}}}};
 
     FinalizeInput(input); return GetJSON(mRunner.RunAction(input));
 }
@@ -414,7 +416,7 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
         return retval;
     }
 
-    RunnerInput input {"files", "createfolder", {{"parent", parent},{"name", name}}};
+    RunnerInput input {"files", "createfolder", {{"parent", parent}, {"name", name}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
@@ -458,7 +460,7 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 
     if (isMemory()) return nullptr;
 
-    RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
@@ -472,7 +474,7 @@ nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::strin
 
     if (isMemory()) return nullptr;
 
-    RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
@@ -486,7 +488,7 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 
     if (isMemory()) return nullptr;
 
-    RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
@@ -500,7 +502,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 
     if (isMemory()) return nullptr;
 
-    RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", overwrite?"true":"false"}}};
+    RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}};
 
     return GetJSON(mRunner.RunAction(FinalizeInput(input)));
 }
@@ -593,6 +595,60 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
                 mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(infile.data.size()));
             }
         }
+    }
+    return retval;
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite)
+{
+    if (data.empty()) { assert(false); MDBG_ERROR("() ERROR no data"); } // stop only in debug builds
+
+    MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
+
+    if (isMemory())
+    {
+        nlohmann::json retval {{"id", ""}, {"name", name}, {"size", data.size()}, {"filesystem", ""}};
+
+        retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",nullptr}};
+        
+        return retval;
+    }
+
+    nlohmann::json retval; // return last retval
+    size_t byte { 0 }; 
+    bool retry { true }; while (retry) // may need to retry a smaller maxSize
+    {
+        const size_t maxSize { mConfig.GetUploadMaxBytes() };
+        MDBG_INFO("... maxSize:" << maxSize);
+
+        const std::string subdata{maxSize ? data.substr(0, maxSize) : ""}; // infile takes a string&
+        const RunnerInput_FilesIn::FileData infile { name, !subdata.empty() ? subdata : data };
+        MDBG_INFO("... size:" << infile.data.size());
+
+        RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}, 
+            {"overwrite", BOOLSTR(overwrite)}}}, {{"file", infile}}};
+        FinalizeInput(input); 
+
+        try
+        {
+            retval = GetJSON(mRunner.RunAction(input));
+            byte += infile.data.size(); retry = false;
+        }
+        catch (const HTTPRunner::InputSizeException& e)
+        {
+            MDBG_INFO("... caught InputSizeException! retry");
+            if (maxSize && maxSize < UPLOAD_MINSIZE) throw;
+            mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(infile.data.size()));
+        }
+    }
+
+    if (byte < data.size()) // write remaining chunks
+    {
+        std::string id; retval.at("id").get_to(id);
+        retval = WriteFile(id, byte, data.substr(byte));
     }
     return retval;
 }

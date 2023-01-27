@@ -44,7 +44,30 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
     const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
-    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize);
+    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize, true);
+
+    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
+        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
+}
+
+/*****************************************************/
+File::File(BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig) : 
+    Item(backend), mDebug("File",this)
+{
+    MDBG_INFO("()");
+
+    mFsConfig = &fsConfig;
+    mParent = &parent;
+    mName = name;
+
+    mCreated = static_cast<decltype(mCreated)>(std::time(nullptr));
+
+    const size_t fsChunk { mFsConfig->GetChunkSize() };
+    const size_t cfChunk { mBackend.GetOptions().pageSize };
+
+    auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
+    const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
+    mPageManager = std::make_unique<PageManager>(*this, 0, pageSize, false);
 
     MDBG_INFO("... ID:" << GetID() << " name:" << mName 
         << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
@@ -52,6 +75,12 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
 /*****************************************************/
 File::~File() { } // for unique_ptr
+
+/*****************************************************/
+bool File::ExistsOnBackend() const
+{
+    return mPageManager->ExistsOnBackend();
+}
 
 /*****************************************************/
 uint64_t File::GetSize() const 
@@ -66,6 +95,8 @@ void File::Refresh(const nlohmann::json& data)
 
     try
     {
+        if (mId.empty()) data.at("id").get_to(mId);
+
         uint64_t newSize;
         data.at("size").get_to(newSize);
         if (newSize != mPageManager->GetBackendSize())
@@ -82,7 +113,8 @@ void File::SubDelete()
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.DeleteFile(GetID());
+    if (mPageManager->ExistsOnBackend())
+        mBackend.DeleteFile(GetID());
 
     mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
 }
@@ -94,7 +126,8 @@ void File::SubRename(const std::string& newName, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.RenameFile(GetID(), newName, overwrite);
+    if (mPageManager->ExistsOnBackend())
+        mBackend.RenameFile(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
@@ -104,7 +137,8 @@ void File::SubMove(Folder& newParent, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
+    if (mPageManager->ExistsOnBackend())
+        mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
 }
 
 /*****************************************************/
