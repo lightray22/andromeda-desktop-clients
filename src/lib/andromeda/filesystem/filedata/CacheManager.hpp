@@ -30,6 +30,9 @@ public:
 
     virtual ~CacheManager();
 
+    /** Returns the maximum cache memory size */
+    uint64_t GetMemoryLimit() const { return mMemoryLimit; }
+
     /** 
      * Inform us that a page was used, putting at the front of the LRU
      * @param pageMgr the page manager that owns the page

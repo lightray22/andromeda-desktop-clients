@@ -56,6 +56,14 @@ void Item::Refresh(const nlohmann::json& data)
             mName = newName;
             ITDBG_INFO("... newName:" << mName);
         }
+        
+        decltype(mCreated) newCreated; 
+        data.at("dates").at("created").get_to(newCreated);
+        if (newCreated != mCreated)
+        {
+            mCreated = newCreated;
+            ITDBG_INFO("... newCreated:" << mCreated);
+        }
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
         if (!modifiedJ.is_null())

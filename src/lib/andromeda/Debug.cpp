@@ -11,7 +11,7 @@ namespace Andromeda {
 std::mutex Debug::sMutex;
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
-high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
+steady_clock::time_point Debug::sStart { steady_clock::now() };
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)
@@ -29,7 +29,7 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
 
     if (sLevel >= Level::DETAILS)
     {
-        duration<double> time { high_resolution_clock::now() - sStart };
+        duration<double> time { steady_clock::now() - sStart };
         std::cerr << "time:" << time.count() << " ";
 
         std::cerr << "tid:" << std::this_thread::get_id() << " ";

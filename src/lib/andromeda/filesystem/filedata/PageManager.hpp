@@ -2,6 +2,8 @@
 #ifndef LIBA2_PAGEMANAGER_H_
 #define LIBA2_PAGEMANAGER_H_
 
+#include <array>
+#include <chrono>
 #include <condition_variable>
 #include <list>
 #include <map>
@@ -137,6 +139,9 @@ private:
     /** Removes the given index from the pending-read list */
     void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
+    /** Updates the bandwidth estimate with the given measurement */
+    void UpdateBandwidth(const uint64_t bytes, const std::chrono::steady_clock::duration& time);
+
     /** Map of page index to page */
     typedef std::map<uint64_t, Page> PageMap;
     /** List of **consecutive** page pointers */
@@ -172,8 +177,21 @@ private:
     /** true iff the file has been created on the backend (false if waiting for flush) */
     bool mBackendExists;
 
-    /** The current read-ahead window */
-    size_t mFetchSize { 100 };
+    /** The desired time elapsed for each backend read-ahead */
+    const std::chrono::milliseconds mReadTarget { 1000 };
+    /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
+    const size_t mReadMaxCacheFrac { 4 };
+    /** The number of bandwidth history entries to store */
+    static constexpr size_t BANDWIDTH_WINDOW { 4 };
+    /** Array of calculated bandwidth targetBytes to average together */
+    std::array<uint64_t, BANDWIDTH_WINDOW> mBandwidthHistory { };
+    /** The next index of mBandwidthHistory to write with a measurement */
+    size_t mBandwidthHistoryIdx { 0 };
+
+    /** The current read-ahead window (number of pages) */
+    size_t mFetchSize { 1 };
+    /** Mutex that protects mFetchSize and mBandwidthHistory */
+    std::mutex mFetchSizeMutex;
 
     /** List of <index,length> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
@@ -187,16 +205,11 @@ private:
     /** Mutex that protects the page maps */
     mutable std::mutex mPagesMutex;
 
-    /** Mutex that protects page content/buffers and mBackendSize */
+    /** Shared mutex that protects page content/buffers and mBackendSize */
     SharedMutex mDataMutex;
-
-    /** 
-     * Mutex that is grabbed exclusively when this class is destructed
-     * Non-file actors can use this to make sure this stays in scope
-     */
+    /** Shared mutex that is grabbed exclusively when this class is destructed */
     std::shared_mutex mScopeMutex;
-
-    /** Don't want overlapped flushes, could duplicate writes */
+    /** Don't want overlapping flushes, could duplicate writes */
     std::mutex mFlushMutex;
 
     Debug mDebug;

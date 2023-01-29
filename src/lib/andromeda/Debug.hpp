@@ -108,7 +108,7 @@ private:
     static std::unordered_set<std::string> sPrefixes;
 
     /** timestamp when the program started */
-    static std::chrono::high_resolution_clock::time_point sStart;
+    static std::chrono::steady_clock::time_point sStart;
 };
 
 } // namespace Andromeda

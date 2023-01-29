@@ -1,5 +1,7 @@
 
+#include <algorithm>
 #include <cstring>
+#include <limits>
 #include <nlohmann/json.hpp>
 
 #include "CacheManager.hpp"
@@ -319,7 +321,9 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
 
-    if (readSize) mBackend.ReadFile(mFile.GetID(), pageStart, readSize, 
+    std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
+
+    mBackend.ReadFile(mFile.GetID(), pageStart, readSize, 
         [&](const size_t roffset, const char* rbuf, const size_t rlength)->void
     {
         // this is basically the same as the File::WriteBytes() algorithm
@@ -369,7 +373,42 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
     if (curPage != nullptr) { assert(false); MDBG_ERROR("() ERROR unfinished read!"); } // stop only in debug builds
 
+    UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
+
     MDBG_INFO("... thread returning!");
+}
+
+/*****************************************************/
+void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
+{
+    using namespace std::chrono;
+
+    MDBG_INFO("(bytes:" << bytes << " time(ms):" << duration_cast<milliseconds>(time).count());
+    MDBG_INFO("... bandwidth:" << (static_cast<double>(bytes)/duration<double>(time).count()/(1<<20)) << " MiB/s");
+
+    UniqueLock llock(mFetchSizeMutex);
+
+    const double timeFrac { duration<double>(time) / duration<double>(mReadTarget) };
+    uint64_t targetBytes { static_cast<uint64_t>(static_cast<double>(bytes) / timeFrac) };
+    MDBG_INFO("... timeFrac:" << timeFrac << " targetBytes:" << targetBytes);
+
+    mBandwidthHistory[mBandwidthHistoryIdx] = targetBytes; 
+    mBandwidthHistoryIdx = (mBandwidthHistoryIdx+1) % BANDWIDTH_WINDOW;
+    targetBytes = std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<uint64_t>(0)) / BANDWIDTH_WINDOW;
+    MDBG_INFO("... history targetBytes:" << targetBytes);
+
+    if (mCacheMgr)
+    {
+        const uint64_t cacheMax { mCacheMgr->GetMemoryLimit()/mReadMaxCacheFrac };
+        if (targetBytes > cacheMax)
+        {
+            targetBytes = cacheMax;
+            MDBG_INFO("... cache limited targetBytes:" << cacheMax);
+        }
+    }
+
+    mFetchSize = min64st(targetBytes/mPageSize, std::numeric_limits<size_t>::max()/mPageSize); // size_t readSize
+    MDBG_INFO("... newFetchSize:" << (targetBytes/mPageSize) << " (32-bit limit:" << mFetchSize <<")");
 }
 
 /*****************************************************/
