@@ -140,7 +140,7 @@ private:
     void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Updates the bandwidth estimate with the given measurement */
-    void UpdateBandwidth(const uint64_t bytes, const std::chrono::steady_clock::duration& time);
+    void UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
 
     /** Map of page index to page */
     typedef std::map<uint64_t, Page> PageMap;
