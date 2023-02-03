@@ -1,5 +1,6 @@
 
 #include <cassert>
+#include <chrono>
 
 #include "CacheManager.hpp"
 #include "PageManager.hpp"
@@ -12,7 +13,8 @@ namespace Filedata {
 
 /*****************************************************/
 CacheManager::CacheManager() : 
-    mDebug("CacheManager",this) 
+    mDebug("CacheManager",this),
+    mBandwidth(mDebug)
 { 
     MDBG_INFO("()");
 
@@ -208,7 +210,7 @@ void CacheManager::CleanupThread()
             UniqueLock lock(mMutex);
 
             while (mRunCleanup && mCurrentDirty <= mDirtyLimit &&
-                mCurrentMemory + mLimitMargin <= mMemoryLimit)
+                mCurrentMemory + mMemoryMargin <= mMemoryLimit)
             {
                 MDBG_INFO("... waiting");
                 mThreadCV.wait(lock);
@@ -218,7 +220,7 @@ void CacheManager::CleanupThread()
             MDBG_INFO("... DOING CLEANUP!");
             PrintStatus(__func__, lock);
 
-            while (!currentEvict && mCurrentMemory + mLimitMargin > mMemoryLimit)
+            while (!currentEvict && mCurrentMemory + mMemoryMargin > mMemoryLimit)
             {
                 PageInfo& pageInfo { mPageQueue.front() };
                 evictLock = pageInfo.mPageMgr.TryGetScopeLock();
@@ -276,7 +278,10 @@ void CacheManager::CleanupThread()
 
             SharedLockRP dataLock { currentFlush->mPageMgr.GetReadPriLock() };
             mSkipMemoryWait = nullptr; // have the lock
-            currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock);
+            
+            std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
+            size_t written { currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock) };
+            mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 
             UniqueLock lock(mMutex);
             PrintDirtyStatus(__func__, lock);

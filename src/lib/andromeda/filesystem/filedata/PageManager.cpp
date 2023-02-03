@@ -22,10 +22,16 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists) : 
-    mFile(file), mBackend(file.GetBackend()), mCacheMgr(mBackend.GetCacheManager()),
-    mPageSize(pageSize), mFileSize(fileSize), mBackendSize(fileSize), mBackendExists(backendExists),
-    mDebug("PageManager",this) 
+PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists) :
+    mFile(file), 
+    mBackend(file.GetBackend()), 
+    mCacheMgr(mBackend.GetCacheManager()),
+    mPageSize(pageSize), 
+    mFileSize(fileSize), 
+    mBackendSize(fileSize), 
+    mBackendExists(backendExists),
+    mDebug("PageManager",this),
+    mBandwidth(mDebug)
 { 
     MDBG_INFO("(file:" << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
 }
@@ -381,21 +387,9 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 /*****************************************************/
 void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
 {
-    using namespace std::chrono;
-
-    MDBG_INFO("(bytes:" << bytes << " time(ms):" << duration_cast<milliseconds>(time).count());
-    MDBG_INFO("... bandwidth:" << (static_cast<double>(bytes)/duration<double>(time).count()/(1<<20)) << " MiB/s");
-
     UniqueLock llock(mFetchSizeMutex);
 
-    const double timeFrac { duration<double>(time) / duration<double>(mReadTarget) };
-    uint64_t targetBytes { static_cast<uint64_t>(static_cast<double>(bytes) / timeFrac) };
-    MDBG_INFO("... timeFrac:" << timeFrac << " targetBytes:" << targetBytes);
-
-    mBandwidthHistory[mBandwidthHistoryIdx] = targetBytes; 
-    mBandwidthHistoryIdx = (mBandwidthHistoryIdx+1) % BANDWIDTH_WINDOW;
-    targetBytes = std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<uint64_t>(0)) / BANDWIDTH_WINDOW;
-    MDBG_INFO("... history targetBytes:" << targetBytes);
+    uint64_t targetBytes { mBandwidth.UpdateBandwidth(bytes, time) };
 
     if (mCacheMgr)
     {
@@ -434,6 +428,12 @@ uint64_t PageManager::GetWriteList(PageMap::iterator& pageIt, PageManager::PageP
             }
             else if (lastIndex+1 != pageIt->first || // not consecutive
                      curSize + pageSize < curSize) break; // size_t overflow!
+            else
+            {
+                const size_t maxWrite { mBackend.GetConfig().GetUploadMaxBytes() };
+                // no point in doing a bigger write than the backend can send at once
+                if (maxWrite && curSize + pageSize > maxWrite) break;
+            }
 
             lastIndex = pageIt->first;
             writeList.push_back(&pageIt->second);
@@ -477,7 +477,7 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 }
 
 /*****************************************************/
-void PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock)
+size_t PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
@@ -495,8 +495,7 @@ void PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock)
         else { MDBG_INFO(" ... page not found"); }
     }
 
-    if (!writeList.empty()) 
-        FlushPageList(index, writeList);
+    return writeList.empty() ? 0 : FlushPageList(index, writeList);
 }
 
 /*****************************************************/
@@ -546,7 +545,7 @@ void PageManager::FlushPages(bool nothrow)
 }
 
 /*****************************************************/
-void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages)
+size_t PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages)
 {
     SemaphorLock backendSem(sBackendSem);
 
@@ -588,6 +587,8 @@ void PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtr
         pagePtr->mDirty = false;
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
+
+    return totalSize;
 }
 
 /*****************************************************/

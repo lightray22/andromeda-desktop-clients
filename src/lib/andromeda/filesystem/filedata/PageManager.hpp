@@ -13,6 +13,7 @@
 #include <shared_mutex>
 #include <thread>
 
+#include "BandwidthMeasure.hpp"
 #include "Page.hpp"
 
 #include "andromeda/Debug.hpp"
@@ -84,8 +85,11 @@ public:
     /** Removes the given page, writing it if dirty - get lock first! */
     bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
 
-    /** Flushes the given page if dirty - get lock first! */
-    void FlushPage(const uint64_t index, const SharedLockRP& dataLock);
+    /** 
+     * Flushes the given page if dirty - get lock first!
+     * @return the total number of bytes written to the backend
+     */
+    size_t FlushPage(const uint64_t index, const SharedLockRP& dataLock);
 
     /**
      * Writes back all dirty pages - THREAD SAFE
@@ -139,7 +143,7 @@ private:
     /** Removes the given index from the pending-read list */
     void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Updates the bandwidth estimate with the given measurement */
+    /** Updates mFetchSize with the given bandwidth measurement - THREAD SAFE */
     void UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
 
     /** Map of page index to page */
@@ -158,8 +162,9 @@ private:
     /** 
      * Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST HAVE DATALOCKR/W!
      * Also marks each page not dirty and informs the cache manager
+     * @return the total number of bytes written to the backend
      */
-    void FlushPageList(const uint64_t index, const PagePtrList& pages);
+    size_t FlushPageList(const uint64_t index, const PagePtrList& pages);
 
     /** Reference to the parent file */
     File& mFile;
@@ -177,21 +182,12 @@ private:
     /** true iff the file has been created on the backend (false if waiting for flush) */
     bool mBackendExists;
 
-    /** The desired time elapsed for each backend read-ahead */
-    const std::chrono::milliseconds mReadTarget { 1000 };
-    /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
-    const size_t mReadMaxCacheFrac { 4 };
-    /** The number of bandwidth history entries to store */
-    static constexpr size_t BANDWIDTH_WINDOW { 4 };
-    /** Array of calculated bandwidth targetBytes to average together */
-    std::array<uint64_t, BANDWIDTH_WINDOW> mBandwidthHistory { };
-    /** The next index of mBandwidthHistory to write with a measurement */
-    size_t mBandwidthHistoryIdx { 0 };
-
     /** The current read-ahead window (number of pages) */
     size_t mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;
+    /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
+    const size_t mReadMaxCacheFrac { 4 };
 
     /** List of <index,length> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
@@ -213,6 +209,9 @@ private:
     std::mutex mFlushMutex;
 
     Debug mDebug;
+
+    /** Bandwidth measurement tool for mFetchSize */
+    BandwidthMeasure mBandwidth;
 };
 
 } // namespace Filedata

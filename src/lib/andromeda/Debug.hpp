@@ -95,7 +95,7 @@ private:
     void Print(const StreamFunc& strfunc);
 
     /** The address this debug instance belongs to */
-    void* mAddr;
+    void* mAddr { nullptr };
     /** The module name this debug instance belongs to */
     std::string mPrefix;
 

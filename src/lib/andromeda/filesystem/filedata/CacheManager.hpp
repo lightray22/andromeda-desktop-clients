@@ -8,6 +8,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include "BandwidthMeasure.hpp"
 #include "Page.hpp"
 #include "andromeda/Debug.hpp"
 
@@ -116,16 +117,19 @@ private:
     /** The maximum page memory usage before evicting */
     const uint64_t mMemoryLimit { 256*1024*1024 };
     /** Amount to below limit to get to when evicting */
-    const size_t mLimitMargin { 16*1024*1024 };
+    const size_t mMemoryMargin { 16*1024*1024 };
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 
-    /** The maximum in memory dirty page usage before flushing */
-    const uint64_t mDirtyLimit { 16*1024*1024 };
+    /** The maximum in memory dirty page usage before flushing - default 128K */
+    uint64_t mDirtyLimit { 0 };
     /** The current total dirty page memory */
     uint64_t mCurrentDirty { 0 };
 
     Debug mDebug;
+
+    /** Bandwidth measurement tool for mDirtyLimit */
+    BandwidthMeasure mBandwidth;
 };
 
 } // namespace Filedata

@@ -1,5 +1,6 @@
 
 set(SOURCE_FILES 
+    BandwidthMeasure.cpp
     CacheManager.cpp
     PageManager.cpp
     )
