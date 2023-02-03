@@ -302,6 +302,10 @@ void FuseAdapter::RunFuse(RunMode runMode)
     try
     {
         FuseArguments fuseArgs; 
+    #if WIN32
+        // For WinFSP, use the current user
+        fuseArgs.AddArg("uid=-1,gid=-1");
+    #endif // WIN32
         for (const std::string& fuseArg : mOptions.fuseArgs)
             fuseArgs.AddArg(fuseArg);
 
