@@ -19,7 +19,7 @@ class BandwidthMeasure
 {
 public:
 
-    BandwidthMeasure(Debug& debug): mDebug(debug) { };
+    explicit BandwidthMeasure(Debug& debug): mDebug(debug) { };
 
     virtual ~BandwidthMeasure(){ };
 
