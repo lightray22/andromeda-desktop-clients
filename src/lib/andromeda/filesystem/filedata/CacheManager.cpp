@@ -210,7 +210,7 @@ void CacheManager::CleanupThread()
             UniqueLock lock(mMutex);
 
             while (mRunCleanup && mCurrentDirty <= mDirtyLimit &&
-                mCurrentMemory + mMemoryMargin <= mMemoryLimit)
+                mCurrentMemory + mMemoryLimit/mMemoryMarginFrac <= mMemoryLimit)
             {
                 MDBG_INFO("... waiting");
                 mThreadCV.wait(lock);
@@ -220,7 +220,7 @@ void CacheManager::CleanupThread()
             MDBG_INFO("... DOING CLEANUP!");
             PrintStatus(__func__, lock);
 
-            while (!currentEvict && mCurrentMemory + mMemoryMargin > mMemoryLimit)
+            while (!currentEvict && mCurrentMemory + mMemoryLimit/mMemoryMarginFrac > mMemoryLimit)
             {
                 PageInfo& pageInfo { mPageQueue.front() };
                 evictLock = pageInfo.mPageMgr.TryGetScopeLock();

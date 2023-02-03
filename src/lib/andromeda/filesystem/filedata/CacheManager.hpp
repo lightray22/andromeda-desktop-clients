@@ -116,8 +116,8 @@ private:
 
     /** The maximum page memory usage before evicting */
     const uint64_t mMemoryLimit { 256*1024*1024 };
-    /** Amount to below limit to get to when evicting */
-    const size_t mMemoryMargin { 16*1024*1024 };
+    /** Fraction of mMemoryLimit to remove when evicting */
+    const size_t mMemoryMarginFrac { 16 };
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 
