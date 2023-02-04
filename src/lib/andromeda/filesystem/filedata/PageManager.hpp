@@ -152,9 +152,9 @@ private:
     typedef std::list<Page*> PagePtrList;
 
     /** 
-     * Returns a series of **consecutive** dirty pages (total < size_t)
-     * @pageIt reference to the iterator to start with - will end as the next index not used
-     * @writeList reference to a list of pages to fill out
+     * Returns a series of **consecutive** dirty pages (total bytes < size_t)
+     * @param pageIt reference to the iterator to start with - will end as the next index not used
+     * @param writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PagePtrList& writeList, const UniqueLock& pagesLock);
@@ -162,9 +162,17 @@ private:
     /** 
      * Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST HAVE DATALOCKR/W!
      * Also marks each page not dirty and informs the cache manager
+     * Also creates the file on the backend if necessary (see mBackendExists)
+     * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PagePtrList& pages);
+    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const UniqueLock& flushLock);
+
+    /** 
+     * Asserts the file is created on the backend (see mBackendExists) - MUST HAVE DATALOCKR/W!
+     * Also calls truncate if max(mBackendSize,maxDirty) < mFileSize 
+     */
+    void FlushTruncate(const UniqueLock& flushLock);
 
     /** Reference to the parent file */
     File& mFile;

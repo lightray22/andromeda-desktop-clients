@@ -451,6 +451,7 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
+    UniqueLock flushLock(mFlushMutex);
     UniqueLock pagesLock(mPagesMutex); // can hold, have dataLockW anyway
 
     PageMap::iterator pageIt { mPages.find(index) };
@@ -463,7 +464,7 @@ bool PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
             PagePtrList writeList;
             PageMap::iterator pageItTmp { pageIt }; // copy
             GetWriteList(pageItTmp, writeList, pagesLock);
-            FlushPageList(index, writeList);
+            FlushPageList(index, writeList, flushLock);
         }
 
         if (mCacheMgr) mCacheMgr->RemovePage(pageIt->second);
@@ -495,7 +496,16 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock
         else { MDBG_INFO(" ... page not found"); }
     }
 
-    return writeList.empty() ? 0 : FlushPageList(index, writeList);
+    // truncate is only cached before mBackendExists
+    const bool flushTruncate { !mBackendExists };
+
+    // flush pages first as this may handle truncating
+    size_t written { writeList.empty() ? 0 :
+        FlushPageList(index, writeList, flushLock) };
+
+    if (flushTruncate) FlushTruncate(flushLock);
+
+    MDBG_INFO("... return:" << written); return written;
 }
 
 /*****************************************************/
@@ -517,35 +527,37 @@ void PageManager::FlushPages(bool nothrow)
         PageMap::iterator pageIt { mPages.begin() };
         while (pageIt != mPages.end())
         {
-            PagePtrList writeList; const uint64_t startIndex { 
+            PagePtrList writeList;
+            const uint64_t startIndex {
                 GetWriteList(pageIt, writeList, pagesLock) };
 
-            if (!writeList.empty()) 
+            if (!writeList.empty())
                 writeLists.emplace(startIndex, std::move(writeList));
+            // this loop is not N^2 as GetWriteList() increments our pageIt
         }
 
         MDBG_INFO("... write runs:" << writeLists.size());
     }
 
-    if (!mBackendExists && writeLists.empty())
+    // truncate is only cached before mBackendExists
+    const bool flushTruncate { !mBackendExists };
+
+    // flush pages first as this may handle truncating
+    for (const decltype(writeLists)::value_type& writePair : writeLists)
     {
-        mFile.Refresh(mBackend.CreateFile(
-             mFile.GetParent().GetID(), mFile.GetName()));
-        mBackendExists = true;
-    }
-    else for (const decltype(writeLists)::value_type& writePair : writeLists)
-    {
-        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second); } };
+        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second, flushLock); } };
 
         if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
             MDBG_ERROR("... Ignoring Error: " << e.what()); }
     }
 
+    if (flushTruncate) FlushTruncate(flushLock);
+    
     MDBG_INFO("... returning!");
 }
 
 /*****************************************************/
-size_t PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages)
+size_t PageManager::FlushPageList(const uint64_t index, const PageManager::PagePtrList& pages, const PageManager::UniqueLock& flushLock)
 {
     SemaphorLock backendSem(sBackendSem);
 
@@ -592,6 +604,41 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageManager::PageP
 }
 
 /*****************************************************/
+void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock)
+{
+    MDBG_INFO("()");
+
+    if (!mBackendExists)
+    {
+        mFile.Refresh(mBackend.CreateFile(
+            mFile.GetParent().GetID(), mFile.GetName()));
+        mBackendExists = true;
+    }
+
+    uint64_t maxDirty { 0 }; // byte after last dirty byte
+    { // lock scope
+        UniqueLock pagesLock(mPagesMutex);
+        for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); ++it)
+        {
+            Page& page { it->second };
+            if (page.mDirty)
+            {
+                uint64_t pageMax { it->first*mPageSize + page.size() };
+                maxDirty = std::max(maxDirty, pageMax);
+            }
+        }
+    }
+
+    // mFileSize should only be larger than mBackendSize if dirty writes
+    if (std::max(mBackendSize, maxDirty) < mFileSize)
+    {
+        MDBG_INFO("... truncate maxDirty:" << maxDirty << " fileSize:" << mFileSize);
+        mBackend.TruncateFile(mFile.GetID(), mFileSize); 
+        mBackendSize = mFileSize;
+    }
+}
+
+/*****************************************************/
 void PageManager::RemoteChanged(const uint64_t backendSize)
 {
     if (!mBackendExists) return; // called Refresh() ourselves
@@ -607,11 +654,11 @@ void PageManager::RemoteChanged(const uint64_t backendSize)
 
     MDBG_INFO("... have locks");
 
-    uint64_t maxDirty { 0 }; // evict all pages
+    uint64_t maxDirty { 0 };  // byte after last dirty byte
     for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); )
     {
         Page& page { it->second };
-        if (!page.mDirty)
+        if (!page.mDirty) // evict all non-dirty
         {
             if (mCacheMgr) mCacheMgr->RemovePage(page);
             it = mPages.erase(it);
@@ -641,9 +688,11 @@ void PageManager::Truncate(const uint64_t newSize)
     MDBG_INFO("... have locks");
 
     if (mBackendExists)
+    {
         mBackend.TruncateFile(mFile.GetID(), newSize); 
-
-    mBackendSize = newSize;
+        mBackendSize = newSize;
+    }
+    
     mFileSize = newSize;
 
     for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); )

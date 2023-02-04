@@ -351,7 +351,8 @@ void FuseAdapter::SignalInit()
     SDBG_INFO("()");
 
     UniqueLock initLock(mInitMutex);
-    mInitialized = true; mInitCV.notify_all();
+    mInitialized = true; 
+    mInitCV.notify_all();
 }
 
 /*****************************************************/
