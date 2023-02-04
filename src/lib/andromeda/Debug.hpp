@@ -1,10 +1,8 @@
 #ifndef LIBA2_DEBUG_H_
 #define LIBA2_DEBUG_H_
 
-#include <chrono>
 #include <functional>
 #include <iostream>
-#include <mutex>
 #include <string>
 #include <unordered_set>
 
@@ -96,19 +94,15 @@ private:
 
     /** The address this debug instance belongs to */
     void* mAddr { nullptr };
+    
     /** The module name this debug instance belongs to */
     std::string mPrefix;
 
     /** Global debug level */
     static Level sLevel;
-    /** Global output lock */
-    static std::mutex sMutex;
 
     /** Set of prefixes to filter printing */
     static std::unordered_set<std::string> sPrefixes;
-
-    /** timestamp when the program started */
-    static std::chrono::steady_clock::time_point sStart;
 };
 
 } // namespace Andromeda

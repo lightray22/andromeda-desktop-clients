@@ -142,7 +142,7 @@ TEST_CASE("TestPRW", "[SharedMutex]")
 }
 
 /*****************************************************/
-TEST_CASE("RPWR", "[SharedMutex]")
+TEST_CASE("TestRPWR", "[SharedMutex]")
 {
     SharedMutex mut; Results res; std::mutex resMutex;
 

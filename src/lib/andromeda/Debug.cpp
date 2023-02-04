@@ -1,17 +1,26 @@
 
 #include "Debug.hpp"
 
+#include <chrono>
 #include <iomanip>
+#include <fstream>
+#include <mutex>
 #include <thread>
 
 using namespace std::chrono;
 
 namespace Andromeda {
 
-std::mutex Debug::sMutex;
+/** Global output lock */
+std::mutex sMutex;
+/** timestamp when the program started */
+steady_clock::time_point sStart { steady_clock::now() };
+
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
-steady_clock::time_point Debug::sStart { steady_clock::now() };
+
+std::ostream& sOutstr { std::cerr };
+//std::ofstream sOutstr("debug.log", std::ofstream::out);
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)
@@ -30,15 +39,15 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
     if (sLevel >= Level::DETAILS)
     {
         duration<double> time { steady_clock::now() - sStart };
-        std::cerr << "time:" << time.count() << " ";
+        sOutstr << "time:" << time.count() << " ";
 
-        std::cerr << "tid:" << std::this_thread::get_id() << " ";
+        sOutstr << "tid:" << std::this_thread::get_id() << " ";
 
-        if (mAddr == nullptr) { std::cerr << "static "; }
-        else { std::cerr << "obj:" << mAddr << " "; }
+        if (mAddr == nullptr) { sOutstr << "static "; }
+        else { sOutstr << "obj:" << mAddr << " "; }
     }
 
-    std::cerr << mPrefix << ": "; strfunc(std::cerr); std::cerr << std::endl;
+    sOutstr << mPrefix << ": "; strfunc(sOutstr); sOutstr << std::endl;
 }
 
 /*****************************************************/
