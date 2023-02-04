@@ -12,13 +12,13 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-CacheManager::CacheManager() : 
+CacheManager::CacheManager(bool startThread) : 
     mDebug("CacheManager",this),
     mBandwidth(mDebug)
 { 
     MDBG_INFO("()");
 
-    mThread = std::thread(&CacheManager::CleanupThread, this);
+    if (startThread) StartThread();
 }
 
 /*****************************************************/
@@ -27,10 +27,22 @@ CacheManager::~CacheManager()
     MDBG_INFO("()");
 
     mRunCleanup = false;
-    mThreadCV.notify_one();
-    mThread.join();
+
+    if (mThread.joinable())
+    {
+        mThreadCV.notify_one();
+        mThread.join();
+    }
 
     MDBG_INFO("... return");
+}
+
+/*****************************************************/
+void CacheManager::StartThread()
+{
+    MDBG_INFO("()");
+    if (mThread.joinable()) return; // already running
+    mThread = std::thread(&CacheManager::CleanupThread, this);
 }
 
 /*****************************************************/
@@ -55,6 +67,8 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
         mCurrentDirty += page.size();
         PrintDirtyStatus(__func__, lock);
     }
+
+    if (!mThread.joinable()) return; // cleanup not running
 
     // copy in case the page is evicted while waiting
     const bool isDirty { page.mDirty };

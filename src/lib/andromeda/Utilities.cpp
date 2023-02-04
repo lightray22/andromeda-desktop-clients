@@ -1,6 +1,8 @@
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <mutex>
 
 // SilentReadConsole()
 #if WIN32
@@ -175,6 +177,26 @@ std::string Utilities::GetHomeDirectory()
     #endif // WIN32
 
     return ""; // not found
+}
+
+// mutex protecting std::strerror
+std::mutex sStrerrorMutex;
+
+/*****************************************************/
+std::string Utilities::GetErrorString(int err)
+{
+    std::lock_guard<std::mutex> llock(sStrerrorMutex);
+
+    #if WIN32
+        #pragma warning(push)
+        #pragma warning(disable:4996) // we lock strerror
+    #endif // WIN32
+
+    return std::string(std::strerror(err));
+
+    #if WIN32
+        #pragma warning(pop)
+    #endif // WIN32
 }
 
 } // namespace Andromeda

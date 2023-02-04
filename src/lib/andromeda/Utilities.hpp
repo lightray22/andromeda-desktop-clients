@@ -13,6 +13,8 @@ class Utilities
 {
 public:
 
+    Utilities() = delete; // static only
+
     typedef std::vector<std::string> StringList;
 
     /**
@@ -66,6 +68,9 @@ public:
 
     /** Returns the user's home directory path if found */
     static std::string GetHomeDirectory();
+
+    /** Returns strerror(err) but thread safe */
+    static std::string GetErrorString(int err);
 };
 
 } // namespace Andromeda

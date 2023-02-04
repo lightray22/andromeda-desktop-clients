@@ -51,7 +51,9 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
     mRootFolder = std::make_unique<SuperRoot>(backend);
 
     mFuseAdapter = std::make_unique<FuseAdapter>(
-        mountPath, *mRootFolder, options, FuseAdapter::RunMode::THREAD);
+        mountPath, *mRootFolder, options);
+    
+    mFuseAdapter->StartFuse(FuseAdapter::RunMode::THREAD); // background
 }
 
 /*****************************************************/

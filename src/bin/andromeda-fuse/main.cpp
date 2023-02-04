@@ -106,7 +106,8 @@ int main(int argc, char** argv)
     }
 
     BackendImpl backend(configOptions, *runner);
-    CacheManager cacheMgr; backend.SetCacheManager(&cacheMgr);
+    CacheManager cacheMgr(false); // don't start thread yet
+    backend.SetCacheManager(&cacheMgr);
 
     std::unique_ptr<Folder> folder;
     
@@ -140,8 +141,21 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions, 
-            options.isForeground() ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
+        FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions);
+
+        // In either case, StartFuse() will block until unmounted
+        if (options.isForeground())
+        {
+            cacheMgr.StartThread();
+            fuseAdapter.StartFuse(
+                FuseAdapter::RunMode::FOREGROUND);
+        }
+        else
+        { // daemonize kills threads, start cacheMgr in the callback
+            fuseAdapter.StartFuse(
+                FuseAdapter::RunMode::DAEMON,
+                [&](){ cacheMgr.StartThread(); });
+        }
     }
     catch (const FuseAdapter::Exception& ex)
     {

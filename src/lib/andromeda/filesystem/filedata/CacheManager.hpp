@@ -27,9 +27,13 @@ class CacheManager
 {
 public:
 
-    CacheManager();
+    /** If true, start the cleanup thread immediately */
+    CacheManager(bool startThread = true);
 
     virtual ~CacheManager();
+
+    /** Runs the cleanup thread */
+    void StartThread();
 
     /** Returns the maximum cache memory size */
     uint64_t GetMemoryLimit() const { return mMemoryLimit; }
@@ -108,8 +112,6 @@ private:
     std::condition_variable mThreadCV;
     /** CV to signal when memory is available */
     std::condition_variable mMemoryCV;
-    /** CV to signal when dirty space is available */
-    std::condition_variable mDirtyCV;
 
     /** PageManager that can skip the memory wait (need it to clear its lock queue) */
     PageManager* mSkipMemoryWait { nullptr };

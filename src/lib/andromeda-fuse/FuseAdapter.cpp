@@ -33,7 +33,7 @@ struct FuseArguments
         SDBG_INFO("() fuse_opt_add_arg()");
 
         int retval; if ((retval = fuse_opt_add_arg(&mFuseArgs, "andromeda-fuse")) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed",retval);
     };
 
     ~FuseArguments()
@@ -49,24 +49,14 @@ struct FuseArguments
         SDBG_INFO("(arg:" << arg << ")"); int retval;
 
         if ((retval = fuse_opt_add_arg(&mFuseArgs, "-o")) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed",retval);
 
         if ((retval = fuse_opt_add_arg(&mFuseArgs, arg.c_str())) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed",retval);
     };
     /** fuse_args struct */
     struct fuse_args mFuseArgs;
 };
-
-/*****************************************************/
-/** Run fuse_daemonize (detach from terminal) */
-static void FuseDaemonize()
-{
-    SDBG_INFO("... fuse_daemonize()");
-
-    int retval; if ((retval = fuse_daemonize(0)) != FUSE_SUCCESS)
-        throw FuseAdapter::Exception("fuse_daemonize() failed: "+std::to_string(retval));
-}
 
 #if LIBFUSE2
 
@@ -200,7 +190,7 @@ struct FuseMount
         SDBG_INFO("() fuse_mount(path:" << path << ")");
 
         int retval; if ((retval = fuse_mount(mContext.mFuse, path)) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_mount() failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_mount() failed",retval);
         mAdapter.mFuseMount = this; // register with adapter
     };
 
@@ -252,7 +242,7 @@ struct FuseSignals
         mFuseSession = fuse_get_session(context.mFuse);
 
         int retval; if ((retval = fuse_set_signal_handlers(mFuseSession)) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed",retval);
     };
 
     ~FuseSignals()
@@ -267,14 +257,23 @@ struct FuseSignals
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options, RunMode runMode)
+FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options)
     : mMountPath(mountPath), mRootFolder(root), mOptions(options)
 {
     SDBG_INFO("(path:" << mMountPath << ")");
+}
+
+/*****************************************************/
+void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::ForkFunc& forkFunc)
+{
+    if (mFuseThread.joinable())
+        mFuseThread.join();
 
     if (runMode == RunMode::THREAD)
     {
-        mFuseThread = std::thread(&FuseAdapter::RunFuse, this, runMode);
+        mFuseThread = std::thread(&FuseAdapter::FuseLoop, this,
+        // do not register signal handlers, do not daemonize
+            false, false, std::ref(forkFunc));
 
         SDBG_INFO("... waiting for init");
 
@@ -283,19 +282,19 @@ FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseO
 
         SDBG_INFO("... init complete!");
     }
-    else RunFuse(runMode); // blocking
+    else FuseLoop(true, (runMode == RunMode::DAEMON), forkFunc); // blocking
 
     if (mInitError)
     {
         if (runMode == RunMode::THREAD)
             mFuseThread.join();
-        
+
         std::rethrow_exception(mInitError);
     }
 }
 
 /*****************************************************/
-void FuseAdapter::RunFuse(RunMode runMode)
+void FuseAdapter::FuseLoop(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc)
 {
     SDBG_INFO("()");
 
@@ -316,17 +315,24 @@ void FuseAdapter::RunFuse(RunMode runMode)
         FuseContext context(*this, fuseArgs);
         FuseMount mount(*this, context, mMountPath.c_str());
     #endif // LIBFUSE2
-        
-        if (runMode == RunMode::DAEMON) FuseDaemonize();
 
-        std::unique_ptr<FuseSignals> signals; 
-        if (runMode != RunMode::THREAD) 
-            signals = std::make_unique<FuseSignals>(context);
+        if (daemonize)
+        {
+            SDBG_INFO("... fuse_daemonize()");
+
+            int retval; if ((retval = fuse_daemonize(0)) != FUSE_SUCCESS)
+                throw FuseAdapter::Exception("fuse_daemonize() failed",retval);
+
+            if (forkFunc) forkFunc();
+        }
+        
+        std::unique_ptr<FuseSignals> signalsPtr {
+            regSignals ? std::make_unique<FuseSignals>(context) : nullptr };
         
         SDBG_INFO("() fuse_loop()");
 
-        int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
-            throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
+        { int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
+            throw FuseAdapter::Exception("fuse_loop() failed",retval); }
 
         SDBG_INFO("() fuse_loop() returned!");
     }
