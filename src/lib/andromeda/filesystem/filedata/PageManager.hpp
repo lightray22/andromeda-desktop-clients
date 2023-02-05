@@ -128,7 +128,10 @@ private:
     /** Returns true if the page at the given index is pending download */
     bool isPending(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Returns the read-ahead size to be used for the given VALID (mBackendSize) index */
+    /** 
+     * Returns the read-ahead size to be used for the given VALID (mFileSize) index 
+     * Returns 0 if the index does not exist on the backend (see mBackendSize)
+     */
     size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
@@ -190,7 +193,7 @@ private:
     /** true iff the file has been created on the backend (false if waiting for flush) */
     bool mBackendExists;
 
-    /** The current read-ahead window (number of pages) */
+    /** The current read-ahead window (number of pages) - never 0 */
     size_t mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;

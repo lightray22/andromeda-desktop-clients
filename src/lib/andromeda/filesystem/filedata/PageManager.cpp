@@ -379,7 +379,8 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
     if (curPage != nullptr) { assert(false); MDBG_ERROR("() ERROR unfinished read!"); } // stop only in debug builds
 
-    UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
+    if (readSize >= mPageSize) // don't consider small reads
+        UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
 
     MDBG_INFO("... thread returning!");
 }
@@ -401,8 +402,9 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
         }
     }
 
-    mFetchSize = min64st(targetBytes/mPageSize, std::numeric_limits<size_t>::max()/mPageSize); // size_t readSize
-    MDBG_INFO("... newFetchSize:" << (targetBytes/mPageSize) << " (32-bit limit:" << mFetchSize <<")");
+    uint64_t fetchSize { std::max(static_cast<uint64_t>(1), targetBytes/mPageSize) };
+    mFetchSize = min64st(fetchSize, std::numeric_limits<size_t>::max()/mPageSize); // size_t readSize
+    MDBG_INFO("... newFetchSize:" << fetchSize << " (32-bit limit:" << mFetchSize <<")");
 }
 
 /*****************************************************/
