@@ -18,6 +18,8 @@ namespace Backend {
 
 #define BOOLSTR(x) x ? "true" : "false"
 
+std::atomic<uint64_t> BackendImpl::sReqCount { 0 };
+
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, BaseRunner& runner) : 
     mOptions(options), mRunner(runner),
@@ -64,12 +66,12 @@ std::string BackendImpl::GetName(bool human) const
 /*****************************************************/
 RunnerInput& BackendImpl::FinalizeInput(RunnerInput& input)
 {
-    ++mReqCount;
+    ++sReqCount;
 
     static const std::string fname(__func__);
     mDebug.Backend([&](std::ostream& str)
     { 
-        str << fname << "() " << mReqCount
+        str << fname << "() " << sReqCount
             << " app:" << input.app << " action:" << input.action;
 
         for (const auto& [key,val] : input.params)

@@ -307,7 +307,8 @@ private:
     std::string mSessionID;
     std::string mSessionKey;
     
-    std::atomic<uint64_t> mReqCount { 0 };
+    // global backend request counter
+    static std::atomic<uint64_t> sReqCount;
 
     ConfigOptions mOptions;
     BaseRunner& mRunner;
