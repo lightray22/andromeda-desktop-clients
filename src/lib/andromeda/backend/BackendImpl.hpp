@@ -21,6 +21,8 @@ namespace Backend {
 
 class BaseRunner;
 struct RunnerInput;
+struct RunnerInput_FilesIn;
+struct RunnerInput_StreamIn;
 
 /** Manages communication with the backend API */
 class BackendImpl
@@ -295,6 +297,13 @@ private:
     
     /** Augment input with authentication details */
     RunnerInput& FinalizeInput(RunnerInput& input);
+
+    /** Prints a RunnerInput to the given stream */
+    void PrintParams(RunnerInput& input, std::ostream& str, const std::string& myfname);
+    /** Prints a RunnerInput_FilesIn to the given stream */
+    void PrintParams(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    /** Prints a RunnerInput_StreamIn to the given stream */
+    void PrintParams(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
