@@ -299,11 +299,11 @@ private:
     RunnerInput& FinalizeInput(RunnerInput& input);
 
     /** Prints a RunnerInput to the given stream */
-    void PrintParams(RunnerInput& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_FilesIn to the given stream */
-    void PrintParams(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_StreamIn to the given stream */
-    void PrintParams(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);

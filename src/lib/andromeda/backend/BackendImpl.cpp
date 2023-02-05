@@ -64,7 +64,7 @@ std::string BackendImpl::GetName(bool human) const
 }
 
 /*****************************************************/
-void BackendImpl::PrintParams(RunnerInput& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname)
 {
     str << ++sReqCount << " " << myfname << "()"
         << " app:" << input.app << " action:" << input.action;
@@ -74,18 +74,18 @@ void BackendImpl::PrintParams(RunnerInput& input, std::ostream& str, const std::
 }
 
 /*****************************************************/
-void BackendImpl::PrintParams(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname)
 {
-    PrintParams(static_cast<RunnerInput&>(input), str, myfname);
+    PrintInput(static_cast<RunnerInput&>(input), str, myfname);
 
     for (const auto& [key,file] : input.files)
         str << " " << key << ":" << file.name << ":" << file.data.size();
 }
 
 /*****************************************************/
-void BackendImpl::PrintParams(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname)
 {
-    PrintParams(static_cast<RunnerInput_FilesIn&>(input), str, myfname);
+    PrintInput(static_cast<RunnerInput_FilesIn&>(input), str, myfname);
 
     for (const auto& [key,fstr] : input.fstreams)
         str << " " << key << ":" << fstr.name << ":" << "(stream)";
@@ -93,7 +93,7 @@ void BackendImpl::PrintParams(RunnerInput_StreamIn& input, std::ostream& str, co
 
 /** Syntactic sugar to print and input object and current function name to debug */
 #define MDBG_BACKEND(input) { static const std::string myfname(__func__); \
-    mDebug.Backend([&](std::ostream& str){ PrintParams(input, str, myfname); }); }
+    mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname); }); }
 
 /*****************************************************/
 RunnerInput& BackendImpl::FinalizeInput(RunnerInput& input)
