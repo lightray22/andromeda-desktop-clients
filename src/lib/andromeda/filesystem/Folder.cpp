@@ -154,8 +154,8 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 
         if (!ignore && newItems.find(oldIt->first) == newItems.end())
         {
-            oldIt = mItemMap.erase(oldIt); // deleted on server
             ITDBG_INFO("... remote deleted: " << oldIt->second->GetName());
+            oldIt = mItemMap.erase(oldIt); // deleted on server
         }
         else ++oldIt;
     }
