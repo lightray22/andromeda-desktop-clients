@@ -82,7 +82,7 @@ public:
      * @param bytes number of bytes to print
      * @param width number of bytes per line
      */
-    static StreamFunc DumpBytes(const void* ptr, uint64_t bytes, uint8_t width = 16);
+    static StreamFunc DumpBytes(const void* ptr, size_t bytes, size_t width = 16);
 
 private:
 

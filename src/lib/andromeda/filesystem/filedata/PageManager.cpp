@@ -28,7 +28,7 @@ PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageS
     mCacheMgr(mBackend.GetCacheManager()),
     mPageSize(pageSize), 
     mFileSize(fileSize), 
-    mBackendSize(fileSize), 
+    mBackendSize(backendExists ? fileSize : 0), 
     mBackendExists(backendExists),
     mDebug("PageManager",this),
     mBandwidth(mDebug)

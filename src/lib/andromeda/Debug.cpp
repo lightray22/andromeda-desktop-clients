@@ -12,15 +12,15 @@ using namespace std::chrono;
 namespace Andromeda {
 
 /** Global output lock */
-std::mutex sMutex;
+static std::mutex sMutex;
 /** timestamp when the program started */
-steady_clock::time_point sStart { steady_clock::now() };
+static steady_clock::time_point sStart { steady_clock::now() };
 
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
 
-std::ostream& sOutstr { std::cerr };
-//std::ofstream sOutstr("debug.log", std::ofstream::out);
+static std::ostream& sOutstr { std::cerr };
+//static std::ofstream sOutstr("debug.log", std::ofstream::out);
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)
@@ -51,7 +51,7 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
 }
 
 /*****************************************************/
-Debug::StreamFunc Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
+Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
 {
     // copy variables into std::function (scope)
     return [ptr,bytes,width](std::ostream& str)

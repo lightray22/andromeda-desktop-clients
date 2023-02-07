@@ -31,10 +31,6 @@ Run `tools/buildrel` for a release build.  Run `tools/builddev` for a developmen
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
 3. Run compile `cmake --build .`
-  
-By default, all targets will be built. To build one target individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
-
-Cmake will automatically clone in-tree dependencies.  By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
 
 ### Build System
 
@@ -42,6 +38,12 @@ Cmake will automatically clone in-tree dependencies.  By default, position-indep
 - cmake (>= 3.16)
 - Python3 (>= 3.8?)
 - Bash (if running tools/)
+
+### Build Options
+  
+- By default, all targets will be built. To build one target individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
+- Cmake will automatically clone in-tree dependencies.  By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
+- The build will fail if any compiler warnings are encountered.  This can be disabled with `-DALLOW_WARNINGS=1`.
 
 ### Prerequisite Libraries
 

@@ -44,8 +44,10 @@ endif()
 # resource for custom warning codes
 # https://github.com/cpp-best-practices/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 
+option(ALLOW_WARNINGS "Allow building with warnings" OFF)
+
 if (MSVC)
-    set(ANDROMEDA_CXX_WARNS /W4 /WX /permissive-
+    set(ANDROMEDA_CXX_WARNS /W4 /permissive-
         /wd4100 # NO unreferenced formal parameter
         /wd4101 # NO unreferenced local variable
         /wd4702 # NO unreachable code (Qt)
@@ -56,14 +58,18 @@ if (MSVC)
         /w14905 /w14906 /w14928
     )
 
+    if (NOT ${ALLOW_WARNINGS})
+        list(APPEND ANDROMEDA_CXX_WARNS /WX)
+    endif()
+
     # security options
     set(ANDROMEDA_CXX_OPTS)
     set(ANDROMEDA_LINK_OPTS 
         /NXCOMPAT /DYNAMICBASE
     )
 else()
-    set(ANDROMEDA_CXX_WARNS -Wall -Wextra -Werror
-        -pedantic -pedantic-errors -Wpedantic
+    set(ANDROMEDA_CXX_WARNS -Wall -Wextra
+        -pedantic -Wpedantic
         -Wno-unused-parameter # NO unused parameter
         -Wcast-align
         -Wcast-qual 
@@ -90,6 +96,11 @@ else()
         list(APPEND ANDROMEDA_CXX_WARNS 
             -Wnewline-eof
         )
+    endif()
+
+    if (NOT ${ALLOW_WARNINGS})
+        list(APPEND ANDROMEDA_CXX_WARNS 
+            -Werror -pedantic-errors)
     endif()
 
     # https://wiki.ubuntu.com/ToolChain/CompilerFlags

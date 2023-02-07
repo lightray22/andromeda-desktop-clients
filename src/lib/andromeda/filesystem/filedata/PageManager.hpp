@@ -73,20 +73,21 @@ public:
     /** Tries to lock mScopeMutex, returns a lock object that is maybe locked */
     ScopeLock TryGetScopeLock() { return ScopeLock(mScopeMutex, std::try_to_lock); }
 
-    /** Reads data from the given page index into buffer - get lock first! */
-    virtual void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock) final;
+    /** Reads data from the given page index into buffer */
+    void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock);
 
-    /** Writes data to the given page index from buffer - get lock first! */
-    virtual void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock) final;
+    /** Writes data to the given page index from buffer */
+    void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock);
 
     /** Returns true if the page at the given index is dirty */
     bool isDirty(const uint64_t index) const;
 
-    /** Removes the given page, writing it if dirty - get lock first! */
+    /** Removes the given page, writing it if dirty */
     bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
 
     /** 
-     * Flushes the given page if dirty - get lock first!
+     * Flushes the given page if dirty
+     * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
      */
     size_t FlushPage(const uint64_t index, const SharedLockRP& dataLock);
@@ -183,7 +184,7 @@ private:
     Backend::BackendImpl& mBackend;
     /** Pointer to the cache manager to use */
     CacheManager* mCacheMgr { nullptr };
-    /** The size of each page */
+    /** The size of each page - see description in ConfigOptions */
     const size_t mPageSize;
     
     /** The current size of the file including dirty extending writes */
