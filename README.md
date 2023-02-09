@@ -18,10 +18,10 @@ This repo contains the native applications and common libraries for Andromeda's 
 
 There are several binaries and libraries in the full suite.
 - `src/lib/andromeda` the core library that implements communication with the server
-- `src/bin/andromeda-cli` allows manual CLI communication with the backend
-- `src/bin/andromeda-fuse` and `src/lib/andromeda-fuse` for mounting with FUSE
+- `src/bin/andromeda-cli` allows manual command line communication with the server
+- `src/bin/andromeda-fuse` and `src/lib/andromeda-fuse` for mounting as local storage
 - FUTURE `src/bin/andromeda-sync` and `src/lib/andromeda-sync` for running directory sync
-- `src/bin/andromeda-gui` a Qt-based GUI client for FUSE and directory sync
+- `src/bin/andromeda-gui` a Qt-based GUI client for local mounting and directory sync
 
 
 # Building
@@ -42,7 +42,7 @@ Run `tools/buildrel` for a release build.  Run `tools/builddev` for a developmen
 ### Build Options
   
 - By default, all targets will be built. To build one target individually, configure cmake targeted at the directory you desire to build, then make normally.  This also will only require dependencies for that target.  E.g. `cmake ../src/bin/andromeda-fuse; cmake --build .`.  To only skip the Qt GUI, use `-DWITHOUT_GUI=1`.  
-- Cmake will automatically clone in-tree dependencies.  By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
+- By default, position-independent executables (PIE) are built.  This can be disabled with `-DWITHOUT_PIE=1`.  
 - The build will fail if any compiler warnings are encountered.  This can be disabled with `-DALLOW_WARNINGS=1`.
 
 ### Prerequisite Libraries
@@ -73,7 +73,7 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base`
 - macOS amd64: `brew install make cmake openssl qt`
 
-The following platforms are supported minus the Qt GUI (it likely works, just not tested):
+The following platforms are supported minus the Qt GUI (it may work, just not tested):
 
 - Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev`
 - FreeBSD 12.3/13.1 amd64: `pkg install cmake python fusefs-libs3`
@@ -91,7 +91,7 @@ Any features that rely on the higher privileges of the real CLI interface are no
 * Changing debug/metrics output
 * Doing a request dry-run
 
-The general usage is the same as the real CLI interface, but with different global options.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage). Batching is not yet supported.
+The general usage is the same as the real CLI interface, but with different global options.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage)). Batching is not yet supported.
 
 Run `./andromeda-cli --help` to see the available options.  
 
@@ -137,7 +137,7 @@ The Qt GUI client implements a GUI for mounting Andromeda storage using FUSE.   
 
 # Common Usage
 
-Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying `https://` ensures TLS is always used.
+Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying `https://` ensures TLS is always used even if the server is not setup to redirect HTTP to HTTPS.
 
 Any option or flag accepted on the command line can also be listed in a config file named after the binary, e.g. `andromeda-fuse.conf`. 
 Example:
