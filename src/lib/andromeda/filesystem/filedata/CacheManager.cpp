@@ -295,9 +295,7 @@ void CacheManager::CleanupThread()
             
             std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
             size_t written { currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock) };
-
-            if (written >= currentFlush->mPageMgr.GetPageSize()) // don't consider small writes
-                mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
+            mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 
             UniqueLock lock(mMutex);
             PrintDirtyStatus(__func__, lock);
