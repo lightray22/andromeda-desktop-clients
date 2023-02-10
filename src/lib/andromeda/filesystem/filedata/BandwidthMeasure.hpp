@@ -19,9 +19,7 @@ class BandwidthMeasure
 {
 public:
 
-    explicit BandwidthMeasure(Debug& debug): mDebug(debug) { };
-
-    virtual ~BandwidthMeasure(){ };
+    explicit BandwidthMeasure(const char* debugName);
 
     /** Updates the bandwidth history with the given measure and returns the estimated targetBytes */
     uint64_t UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
@@ -40,7 +38,7 @@ private:
     /** The next index of mBandwidthHistory to write with a measurement */
     size_t mBandwidthHistoryIdx { 0 };
 
-    Debug& mDebug;
+    Debug mDebug;
 };
 
 } // namespace Filedata

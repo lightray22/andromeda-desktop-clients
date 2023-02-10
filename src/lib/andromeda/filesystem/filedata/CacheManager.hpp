@@ -2,6 +2,7 @@
 #ifndef LIBA2_CACHEMANAGER_H_
 #define LIBA2_CACHEMANAGER_H_
 
+#include <atomic>
 #include <condition_variable>
 #include <list>
 #include <mutex>
@@ -104,7 +105,7 @@ private:
     PageItMap mDirtyItMap;
 
     /** Set to false to stop the cleanup threads */
-    bool mRunCleanup { true };
+    std::atomic<bool> mRunCleanup { true };
 
     /** Background page cleanup thread */
     std::thread mThread;
@@ -124,7 +125,7 @@ private:
     uint64_t mCurrentMemory { 0 };
 
     /** The maximum in memory dirty page usage before flushing - default 128K */
-    uint64_t mDirtyLimit { 0 };
+    std::atomic<uint64_t> mDirtyLimit { 0 };
     /** The current total dirty page memory */
     uint64_t mCurrentDirty { 0 };
 

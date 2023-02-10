@@ -2,22 +2,20 @@
 #ifndef LIBA2_PAGEMANAGER_H_
 #define LIBA2_PAGEMANAGER_H_
 
-#include <array>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <list>
 #include <map>
-#include <memory>
 #include <mutex>
-#include <set>
 #include <shared_mutex>
 #include <thread>
 
 #include "BandwidthMeasure.hpp"
+#include "PageBackend.hpp"
 #include "Page.hpp"
 
 #include "andromeda/Debug.hpp"
-#include "andromeda/Semaphor.hpp"
 #include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
@@ -54,10 +52,10 @@ public:
     uint64_t GetFileSize() const { return mFileSize; }
 
     /** Returns the current size on the backend (we may have dirty writes) */
-    uint64_t GetBackendSize() const { return mBackendSize; }
+    uint64_t GetBackendSize() const { return mPageBackend.GetBackendSize(); }
 
     /** Returns whether or not the file exists on the backend */
-    bool ExistsOnBackend() const { return mBackendExists; }
+    bool ExistsOnBackend() const { return mPageBackend.ExistsOnBackend(); }
 
     /** Returns a read lock for page data */
     SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
@@ -152,8 +150,6 @@ private:
 
     /** Map of page index to page */
     typedef std::map<uint64_t, Page> PageMap;
-    /** List of **consecutive** page pointers */
-    typedef std::list<Page*> PagePtrList;
 
     /** 
      * Returns a series of **consecutive** dirty pages (total bytes < size_t)
@@ -161,22 +157,25 @@ private:
      * @param writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
-    uint64_t GetWriteList(PageMap::iterator& pageIt, PagePtrList& writeList, const UniqueLock& pagesLock);
+    uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
 
     /** 
-     * Writes a series of **consecutive** pages (total < size_t) starting at the given index - MUST HAVE DATALOCKR/W!
+     * Writes a series of **consecutive** pages (total < size_t) - MUST HAVE DATALOCKR/W!
      * Also marks each page not dirty and informs the cache manager
      * Also creates the file on the backend if necessary (see mBackendExists)
+     * @param index the starting index of the page list
      * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const UniqueLock& flushLock);
+    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const UniqueLock& flushLock);
 
     /** 
      * Asserts the file is created on the backend (see mBackendExists) - MUST HAVE DATALOCKR/W!
      * Also calls truncate if max(mBackendSize,maxDirty) < mFileSize 
      */
     void FlushTruncate(const UniqueLock& flushLock);
+
+    Debug mDebug;
 
     /** Reference to the parent file */
     File& mFile;
@@ -186,16 +185,11 @@ private:
     CacheManager* mCacheMgr { nullptr };
     /** The size of each page - see description in ConfigOptions */
     const size_t mPageSize;
-    
     /** The current size of the file including dirty extending writes */
     uint64_t mFileSize;
-    /** file size as far as the backend knows - may have dirty writes that extend the file */
-    uint64_t mBackendSize;
-    /** true iff the file has been created on the backend (false if waiting for flush) */
-    bool mBackendExists;
 
     /** The current read-ahead window (number of pages) - never 0 */
-    size_t mFetchSize { 1 };
+    std::atomic<size_t> mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;
     /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
@@ -210,20 +204,24 @@ private:
     PendingMap mPendingPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
-    /** Mutex that protects the page maps */
+    /** 
+     * Mutex that protects the page maps 
+     * This is only really needed between R dataLocks as the page map can be
+     * modified when reading, but we usually grab it after W dataLocks anyway
+     */
     mutable std::mutex mPagesMutex;
 
-    /** Shared mutex that protects page content/buffers and mBackendSize */
+    /** Shared mutex that protects page content/buffers and mPageBackend */
     SharedMutex mDataMutex;
     /** Shared mutex that is grabbed exclusively when this class is destructed */
     std::shared_mutex mScopeMutex;
     /** Don't want overlapping flushes, could duplicate writes */
     std::mutex mFlushMutex;
 
-    Debug mDebug;
-
     /** Bandwidth measurement tool for mFetchSize */
     BandwidthMeasure mBandwidth;
+    /** Page to/from backend interface */
+    PageBackend mPageBackend;
 };
 
 } // namespace Filedata

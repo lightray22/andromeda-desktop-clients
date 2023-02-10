@@ -14,7 +14,7 @@ namespace Filedata {
 /*****************************************************/
 CacheManager::CacheManager(bool startThread) : 
     mDebug("CacheManager",this),
-    mBandwidth(mDebug)
+    mBandwidth("CacheManager")
 { 
     MDBG_INFO("()");
 

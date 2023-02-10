@@ -8,6 +8,10 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
+BandwidthMeasure::BandwidthMeasure(const char* debugName):
+    mDebug(std::string(__func__)+"_"+debugName,this) { }
+
+/*****************************************************/
 uint64_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
 {
     using namespace std::chrono;
