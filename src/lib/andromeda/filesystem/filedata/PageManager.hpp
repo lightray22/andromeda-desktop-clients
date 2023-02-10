@@ -125,7 +125,10 @@ private:
     void ResizePage(Page& page, const size_t pageSize, bool inform = true);
 
     /** Returns true if the page at the given index is pending download */
-    bool isPending(const uint64_t index, const UniqueLock& pagesLock);
+    bool isFetchPending(const uint64_t index, const UniqueLock& pagesLock);
+
+    /** Returns true if the page at the given index failed download */
+    std::exception_ptr isFetchFailed(const uint64_t index, const UniqueLock& pagesLock);
 
     /** 
      * Returns the read-ahead size to be used for the given VALID (mFileSize) index 
@@ -142,8 +145,11 @@ private:
      */
     void FetchPages(const uint64_t index, const size_t count);
 
-    /** Removes the given index from the pending-read list */
-    void RemovePending(const uint64_t index, const UniqueLock& pagesLock);
+    /** 
+     * Removes the given start index from the pending-read list and notifies waiters
+     * @param idxOnly if true, adjust the entry start index to be the next index, else remove it
+     */
+    void RemovePendingFetch(const uint64_t index, bool idxOnly, const UniqueLock& pagesLock);
 
     /** Updates mFetchSize with the given bandwidth measurement - THREAD SAFE */
     void UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
@@ -195,13 +201,21 @@ private:
     /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
     const size_t mReadMaxCacheFrac { 4 };
 
-    /** List of <index,length> pending reads */
+    /** List of <index,count> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
+    /** 
+     * Map of page index to exception thrown when reading 
+     * This is simpler but less efficient than storing a map of FetchPairs,
+     * but performance is not critical for the rare failure case
+     */
+    typedef std::map<uint64_t, std::exception_ptr> FailureMap;
 
     /** The index based map of pages */
     PageMap mPages;
     /** Unique set of page ranges being downloaded */
     PendingMap mPendingPages;
+    /** Map of failures encountered while downloading pages */
+    FailureMap mFailedPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
     /** 

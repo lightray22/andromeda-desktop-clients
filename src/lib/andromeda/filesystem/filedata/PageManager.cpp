@@ -119,7 +119,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
         return it->second;
     } }
 
-    if (!isPending(index, pagesLock))
+    if (!isFetchPending(index, pagesLock))
     {
         const size_t fetchSize { GetFetchSize(index, pagesLock) };
 
@@ -135,8 +135,17 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
     MDBG_INFO("... waiting for pending " << index);
 
     PageMap::const_iterator it;
-    while ((it = mPages.find(index)) == mPages.end())
+    std::exception_ptr fail;
+
+    while ((it = mPages.find(index)) == mPages.end() &&
+            (fail = isFetchFailed(index, pagesLock)) == nullptr)
         mPagesCV.wait(pagesLock);
+
+    if (fail != nullptr)
+    {
+        MDBG_INFO("... rethrowing exception");
+        std::rethrow_exception(fail);
+    }
 
     MDBG_INFO("... returning pended page " << index);
     return it->second;
@@ -156,7 +165,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const 
         return it->second;
     } }
 
-    if (!isPending(index, pagesLock))
+    if (!isFetchPending(index, pagesLock))
     {
         const uint64_t pageStart { index*mPageSize }; // offset of the page start
         if (pageStart >= mPageBackend.GetBackendSize() || !partial) // bigger than backend, create empty
@@ -178,8 +187,17 @@ Page& PageManager::GetPageWrite(const uint64_t index, const bool partial, const 
     MDBG_INFO("... waiting for pending");
 
     PageMap::iterator it;
-    while ((it = mPages.find(index)) == mPages.end())
+    std::exception_ptr fail;
+
+    while ((it = mPages.find(index)) == mPages.end() &&
+            (fail = isFetchFailed(index, pagesLock)) == nullptr)
         mPagesCV.wait(pagesLock);
+
+    if (fail != nullptr)
+    {
+        MDBG_INFO("... rethrowing exception");
+        std::rethrow_exception(fail);
+    }
 
     MDBG_INFO("... returning pended page " << index);
     return it->second;
@@ -213,7 +231,7 @@ bool PageManager::isDirty(const uint64_t index) const
 }
 
 /*****************************************************/
-bool PageManager::isPending(const uint64_t index, const UniqueLock& pagesLock)
+bool PageManager::isFetchPending(const uint64_t index, const UniqueLock& pagesLock)
 {
     for (const decltype(mPendingPages)::value_type& pend : mPendingPages)
         if (index >= pend.first && index < pend.first + pend.second) return true;
@@ -221,7 +239,14 @@ bool PageManager::isPending(const uint64_t index, const UniqueLock& pagesLock)
 }
 
 /*****************************************************/
-void PageManager::RemovePending(const uint64_t index, const UniqueLock& pagesLock)
+std::exception_ptr PageManager::isFetchFailed(const uint64_t index, const UniqueLock& pagesLock)
+{
+    FailureMap::iterator it { mFailedPages.find(index) };
+    return (it != mFailedPages.end()) ? it->second : nullptr;
+}
+
+/*****************************************************/
+void PageManager::RemovePendingFetch(const uint64_t index, bool idxOnly, const UniqueLock& pagesLock)
 {
     MDBG_INFO("(index:" << index << ")");
 
@@ -232,13 +257,13 @@ void PageManager::RemovePending(const uint64_t index, const UniqueLock& pagesLoc
         {
             ++pend->first; // index
             --pend->second; // count
-            if (!pend->second) 
+
+            if (!idxOnly || !pend->second)
                 mPendingPages.erase(pend);
-            break;
+
+            mPagesCV.notify_all(); return;
         }
     }
-
-    mPagesCV.notify_all();
 }
 
 /*****************************************************/
@@ -272,7 +297,7 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
 
     for (size_t curCount { 0 }; curCount < readCount; ++curCount) // stop before next pending
     {
-        if (isPending(curCount+index, pagesLock))
+        if (isFetchPending(curCount+index, pagesLock))
         {
             MDBG_INFO("... pending page at:" << curCount+index);
             readCount = curCount;
@@ -293,6 +318,14 @@ void PageManager::StartFetch(const uint64_t index, const size_t readCount, const
 
     mPendingPages.emplace_back(index, readCount);
 
+    if (mFailedPages.size())
+    {
+        size_t erased { 0 };
+        for (uint64_t idx { index }; idx < index+readCount; ++idx)
+            erased += mFailedPages.erase(idx);
+        if (erased) MDBG_INFO("... reset " << erased << " failures");
+    }
+
     std::thread(&PageManager::FetchPages, this, index, readCount).detach();
 }
 
@@ -308,30 +341,46 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
 
     std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
 
-    const size_t readSize { mPageBackend.FetchPages(index, count, 
-        [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)
+    uint64_t nextIndex { index }; try
     {
-        // if we are reading a page that is smaller on the backend (dirty writes), might need to extend
-        const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };
-        if (pageSize < realSize) ResizePage(page, realSize, false);
+        const size_t readSize { mPageBackend.FetchPages(index, count, 
+            [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)
+        {
+            // if we are reading a page that is smaller on the backend (dirty writes), might need to extend
+            const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };
+            if (pageSize < realSize) ResizePage(page, realSize, false);
 
-        PageMap::const_iterator newIt;
-        { // lock scope 
-            UniqueLock pagesLock(mPagesMutex);
-            newIt = mPages.emplace(pageIndex, std::move(page)).first;
-            RemovePending(pageIndex, pagesLock); 
-        } // unlock to let waiters proceed with page
+            PageMap::const_iterator newIt;
+            { // lock scope 
+                UniqueLock pagesLock(mPagesMutex);
+                newIt = mPages.emplace(pageIndex, std::move(page)).first;
+                RemovePendingFetch(pageIndex, true, pagesLock); 
+            } // unlock to let waiters proceed with page
 
-        // assume the requesting thread will do InformPage() for the first page
-        if (mCacheMgr && !mBackend.isMemory() && count > 1)
-            mCacheMgr->InformPage(*this, pageIndex, newIt->second, false);
-        // pass false to not block - we have the httplib lock and reclaiming
-        // memory may involve httplib flushing pages - would deadlock
-    }) };
+            // assume the requesting thread will do InformPage() for the first page
+            if (mCacheMgr && !mBackend.isMemory() && count > 1)
+                mCacheMgr->InformPage(*this, pageIndex, newIt->second, false);
+            // pass false to not block - we have the httplib lock and reclaiming
+            // memory may involve httplib flushing pages - would deadlock
 
-    if (readSize >= mPageSize) // don't consider small reads
-        UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
+            ++nextIndex;
+        }) };
 
+        if (readSize >= mPageSize) // don't consider small reads
+            UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
+    }
+    catch (const BaseException& ex)
+    {
+        MDBG_ERROR("... " << ex.what());
+        UniqueLock pagesLock(mPagesMutex);
+
+        std::exception_ptr exptr { std::current_exception() };
+        for (uint64_t eidx { nextIndex }; eidx < nextIndex+count; ++eidx)
+            mFailedPages[eidx] = exptr; // shared_ptr
+
+        RemovePendingFetch(nextIndex, false, pagesLock);
+    }
+    
     MDBG_INFO("... thread returning!");
 }
 
