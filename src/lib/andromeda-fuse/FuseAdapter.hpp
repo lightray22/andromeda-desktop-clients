@@ -106,7 +106,7 @@ private:
      * @param daemonize if true, fork to a detached process
      * @param forkFunc function to run after daemonizing if applicable
      */
-    void FuseLoop(bool regSignals, bool daemonize, const ForkFunc& forkFunc);
+    void FuseMain(bool regSignals, bool daemonize, const ForkFunc& forkFunc);
 
     /** Signals initialization complete */
     void SignalInit();

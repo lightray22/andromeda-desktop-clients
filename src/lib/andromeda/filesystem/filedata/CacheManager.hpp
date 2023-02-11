@@ -44,7 +44,7 @@ public:
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
-     * @param canWait block if memory is not available
+     * @param canWait block if memory is not below limits
      */
     void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool canWait = true);
 
@@ -80,10 +80,10 @@ private:
     void CleanupThread();
 
     /** Run necessary page evictions */
-    void DoPageEvictions();
+    inline void DoPageEvictions();
 
     /** Run necessary page flushes */
-    void DoPageFlushes();
+    inline void DoPageFlushes();
 
     /** Mutex to guard writing data structures */
     std::mutex mMutex;

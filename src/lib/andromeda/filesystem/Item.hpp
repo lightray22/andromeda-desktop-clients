@@ -40,6 +40,9 @@ public:
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_INFO(strfunc) MDBG_INFO("(" << mName << ")" << strfunc)
 
+    /** Macro to print the file name at the beginning of debug */
+    #define ITDBG_ERROR(strfunc) MDBG_ERROR("(" << mName << ")" << strfunc)
+
     virtual ~Item(){};
 
     /** API date format */

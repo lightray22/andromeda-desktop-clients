@@ -90,11 +90,8 @@ public:
      */
     size_t FlushPage(const uint64_t index, const SharedLockRP& dataLock);
 
-    /**
-     * Writes back all dirty pages - THREAD SAFE
-     * @param nothrow if true, don't throw on failure
-     */
-    void FlushPages(bool nothrow = false);
+    /** Writes back all dirty pages - THREAD SAFE */
+    void FlushPages();
 
     /**
      * Informs us of the file changing on the backend - THREAD SAFE

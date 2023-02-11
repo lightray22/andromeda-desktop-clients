@@ -271,7 +271,7 @@ void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::For
 
     if (runMode == RunMode::THREAD)
     {
-        mFuseThread = std::thread(&FuseAdapter::FuseLoop, this,
+        mFuseThread = std::thread(&FuseAdapter::FuseMain, this,
         // do not register signal handlers, do not daemonize
             false, false, std::ref(forkFunc));
 
@@ -282,7 +282,7 @@ void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::For
 
         SDBG_INFO("... init complete!");
     }
-    else FuseLoop(true, (runMode == RunMode::DAEMON), forkFunc); // blocking
+    else FuseMain(true, (runMode == RunMode::DAEMON), forkFunc); // blocking
 
     if (mInitError)
     {
@@ -294,7 +294,7 @@ void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::For
 }
 
 /*****************************************************/
-void FuseAdapter::FuseLoop(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc)
+void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc)
 {
     SDBG_INFO("()");
 

@@ -160,9 +160,11 @@ void File::FlushCache(bool nothrow)
 {
     if (mDeleted) return;
 
-    ITDBG_INFO("()")
+    ITDBG_INFO("()");
 
-    mPageManager->FlushPages(nothrow);
+    if (!nothrow) mPageManager->FlushPages();
+    else try { mPageManager->FlushPages(); } catch (BaseException& e){ 
+        ITDBG_ERROR("... ignoring error: " << e.what()); }
 }
 
 /*****************************************************/

@@ -510,7 +510,7 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock
 }
 
 /*****************************************************/
-void PageManager::FlushPages(bool nothrow)
+void PageManager::FlushPages()
 {
     MDBG_INFO("()");
 
@@ -545,12 +545,7 @@ void PageManager::FlushPages(bool nothrow)
 
     // flush pages first as this may handle truncating
     for (const decltype(writeLists)::value_type& writePair : writeLists)
-    {
-        auto writeFunc { [&]()->void { FlushPageList(writePair.first, writePair.second, flushLock); } };
-
-        if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
-            MDBG_ERROR("... Ignoring Error: " << e.what()); }
-    }
+        FlushPageList(writePair.first, writePair.second, flushLock);
 
     if (flushTruncate) FlushTruncate(flushLock);
     
