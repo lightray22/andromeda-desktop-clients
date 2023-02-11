@@ -76,8 +76,14 @@ private:
     /** Send some stats about the dirty memory to debug */
     void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
 
-    /** Run the page cleanup loop */
+    /** Run the page cleanup tasks in a loop */
     void CleanupThread();
+
+    /** Run necessary page evictions */
+    void DoPageEvictions();
+
+    /** Run necessary page flushes */
+    void DoPageFlushes();
 
     /** Mutex to guard writing data structures */
     std::mutex mMutex;

@@ -216,10 +216,6 @@ void CacheManager::CleanupThread()
 
     while (true)
     {
-        // need to make sure pageManager stays in scope between mMutex release and evict/flush
-        PageManager::ScopeLock evictLock, flushLock;
-        std::unique_ptr<PageInfo> currentEvict, currentFlush;
-
         { // lock scope
             UniqueLock lock(mMutex);
 
@@ -230,82 +226,113 @@ void CacheManager::CleanupThread()
                 mThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
-
             MDBG_INFO("... DOING CLEANUP!");
-            PrintStatus(__func__, lock);
-
-            while (!currentEvict && mCurrentMemory + mMemoryLimit/mMemoryMarginFrac > mMemoryLimit)
-            {
-                PageInfo& pageInfo { mPageQueue.front() };
-                evictLock = pageInfo.mPageMgr.TryGetScopeLock();
-
-                if (!evictLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
-                else 
-                { // let waiters on this file continue so we can lock
-                    currentEvict = std::make_unique<PageInfo>(pageInfo); // copy
-                    mSkipMemoryWait = &currentEvict->mPageMgr;
-                    mMemoryCV.notify_all();
-                }
-            }
         }
 
-        // don't hold the local lock the whole time we're doing evict/flush as it could deadlock... to get the 
-        // dataLock we have to wait in the file's dataLock queue and threads in the queue might do InformPage()
-
-        if (currentEvict)
-        {
-            MDBG_INFO("... evicting page");
-
-            SharedLockW dataLock { currentEvict->mPageMgr.GetWriteLock() };
-            mSkipMemoryWait = nullptr; // have the lock
-            currentEvict->mPageMgr.EvictPage(currentEvict->mPageIndex, dataLock);
-
-            UniqueLock lock(mMutex);
-            PrintStatus(__func__, lock);
-
-            currentEvict.reset();
-            mMemoryCV.notify_all();
-        }
-
-        { // lock scope
-            UniqueLock lock(mMutex);
-
-            PrintDirtyStatus(__func__, lock);
-            while (!currentFlush && mCurrentDirty > mDirtyLimit)
-            {
-                PageInfo& pageInfo { mDirtyQueue.front() };
-                flushLock = pageInfo.mPageMgr.TryGetScopeLock();
-
-                if (!flushLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
-                else 
-                { // let waiters on this file continue so we can lock
-                    currentFlush = std::make_unique<PageInfo>(pageInfo); // copy
-                    mSkipMemoryWait = &currentFlush->mPageMgr;
-                    mMemoryCV.notify_all();
-                }
-            }
-        }
-
-        if (currentFlush)
-        {
-            MDBG_INFO("... flushing page");
-
-            SharedLockRP dataLock { currentFlush->mPageMgr.GetReadPriLock() };
-            mSkipMemoryWait = nullptr; // have the lock
-            
-            std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
-            size_t written { currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock) };
-            mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
-
-            UniqueLock lock(mMutex);
-            PrintDirtyStatus(__func__, lock);
-
-            currentFlush.reset();
-            mMemoryCV.notify_all();
-        }
+        DoPageEvictions();
+        DoPageFlushes();
     }
 
     MDBG_INFO("... exiting");
+}
+
+/*****************************************************/
+void CacheManager::DoPageEvictions()
+{
+    MDBG_INFO("()");
+
+    // need to make sure pageManager stays in scope between mMutex release and evict
+    PageManager::ScopeLock evictLock;
+    std::unique_ptr<PageInfo> currentEvict;
+
+    { // lock scope
+        UniqueLock lock(mMutex);
+
+        PrintStatus(__func__, lock);
+        while (!currentEvict && mCurrentMemory + mMemoryLimit/mMemoryMarginFrac > mMemoryLimit)
+        {
+            PageInfo& pageInfo { mPageQueue.front() };
+            evictLock = pageInfo.mPageMgr.TryGetScopeLock();
+
+            if (!evictLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+            else 
+            { // let waiters on this file continue so we can lock
+                currentEvict = std::make_unique<PageInfo>(pageInfo); // copy
+                mSkipMemoryWait = &currentEvict->mPageMgr;
+                mMemoryCV.notify_all();
+            }
+        }
+    }
+
+    // don't hold the local lock the whole time we're doing evict as it could deadlock... to get the 
+    // dataLock we have to wait in the file's dataLock queue and threads in the queue might do InformPage()
+
+    if (currentEvict)
+    {
+        MDBG_INFO("... evicting page");
+
+        SharedLockW dataLock { currentEvict->mPageMgr.GetWriteLock() };
+        mSkipMemoryWait = nullptr; // have the lock
+        currentEvict->mPageMgr.EvictPage(currentEvict->mPageIndex, dataLock);
+
+        UniqueLock lock(mMutex);
+        PrintStatus(__func__, lock);
+
+        currentEvict.reset();
+        mMemoryCV.notify_all();
+    }
+}
+
+/*****************************************************/
+void CacheManager::DoPageFlushes()
+{
+    MDBG_INFO("()");
+
+    // need to make sure pageManager stays in scope between mMutex release and flush
+    PageManager::ScopeLock flushLock;
+    std::unique_ptr<PageInfo> currentFlush;
+
+    { // lock scope
+        UniqueLock lock(mMutex);
+
+        PrintDirtyStatus(__func__, lock);
+        while (!currentFlush && mCurrentDirty > mDirtyLimit)
+        {
+            PageInfo& pageInfo { mDirtyQueue.front() };
+            flushLock = pageInfo.mPageMgr.TryGetScopeLock();
+
+            if (!flushLock) RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+            else 
+            { // let waiters on this file continue so we can lock
+                currentFlush = std::make_unique<PageInfo>(pageInfo); // copy
+                mSkipMemoryWait = &currentFlush->mPageMgr;
+                mMemoryCV.notify_all();
+            }
+        }
+    }
+
+    // don't hold the local lock the whole time we're doing flush as it could deadlock... to get the 
+    // dataLock we have to wait in the file's dataLock queue and threads in the queue might do InformPage()
+
+    if (currentFlush)
+    {
+        MDBG_INFO("... flushing page");
+
+        SharedLockRP dataLock { currentFlush->mPageMgr.GetReadPriLock() };
+        mSkipMemoryWait = nullptr; // have the lock
+        
+        std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
+        size_t written { currentFlush->mPageMgr.FlushPage(currentFlush->mPageIndex, dataLock) };
+        mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
+
+        UniqueLock lock(mMutex);
+        PrintDirtyStatus(__func__, lock);
+
+        currentFlush.reset();
+        mMemoryCV.notify_all();
+    }
+
+    MDBG_INFO("... return!");
 }
 
 } // namespace Filedata
