@@ -20,12 +20,19 @@ namespace fs = std::filesystem;
 namespace AndromedaGui {
 
 /*****************************************************/
-MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
+MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mountPath, FuseOptions& options) : 
     mDebug("MountContext",this) 
 {
     MDBG_INFO("(mountPath:" << mountPath << ")");
 
-    if (home) mountPath = InitHomeRoot()+"/"+mountPath;
+    if (homeRel)
+    {
+        QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
+            if (locations.empty()) throw UnknownHomeException();
+
+        mountPath = locations.at(0).toStdString()+"/"+mountPath;
+        MDBG_INFO("... mountPath:" << mountPath);
+    }
 
     try
     {
@@ -39,7 +46,11 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
         #endif // WIN32
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (home) fs::create_directory(mountPath);
+        else if (homeRel)
+        {
+            fs::create_directory(mountPath);
+            mDirCreated = true;
+        }
     #endif // !WIN32
     }
     catch (const fs::filesystem_error& err)
@@ -67,19 +78,10 @@ MountContext::~MountContext()
 
     try
     {
-        if (!mHomeRoot.empty()) // home-relative mount
+        if (mDirCreated && fs::is_directory(mountPath) && fs::is_empty(mountPath))
         {
-            if (fs::is_directory(mountPath) && fs::is_empty(mountPath))
-            {
-                MDBG_INFO("... remove mountPath");
-                fs::remove(mountPath);
-            }
-
-            if (fs::is_directory(mHomeRoot) && fs::is_empty(mHomeRoot))
-            {
-                MDBG_INFO("... remove homeRoot");
-                fs::remove(mHomeRoot);
-            }
+            MDBG_INFO("... remove mountPath");
+            fs::remove(mountPath);
         }
     }
     catch (const fs::filesystem_error& err)
@@ -92,31 +94,6 @@ MountContext::~MountContext()
 const std::string& MountContext::GetMountPath() const
 {
     return mFuseAdapter->GetMountPath();
-}
-
-/*****************************************************/
-const std::string& MountContext::InitHomeRoot()
-{
-    MDBG_INFO("()");
-
-    QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
-    if (locations.empty()) throw UnknownHomeException();
-
-    mHomeRoot = locations.at(0).toStdString()+"/Andromeda";
-    MDBG_INFO("... homeRoot:" << mHomeRoot);
-    
-    try
-    {
-        if (!fs::is_directory(mHomeRoot))
-            fs::create_directory(mHomeRoot);
-    }
-    catch (const fs::filesystem_error& err)
-    {
-        MDBG_ERROR("... " << err.what());
-        throw FilesystemErrorException(err);
-    }
-
-    return mHomeRoot;
 }
 
 } // namespace AndromedaGui

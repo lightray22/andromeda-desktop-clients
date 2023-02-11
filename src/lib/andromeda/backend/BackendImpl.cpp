@@ -60,7 +60,9 @@ std::string BackendImpl::GetName(bool human) const
     std::string hostname { mRunner.GetHostname() };
 
     if (mUsername.empty()) return hostname;
-    else return mUsername + (human ? " on " : "_") + hostname;
+    
+    if (human) return mUsername+" on "+hostname;
+    else return hostname+"_"+mUsername;
 }
 
 /*****************************************************/
