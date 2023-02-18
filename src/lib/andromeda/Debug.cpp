@@ -38,10 +38,10 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
 
     if (sLevel >= Level::DETAILS)
     {
+        sOutstr << "tid:" << std::this_thread::get_id() << " ";
+
         duration<double> time { steady_clock::now() - sStart };
         sOutstr << "time:" << time.count() << " ";
-
-        sOutstr << "tid:" << std::this_thread::get_id() << " ";
 
         if (mAddr == nullptr) { sOutstr << "static "; }
         else { sOutstr << "obj:" << mAddr << " "; }
@@ -56,6 +56,8 @@ Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
     // copy variables into std::function (scope)
     return [ptr,bytes,width](std::ostream& str)
     {
+        std::ios_base::fmtflags sflags { str.flags() };
+
         str << "printing " << bytes << " bytes at " 
             << std::hex << ptr << std::endl;
 
@@ -71,7 +73,7 @@ Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
             if ((i % width) + 1 == width) str << std::endl;
         }
 
-        str << std::endl;
+        str << std::endl; str.flags(sflags); // restore flags
     };
 }
 
