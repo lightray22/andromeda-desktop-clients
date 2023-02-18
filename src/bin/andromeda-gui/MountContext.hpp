@@ -59,8 +59,8 @@ public:
 
 private:
 
-    /** True if the mount point was created */
-    bool mDirCreated { false };
+    /** True if the mount point is home-relative */
+    bool mHomeRelative { false };
 
     std::unique_ptr<Andromeda::Filesystem::Folder> mRootFolder;
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;

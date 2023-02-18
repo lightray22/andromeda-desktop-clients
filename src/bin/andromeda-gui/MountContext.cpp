@@ -21,11 +21,11 @@ namespace AndromedaGui {
 
 /*****************************************************/
 MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mountPath, FuseOptions& options) : 
-    mDebug("MountContext",this) 
+    mHomeRelative(homeRel), mDebug("MountContext",this) 
 {
     MDBG_INFO("(mountPath:" << mountPath << ")");
 
-    if (homeRel)
+    if (mHomeRelative)
     {
         QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
             if (locations.empty()) throw UnknownHomeException();
@@ -46,11 +46,8 @@ MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mount
         #endif // WIN32
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (homeRel)
-        {
+        else if (mHomeRelative)
             fs::create_directory(mountPath);
-            mDirCreated = true;
-        }
     #endif // !WIN32
     }
     catch (const fs::filesystem_error& err)
@@ -78,7 +75,7 @@ MountContext::~MountContext()
 
     try
     {
-        if (mDirCreated && fs::is_directory(mountPath) && fs::is_empty(mountPath))
+        if (mHomeRelative && fs::is_directory(mountPath) && fs::is_empty(mountPath))
         {
             MDBG_INFO("... remove mountPath");
             fs::remove(mountPath);
