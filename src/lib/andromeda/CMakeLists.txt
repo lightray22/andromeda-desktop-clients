@@ -41,7 +41,7 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
 FetchContent_Declare(cpp-httplib
     GIT_REPOSITORY  https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG         v0.11.4
+    GIT_TAG         4e6ded1 # v0.12.0
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 
@@ -72,7 +72,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 FetchContent_Declare(nlohmann_json
     GIT_REPOSITORY  https://github.com/nlohmann/json.git
-    GIT_TAG         v3.11.2
+    GIT_TAG         bc889af # v3.11.2
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(nlohmann_json)
 
