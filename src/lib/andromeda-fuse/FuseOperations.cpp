@@ -27,6 +27,8 @@ using Andromeda::Filesystem::Item;
 using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 
 static Debug debug("FuseOperations",nullptr);
 
@@ -89,6 +91,10 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     catch (const BackendImpl::NotFoundException& e)  
     {
         DDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
+    }
+    catch (const CacheManager::MemoryException& e)
+    {
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOMEM;
     }
 
     // Error exceptions

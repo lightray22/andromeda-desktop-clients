@@ -5,6 +5,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <exception>
 #include <list>
 #include <map>
 #include <mutex>
@@ -78,7 +79,7 @@ public:
     void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock);
 
     /** Returns true if the page at the given index is dirty */
-    bool isDirty(const uint64_t index) const;
+    bool isDirty(const uint64_t index, const SharedLockW& dataLock);
 
     /** Removes the given page, writing it if dirty */
     bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
@@ -89,6 +90,7 @@ public:
      * @return the total number of bytes written to the backend
      */
     size_t FlushPage(const uint64_t index, const SharedLockRP& dataLock);
+    size_t FlushPage(const uint64_t index, const SharedLockW& dataLock);
 
     /** Writes back all dirty pages - THREAD SAFE */
     void FlushPages();
@@ -119,12 +121,12 @@ private:
      * Resizes an existing page to the given size, informing the CacheManager if inform 
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
      */
-    void ResizePage(Page& page, const size_t pageSize, bool inform = true);
+    void ResizePage(Page& page, const size_t pageSize, bool inform, const SharedLockW* dataLock = nullptr);
 
     /** Returns true if the page at the given index is pending download */
     bool isFetchPending(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Returns true if the page at the given index failed download */
+    /** Returns an exception_ptr if the page at the given index failed download else nullptr */
     std::exception_ptr isFetchFailed(const uint64_t index, const UniqueLock& pagesLock);
 
     /** 
@@ -161,6 +163,9 @@ private:
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
+
+    /** Flushes the given page if dirty (already have the lock) */
+    size_t FlushPage(const uint64_t index, const UniqueLock& flushLock);
 
     /** 
      * Writes a series of **consecutive** pages (total < size_t) - MUST HAVE DATALOCKR/W!
@@ -215,17 +220,13 @@ private:
     FailureMap mFailedPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
-    /** 
-     * Mutex that protects the page maps 
-     * This is only really needed between R dataLocks as the page map can be
-     * modified when reading, but we usually grab it after W dataLocks anyway
-     */
-    mutable std::mutex mPagesMutex;
 
-    /** Shared mutex that protects page content/buffers and mPageBackend */
+    /** Primary shared mutex that protects the manager and data */
     SharedMutex mDataMutex;
     /** Shared mutex that is grabbed exclusively when this class is destructed */
     std::shared_mutex mScopeMutex;
+    /** Mutex that protects the page maps between concurrent readers (not needed for writers) */
+    std::mutex mPagesMutex;
     /** Don't want overlapping flushes, could duplicate writes */
     std::mutex mFlushMutex;
 

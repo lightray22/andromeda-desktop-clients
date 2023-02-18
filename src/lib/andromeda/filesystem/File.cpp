@@ -113,7 +113,7 @@ void File::SubDelete()
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend())
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
         mBackend.DeleteFile(GetID());
 
     mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
@@ -126,7 +126,7 @@ void File::SubRename(const std::string& newName, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend())
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
         mBackend.RenameFile(GetID(), newName, overwrite);
 }
 
@@ -137,7 +137,7 @@ void File::SubMove(Folder& newParent, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend())
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
         mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
 }
 
@@ -256,7 +256,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         {
             // allowed if (==fileSize and startOfPage) OR (within dirty page)
             if (!(offset == fileSize && offset % pageSize == 0) && 
-                !mPageManager->isDirty(offset/pageSize)) throw WriteTypeException();
+                !mPageManager->isDirty(offset/pageSize, dataLock)) throw WriteTypeException();
         }
 
         const uint64_t index { byte / pageSize };

@@ -146,7 +146,7 @@ int main(int argc, char** argv)
         // In either case, StartFuse() will block until unmounted
         if (options.isForeground())
         {
-            cacheMgr.StartThread();
+            cacheMgr.StartThreads();
             fuseAdapter.StartFuse(
                 FuseAdapter::RunMode::FOREGROUND);
         }
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
         { // daemonize kills threads, start cacheMgr in the callback
             fuseAdapter.StartFuse(
                 FuseAdapter::RunMode::DAEMON,
-                [&](){ cacheMgr.StartThread(); });
+                [&](){ cacheMgr.StartThreads(); });
         }
     }
     catch (const FuseAdapter::Exception& ex)

@@ -53,7 +53,7 @@ public:
      */
     size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler);
 
-    /** List of **consecutive** page pointers */
+    /** List of **consecutive** non-null page pointers */
     typedef std::list<Page*> PagePtrList;
 
     /** 
