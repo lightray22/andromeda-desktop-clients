@@ -89,7 +89,8 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, bool canWait, Unique
     {
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
-        while (canWait && isMemoryOverLimit() && &mPageQueue.front().mPageMgr == &pageMgr)
+        while (canWait && isMemoryOverLimit() && 
+            &mPageQueue.front().mPageMgr == &pageMgr)
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
@@ -129,7 +130,8 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, bool canWait, U
     {
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipFlushWait)
-        while (canWait && mCurrentDirty > mDirtyLimit && &mDirtyQueue.front().mPageMgr == &pageMgr)
+        while (canWait && mCurrentDirty > mDirtyLimit && 
+            &mDirtyQueue.front().mPageMgr == &pageMgr)
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
@@ -161,7 +163,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, bool canWait, U
 }
 
 /*****************************************************/
-bool CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock)
+size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
     PageInfo pageInfo { pageMgr, index, &page, page.size() };
@@ -180,7 +182,7 @@ bool CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const
     }
 
     MDBG_INFO("... pageSize:" << page.size() << " oldSize:" << oldSize);
-    return (page.size() > oldSize);
+    return oldSize;
 }
 
 /*****************************************************/
@@ -190,7 +192,8 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 
     UniqueLock lock(mMutex);
 
-    if (EnqueuePage(pageMgr, index, page, lock)) // page grew
+    const size_t oldSize { EnqueuePage(pageMgr, index, page, lock) };
+    if (page.size() > oldSize)
     {
         HandleMemory(pageMgr, canWait, lock, mgrLock);
         if (page.mDirty) HandleDirtyMemory(pageMgr, canWait, lock, mgrLock);
@@ -218,7 +221,12 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         PrintStatus(__func__, lock);
 
         if (newSize > oldSize)
-            HandleMemory(pageMgr, true, lock, mgrLock);
+            try { HandleMemory(pageMgr, true, lock, mgrLock); }
+        catch (BaseException& e)
+        {
+            mCurrentMemory -= newSize-oldSize;
+            itQueue->mPageSize = oldSize;
+        }
     }
     else { MDBG_INFO("... page not found"); } }
 
@@ -234,7 +242,12 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         PrintDirtyStatus(__func__, lock);
 
         if (newSize > oldSize)
-            HandleDirtyMemory(pageMgr, true, lock, mgrLock);
+            try { HandleDirtyMemory(pageMgr, true, lock, mgrLock); }
+        catch (BaseException& e)
+        {
+            mCurrentDirty -= newSize-oldSize;
+            itQueue->mPageSize = oldSize;
+        }
     }
     else { MDBG_INFO("... page not found"); } }
 }
@@ -474,10 +487,10 @@ void CacheManager::DoPageFlushes()
 
 /*****************************************************/
 template<class T>
-void CacheManager::FlushPage(PageManager& pageManager, const uint64_t index, const T& mgrLock)
+void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock)
 {
     std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
-    size_t written { pageManager.FlushPage(index, mgrLock) };
+    size_t written { pageMgr.FlushPage(index, mgrLock) };
     mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 }
 

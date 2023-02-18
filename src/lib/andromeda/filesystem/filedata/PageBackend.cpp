@@ -81,7 +81,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
         }
     });
 
-    if (curPage != nullptr) { assert(false); MDBG_ERROR("() ERROR unfinished read!"); } // stop only in debug builds
+    if (curPage != nullptr) { MDBG_ERROR("() ERROR unfinished read!"); assert(false); } // stop only in debug builds
 
     return readSize;
 }

@@ -49,7 +49,9 @@ public:
     uint64_t GetMemoryLimit() const { return mMemoryLimit; }
 
     /** 
-     * Inform us that a page was used, putting at the front of the LRU, maybe waits
+     * Inform us that a page was used, putting at the front of the LRU
+     * if mgrLock is given, may synchronously evict or flush pages on this manager
+     * IF this fails, the caller must call RemovePage() or ResizePage(oldSize)
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
@@ -62,7 +64,8 @@ public:
         bool canWait = true, const SharedLockW* mgrLock = nullptr);
 
     /**
-     * Inform us that a page has changed size, waits for memory if necessary
+     * Inform us that a page has changed size
+     * if mgrLock is given, may synchronously evict or flush pages on this manager
      * @param pageMgr the page manager that owns the page
      * @param page reference to the page
      * @param newSize the new size of the page
@@ -112,9 +115,9 @@ private:
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
-     * @return bool true if the page grew in size
+     * @return size_t the size of the old page or 0 if it didn't exist
      */
-    bool EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock);
+    size_t EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock);
 
     /** 
      * Inform us that a page has been erased (already have the lock) 

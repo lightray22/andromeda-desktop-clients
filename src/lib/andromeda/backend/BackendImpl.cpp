@@ -136,6 +136,8 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
             else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); // TODO better exception? - should not happen if Authenticated? maybe for bad shares
+            else if (code == 400 && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
+            
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
             else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyFSException("Database");
@@ -527,7 +529,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
-    if (!length) { assert(false); MDBG_ERROR("() ERROR 0 length"); return ""; } // stop only in debug builds
+    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return ""; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -547,7 +549,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
-    if (!length) { assert(false); MDBG_ERROR("() ERROR 0 length"); return; } // stop only in debug builds
+    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return; } // stop only in debug builds
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -577,7 +579,7 @@ constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    if (data.empty()) { assert(false); MDBG_ERROR("() ERROR no data"); } // stop only in debug builds
+    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); } // stop only in debug builds
 
     MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 
@@ -620,7 +622,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 /*****************************************************/
 nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite)
 {
-    if (data.empty()) { assert(false); MDBG_ERROR("() ERROR no data"); } // stop only in debug builds
+    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); } // stop only in debug builds
 
     MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
 

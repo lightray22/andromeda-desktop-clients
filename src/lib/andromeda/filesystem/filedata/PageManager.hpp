@@ -108,14 +108,25 @@ private:
 
     typedef std::unique_lock<std::mutex> UniqueLock;
 
-    /** Returns the page at the given index - use GetReadLock() first! */
+    /** Returns the page at the given index and informs cacheMgr - use GetReadLock() first! */
     const Page& GetPageRead(const uint64_t index, const SharedLockR& dataLock);
 
     /** 
-     * Returns the page at the given index - use GetWriteLock() first! 
+     * Returns the page at the given index and marks dirty/informs cacheMgr - use GetWriteLock() first! 
+     * @param pageSize the desired size of the page for writing
      * @param partial if true, pre-populate the page with backend data
      */
-    Page& GetPageWrite(const uint64_t index, const bool partial, const SharedLockW& dataLock);
+    Page& GetPageWrite(const uint64_t index, const size_t pageSize, const bool partial, const SharedLockW& dataLock);
+
+    /** 
+     * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
+     * MUST HAVE either dataLockW or pagesLock! (will be checked!)
+     */
+    void InformNewPage(const uint64_t index, const Page& page, 
+        const UniqueLock* pagesLock, const SharedLockW* dataLock);
+
+    /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
+    void InformResizePage(const uint64_t index, Page& page, const size_t pageSize, const SharedLockW& dataLock);
 
     /** 
      * Resizes an existing page to the given size, informing the CacheManager if inform 
@@ -140,7 +151,7 @@ private:
 
     /** 
      * Reads count# pages from the backend at the given index, adding to the page map
-     * Does NOT get a dataLock or inform the cacheManager of the new page if count is 1!
+     * Gets its own R dataLock and informs the cacheManager of all new pages
      */
     void FetchPages(const uint64_t index, const size_t count);
 
