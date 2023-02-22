@@ -134,8 +134,11 @@ private:
     /** Send some stats about the dirty memory to debug */
     void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
 
-    /** Returns true if memory is over the memory limit (minus margin) */
-    inline bool isMemoryOverLimit();
+    /** 
+     * Returns true if memory is over the memory limit (minus margin) 
+     * @param cleaned add this to the current limit
+     */
+    inline bool isMemoryOverLimit(const size_t cleaned = 0);
 
     /** Run the page evict task in a loop while mRunCleanup */
     void EvictThread();
@@ -194,9 +197,9 @@ private:
     std::condition_variable mFlushWaitCV;
 
     /** PageManager that can skip the evict wait (need it to clear its lock queue) */
-    PageManager* mSkipEvictWait { nullptr };
+    std::atomic<PageManager*> mSkipEvictWait { nullptr };
     /** PageManager that can skip the flush wait (need it to clear its lock queue) */
-    PageManager* mSkipFlushWait { nullptr };
+    std::atomic<PageManager*> mSkipFlushWait { nullptr };
 
     /** The maximum page memory usage before evicting */
     const uint64_t mMemoryLimit { 256*1024*1024 };
