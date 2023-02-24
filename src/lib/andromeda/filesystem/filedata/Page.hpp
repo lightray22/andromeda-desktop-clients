@@ -19,7 +19,10 @@ struct Page
 {
     explicit Page(size_t pageSize) : mData(pageSize) { }
     std::vector<char> mData;
+    /** true if the page has dirty (un-flushed) data */
     bool mDirty { false };
+    /** true if the page is valid to be flushed (false if in init) */
+    bool mReady { false };
 
     char* data() { return mData.data(); }
     const char* data() const { return mData.data(); }

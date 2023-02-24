@@ -82,7 +82,7 @@ public:
     bool isDirty(const uint64_t index, const SharedLockW& dataLock);
 
     /** Removes the given page, writing it if dirty */
-    bool EvictPage(const uint64_t index, const SharedLockW& dataLock);
+    void EvictPage(const uint64_t index, const SharedLockW& dataLock);
 
     /** 
      * Flushes the given page if dirty
@@ -122,8 +122,7 @@ private:
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
      * MUST HAVE either dataLockW or pagesLock! (will be checked!)
      */
-    void InformNewPage(const uint64_t index, const Page& page, 
-        const UniqueLock* pagesLock, const SharedLockW* dataLock);
+    void InformNewPage(const uint64_t index, Page& page, const UniqueLock* pagesLock, const SharedLockW* dataLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
     void InformResizePage(const uint64_t index, Page& page, const size_t pageSize, const SharedLockW& dataLock);
@@ -183,7 +182,7 @@ private:
      * Also marks each page not dirty and informs the cache manager
      * Also creates the file on the backend if necessary (see mBackendExists)
      * @param index the starting index of the page list
-     * @param pages list of pages to flush - must NOT be empty
+     * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
      */
     size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const UniqueLock& flushLock);

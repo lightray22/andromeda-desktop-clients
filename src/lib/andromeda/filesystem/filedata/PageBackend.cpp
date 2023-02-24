@@ -38,7 +38,8 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
     MDBG_INFO("(index:" << index << " count:" << count << ")");
 
     if (!count || (index+count-1)*mPageSize >= mBackendSize) 
-        throw std::invalid_argument(__func__);
+        { MDBG_ERROR("() ERROR invalid index:" << index << " count:" << count 
+            << " mBackendSize:" << mBackendSize << " mPageSize:" << mPageSize); assert(false); }
 
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const size_t readSize { min64st(mBackendSize-pageStart, mPageSize*count) }; // length of data to fetch
@@ -81,7 +82,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
         }
     });
 
-    if (curPage != nullptr) { MDBG_ERROR("() ERROR unfinished read!"); assert(false); } // stop only in debug builds
+    if (curPage != nullptr) { MDBG_ERROR("() ERROR unfinished read!"); assert(false); }
 
     return readSize;
 }
@@ -92,8 +93,7 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     SemaphorLock backendSem(sBackendSem); 
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
-    if (!pages.size()) 
-        throw std::invalid_argument(__func__);
+    if (!pages.size()) { MDBG_ERROR("() ERROR empty list!"); assert(false); return 0; }
 
     size_t totalSize { 0 };
     for (const Page* pagePtr : pages)

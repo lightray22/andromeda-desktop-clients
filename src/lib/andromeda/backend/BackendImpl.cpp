@@ -529,7 +529,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 /*****************************************************/
 std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length)
 {
-    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return ""; } // stop only in debug builds
+    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return ""; }
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -549,7 +549,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 /*****************************************************/
 void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
 {
-    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return; } // stop only in debug builds
+    if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return; }
 
     std::string fstart(std::to_string(offset));
     std::string flast(std::to_string(offset+length-1));
@@ -579,7 +579,7 @@ constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); } // stop only in debug builds
+    if (data.empty()) { MDBG_ERROR("() ERROR no data"); throw std::invalid_argument(__func__); } // fatal
 
     MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 
@@ -622,7 +622,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 /*****************************************************/
 nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite)
 {
-    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); } // stop only in debug builds
+    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); }
 
     MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
 
