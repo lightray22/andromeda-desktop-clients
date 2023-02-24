@@ -98,14 +98,24 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
 
     UniqueLock pagesLock(mPagesMutex);
 
-    // TODO optimize - maybe even if this index exists, always make sure at least the NEXT one is ready?
-    // could generalize that with like a minPopulated or something, configurable?
-    // FetchPages will need to take actual "haveLock" param not assume not to lock if size 1
-
     { PageMap::const_iterator it { mPages.find(index) };
     if (it != mPages.end()) 
     {
         MDBG_INFO("... return existing page");
+
+        // always pre-populate mReadAheadPages ahead (except index 0)
+        if (index > 0) for (uint64_t nextIdx { index+1 }; 
+            nextIdx <= index + mReadAheadPages; ++nextIdx)
+        {
+            if (nextIdx*mPageSize >= mFileSize) break; // exit loop
+            const size_t fetchSize { GetFetchSize(nextIdx, pagesLock) };
+            if (fetchSize)
+            {
+                MDBG_INFO("... read-ahead nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
+                StartFetch(nextIdx, fetchSize, pagesLock);
+                break; // exit loop
+            }
+        }
 
         if (mCacheMgr && !mBackend.isMemory()) 
             mCacheMgr->InformPage(*this, index, it->second);
@@ -309,28 +319,27 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
     const uint64_t backendSize { mPageBackend.GetBackendSize() };
 
     if (!backendSize) return 0;
-    const uint64_t lastPage { (backendSize-1)/mPageSize }; // the last valid page index
-    if (index > lastPage) return 0; // don't read-ahead empty pages
-
+    const uint64_t lastPage { (backendSize-1)/mPageSize }; // last valid page index
+    if (index > lastPage) return 0; // can't read beyond the backend
     const size_t maxReadCount { min64st(lastPage-index+1, mFetchSize) };
 
-    MDBG_INFO("(index:" << index << ") backendSize:" << backendSize
-        << " lastPage:" << lastPage << " maxReadCount:" << maxReadCount);
+    MDBG_INFO("(index:" << index << ") backendSize:" << backendSize << " maxReadCount:" << maxReadCount);
+
+    if (mPages.find(index) != mPages.end()) return 0; // page exists
 
     // no read-ahead for the first page as file managers often read just metadata
     size_t readCount { (index > 0) ? maxReadCount : 1 };
 
-    for (const PageMap::value_type& page : mPages) // stop before next existing
+    // stop before the next existing (pages are in order)
+    { PageMap::const_iterator nextIt { mPages.upper_bound(index) };
+    if (nextIt != mPages.end())
     {
-        if (page.first >= index)
-        {
-            MDBG_INFO("... first page at:" << page.first);
-            readCount = min64st(page.first-index, readCount);
-            break; // pages are in order
-        }
-    }
+        MDBG_INFO("... first page at:" << nextIt->first);
+        readCount = min64st(nextIt->first-index, readCount);
+    } }
 
-    for (size_t curCount { 0 }; curCount < readCount; ++curCount) // stop before next pending
+    // stop before the next pending
+    for (size_t curCount { 0 }; curCount < readCount; ++curCount)
     {
         if (isFetchPending(curCount+index, pagesLock))
         {
@@ -428,7 +437,7 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
     if (mCacheMgr)
     {
         const uint64_t cacheMax { mCacheMgr->GetMemoryLimit()/mReadMaxCacheFrac };
-        if (targetBytes > cacheMax)
+        if (targetBytes > cacheMax) // no point in downloading just to get evicted
         {
             targetBytes = cacheMax;
             MDBG_INFO("... cache limited targetBytes:" << cacheMax);

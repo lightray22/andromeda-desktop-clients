@@ -35,10 +35,7 @@ void Config::Initialize()
         config.at("core").at("features").at("read_only").get_to(mReadOnly);
 
         const nlohmann::json& maxbytes { config.at("files").at("upload_maxbytes") };
-        if (!maxbytes.is_null()) maxbytes.get_to(mUploadMaxBytes);
-
-        const nlohmann::json& maxfiles { config.at("files").at("upload_maxfiles") };
-        if (!maxfiles.is_null()) maxfiles.get_to(mUploadMaxFiles);
+        if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>(); // can't get_to() with std::atomic
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

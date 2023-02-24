@@ -1,6 +1,7 @@
 #ifndef LIBA2_CONFIG_H_
 #define LIBA2_CONFIG_H_
 
+#include <atomic>
 #include <chrono>
 #include <nlohmann/json_fwd.hpp>
 
@@ -58,9 +59,6 @@ public:
     /** Sets the max upload bytes in case we discover it is lower than thought */
     void SetUploadMaxBytes(const size_t newMax) { mUploadMaxBytes = newMax; };
 
-    /** Returns the max # of files allowed in an upload or 0 for no limit */
-    size_t GetUploadMaxFiles() const { return mUploadMaxFiles; }
-
 private:
     Debug mDebug;
     BackendImpl& mBackend;
@@ -68,8 +66,7 @@ private:
     bool mReadOnly { false };
     bool mRandWrite { true };
 
-    size_t mUploadMaxBytes { 0 }; // TODO locking
-    size_t mUploadMaxFiles { 0 };
+    std::atomic<size_t> mUploadMaxBytes { 0 };
 };
 
 } // namespace Backend

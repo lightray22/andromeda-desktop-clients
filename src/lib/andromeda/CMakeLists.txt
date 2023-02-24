@@ -41,7 +41,7 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
 FetchContent_Declare(cpp-httplib
     GIT_REPOSITORY  https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG         4e6ded1 # v0.12.0
+    GIT_TAG         75053bf # v0.12.1-pre
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 

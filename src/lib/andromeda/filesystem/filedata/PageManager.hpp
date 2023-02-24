@@ -142,7 +142,7 @@ private:
 
     /** 
      * Returns the read-ahead size to be used for the given VALID (mFileSize) index 
-     * Returns 0 if the index does not exist on the backend (see mBackendSize)
+     * Returns 0 if the page exists or the index does not exist on the backend (see mBackendSize)
      */
     size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
 
@@ -213,6 +213,8 @@ private:
     std::mutex mFetchSizeMutex;
     /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
     const size_t mReadMaxCacheFrac { 4 };
+    /** The number of pages past the current to always pre-populate */
+    const size_t mReadAheadPages { 2 };
 
     /** List of <index,count> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;
