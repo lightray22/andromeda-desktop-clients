@@ -2,12 +2,11 @@
 #include <sstream>
 
 #include "ConfigOptions.hpp"
-#include "andromeda/BaseOptions.hpp"
+#include "BaseOptions.hpp"
 
 using namespace std::chrono;
 
 namespace Andromeda {
-namespace Backend {
 
 /*****************************************************/
 std::string ConfigOptions::HelpText()
@@ -60,5 +59,4 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     return true; 
 }
 
-} // namespace Backend
 } // namespace Andromeda

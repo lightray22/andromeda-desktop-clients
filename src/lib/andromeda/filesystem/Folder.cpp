@@ -3,12 +3,12 @@
 
 #include "Folder.hpp"
 #include "File.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/folders/PlainFolder.hpp"
 using Andromeda::Filesystem::Folders::PlainFolder;
 

@@ -5,7 +5,6 @@
 #include <string>
 
 namespace Andromeda {
-namespace Backend {
 
 /** Client-based libAndromeda options */
 struct ConfigOptions
@@ -46,7 +45,6 @@ struct ConfigOptions
     std::chrono::seconds refreshTime { std::chrono::seconds(15) };
 };
 
-} // namespace Backend
 } // namespace Andromeda
 
 #endif // LIBA2_CONFIGOPTIONS_H_

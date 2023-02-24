@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "andromeda/Debug.hpp"
-#include "andromeda/backend/ConfigOptions.hpp"
+#include "andromeda/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 
 namespace Andromeda { namespace Backend { class BackendImpl; class HTTPRunner; } }
@@ -29,7 +29,7 @@ public:
 private:
 
     /** libandromeda configuration */
-    Andromeda::Backend::ConfigOptions mConfigOptions;
+    Andromeda::ConfigOptions mConfigOptions;
     /** HTTP Runner configuration */
     Andromeda::Backend::HTTPOptions mHttpOptions;
     

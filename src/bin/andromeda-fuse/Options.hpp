@@ -7,7 +7,7 @@
 #include "andromeda-fuse/FuseOptions.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/backend/ConfigOptions.hpp"
+#include "andromeda/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 
 namespace AndromedaFuse {
@@ -25,7 +25,7 @@ public:
      * @param httpOptions HTTPRunner options ref to fill
      * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::Backend::ConfigOptions& configOptions, 
+    Options(Andromeda::ConfigOptions& configOptions, 
             Andromeda::Backend::HTTPOptions& httpOptions, 
             AndromedaFuse::FuseOptions& fuseOptions);
 
@@ -96,7 +96,7 @@ public:
 
 private:
 
-    Andromeda::Backend::ConfigOptions& mConfigOptions;
+    Andromeda::ConfigOptions& mConfigOptions;
     Andromeda::Backend::HTTPOptions& mHttpOptions;
     AndromedaFuse::FuseOptions& mFuseOptions;
 

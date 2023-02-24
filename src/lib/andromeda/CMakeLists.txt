@@ -10,6 +10,7 @@ set_target_properties(libandromeda PROPERTIES PREFIX "")
 
 set(SOURCE_FILES 
     BaseOptions.cpp
+    ConfigOptions.cpp
     Debug.cpp
     Utilities.cpp
     )

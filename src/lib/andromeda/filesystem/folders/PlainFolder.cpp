@@ -2,10 +2,10 @@
 #include <nlohmann/json.hpp>
 
 #include "PlainFolder.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/FSConfig.hpp"
 using Andromeda::Filesystem::FSConfig;
 #include "andromeda/filesystem/File.hpp"

@@ -5,11 +5,11 @@
 #include "File.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/filedata/PageManager.hpp"
 using Andromeda::Filesystem::Filedata::PageManager;
 

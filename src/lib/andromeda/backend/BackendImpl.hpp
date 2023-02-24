@@ -9,8 +9,8 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Config.hpp"
-#include "ConfigOptions.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
@@ -95,7 +95,7 @@ public:
      * @param options configuration options
      * @param runner the BaseRunner to use 
      */
-    BackendImpl(const ConfigOptions& options, BaseRunner& runner);
+    BackendImpl(const Andromeda::ConfigOptions& options, BaseRunner& runner);
 
     virtual ~BackendImpl();
 
@@ -106,7 +106,7 @@ public:
     const Config& GetConfig() { return mConfig; }
 
     /** Returns the backend options in use */
-    const ConfigOptions& GetOptions() const { return mOptions; }
+    const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
 
     /** Returns the cache manager if set or nullptr */
     Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }

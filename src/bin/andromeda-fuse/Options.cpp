@@ -8,8 +8,8 @@ using AndromedaFuse::FuseOptions;
 
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
 

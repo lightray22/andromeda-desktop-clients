@@ -11,6 +11,8 @@
 #include "BaseRunner.hpp"
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
 
 namespace Andromeda {

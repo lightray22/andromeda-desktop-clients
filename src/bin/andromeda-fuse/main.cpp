@@ -15,14 +15,14 @@ using AndromedaFuse::FuseOptions;
 
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
 #include "andromeda/backend/BaseRunner.hpp"
 using Andromeda::Backend::BaseRunner;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/backend/CLIRunner.hpp"
 using Andromeda::Backend::CLIRunner;
 #include "andromeda/backend/HTTPRunner.hpp"
