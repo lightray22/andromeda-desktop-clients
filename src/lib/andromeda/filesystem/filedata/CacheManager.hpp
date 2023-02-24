@@ -95,20 +95,22 @@ private:
     /**
      * Signals the evict thread and checks memory
      * @param pageMgr pageManager that is making this call
+     * @param page do not synchronously evict this page
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
      */
-    void HandleMemory(const PageManager& pageMgr, bool canWait, 
-        UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
+    void HandleMemory(const PageManager& pageMgr, const Page& page, 
+        bool canWait, UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
 
     /**
      * Signals the flush thread and checks dirty memory
      * @param pageMgr pageManager that is making this call
+     * @param page do not synchronously flush this page
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
      */
-    void HandleDirtyMemory(const PageManager& pageMgr, bool canWait, 
-        UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
+    void HandleDirtyMemory(const PageManager& pageMgr, const Page& page, 
+        bool canWait, UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
 
     /** 
      * Inform us that a page was used, putting at the front of the LRU
@@ -208,7 +210,7 @@ private:
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 
-    /** The maximum in memory dirty page usage before flushing - default 128K */
+    /** The maximum in-memory dirty page usage before flushing (dynamic) */
     std::atomic<uint64_t> mDirtyLimit { 0 };
     /** The current total dirty page memory */
     uint64_t mCurrentDirty { 0 };

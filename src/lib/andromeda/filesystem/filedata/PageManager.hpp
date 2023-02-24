@@ -207,7 +207,7 @@ private:
     /** The current size of the file including dirty extending writes */
     uint64_t mFileSize;
 
-    /** The current read-ahead window (number of pages) - never 0 */
+    /** The current read-ahead window (number of pages) (dynamic) - NEVER zero */
     std::atomic<size_t> mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;
