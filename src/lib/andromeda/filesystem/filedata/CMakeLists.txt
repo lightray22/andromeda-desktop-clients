@@ -2,6 +2,7 @@
 set(SOURCE_FILES 
     BandwidthMeasure.cpp
     CacheManager.cpp
+    CacheOptions.cpp
     PageBackend.cpp
     PageManager.cpp
     )

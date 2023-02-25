@@ -22,6 +22,7 @@ namespace Filedata {
 
 struct Page;
 class PageManager;
+struct CacheOptions;
 
 /** 
  * Manages pages as an LRU cache to limit memory usage 
@@ -38,7 +39,7 @@ public:
             BaseException("Failed to reserve memory: "+type+" error") {}; };
 
     /** If true, start the cleanup threads immediately */
-    CacheManager(bool startThreads = true);
+    explicit CacheManager(const CacheOptions& cacheOptions, bool startThreads = true);
 
     virtual ~CacheManager();
 
@@ -46,8 +47,8 @@ public:
     void StartThreads();
 
     /** Returns the maximum cache memory size */
-    uint64_t GetMemoryLimit() const { return mMemoryLimit; }
-
+    uint64_t GetMemoryLimit() const;
+    
     /** 
      * Inform us that a page was used, putting at the front of the LRU
      * if mgrLock is given, may synchronously evict or flush pages on this manager
@@ -136,12 +137,6 @@ private:
     /** Send some stats about the dirty memory to debug */
     void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
 
-    /** 
-     * Returns true if memory is over the memory limit (minus margin) 
-     * @param cleaned add this to the current limit
-     */
-    inline bool isMemoryOverLimit(const size_t cleaned = 0);
-
     /** Run the page evict task in a loop while mRunCleanup */
     void EvictThread();
     /** Run the page flush task in a loop while mRunCleanup */
@@ -203,10 +198,9 @@ private:
     /** PageManager that can skip the flush wait (need it to clear its lock queue) */
     std::atomic<PageManager*> mSkipFlushWait { nullptr };
 
-    /** The maximum page memory usage before evicting */
-    const uint64_t mMemoryLimit { 256*1024*1024 };
-    /** Fraction of mMemoryLimit to remove when evicting */
-    const size_t mMemoryMarginFrac { 16 };
+    /** Reference to CacheOptions */
+    const CacheOptions& mCacheOptions;
+
     /** The current total memory usage */
     uint64_t mCurrentMemory { 0 };
 

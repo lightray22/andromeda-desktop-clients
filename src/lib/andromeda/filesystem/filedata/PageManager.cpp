@@ -24,7 +24,7 @@ PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageS
     mCacheMgr(mBackend.GetCacheManager()),
     mPageSize(pageSize), 
     mFileSize(fileSize), 
-    mBandwidth("PageManager"),
+    mBandwidth("PageManager", mBackend.GetOptions().readAheadTime),
     mPageBackend(file, pageSize, fileSize, backendExists)
 { 
     MDBG_INFO("(file:" << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
@@ -105,7 +105,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
 
         // always pre-populate mReadAheadPages ahead (except index 0)
         if (index > 0) for (uint64_t nextIdx { index+1 }; 
-            nextIdx <= index + mReadAheadPages; ++nextIdx)
+            nextIdx <= index + mBackend.GetOptions().readAheadBuffer; ++nextIdx)
         {
             if (nextIdx*mPageSize >= mFileSize) break; // exit loop
             const size_t fetchSize { GetFetchSize(nextIdx, pagesLock) };
@@ -442,7 +442,7 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
 
     if (mCacheMgr)
     {
-        const uint64_t cacheMax { mCacheMgr->GetMemoryLimit()/mReadMaxCacheFrac };
+        const uint64_t cacheMax { mCacheMgr->GetMemoryLimit()/mBackend.GetOptions().readMaxCacheFrac };
         if (targetBytes > cacheMax) // no point in downloading just to get evicted
         {
             targetBytes = cacheMax;

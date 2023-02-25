@@ -4,7 +4,10 @@
 #include <string>
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/backend/HTTPOptions.hpp"
+
+namespace Andromeda {
+    namespace Backend { struct HTTPOptions; }
+}
 
 namespace AndromedaCli {
 

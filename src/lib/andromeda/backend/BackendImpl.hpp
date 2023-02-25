@@ -103,16 +103,16 @@ public:
     void Initialize();
 
     /** Gets the server config object */
-    const Config& GetConfig() { return mConfig; }
+    inline const Config& GetConfig() { return mConfig; }
 
     /** Returns the backend options in use */
-    const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
+    inline const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
 
     /** Returns the cache manager if set or nullptr */
-    Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
+    inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
 
     /** Sets the cache manager to use (or nullptr) */
-    void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
+    inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
     /** Returns true if doing memory only */
     bool isMemory() const;

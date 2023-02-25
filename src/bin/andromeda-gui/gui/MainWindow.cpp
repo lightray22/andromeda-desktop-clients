@@ -9,15 +9,18 @@
 #include "AccountTab.hpp"
 #include "LoginDialog.hpp"
 
-#include "andromeda/backend/BackendImpl.hpp"
+#include "andromeda/backend/BackendImpl.hpp" // GetBackend()
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda-gui/BackendContext.hpp"
 
 namespace AndromedaGui {
 namespace Gui {
 
 /*****************************************************/
-MainWindow::MainWindow() : QMainWindow(),
+MainWindow::MainWindow(CacheOptions& cacheOptions) : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
+    mCacheManager(cacheOptions),
     mDebug("MainWindow",this)
 {
     MDBG_INFO("()");

@@ -7,8 +7,12 @@
 #include "andromeda-fuse/FuseOptions.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/ConfigOptions.hpp"
-#include "andromeda/backend/HTTPOptions.hpp"
+
+namespace Andromeda {
+    struct ConfigOptions;
+    namespace Backend { struct HTTPOptions; }
+    namespace Filesystem { namespace Filedata { struct CacheOptions; } }
+}
 
 namespace AndromedaFuse {
 
@@ -23,10 +27,12 @@ public:
     /**
      * @param configOptions Config options ref to fill
      * @param httpOptions HTTPRunner options ref to fill
+     * @param cacheOptions CacheManager options ref to fill
      * @param fuseOptions FUSE options ref to fill
      */
     Options(Andromeda::ConfigOptions& configOptions, 
             Andromeda::Backend::HTTPOptions& httpOptions, 
+            Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions,
             AndromedaFuse::FuseOptions& fuseOptions);
 
     virtual bool AddFlag(const std::string& flag) override;
@@ -98,6 +104,7 @@ private:
 
     Andromeda::ConfigOptions& mConfigOptions;
     Andromeda::Backend::HTTPOptions& mHttpOptions;
+    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
     AndromedaFuse::FuseOptions& mFuseOptions;
 
     ApiType mApiType { static_cast<ApiType>(-1) };

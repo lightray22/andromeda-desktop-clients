@@ -8,6 +8,10 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
+namespace Andromeda { 
+    namespace Filesystem { namespace Filedata { struct CacheOptions; } }
+}
+
 namespace AndromedaGui {
 namespace Gui {
 
@@ -22,7 +26,7 @@ class MainWindow : public QMainWindow
 
 public:
 
-    MainWindow();
+    explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     virtual ~MainWindow();
 

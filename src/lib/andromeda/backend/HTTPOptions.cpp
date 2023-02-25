@@ -14,7 +14,6 @@ namespace Backend {
 std::string HTTPOptions::HelpText()
 {
     std::ostringstream output;
-
     HTTPOptions defaultO;
 
     const auto defRetry(seconds(defaultO.retryTime).count());

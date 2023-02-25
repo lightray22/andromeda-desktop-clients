@@ -210,10 +210,6 @@ private:
     std::atomic<size_t> mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;
-    /** The maximum fraction of the cache that a read-ahead can consume (1/x) */
-    const size_t mReadMaxCacheFrac { 4 };
-    /** The number of pages past the current to always pre-populate */
-    const size_t mReadAheadPages { 2 };
 
     /** List of <index,count> pending reads */
     typedef std::list<std::pair<uint64_t, size_t>> PendingMap;

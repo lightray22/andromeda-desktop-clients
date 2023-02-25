@@ -11,6 +11,8 @@ using AndromedaGui::Gui::SystemTray;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 enum class ExitCode
 {
@@ -23,7 +25,9 @@ int main(int argc, char** argv)
 {
     Debug debug("main",nullptr); 
 
-    Options options;
+    CacheOptions cacheOptions;
+
+    Options options(cacheOptions);
 
     try
     {
@@ -54,7 +58,7 @@ int main(int argc, char** argv)
 
     QApplication application(argc, argv);
 
-    MainWindow mainWindow; 
+    MainWindow mainWindow(cacheOptions); 
     SystemTray systemTray(application, mainWindow);
 
     mainWindow.show();

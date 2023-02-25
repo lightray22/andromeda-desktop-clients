@@ -19,7 +19,8 @@ class BandwidthMeasure
 {
 public:
 
-    explicit BandwidthMeasure(const char* debugName);
+    /** @param timeTarget reference to the target time */
+    explicit BandwidthMeasure(const char* debugName, const std::chrono::milliseconds& timeTarget);
 
     /** Updates the bandwidth history with the given measure and returns the estimated targetBytes */
     uint64_t UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
@@ -27,7 +28,7 @@ public:
 private:
 
     /** The desired time target for the transfer */
-    const std::chrono::milliseconds mTimeTarget { 1000 };
+    const std::chrono::milliseconds& mTimeTarget;
     
     /** The number of bandwidth history entries to store */
     static constexpr size_t BANDWIDTH_WINDOW { 4 };

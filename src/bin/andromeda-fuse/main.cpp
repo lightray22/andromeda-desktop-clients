@@ -40,6 +40,8 @@ using Andromeda::Filesystem::Folders::Filesystem;
 using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 enum class ExitCode
 {
@@ -55,9 +57,10 @@ int main(int argc, char** argv)
     
     ConfigOptions configOptions;
     HTTPOptions httpOptions;
+    CacheOptions cacheOptions;
     FuseOptions fuseOptions;
 
-    Options options(configOptions, httpOptions, fuseOptions);
+    Options options(configOptions, httpOptions, cacheOptions, fuseOptions);
 
     try
     {
@@ -106,7 +109,7 @@ int main(int argc, char** argv)
     }
 
     BackendImpl backend(configOptions, *runner);
-    CacheManager cacheMgr(false); // don't start thread yet
+    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     backend.SetCacheManager(&cacheMgr);
 
     std::unique_ptr<Folder> folder;

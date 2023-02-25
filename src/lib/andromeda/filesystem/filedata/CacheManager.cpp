@@ -3,6 +3,7 @@
 #include <chrono>
 
 #include "CacheManager.hpp"
+#include "CacheOptions.hpp"
 #include "PageManager.hpp"
 
 #include "andromeda/BaseException.hpp"
@@ -13,14 +14,19 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-CacheManager::CacheManager(bool startThreads) : 
+CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) : 
+    mCacheOptions(cacheOptions),
     mDebug("CacheManager",this),
-    mBandwidth("CacheManager")
+    mBandwidth("CacheManager", cacheOptions.maxDirtyTime)
 { 
     MDBG_INFO("()");
 
     if (startThreads) StartThreads();
 }
+
+/*****************************************************/
+uint64_t CacheManager::GetMemoryLimit() const { 
+    return mCacheOptions.memoryLimit; }
 
 /*****************************************************/
 CacheManager::~CacheManager()
@@ -59,13 +65,13 @@ void CacheManager::StartThreads()
 /*****************************************************/
 bool CacheManager::ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock)
 {
-    if (mCurrentMemory > mMemoryLimit && mEvictFailure != nullptr)
+    if (mCurrentMemory > mCacheOptions.memoryLimit && mEvictFailure != nullptr)
         throw MemoryException("evict");
 
     // cleanup threads could be waiting on our mgrLock
     if (mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr) return false;
 
-    return (mCurrentMemory > mMemoryLimit);
+    return (mCurrentMemory > mCacheOptions.memoryLimit);
 }
 
 /*****************************************************/
@@ -89,7 +95,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
     {
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
-        while (canWait && isMemoryOverLimit() && 
+        while (canWait && mCurrentMemory > mCacheOptions.memoryLimit && 
             &mPageQueue.front().mPageMgr == &pageMgr &&
             mPageQueue.front().mPagePtr != &page)
         {
@@ -104,7 +110,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         }
     }
 
-    if (mCurrentMemory > mMemoryLimit)
+    if (mCurrentMemory > mCacheOptions.memoryLimit)
     {
         MDBG_INFO("... memory limit! signal");
         mEvictThreadCV.notify_one();
@@ -338,12 +344,6 @@ void CacheManager::PrintDirtyStatus(const char* const fname, const UniqueLock& l
 }
 
 /*****************************************************/
-bool CacheManager::isMemoryOverLimit(const size_t cleaned)
-{
-    return (mCurrentMemory + mMemoryLimit/mMemoryMarginFrac > mMemoryLimit + cleaned);
-}
-
-/*****************************************************/
 void CacheManager::EvictThread()
 {
     MDBG_INFO("()");
@@ -352,7 +352,7 @@ void CacheManager::EvictThread()
     {
         { // lock scope
             UniqueLock lock(mMutex);
-            while (mRunCleanup && (!isMemoryOverLimit() || mEvictFailure != nullptr))
+            while (mRunCleanup && (mCurrentMemory <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
                 mEvictThreadCV.wait(lock);
@@ -407,7 +407,8 @@ void CacheManager::DoPageEvictions()
         size_t cleaned { 0 };
 
         PageList::iterator pageIt { mPageQueue.begin() };
-        for (; isMemoryOverLimit(cleaned); ++pageIt)
+        const uint64_t margin { mCacheOptions.memoryLimit/mCacheOptions.evictSizeFrac };
+        for (; mCurrentMemory + margin > mCacheOptions.memoryLimit + cleaned; ++pageIt)
         {
             PageInfo& pageInfo { *pageIt };
 

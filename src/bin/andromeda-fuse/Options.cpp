@@ -12,6 +12,8 @@ using Andromeda::BaseOptions;
 using Andromeda::ConfigOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 using namespace std::chrono;
 
@@ -37,6 +39,7 @@ std::string Options::HelpText()
         << HTTPOptions::HelpText() << endl << endl
         << FuseOptions::HelpText() << endl << endl
         << ConfigOptions::HelpText() << endl << endl
+        << CacheOptions::HelpText() << endl << endl
            
         << OtherBaseHelpText() << endl;
 
@@ -45,10 +48,12 @@ std::string Options::HelpText()
 
 /*****************************************************/
 Options::Options(ConfigOptions& configOptions, 
-                 HTTPOptions& httpOptions, 
+                 HTTPOptions& httpOptions,
+                 CacheOptions& cacheOptions,
                  FuseOptions& fuseOptions) :
     mConfigOptions(configOptions), 
     mHttpOptions(httpOptions), 
+    mCacheOptions(cacheOptions),
     mFuseOptions(fuseOptions) { }
 
 /*****************************************************/
@@ -71,6 +76,7 @@ bool Options::AddFlag(const std::string& flag)
     else if (BaseOptions::AddFlag(flag)) { }
     else if (mConfigOptions.AddFlag(flag)) { }
     else if (mHttpOptions.AddFlag(flag)) { }
+    else if (mCacheOptions.AddFlag(flag)) { }
     else if (mFuseOptions.AddFlag(flag)) { }
 
     else return false; // not used
@@ -129,6 +135,7 @@ bool Options::AddOption(const std::string& option, const std::string& value)
     else if (BaseOptions::AddOption(option, value)) { }
     else if (mConfigOptions.AddOption(option, value)) { }
     else if (mHttpOptions.AddOption(option, value)) { }
+    else if (mCacheOptions.AddOption(option, value)) { }
     else if (mFuseOptions.AddOption(option, value)) { }
 
     else return false; // not used
