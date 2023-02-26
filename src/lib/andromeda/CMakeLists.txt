@@ -40,8 +40,12 @@ set(HTTPLIB_REQUIRE_OPENSSL True)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE False)
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
 
+set(DEPS_BASEURL "https://github.com" CACHE STRING "Base URL for git dependencies")
+# example to set up a local git repo for testing to avoid cloning from github repeatedly
+# git clone https://github.com/nlohmann/json.git --bare; cd json.git; git --bare update-server-info; mv hooks/post-update.sample hooks/post-update
+
 FetchContent_Declare(cpp-httplib
-    GIT_REPOSITORY  https://github.com/yhirose/cpp-httplib.git
+    GIT_REPOSITORY  ${DEPS_BASEURL}/yhirose/cpp-httplib.git
     GIT_TAG         75053bf # v0.12.1-pre
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
@@ -56,7 +60,7 @@ set(REPROC++ ON)
 set(REPROC_INSTALL OFF)
 
 FetchContent_Declare(reproc
-    GIT_REPOSITORY  https://github.com/stingray-11/reproc
+    GIT_REPOSITORY  ${DEPS_BASEURL}/stingray-11/reproc.git
     GIT_TAG         c1edf03 # master
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
@@ -72,7 +76,7 @@ set(JSON_ImplicitConversions "OFF")
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 FetchContent_Declare(nlohmann_json
-    GIT_REPOSITORY  https://github.com/nlohmann/json.git
+    GIT_REPOSITORY  ${DEPS_BASEURL}/nlohmann/json.git
     GIT_TAG         bc889af # v3.11.2
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(nlohmann_json)
