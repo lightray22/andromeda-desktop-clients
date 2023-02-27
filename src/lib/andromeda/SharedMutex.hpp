@@ -13,6 +13,10 @@ namespace Andromeda {
  * This class specifically implements both a readers-priority and fair queued lock,
  * unlike std::shared_mutex which does not define the priority type (up to the OS)
  * See https://en.wikipedia.org/wiki/Readers%E2%80%93writers_problem#First_readers%E2%80%93writers_problem
+ * 
+ * NOTE this implementation has a small quirk/bug - when the queue is all writers and a priority read lock
+ * is acquired, it will skip the queue but only up to 2nd place in line.  E.g. (W)WWWP -> (W)WPWW ...
+ * this is because only 2nd place and up are waiting on mResQueue - first place is already waiting on mResource
  */
 class SharedMutex
 {

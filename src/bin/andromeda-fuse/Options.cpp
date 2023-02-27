@@ -38,7 +38,8 @@ std::string Options::HelpText()
        
         << HTTPOptions::HelpText() << endl << endl
         << FuseOptions::HelpText() << endl << endl
-        << ConfigOptions::HelpText() << endl << endl
+        
+        << ConfigOptions::HelpText() << endl
         << CacheOptions::HelpText() << endl << endl
            
         << OtherBaseHelpText() << endl;

@@ -60,7 +60,7 @@ TEST_CASE("Test2.1", "[Semaphor]")
     Semaphor sem; Results res; std::mutex resMutex;
 
     RunLock(sem, res, resMutex, "1");
-    RunThread(t2, "2", 1); wait(10);
+    RunThread(t2, "2", 10); wait(100);
 
     RunUnlock(sem, res, resMutex, "1");
     t2.join();
@@ -75,7 +75,7 @@ TEST_CASE("Test3.2", "[Semaphor]")
 
     RunLock(sem, res, resMutex, "1");
     RunLock(sem, res, resMutex, "2");
-    RunThread(t3, "3", 1); wait(10);
+    RunThread(t3, "3", 10); wait(100);
 
     RunUnlock(sem, res, resMutex, "2");
     t3.join();
@@ -92,17 +92,17 @@ TEST_CASE("Test8.3", "[Semaphor]")
     RunLock(sem, res, resMutex, "1");
     RunLock(sem, res, resMutex, "2");
     RunLock(sem, res, resMutex, "3");
-    RunThread(t4, "4", 10); wait(3);
-    RunThread(t5, "5", 10); wait(3);
-    RunThread(t6, "6", 10); wait(3);
-    RunThread(t7, "7", 10); wait(3);
-    RunThread(t8, "8", 10); wait(3);
+    RunThread(t4, "4", 100); wait(30);
+    RunThread(t5, "5", 100); wait(30);
+    RunThread(t6, "6", 100); wait(30);
+    RunThread(t7, "7", 100); wait(30);
+    RunThread(t8, "8", 100); wait(30);
     // this will check the FIFO order
 
     RunUnlock(sem, res, resMutex, "2"); // run 4
-    t4.join(); wait(3); // unlock 4, run 5
+    t4.join(); wait(30); // unlock 4, run 5
 
-    RunUnlock(sem, res, resMutex, "1"); wait(3); // run 6
+    RunUnlock(sem, res, resMutex, "1"); wait(30); // run 6
     RunUnlock(sem, res, resMutex, "3"); // run 7
 
     // 5 finish, run 8, 6 finish

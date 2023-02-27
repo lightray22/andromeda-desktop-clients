@@ -122,10 +122,10 @@ private:
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
      * MUST HAVE either dataLockW or pagesLock! (will be checked!)
      */
-    void InformNewPage(const uint64_t index, Page& page, const UniqueLock* pagesLock, const SharedLockW* dataLock);
+    void InformNewPage(const uint64_t index, Page& page, bool dirty, const UniqueLock* pagesLock, const SharedLockW* dataLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
-    void InformResizePage(const uint64_t index, Page& page, const size_t pageSize, const SharedLockW& dataLock);
+    void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& dataLock);
 
     /** 
      * Resizes an existing page to the given size, informing the CacheManager if inform 
@@ -174,7 +174,7 @@ private:
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
 
-    /** Flushes the given page if dirty (already have the lock) */
+    /** Flushes the given page if dirty (already have the lock) - MUST HAVE DATALOCKR/W! */
     size_t FlushPage(const uint64_t index, const UniqueLock& flushLock);
 
     /** 

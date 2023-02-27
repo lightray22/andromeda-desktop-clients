@@ -72,8 +72,8 @@ TEST_CASE("TestRWP", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::READ);
-    RunThread(t2, "2", 10, LockType::WRITE); wait(3);
-    RunThread(t3, "3", 10, LockType::READP); wait(3);
+    RunThread(t2, "2", 100, LockType::WRITE); wait(30);
+    RunThread(t3, "3", 100, LockType::READP); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::READ);
     t2.join(); t3.join();
@@ -87,8 +87,8 @@ TEST_CASE("TestRPW", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::READ);
-    RunThread(t2, "2", 20, LockType::READP); wait(3);
-    RunThread(t3, "3", 10, LockType::WRITE); wait(3);
+    RunThread(t2, "2", 200, LockType::READP); wait(30);
+    RunThread(t3, "3", 100, LockType::WRITE); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::READ);
     t2.join(); t3.join();
@@ -102,8 +102,8 @@ TEST_CASE("TestWPR", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::WRITE);
-    RunThread(t2, "2", 10, LockType::READP); wait(3);
-    RunThread(t3, "3", 15, LockType::READ); wait(3);
+    RunThread(t2, "2", 100, LockType::READP); wait(30);
+    RunThread(t3, "3", 150, LockType::READ); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::WRITE);
     t2.join(); t3.join();
@@ -117,8 +117,8 @@ TEST_CASE("TestPWR", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::READP);
-    RunThread(t2, "2", 10, LockType::WRITE); wait(3);
-    RunThread(t3, "3", 10, LockType::READ); wait(3);
+    RunThread(t2, "2", 100, LockType::WRITE); wait(30);
+    RunThread(t3, "3", 100, LockType::READ); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::READP);
     t2.join(); t3.join();
@@ -132,8 +132,8 @@ TEST_CASE("TestPRW", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::READP);
-    RunThread(t2, "2", 10, LockType::READ); wait(3);
-    RunThread(t3, "3", 10, LockType::WRITE); wait(3);
+    RunThread(t2, "2", 100, LockType::READ); wait(30);
+    RunThread(t3, "3", 100, LockType::WRITE); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::READP);
     t2.join(); t3.join();
@@ -147,11 +147,11 @@ TEST_CASE("TestRPWR", "[SharedMutex]")
     SharedMutex mut; Results res; std::mutex resMutex;
 
     RunLock(mut, res, resMutex, "1", LockType::READ);
-    RunThread(t2, "2", 10, LockType::READP); wait(3);
-    RunThread(t3, "3", 10, LockType::WRITE); wait(3);
+    RunThread(t2, "2", 100, LockType::READP); wait(30);
+    RunThread(t3, "3", 100, LockType::WRITE); wait(30);
 
     RunUnlock(mut, res, resMutex, "1", LockType::READ);
-    RunThread(t4, "4", 10, LockType::READ); wait(3);
+    RunThread(t4, "4", 100, LockType::READ); wait(30);
 
     t2.join(); // t2 done, run t3
     t3.join(); // t3 done, run t4

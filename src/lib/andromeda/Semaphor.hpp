@@ -14,44 +14,42 @@ namespace Andromeda {
 class Semaphor
 {
 public:
+
     /** @param max maximum number of concurrent lock holders */
-    Semaphor(size_t max = 1) : mMaxCount(max) { }
+    Semaphor(size_t max = 1, bool debug = false) :
+        mAvailable(max), mMaxCount(max), mCurSignal(max+1) { }
 
     inline bool try_lock() noexcept
     {
         std::lock_guard<std::mutex> llock(mMutex);
-        if (mCount == mMaxCount) return false;
-        ++mCount; return true;
+        if (!mAvailable) return false;
+        --mAvailable; return true;
     }
 
     inline void lock() noexcept
     {
         std::unique_lock<std::mutex> llock(mMutex);
-        if (mCount == mMaxCount)
-        {
-            const size_t waitIndex { ++curWait };
-            while (waitIndex != curSignal)
-                mCV.wait(llock);
-        }
-        ++mCount;
+        
+        const size_t waitIndex { ++mCurWait };
+        while (!mAvailable || waitIndex + mAvailable != mCurSignal)
+            mCV.wait(llock);
+        --mAvailable;
     }
 
     inline void unlock() noexcept
     {
         std::lock_guard<std::mutex> llock(mMutex);
-        if (curWait != curSignal)
-        {
-            ++curSignal;
-            mCV.notify_all();
-        }
-        --mCount;
+
+        ++mCurSignal;
+        ++mAvailable;
+        mCV.notify_all();
     }
 
     /** Returns the current # of locks */
-    size_t get_count() noexcept
+    size_t get_avail() noexcept
     {
         std::lock_guard<std::mutex> llock(mMutex);
-        return mCount;
+        return mAvailable;
     }
 
     /** Returns the max semaphor count */
@@ -63,14 +61,14 @@ public:
 
 private:
 
-    /** current count */
-    size_t mCount { 0 };
+    /** current available locks */
+    size_t mAvailable;
     /** original max count */
     size_t mMaxCount;
     /** index of current waiter - can overflow */
-    size_t curWait { 0 };
+    size_t mCurWait { 0 };
     /** index of current signal - can overflow */
-    size_t curSignal { 0 };
+    size_t mCurSignal;
 
     std::mutex mMutex;
     std::condition_variable mCV;

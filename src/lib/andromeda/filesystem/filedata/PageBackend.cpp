@@ -18,9 +18,6 @@ namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
 
-// globally limit the maximum number of concurrent background ops
-static Semaphor sBackendSem { 4 }; // TODO configurable later?
-
 /*****************************************************/
 PageBackend::PageBackend(File& file, const size_t pageSize, uint64_t backendSize, bool backendExists) :
     mPageSize(pageSize),
@@ -34,7 +31,6 @@ PageBackend::PageBackend(File& file, const size_t pageSize, uint64_t backendSize
 size_t PageBackend::FetchPages(const uint64_t index, const size_t count, 
     const PageBackend::PageHandler& pageHandler)
 {
-    SemaphorLock backendSem(sBackendSem); 
     MDBG_INFO("(index:" << index << " count:" << count << ")");
 
     if (!count || (index+count-1)*mPageSize >= mBackendSize) 
@@ -44,8 +40,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const size_t readSize { min64st(mBackendSize-pageStart, mPageSize*count) }; // length of data to fetch
 
-    MDBG_INFO("... threads:" << sBackendSem.get_count() << 
-        " pageStart:" << pageStart << " readSize:" << readSize);
+    MDBG_INFO("... pageStart:" << pageStart << " readSize:" << readSize);
 
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
@@ -90,7 +85,6 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 /*****************************************************/
 size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages)
 {
-    SemaphorLock backendSem(sBackendSem); 
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
     if (!pages.size()) { MDBG_ERROR("() ERROR empty list!"); assert(false); return 0; }

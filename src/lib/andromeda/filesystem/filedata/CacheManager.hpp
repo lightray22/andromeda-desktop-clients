@@ -56,12 +56,13 @@ public:
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
+     * @param dirty if true, consider dirty memory also
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
      * @throws MemoryException if canWait and evict/flush fails to free memory
      * @throws BaseException if canWait and flush for this pageMgr fails to free memory
      */
-    void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, 
+    void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty,
         bool canWait = true, const SharedLockW* mgrLock = nullptr);
 
     /**
@@ -118,9 +119,10 @@ private:
      * @param pageMgr the page manager that owns the page
      * @param index the page manager page index
      * @param page reference to the page
+     * @param dirty if true, consider dirty memory also
      * @return size_t the size of the old page or 0 if it didn't exist
      */
-    size_t EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock);
+    size_t EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock);
 
     /** 
      * Inform us that a page has been erased (already have the lock) 

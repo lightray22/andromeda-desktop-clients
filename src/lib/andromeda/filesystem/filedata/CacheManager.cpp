@@ -171,7 +171,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
 }
 
 /*****************************************************/
-size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, const UniqueLock& lock)
+size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
     PageInfo pageInfo { pageMgr, index, &page, page.size() };
@@ -181,7 +181,7 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
     mCurrentMemory += page.size();
     PrintStatus(__func__, lock);
 
-    if (page.mDirty)
+    if (dirty)
     {
         mDirtyQueue.emplace_back(pageInfo);
         mDirtyItMap[&page] = std::prev(mDirtyQueue.end());
@@ -194,18 +194,17 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
 }
 
 /*****************************************************/
-void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool canWait, const SharedLockW* mgrLock)
+void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, bool canWait, const SharedLockW* mgrLock)
 {
     MDBG_INFO("(page:" << index << " " << &page << " canWait:" << (canWait?"true":"false") << ")");
 
     UniqueLock lock(mMutex);
 
-    const size_t oldSize { EnqueuePage(pageMgr, index, page, lock) };
+    const size_t oldSize { EnqueuePage(pageMgr, index, page, dirty, lock) };
     if (page.size() > oldSize)
     {
         HandleMemory(pageMgr, page, canWait, lock, mgrLock);
-        if (page.mDirty) 
-            HandleDirtyMemory(pageMgr, page, canWait, lock, mgrLock);
+        if (dirty) HandleDirtyMemory(pageMgr, page, canWait, lock, mgrLock);
     }
 
     MDBG_INFO("... return!");
@@ -325,7 +324,7 @@ void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " pages:" << mPageItMap.size() << ", memory:" << mCurrentMemory; });
 
-#if DEBUG
+#if DEBUG // this will kill performance
     uint64_t total = 0; for (const PageInfo& pageInfo : mPageQueue) total += pageInfo.mPageSize;
     if (total != mCurrentMemory){ MDBG_ERROR(": BAD MEMORY TRACKING! " << total << " != " << mCurrentMemory); assert(false); }
 #endif // DEBUG
@@ -337,7 +336,7 @@ void CacheManager::PrintDirtyStatus(const char* const fname, const UniqueLock& l
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " dirtyPages:" << mDirtyItMap.size() << ", dirtyMemory:" << mCurrentDirty; });
 
-#if DEBUG
+#if DEBUG // this will kill performance
     uint64_t total = 0; for (const PageInfo& pageInfo : mDirtyQueue) total += pageInfo.mPageSize;
     if (total != mCurrentDirty){ MDBG_ERROR(": BAD DIRTY TRACKING! " << total << " != " << mCurrentDirty); assert(false); }
 #endif // DEBUG
@@ -446,9 +445,10 @@ void CacheManager::DoPageEvictions()
                 UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
                 
-                // move the failed page to the front so we try a different (maybe non-dirty) one next
+                // move the failed page to the end so we try a different (maybe non-dirty) one next
                 if (RemovePage(*pageInfo.mPagePtr, lock))
-                    EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, *pageInfo.mPagePtr, lock);
+                    EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
+                    *pageInfo.mPagePtr, pageInfo.mPagePtr->mDirty, lock);
 
                 mEvictFailure = std::current_exception();
                 mEvictWaitCV.notify_all();
