@@ -19,7 +19,7 @@ std::string CacheOptions::HelpText()
     const auto defDirty(milliseconds(cfgDefault.maxDirtyTime).count());
 
     // TODO add utility functions to convert 268435456 <-> 256M + unit test
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes(" << cfgDefault.memoryLimit << ")] [--evict-frac int(" << cfgDefault.evictSizeFrac << ")]";
+    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << cfgDefault.memoryLimit << ")] [--evict-frac uint(" << cfgDefault.evictSizeFrac << ")]";
 
     return output.str();
 }
@@ -34,7 +34,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     }
     else if (option == "memory-limit")
     {
-        try { memoryLimit = stoul(value); }
+        try { memoryLimit = stoull(value); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }

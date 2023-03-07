@@ -19,8 +19,8 @@ std::string ConfigOptions::HelpText()
 
     using std::endl; output 
         << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal]" << endl
-        << "Data Advanced:   [--pagesize bytes(" << cfgDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
-            << " [--read-max-cache-frac int(" << cfgDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << cfgDefault.readAheadBuffer << ")]";
+        << "Data Advanced:   [--pagesize bytes32(" << cfgDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
+            << " [--read-max-cache-frac uint(" << cfgDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << cfgDefault.readAheadBuffer << ")]";
 
     return output.str();
 }
