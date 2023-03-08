@@ -100,7 +100,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
     { PageMap::const_iterator it { mPages.find(index) };
     if (it != mPages.end()) 
     {
-        DoReadAhead(index, pagesLock);
+        DoAdvanceRead(index, pagesLock);
 
         MDBG_INFO("... return existing page");
         const Page& page { it->second };
@@ -342,7 +342,7 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
 }
 
 /*****************************************************/
-void PageManager::DoReadAhead(const uint64_t index, const UniqueLock& pagesLock)
+void PageManager::DoAdvanceRead(const uint64_t index, const UniqueLock& pagesLock)
 {
     // always pre-populate mReadAheadPages ahead (except index 0)
     if (index > 0) for (uint64_t nextIdx { index+1 }; 

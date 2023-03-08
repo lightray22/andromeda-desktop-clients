@@ -30,7 +30,17 @@ namespace Filedata {
 
 class CacheManager;
 
-/** File page data manager */
+/** 
+ * File page data manager - splits the file into a series of fixed size pages
+ * Implements thread-safe interfaces to read, write, truncate, evict and flush
+ * Implements various tricks/caching to greatly increase speed:
+ *  - caches pages read from the backend (see EvictPage)
+ *  - reads ahead consecutive ranges of pages sized by bandwidth,
+ *      doing so on a background thread to minimize waiting
+ *  - caches writes until flushed (write-back cache) (see FlushPage)
+ *  - writes back consecutive ranges of pages to maximize throughput
+ *  - supports delayed file Create to combine Create+Write to Upload
+ */
 class PageManager
 {
 public:
@@ -146,7 +156,7 @@ private:
     size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Starts a fetch if necessary to prepopulate some pages ahead of the given index (options.readAheadBuffer) */
-    void DoReadAhead(const uint64_t index, const UniqueLock& pagesLock);
+    void DoAdvanceRead(const uint64_t index, const UniqueLock& pagesLock);
 
     /** Spawns a thread to read some # of pages starting at the given VALID (mBackendSize) index */
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);

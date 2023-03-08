@@ -25,8 +25,12 @@ class PageManager;
 struct CacheOptions;
 
 /** 
- * Manages pages as an LRU cache to limit memory usage 
- * Also tracks dirty pages to limit the total dirty memory
+ * Manages pages as an LRU cache to limit memory usage, by calling EvictPage()
+ * Also tracks dirty pages to limit the total dirty memory, by calling FlushPage()
+ * The maximum dirty pages is in terms of time, determined by bandwidth measurement
+ * Fully thread-safe. Evict/Flush are synchronous if possible when writing for
+ *     error-catching - otherwise, they happen on background threads.
+ * Callers adding new/bigger pages will block until memory is available
  */
 class CacheManager
 {
