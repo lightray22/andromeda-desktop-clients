@@ -17,13 +17,22 @@ using AndromedaFuse::FuseOptions;
 
 namespace fs = std::filesystem;
 
-/*****************************************************/
-MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPath, FuseOptions& options) : 
-    mDebug("MountContext") 
-{
-    mDebug << __func__ << "(mountPath:" << mountPath << ")"; mDebug.Info();
+namespace AndromedaGui {
 
-    if (home) mountPath = InitHomeRoot()+"/"+mountPath;
+/*****************************************************/
+MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mountPath, FuseOptions& options) : 
+    mHomeRelative(homeRel), mDebug("MountContext",this) 
+{
+    MDBG_INFO("(mountPath:" << mountPath << ")");
+
+    if (mHomeRelative)
+    {
+        QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
+            if (locations.empty()) throw UnknownHomeException();
+
+        mountPath = locations.at(0).toStdString()+"/"+mountPath;
+        MDBG_INFO("... mountPath:" << mountPath);
+    }
 
     try
     {
@@ -34,53 +43,47 @@ MountContext::MountContext(BackendImpl& backend, bool home, std::string mountPat
         #if WIN32
             // Windows auto-creates the directory and fails if it already exists
             fs::remove(mountPath);
-        #endif
+        #endif // WIN32
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (home) fs::create_directory(mountPath);
-    #endif
+        else if (mHomeRelative)
+            fs::create_directory(mountPath);
+    #endif // !WIN32
     }
     catch (const fs::filesystem_error& err)
     {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
+        MDBG_ERROR("... " << err.what());
         throw FilesystemErrorException(err);
     }
 
     mRootFolder = std::make_unique<SuperRoot>(backend);
 
     mFuseAdapter = std::make_unique<FuseAdapter>(
-        mountPath, *mRootFolder, options, FuseAdapter::RunMode::THREAD);
+        mountPath, *mRootFolder, options);
+    
+    mFuseAdapter->StartFuse(FuseAdapter::RunMode::THREAD); // background
 }
 
 /*****************************************************/
 MountContext::~MountContext()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     const std::string mountPath { GetMountPath() }; // copy
 
-    mFuseAdapter.reset(); // unmount FUSE
+    mFuseAdapter.reset(); // unmount before removing dirs
 
     try
     {
-        if (!mHomeRoot.empty()) // home-relative mount
+        if (mHomeRelative && fs::is_directory(mountPath) && fs::is_empty(mountPath))
         {
-            if (fs::is_directory(mountPath) && fs::is_empty(mountPath))
-            {
-                mDebug << __func__ << "... remove mountPath"; mDebug.Info();
-                fs::remove(mountPath);
-            }
-
-            if (fs::is_directory(mHomeRoot) && fs::is_empty(mHomeRoot))
-            {
-                mDebug << __func__ << "... remove homeRoot"; mDebug.Info();
-                fs::remove(mHomeRoot);
-            }
+            MDBG_INFO("... remove mountPath");
+            fs::remove(mountPath);
         }
     }
     catch (const fs::filesystem_error& err)
     {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
+        MDBG_ERROR("... " << err.what()); // ignore
     }
 }
 
@@ -90,27 +93,4 @@ const std::string& MountContext::GetMountPath() const
     return mFuseAdapter->GetMountPath();
 }
 
-/*****************************************************/
-const std::string& MountContext::InitHomeRoot()
-{
-    mDebug << __func__ << "()"; mDebug.Info();
-
-    QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
-    if (locations.empty()) throw UnknownHomeException();
-
-    mHomeRoot = locations.at(0).toStdString()+"/Andromeda";
-    mDebug << __func__ << "... homeRoot:" << mHomeRoot; mDebug.Info();
-    
-    try
-    {
-        if (!fs::is_directory(mHomeRoot))
-            fs::create_directory(mHomeRoot);
-    }
-    catch (const fs::filesystem_error& err)
-    {
-        mDebug << __func__ << "... " << err.what(); mDebug.Error();
-        throw FilesystemErrorException(err);
-    }
-
-    return mHomeRoot;
-}
+} // namespace AndromedaGui

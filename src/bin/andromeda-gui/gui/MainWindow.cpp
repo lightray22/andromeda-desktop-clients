@@ -1,5 +1,7 @@
 
+#include <sstream>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QWidget>
 
 #include "MainWindow.hpp"
 #include "ui_MainWindow.h"
@@ -7,14 +9,21 @@
 #include "AccountTab.hpp"
 #include "LoginDialog.hpp"
 
+#include "andromeda/backend/BackendImpl.hpp" // GetBackend()
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda-gui/BackendContext.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
-MainWindow::MainWindow() : QMainWindow(),
+MainWindow::MainWindow(CacheOptions& cacheOptions) : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
-    mDebug("MainWindow")
+    mCacheManager(cacheOptions),
+    mDebug("MainWindow",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mQtUi->setupUi(this);
 }
@@ -22,13 +31,20 @@ MainWindow::MainWindow() : QMainWindow(),
 /*****************************************************/
 MainWindow::~MainWindow()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
+
+    // need to make sure AccountTab/BackendContexts are deleted before CacheManager
+    while (mQtUi->tabAccounts->count() != 0)
+    {
+        QWidget* accountTab { mQtUi->tabAccounts->widget(0) };
+        mQtUi->tabAccounts->removeTab(0); delete accountTab;
+    }
 }
 
 /*****************************************************/
 void MainWindow::show()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     QMainWindow::show(); // base class
     activateWindow(); // bring to front
@@ -39,18 +55,16 @@ void MainWindow::show()
 /*****************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     if (!event->spontaneous() || GetCurrentTab() == nullptr)
     {
-        mDebug << __func__ << "... closing"; mDebug.Info();
-
+        MDBG_INFO("... closing");
         QMainWindow::closeEvent(event);
     }
     else
     {
-        mDebug << __func__ << "... hiding"; mDebug.Info();
-
+        MDBG_INFO("... hiding");
         event->ignore(); hide();
     }
 }
@@ -58,12 +72,15 @@ void MainWindow::closeEvent(QCloseEvent* event)
 /*****************************************************/
 void MainWindow::AddAccount()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     LoginDialog loginDialog(*this);
     if (loginDialog.exec())
     {
-        AccountTab* accountTab { new AccountTab(*this, loginDialog.TakeBackend()) };
+        std::unique_ptr<BackendContext> backendCtx { loginDialog.TakeBackend() };
+        backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+
+        AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
         mQtUi->tabAccounts->setCurrentIndex(
             mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
@@ -78,10 +95,10 @@ void MainWindow::AddAccount()
 /*****************************************************/
 void MainWindow::RemoveAccount()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     if (QMessageBox::question(this, "Remove Account", "Are you sure?") == QMessageBox::Yes)
-        { mDebug << __func__ << "... confirmed"; mDebug.Info(); }
+        { MDBG_INFO("... confirmed"); }
     else return; // early return!
 
     AccountTab* accountTab { GetCurrentTab() };
@@ -110,7 +127,7 @@ AccountTab* MainWindow::GetCurrentTab()
 /*****************************************************/
 void MainWindow::MountCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Mount();
@@ -119,7 +136,7 @@ void MainWindow::MountCurrent()
 /*****************************************************/
 void MainWindow::UnmountCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Unmount();
@@ -128,8 +145,21 @@ void MainWindow::UnmountCurrent()
 /*****************************************************/
 void MainWindow::BrowseCurrent()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr) accountTab->Browse();
 }
+
+/*****************************************************/
+void MainWindow::ShowAbout()
+{
+    std::stringstream str;
+    str << "Andromeda GUI v" << ANDROMEDA_VERSION << std::endl;
+    str << "License: GNU GPLv3" << std::endl;
+
+    QMessageBox::about(this, "Andromeda GUI", str.str().c_str());
+}
+
+} // namespace Gui
+} // namespace AndromedaGui

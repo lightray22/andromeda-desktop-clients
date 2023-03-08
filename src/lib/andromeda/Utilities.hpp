@@ -1,8 +1,9 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
-#include <map>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace Andromeda {
@@ -11,6 +12,8 @@ namespace Andromeda {
 class Utilities
 {
 public:
+
+    Utilities() = delete; // static only
 
     typedef std::vector<std::string> StringList;
 
@@ -54,20 +57,22 @@ public:
 
     /**
      * Silently read a line of input from stdin
-     * @param retval reference to string to fill
+     * @param[out] retval reference to string to fill
      */
     static void SilentReadConsole(std::string& retval);
 
-    typedef std::map<std::string,std::string> StringMap;
+    typedef std::unordered_map<std::string,std::string> StringMap;
 
     /** Returns a string map of the process environment variables */
     static StringMap GetEnvironment();
 
     /** Returns the user's home directory path if found */
     static std::string GetHomeDirectory();
+
+    /** Returns strerror(err) but thread safe */
+    static std::string GetErrorString(int err);
 };
 
 } // namespace Andromeda
 
-#endif
-
+#endif // LIBA2_UTILITIES_H_

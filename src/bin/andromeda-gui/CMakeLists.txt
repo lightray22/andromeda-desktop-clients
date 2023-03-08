@@ -30,7 +30,10 @@ else()
     add_executable(andromeda-gui ${SOURCE_FILES})
 endif()
     
-target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_WARNINGS})
+target_compile_options(andromeda-gui PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_compile_definitions(andromeda-gui PRIVATE ${ANDROMEDA_CXX_DEFS} QTVER=${QT_VERSION_MAJOR})
+target_link_options(andromeda-gui PRIVATE ${ANDROMEDA_LINK_OPTS})
+
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
@@ -66,16 +69,16 @@ add_subdirectory(gui)
 
 # include/link libandromeda
 
-if (NOT TARGET andromeda-fuse)
+if (NOT TARGET libandromeda-fuse)
     add_subdirectory(../../lib/andromeda-fuse lib/andromeda-fuse)
 endif()
 
-if (NOT TARGET andromeda-sync)
+if (NOT TARGET libandromeda-sync)
     add_subdirectory(../../lib/andromeda-sync lib/andromeda-sync)
 endif()
 
-target_link_libraries(andromeda-gui PRIVATE andromeda-fuse)
-#target_link_libraries(andromeda-gui PRIVATE andromeda-sync)
+target_link_libraries(andromeda-gui PRIVATE libandromeda-fuse)
+#target_link_libraries(andromeda-gui PRIVATE libandromeda-sync)
 
 # include/link Qt libraries
 

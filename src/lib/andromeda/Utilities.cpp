@@ -1,11 +1,22 @@
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <mutex>
 
+// SilentReadConsole()
 #if WIN32
 #include <windows.h>
 #else // !WIN32
 #include <termios.h>
+#endif // WIN32
+
+// GetEnvironment()
+#if WIN32
+#include <stdlib.h>
+#else // !WIN32
+#include <unistd.h>
+extern char** environ;
 #endif // WIN32
 
 #include "Utilities.hpp"
@@ -38,7 +49,7 @@ Utilities::StringList Utilities::explode(
             retval.push_back(segment); 
             segment.clear(); 
         }
-        else { skipped++; segment += delim; }
+        else { ++skipped; segment += delim; }
 
         str.erase(0, segEnd + delim.length());
     }
@@ -89,8 +100,8 @@ std::string Utilities::trim(const std::string& str)
 {
     const size_t size { str.size() };
 
-    size_t start = 0; while (start < size && std::isspace(str[start])) start++;
-    size_t end = size; while (end > 0 && std::isspace(str[end-1])) end--;
+    size_t start = 0; while (start < size && std::isspace(str[start])) ++start;
+    size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
 
     return str.substr(start, end-start);
 }
@@ -116,7 +127,7 @@ void Utilities::SilentReadConsole(std::string& retval)
         nflags = oflags;
         nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
         tcsetattr(fileno(stdin), TCSANOW, &nflags);
-    #endif
+    #endif // WIN32
 
     std::getline(std::cin, retval);
     
@@ -124,16 +135,10 @@ void Utilities::SilentReadConsole(std::string& retval)
         SetConsoleMode(hStdin, mode);
     #else // !WIN32
         tcsetattr(fileno(stdin), TCSANOW, &oflags);
-    #endif
+    #endif // WIN32
 
     std::cout << std::endl;
 }
-
-#if WIN32
-#include <stdlib.h>
-#else // !WIN32
-#include <unistd.h>
-#endif // WIN32
 
 /*****************************************************/
 Utilities::StringMap Utilities::GetEnvironment()
@@ -142,7 +147,6 @@ Utilities::StringMap Utilities::GetEnvironment()
 #if WIN32
     env = *__p__environ();
 #else // !WIN32
-    extern char** environ;
     env = environ;
 #endif // WIN32
 
@@ -160,7 +164,7 @@ std::string Utilities::GetHomeDirectory()
     #if WIN32
         #pragma warning(push)
         #pragma warning(disable:4996) // getenv is safe in C++11
-    #endif
+    #endif // WIN32
 
     for (const char* env : { "HOME", "HOMEDIR", "HOMEPATH" })
     {
@@ -170,9 +174,29 @@ std::string Utilities::GetHomeDirectory()
 
     #if WIN32
         #pragma warning(pop)
-    #endif
+    #endif // WIN32
 
     return ""; // not found
+}
+
+// mutex protecting std::strerror
+std::mutex sStrerrorMutex;
+
+/*****************************************************/
+std::string Utilities::GetErrorString(int err)
+{
+    std::lock_guard<std::mutex> llock(sStrerrorMutex);
+
+    #if WIN32
+        #pragma warning(push)
+        #pragma warning(disable:4996) // we lock strerror
+    #endif // WIN32
+
+    return std::string(std::strerror(err));
+
+    #if WIN32
+        #pragma warning(pop)
+    #endif // WIN32
 }
 
 } // namespace Andromeda

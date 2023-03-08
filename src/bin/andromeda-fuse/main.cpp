@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "Options.hpp"
+using AndromedaFuse::Options;
 #include "andromeda-fuse/FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
 #include "andromeda-fuse/FuseOptions.hpp"
@@ -14,14 +15,14 @@ using AndromedaFuse::FuseOptions;
 
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
 #include "andromeda/backend/BaseRunner.hpp"
 using Andromeda::Backend::BaseRunner;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/backend/CLIRunner.hpp"
 using Andromeda::Backend::CLIRunner;
 #include "andromeda/backend/HTTPRunner.hpp"
@@ -37,10 +38,10 @@ using Andromeda::Filesystem::Folders::PlainFolder;
 using Andromeda::Filesystem::Folders::Filesystem;
 #include "andromeda/filesystem/folders/SuperRoot.hpp"
 using Andromeda::Filesystem::Folders::SuperRoot;
-
-#define VERSION "0.1-alpha"
-
-using AndromedaFuse::FuseAdapter;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 enum class ExitCode
 {
@@ -52,13 +53,14 @@ enum class ExitCode
 
 int main(int argc, char** argv)
 {
-    Debug debug("main"); 
+    Debug debug("main",nullptr); 
     
     ConfigOptions configOptions;
     HTTPOptions httpOptions;
+    CacheOptions cacheOptions;
     FuseOptions fuseOptions;
 
-    Options options(configOptions, httpOptions, fuseOptions);
+    Options options(configOptions, httpOptions, cacheOptions, fuseOptions);
 
     try
     {
@@ -75,7 +77,7 @@ int main(int argc, char** argv)
     }
     catch (const Options::ShowVersionException& ex)
     {
-        std::cout << "version: " << VERSION << std::endl;
+        std::cout << "version: " << ANDROMEDA_VERSION << std::endl;
         FuseAdapter::ShowVersionText();
         return static_cast<int>(ExitCode::SUCCESS);
     }
@@ -86,9 +88,7 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
-    Debug::SetLevel(options.GetDebugLevel());
-
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     std::unique_ptr<BaseRunner> runner;
     switch (options.GetApiType())
@@ -109,8 +109,11 @@ int main(int argc, char** argv)
     }
 
     BackendImpl backend(configOptions, *runner);
-    std::unique_ptr<Folder> folder;
+    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
+    backend.SetCacheManager(&cacheMgr);
 
+    std::unique_ptr<Folder> folder;
+    
     try
     {
         backend.Initialize();
@@ -141,8 +144,21 @@ int main(int argc, char** argv)
 
     try
     {
-        FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions, 
-            static_cast<bool>(Debug::GetLevel()) ? FuseAdapter::RunMode::FOREGROUND : FuseAdapter::RunMode::DAEMON);
+        FuseAdapter fuseAdapter(options.GetMountPath(), *folder, fuseOptions);
+
+        // In either case, StartFuse() will block until unmounted
+        if (options.isForeground())
+        {
+            cacheMgr.StartThreads();
+            fuseAdapter.StartFuse(
+                FuseAdapter::RunMode::FOREGROUND);
+        }
+        else
+        { // daemonize kills threads, start cacheMgr in the callback
+            fuseAdapter.StartFuse(
+                FuseAdapter::RunMode::DAEMON,
+                [&](){ cacheMgr.StartThreads(); });
+        }
     }
     catch (const FuseAdapter::Exception& ex)
     {
@@ -150,6 +166,6 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::FUSE_INIT);
     }
 
-    debug.Info("returning success...");
+    DDBG_INFO(": returning success...");
     return static_cast<int>(ExitCode::SUCCESS);
 }

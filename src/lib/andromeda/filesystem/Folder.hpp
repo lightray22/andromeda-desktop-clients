@@ -11,11 +11,6 @@
 #include "Item.hpp"
 #include "andromeda/Debug.hpp"
 
-#if WIN32 && defined(CreateFile)
-// thanks for nothing, Windows >:(
-#undef CreateFile
-#endif
-
 namespace Andromeda {
 
 namespace Backend { class BackendImpl; }
@@ -148,4 +143,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_FOLDER_H_

@@ -6,8 +6,13 @@
 
 #include "andromeda/Debug.hpp"
 
+namespace AndromedaGui {
+
 class BackendContext;
 class MountContext;
+
+namespace Gui {
+
 namespace Ui { class AccountTab; }
 
 /** The main tab widget for an account/backend instance */
@@ -53,5 +58,8 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // A2GUI_ACCOUNTTAB_HPP

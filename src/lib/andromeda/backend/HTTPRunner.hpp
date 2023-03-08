@@ -6,8 +6,16 @@
 #include <string>
 
 // TODO should not include this here - use PRIVATE cmake link
+// probably need just an interface here then a separate HTTPRunnerImpl
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
+
+#if WIN32 // httplib adds windows.h
+// thanks for nothing, Windows >:(
+#undef CreateFile
+#undef DeleteFile
+#undef MoveFile
+#endif // WIN32
 
 #include "BaseRunner.hpp"
 #include "HTTPOptions.hpp"
@@ -35,6 +43,16 @@ public:
         public: explicit ConnectionException() : 
             LibraryException(httplib::Error::Connection) {} };
 
+    /** Exception indicating that the request was redirected */
+    class RedirectException : public EndpointException { public:
+        RedirectException() : EndpointException("Redirected") {}
+        explicit RedirectException(const std::string& location) :
+            EndpointException("30X Redirected: "+location) {}; };
+
+    /** Exception indicating the input request size is too big */
+    class InputSizeException : public EndpointException { public:
+        InputSizeException() : EndpointException("413 Request Too Large") {} };
+
     /**
      * @param protoHost (protocol://)hostname
      * @param baseURL baseURL of the endpoint
@@ -60,10 +78,28 @@ public:
     virtual const std::string& GetBaseURL() const final { return mBaseURL; }
 
     inline virtual std::string RunAction(const RunnerInput& input) override { 
-        bool isJson; return RunAction(input,isJson); };
+        bool isJson; return RunAction(input, isJson); };
 
-    /** @param isJson if the response is JSON, set to true */
+    virtual std::string RunAction(const RunnerInput_FilesIn& input) override { 
+        bool isJson; return RunAction(input, isJson); };
+    
+    virtual std::string RunAction(const RunnerInput_StreamIn& input) override { 
+        bool isJson; return RunAction(input, isJson); };
+    
+    virtual void RunAction(const RunnerInput_StreamOut& input) override { 
+        bool isJson; RunAction(input, isJson); };
+
+    /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction(const RunnerInput& input, bool& isJson);
+
+    /** @param[out] isJson ref set to whether response is json */
+    virtual std::string RunAction(const RunnerInput_FilesIn& input, bool& isJson);
+
+    /** @param[out] isJson ref set to whether response is json */
+    virtual std::string RunAction(const RunnerInput_StreamIn& input, bool& isJson);
+
+    /** @param[out] isJson ref set to whether response is json (before data starts) */
+    virtual void RunAction(const RunnerInput_StreamOut& input, bool& isJson);
 
     /** Allows automatic retry on HTTP failure */
     virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
@@ -80,15 +116,53 @@ private:
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
 
-    /** Returns an httplib function that reads in to buf */
-    httplib::ContentProviderWithoutLength GetStreamFunc(
-        char* const& buf, const size_t& bufSize, std::istream& in);
+    /** Returns the action URL for the given input and adds params to headers */
+    std::string SetupRequest(const RunnerInput& input, httplib::Headers& headers);
+
+    /** Returns the action URL for the given input and adds params to a post body */
+    std::string SetupRequest(const RunnerInput& input, httplib::MultipartFormDataItems& params);
+
+    /**
+     * Performs a series of HTTP request attempts, does not call HandleResponse
+     * @param[in] getResult Function that provides an httplib result
+     * @param[out] canRetry ref set to where retry is allowed
+     * @param[in] doRetry ref to bool set by manual call of HandleResponse
+     */
+    void DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry);
+
+    /**
+     * Performs a series of HTTP request attempts, calling HandleResponse
+     * @param[in] getResult Function that provides an httplib result
+     * @param[out] isJson ref set to whether response is json
+     * @return std::string the body of the response
+     */
+    std::string DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson);
+
+    /**
+     * Handles an httplib non-response
+     * @param result httplib result object
+     * @param retry true if retry is allowed (wait), else throw
+     * @param attempt current attempt # (for debug print)
+     * @throws LibraryException if not retry
+     */
+    void HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt);
+
+    /**
+     * Handles an httplib response
+     * @param[in] response httplib response object
+     * @param[out] isJson ref set to whether response is json
+     * @param[in] canRetry true if a retry is allowed (else fail)
+     * @param[out] doRetry ref set to whether the request needs retry
+     * @return std::string the body if not doRetry
+     * @throws EndpointException if a non-retry error
+     */
+    std::string HandleResponse(const httplib::Response& response, bool& isJson, const bool& canRetry, bool& doRetry);
 
     /** Handles an HTTP redirect to a new location */
-    void HandleRedirect(const std::string& location);
+    void RegisterRedirect(const std::string& location);
 
-    /** Throws a redirect exception with the repsonse headers */
-    void RedirectException(const httplib::Headers& headers);
+    /** Returns a redirect exception with the response */
+    RedirectException GetRedirectException(const httplib::Response& response);
 
     Debug mDebug;
 
@@ -105,5 +179,4 @@ private:
 } // namespace Backend
 } // namespace Andromeda
 
-#endif
-
+#endif // LIBA2_HTTPRUNNER_H_

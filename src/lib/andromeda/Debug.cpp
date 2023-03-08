@@ -1,87 +1,80 @@
 
 #include "Debug.hpp"
 
+#include <chrono>
 #include <iomanip>
-#include <iostream>
+#include <fstream>
+#include <mutex>
 #include <thread>
 
 using namespace std::chrono;
 
 namespace Andromeda {
 
-std::mutex Debug::sMutex;
-Debug::Level Debug::sLevel { Debug::Level::NONE };
-high_resolution_clock::time_point Debug::sStart { high_resolution_clock::now() };
+/** Global output lock */
+static std::mutex sMutex;
+/** timestamp when the program started */
+static steady_clock::time_point sStart { steady_clock::now() };
+
+Debug::Level Debug::sLevel { Debug::Level::ERRORS };
+std::unordered_set<std::string> Debug::sPrefixes;
+
+static std::ostream& sOutstr { std::cerr };
+//static std::ofstream sOutstr("debug.log", std::ofstream::out);
 
 /*****************************************************/
-Debug::operator bool() const
+void Debug::PrintIf(const Debug::StreamFunc& strfunc)
 {
-    return static_cast<bool>(sLevel);
+    if (sPrefixes.empty() || sPrefixes.find(mPrefix) != sPrefixes.end())
+    {
+        Print(strfunc);
+    }
 }
 
 /*****************************************************/
-void Debug::Info(const std::string& str)
+void Debug::Print(const Debug::StreamFunc& strfunc)
 {
-    if (sLevel >= Level::INFO) Error(str);
-
-    if (str.empty()) mBuffer.str(std::string());
-}
-
-/*****************************************************/
-void Debug::Backend(const std::string& str)
-{
-    if (sLevel >= Level::BACKEND) Error(str);
-
-    if (str.empty()) mBuffer.str(std::string());
-}
-
-/*****************************************************/
-void Debug::Error(const std::string& str)
-{
-    if (sLevel < Level::ERRORS) return;
-
-    const std::lock_guard<std::mutex> lock(sMutex);
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
     if (sLevel >= Level::DETAILS)
     {
-        duration<double> time { high_resolution_clock::now() - sStart };
-        std::cerr << "time:" << time.count() << " ";
+        sOutstr << "tid:" << std::this_thread::get_id() << " ";
 
-        std::cerr << "tid:" << std::this_thread::get_id() << " ";
+        duration<double> time { steady_clock::now() - sStart };
+        sOutstr << "time:" << time.count() << " ";
 
-        if (mAddr != nullptr) std::cerr << "obj:" << mAddr << " ";
+        if (mAddr == nullptr) { sOutstr << "static "; }
+        else { sOutstr << "obj:" << mAddr << " "; }
     }
 
-    std::cerr << mPrefix << ": ";
-
-    if (str.empty())
-    {
-        std::cerr << mBuffer.str() << std::endl; 
-        
-        mBuffer.str(std::string()); // reset buffer
-    }
-    else std::cerr << str << std::endl;
+    sOutstr << mPrefix << ": "; strfunc(sOutstr); sOutstr << std::endl;
 }
 
 /*****************************************************/
-void Debug::DumpBytes(const void* ptr, uint64_t bytes, uint8_t width)
+Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
 {
-    mBuffer << "printing " << bytes << " bytes at " 
-        << std::hex << ptr << std::endl;
-
-    for (decltype(bytes) i { 0 }; i < bytes; i++)
+    // copy variables into std::function (scope)
+    return [ptr,bytes,width](std::ostream& str)
     {
-        const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
-        
-        if (i % width == 0) mBuffer << static_cast<const void*>(byte) << ": ";
-        
-        // need to cast to a 16-bit integer so it gets printed as a number not a character
-        mBuffer << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
+        std::ios_base::fmtflags sflags { str.flags() };
 
-        if ((i % width) + 1 == width) mBuffer << std::endl;
-    }
+        str << "printing " << bytes << " bytes at " 
+            << std::hex << ptr << std::endl;
 
-    mBuffer << std::endl;
+        for (decltype(bytes) i { 0 }; i < bytes; i++)
+        {
+            const uint8_t* byte { static_cast<const uint8_t*>(ptr)+i };
+            
+            if (i % width == 0) str << static_cast<const void*>(byte) << ": ";
+            
+            // need to cast to a 16-bit integer so it gets printed as a number not a character
+            str << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
+
+            if ((i % width) + 1 == width) str << std::endl;
+        }
+
+        str << std::endl; str.flags(sflags); // restore flags
+    };
 }
 
 } // namespace Andromeda

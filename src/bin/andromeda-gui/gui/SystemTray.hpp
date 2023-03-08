@@ -1,12 +1,20 @@
 #ifndef A2GUI_SYSTEMTRAY_H
 #define A2GUI_SYSTEMTRAY_H
 
+#if QTVER == 5
+#include <QtWidgets/QAction>
+#else // QTVER != 5
 #include <QtGui/QAction>
+#endif // QTVER
+
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QSystemTrayIcon>
 
 #include "andromeda/Debug.hpp"
+
+namespace AndromedaGui {
+namespace Gui {
 
 class MainWindow;
 
@@ -35,5 +43,8 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // A2GUI_SYSTEMTRAY_H

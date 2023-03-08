@@ -5,33 +5,33 @@
 #include "File.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
+#include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
+#include "andromeda/filesystem/filedata/PageManager.hpp"
+using Andromeda::Filesystem::Filedata::PageManager;
 
 namespace Andromeda {
 namespace Filesystem {
 
-/** return the size_t min of a (uint64_t and size_t) */
-size_t min64st(uint64_t s1, size_t s2)
-{
-    return static_cast<size_t>(std::min(s1, static_cast<uint64_t>(s2)));
-}
+// TODO consider changing this pattern so the constructor take only real params and then we have a static FromData()
+// this way things can be actually initialized at construction and won't need Initialize()
 
 /*****************************************************/
 File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) : 
     Item(backend), mDebug("File",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     Initialize(data); mParent = &parent;
 
-    std::string fsid; try
+    uint64_t fileSize;
+    std::string fsid; 
+    try
     {
-        data.at("size").get_to(mSize);
-        mBackendSize = mSize;
-
+        data.at("size").get_to(fileSize);
         data.at("filesystem").get_to(fsid);
     }
     catch (const nlohmann::json::exception& ex) {
@@ -43,9 +43,49 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
     const size_t cfChunk { mBackend.GetOptions().pageSize };
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
-    mPageSize = fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk;
+    const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
+    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize, true);
 
-    mDebug << mName << ":" << __func__ << "... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " mPageSize:" << mPageSize; mDebug.Info();
+    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
+        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
+}
+
+/*****************************************************/
+File::File(BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig) : 
+    Item(backend), mDebug("File",this)
+{
+    MDBG_INFO("()");
+
+    mFsConfig = &fsConfig;
+    mParent = &parent;
+    mName = name;
+
+    mCreated = static_cast<decltype(mCreated)>(std::time(nullptr));
+
+    const size_t fsChunk { mFsConfig->GetChunkSize() };
+    const size_t cfChunk { mBackend.GetOptions().pageSize };
+
+    auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
+    const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
+    mPageManager = std::make_unique<PageManager>(*this, 0, pageSize, false);
+
+    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
+        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
+}
+
+/*****************************************************/
+File::~File() { } // for unique_ptr
+
+/*****************************************************/
+bool File::ExistsOnBackend() const
+{
+    return mPageManager->ExistsOnBackend();
+}
+
+/*****************************************************/
+uint64_t File::GetSize() const 
+{ 
+    return mPageManager->GetFileSize();
 }
 
 /*****************************************************/
@@ -53,72 +93,52 @@ void File::Refresh(const nlohmann::json& data)
 {
     Item::Refresh(data);
 
-    uint64_t newSize; try
+    try
     {
+        if (mId.empty()) data.at("id").get_to(mId);
+
+        uint64_t newSize;
         data.at("size").get_to(newSize);
+        if (newSize != mPageManager->GetBackendSize())
+            mPageManager->RemoteChanged(newSize);
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
-
-    if (newSize == mBackendSize) return;
-
-    mDebug << mName << ":" << __func__ << "... backend changed size!"
-        << " old:" << mBackendSize << " new:" << newSize << " size:" << mSize; mDebug.Info();
-
-    mBackendSize = newSize; 
-    uint64_t maxDirty { 0 };
-
-    // get new max size = max(server size, dirty byte) and purge extra mPages
-    for (PageMap::reverse_iterator it { mPages.rbegin() }; it != mPages.rend(); )
-    {
-        uint64_t pageStart { it->first * mPageSize };
-
-        if (pageStart >= mBackendSize)
-        {
-            Page& page(it->second);
-
-            // dirty mPages will extend the file again when written
-            if (page.dirty) { maxDirty = std::min(mSize, pageStart + mPageSize); break; }
-
-            // hacky reverse_iterator version of it = mPages.erase(it);
-            else it = decltype(it)(mPages.erase(std::next(it).base())); // erase deleted page
-        }
-        else break; // future pageStarts are smaller
-    }
-
-    mSize = std::max(mBackendSize, maxDirty);
 }
 
 /*****************************************************/
 void File::SubDelete()
 {
-    mDebug << mName << ":" << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()")
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.DeleteFile(GetID());
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
+        mBackend.DeleteFile(GetID());
 
-    mDeleted = true;
+    mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
 }
 
 /*****************************************************/
 void File::SubRename(const std::string& newName, bool overwrite)
 {
-    mDebug << mName << ":" << __func__ << " (name:" << newName << ")"; mDebug.Info();
+    ITDBG_INFO("(name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.RenameFile(GetID(), newName, overwrite);
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
+        mBackend.RenameFile(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
 void File::SubMove(Folder& newParent, bool overwrite)
 {
-    mDebug << mName << ":" << __func__ << " (parent:" << newParent.GetName() << ")"; mDebug.Info();
+    ITDBG_INFO("(parent:" << newParent.GetName() << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
+    if (mPageManager->ExistsOnBackend()) // TODO locking here??
+        mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
 }
 
 /*****************************************************/
@@ -136,169 +156,117 @@ FSConfig::WriteMode File::GetWriteMode() const
 }
 
 /*****************************************************/
-File::Page& File::GetPage(const uint64_t index, const size_t minsize)
-{
-    PageMap::iterator it { mPages.find(index) };
-
-    if (it == mPages.end())
-    {
-        const uint64_t offset { index*mPageSize };
-        const size_t readsize { min64st(mSize-offset, mPageSize) };
-        
-        mDebug << __func__ << "... index:" << index << " offset:" << offset << " readsize:" << readsize; mDebug.Info();
-
-        bool hasData { readsize > 0 && offset < mBackendSize };
-
-        const std::string data(hasData ? mBackend.ReadFile(GetID(), offset, readsize) : "");
-
-        // for the first page we keep it minimal to save memory on small files
-        // for subsequent mPages we allocate the full size ahead of time for speed
-        const size_t pageSize { (index == 0) ? readsize : mPageSize };
-
-        it = mPages.emplace(index, pageSize).first;
-
-        char* buf { reinterpret_cast<char*>(it->second.data.data()) };
-
-        std::copy(data.cbegin(), data.cend(), buf);
-    }
-
-    Page& page(it->second);
-
-    if (page.data.size() < minsize) 
-        page.data.resize(minsize);
-
-    return page;
-}
-
-/*****************************************************/
 void File::FlushCache(bool nothrow)
 {
     if (mDeleted) return;
 
-    mDebug << mName << ":" << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()");
 
-    for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); ++it)
-    {
-        const uint64_t index(it->first); Page& page(it->second);
-
-        if (page.dirty)
-        {
-            const uint64_t pageOffset { index*mPageSize };
-            const size_t pageSize { min64st(mSize-pageOffset, mPageSize) };
-
-            std::string data(reinterpret_cast<const char*>(page.data.data()), pageSize);
-
-            if (mDebug) { mDebug << __func__ << "... index:" << index << " offset:" << pageOffset << " size:" << pageSize; mDebug.Info(); }
-
-            auto writeFunc { [&]()->void { mBackend.WriteFile(GetID(), pageOffset, data); } };
-
-            if (!nothrow) writeFunc(); else try { writeFunc(); } catch (const BaseException& e) { 
-                mDebug << __func__ << "... Ignoring Error: " << e.what(); mDebug.Error(); }
-
-            page.dirty = false; mBackendSize = std::max(mBackendSize, pageOffset+pageSize);
-        }
-    }
+    if (!nothrow) mPageManager->FlushPages();
+    else try { mPageManager->FlushPages(); } catch (BaseException& e){ 
+        ITDBG_ERROR("... ignoring error: " << e.what()); }
 }
 
 /*****************************************************/
-void File::ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length)
-{
-    if (mDebug) { mDebug << mName << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
-
-    const Page& page(GetPage(index));
-
-    const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
-    const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
-
-    std::copy(page.data.cbegin()+iOffset, page.data.cbegin()+iOffset+iLength, buffer);
-}
-
-/*****************************************************/
-void File::WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length)
-{
-    if (mDebug) { mDebug << mName << ":" << __func__ << " (index:" << index << " offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
-
-    Page& page(GetPage(index, offset+length)); page.dirty = true;
-
-    const auto iOffset { static_cast<Page::Data::iterator::difference_type>(offset) };
-    const auto iLength { static_cast<Page::Data::iterator::difference_type>(length) };
-
-    std::copy(buffer, buffer+iLength, page.data.begin()+iOffset);
-}
-
-/*****************************************************/
-size_t File::ReadBytes(std::byte* buffer, const uint64_t offset, size_t length)
+size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength)
 {    
-    if (mDebug) { mDebug << mName << ":" << __func__ << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    ITDBG_INFO("(offset:" << offset << " maxLength:" << maxLength << ")");
 
-    if (offset >= mSize) return 0;
+    SharedLockR dataLock { mPageManager->GetReadLock() };
 
-    length = min64st(mSize-offset, length);
+    const uint64_t fileSize { mPageManager->GetFileSize() };
+    ITDBG_INFO("... fileSize:" << fileSize);
 
-    if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
-    {
-        const std::string data(mBackend.ReadFile(GetID(), offset, length));
+    if (offset >= fileSize) return 0;
+    const size_t length { Filedata::min64st(fileSize-offset, maxLength) };
 
-        std::copy(data.cbegin(), data.cend(), reinterpret_cast<char*>(buffer));
-    }
-    else for (uint64_t byte { offset }; byte < offset+length; )
-    {
-        const uint64_t index { byte / mPageSize };
-        const size_t pOffset { static_cast<size_t>(byte - index*mPageSize) };
-        const size_t pLength { min64st(length+offset-byte, mPageSize-pOffset) };
-
-        if (mDebug) { mDebug << __func__ << "... size:" << mSize << " byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
-
-        ReadPage(buffer, index, pOffset, pLength);
-
-        buffer += pLength; byte += pLength;
-    }
+    ReadBytes(buffer, offset, length, dataLock);
 
     return length;
 }
 
 /*****************************************************/
-void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size_t length)
+void File::ReadBytes(char* buffer, const uint64_t offset, size_t length)
+{    
+    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
+
+    SharedLockR dataLock { mPageManager->GetReadLock() };
+
+    ReadBytes(buffer, offset, length, dataLock);
+}
+
+/*****************************************************/
+void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock)
 {
-    if (mDebug) { mDebug << mName << ":" << __func__ << " (offset:" << offset << " length:" << length << ")"; mDebug.Info(); }
+    if (offset + length > mPageManager->GetFileSize())
+        throw ReadBoundsException();
+
+    if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
+    {
+        const std::string data { mBackend.ReadFile(GetID(), offset, length) };
+
+        std::copy(data.cbegin(), data.cend(), buffer);
+    }
+    else for (uint64_t byte { offset }; byte < offset+length; )
+    {
+        const size_t pageSize { mPageManager->GetPageSize() };
+
+        const uint64_t index { byte / pageSize };
+        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
+        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
+
+        ITDBG_INFO("... byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength);
+
+        mPageManager->ReadPage(buffer, index, pOffset, pLength, dataLock);
+
+        buffer += pLength; byte += pLength;
+    }
+}
+
+/*****************************************************/
+void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length)
+{
+    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
 
+    SharedLockW dataLock { mPageManager->GetWriteLock() };
+
+    const uint64_t fileSize { mPageManager->GetFileSize() };
+    ITDBG_INFO("... fileSize:" << fileSize);
+
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
         if (writeMode == FSConfig::WriteMode::APPEND 
-            && offset != mBackendSize) throw WriteTypeException();
+            && offset != mPageManager->GetFileSize()) throw WriteTypeException();
 
-        const std::string data(reinterpret_cast<const char*>(buffer), length);
-
+        const std::string data(buffer, length);
         mBackend.WriteFile(GetID(), offset, data);
-
-        mSize = std::max(mSize, offset+length); 
-        mBackendSize = mSize;
+        mPageManager->RemoteChanged(std::max(fileSize, offset+length));
     }
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
+        const size_t pageSize { mPageManager->GetPageSize() };
+
         if (writeMode == FSConfig::WriteMode::APPEND)
         {
             // allowed if (==fileSize and startOfPage) OR (within dirty page)
-            if (!(offset == mSize && offset % mPageSize == 0) && 
-                !(GetPage(offset/mPageSize).dirty)) throw WriteTypeException();
+            if (!(offset == fileSize && offset % pageSize == 0) && 
+                !mPageManager->isDirty(offset/pageSize, dataLock)) throw WriteTypeException();
         }
 
-        const uint64_t index { byte / mPageSize };
-        const size_t pOffset { static_cast<size_t>(byte - index*mPageSize) };
-        const size_t pLength { min64st(length+offset-byte, mPageSize-pOffset) };
+        const uint64_t index { byte / pageSize };
+        const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
+        const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
 
-        if (mDebug) { mDebug << __func__ << "... size:" << mSize << " byte:" << byte << " index:" << index 
-            << " pOffset:" << pOffset << " pLength:" << pLength; mDebug.Info(); }
+        ITDBG_INFO("... byte:" << byte << " index:" << index 
+            << " pOffset:" << pOffset << " pLength:" << pLength);
 
-        WritePage(buffer, index, pOffset, pLength);   
-    
-        mSize = std::max(mSize, byte+pLength);
+        mPageManager->WritePage(buffer, index, pOffset, pLength, dataLock);
         
         buffer += pLength; byte += pLength;
     }
@@ -307,24 +275,13 @@ void File::WriteBytes(const std::byte* buffer, const uint64_t offset, const size
 /*****************************************************/
 void File::Truncate(const uint64_t newSize)
 {    
-    mDebug << mName << ":" << __func__ << " (size:" << newSize << ")"; mDebug.Info();
+    ITDBG_INFO("(size:" << newSize << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 
-    mBackend.TruncateFile(GetID(), newSize); 
-
-    mSize = newSize; mBackendSize = newSize;
-
-    for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); )
-    {
-        if (!newSize || it->first > (newSize-1)/mPageSize)
-        {
-            it = mPages.erase(it); // remove past end
-        }
-        else ++it; // move to next page
-    }
+    mPageManager->Truncate(newSize);
 }
 
 } // namespace Filesystem

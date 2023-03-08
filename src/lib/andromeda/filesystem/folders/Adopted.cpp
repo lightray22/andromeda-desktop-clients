@@ -14,7 +14,7 @@ namespace Folders {
 Adopted::Adopted(BackendImpl& backend, Folder& parent) :
     PlainFolder(backend, nullptr, &parent), mDebug("Adopted",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mName = "Adopted by others";
 }
@@ -22,7 +22,7 @@ Adopted::Adopted(BackendImpl& backend, Folder& parent) :
 /*****************************************************/
 void Adopted::LoadItems()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     Folder::LoadItemsFrom(mBackend.GetAdopted());
 }

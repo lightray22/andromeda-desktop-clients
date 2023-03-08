@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 (cd src; find . -maxdepth 2 -mindepth 2 -type d) | while read -r d; do
    mkdir -p docs/$d

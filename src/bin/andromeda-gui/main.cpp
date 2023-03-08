@@ -3,14 +3,16 @@
 #include <QtWidgets/QApplication>
 
 #include "Options.hpp"
-
+using AndromedaGui::Options;
 #include "gui/MainWindow.hpp"
+using AndromedaGui::Gui::MainWindow;
 #include "gui/SystemTray.hpp"
+using AndromedaGui::Gui::SystemTray;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
-
-#define VERSION "0.1-alpha"
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 enum class ExitCode
 {
@@ -21,12 +23,11 @@ enum class ExitCode
 /*****************************************************/
 int main(int argc, char** argv)
 {
-    Debug debug("main"); 
+    Debug debug("main",nullptr); 
 
-    // if foreground, you must want debug
-    Debug::SetLevel(Debug::Level::ERRORS); 
+    CacheOptions cacheOptions;
 
-    Options options;
+    Options options(cacheOptions);
 
     try
     {
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
     }
     catch (const Options::ShowVersionException& ex)
     {
-        std::cout << "version: " << VERSION << std::endl;
+        std::cout << "version: " << ANDROMEDA_VERSION << std::endl;
         return static_cast<int>(ExitCode::SUCCESS);
     }
     catch (const Options::Exception& ex)
@@ -53,13 +54,11 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BAD_USAGE);
     }
 
-    Debug::SetLevel(options.GetDebugLevel());
-
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     QApplication application(argc, argv);
 
-    MainWindow mainWindow; 
+    MainWindow mainWindow(cacheOptions); 
     SystemTray systemTray(application, mainWindow);
 
     mainWindow.show();
@@ -67,7 +66,7 @@ int main(int argc, char** argv)
 
     int retval = application.exec();
 
-    debug << __func__ << "... return " << retval; debug.Info();
+    DDBG_INFO("... return " << retval);
 
     return retval;
 }

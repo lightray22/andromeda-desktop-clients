@@ -14,7 +14,7 @@ Config::Config(BackendImpl& backend) : mDebug("Config",this), mBackend(backend) 
 /*****************************************************/
 void Config::Initialize()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json config(mBackend.GetConfigJ());
 
@@ -33,6 +33,9 @@ void Config::Initialize()
                 throw AppMissingException(app);
 
         config.at("core").at("features").at("read_only").get_to(mReadOnly);
+
+        const nlohmann::json& maxbytes { config.at("files").at("upload_maxbytes") };
+        if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>(); // can't get_to() with std::atomic
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
@@ -41,7 +44,7 @@ void Config::Initialize()
 /*****************************************************/
 void Config::LoadAccountLimits(BackendImpl& backend)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json limits(backend.GetAccountLimits());
 

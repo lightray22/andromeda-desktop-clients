@@ -1,4 +1,4 @@
-#include <map>
+#include <unordered_map>
 #include <utility>
 #include <nlohmann/json.hpp>
 
@@ -9,7 +9,7 @@ using Andromeda::Backend::BackendImpl;
 namespace Andromeda {
 namespace Filesystem {
 
-typedef std::map<std::string, FSConfig> CacheMap; static CacheMap sCache;
+typedef std::unordered_map<std::string, FSConfig> CacheMap; static CacheMap sCache;
 
 /*****************************************************/
 const FSConfig& FSConfig::LoadByID(BackendImpl& backend, const std::string& id)

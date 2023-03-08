@@ -49,4 +49,4 @@ private:
 } // namespace Filesystem
 } // namespace Folders
 
-#endif
+#endif // LIBA2_ADOPTED_H_

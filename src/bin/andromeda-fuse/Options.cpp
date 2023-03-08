@@ -8,12 +8,16 @@ using AndromedaFuse::FuseOptions;
 
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/filesystem/filedata/CacheOptions.hpp"
+using Andromeda::Filesystem::Filedata::CacheOptions;
 
 using namespace std::chrono;
+
+namespace AndromedaFuse {
 
 /*****************************************************/
 std::string Options::HelpText()
@@ -34,7 +38,9 @@ std::string Options::HelpText()
        
         << HTTPOptions::HelpText() << endl << endl
         << FuseOptions::HelpText() << endl << endl
-        << ConfigOptions::HelpText() << endl << endl
+        
+        << ConfigOptions::HelpText() << endl
+        << CacheOptions::HelpText() << endl << endl
            
         << OtherBaseHelpText() << endl;
 
@@ -43,18 +49,18 @@ std::string Options::HelpText()
 
 /*****************************************************/
 Options::Options(ConfigOptions& configOptions, 
-                 HTTPOptions& httpOptions, 
+                 HTTPOptions& httpOptions,
+                 CacheOptions& cacheOptions,
                  FuseOptions& fuseOptions) :
     mConfigOptions(configOptions), 
     mHttpOptions(httpOptions), 
+    mCacheOptions(cacheOptions),
     mFuseOptions(fuseOptions) { }
 
 /*****************************************************/
 bool Options::AddFlag(const std::string& flag)
 {
-    if (BaseOptions::AddFlag(flag)) { }
-
-    else if (flag == "p" || flag == "apipath")
+    if (flag == "p" || flag == "apipath")
         mApiType = ApiType::API_PATH;
 
     else if (flag == "force-session")
@@ -64,9 +70,14 @@ bool Options::AddFlag(const std::string& flag)
         mMountRootType = RootType::FILESYSTEM;
     else if (flag == "folder")
         mMountRootType = RootType::FOLDER;
+
+    else if (flag == "d" || flag == "debug")
+        mForeground = true;
     
+    else if (BaseOptions::AddFlag(flag)) { }
     else if (mConfigOptions.AddFlag(flag)) { }
     else if (mHttpOptions.AddFlag(flag)) { }
+    else if (mCacheOptions.AddFlag(flag)) { }
     else if (mFuseOptions.AddFlag(flag)) { }
 
     else return false; // not used
@@ -77,10 +88,8 @@ bool Options::AddFlag(const std::string& flag)
 /*****************************************************/
 bool Options::AddOption(const std::string& option, const std::string& value)
 {
-    if (BaseOptions::AddOption(option, value)) { }
-
     /** Backend endpoint selection */
-    else if (option == "a" || option == "apiurl")
+    if (option == "a" || option == "apiurl")
     {
         mApiPath = value;
         mApiType = ApiType::API_URL;
@@ -115,14 +124,19 @@ bool Options::AddOption(const std::string& option, const std::string& value)
         mMountItemID = value;
         mMountRootType = RootType::FOLDER;
     }
-
     else if (option == "m" || option == "mountpath")
-    {
         mMountPath = value;
+
+    else if (option == "d" || option == "debug")
+    {
+        mForeground = true;
+        BaseOptions::AddOption(option, value);
     }
 
+    else if (BaseOptions::AddOption(option, value)) { }
     else if (mConfigOptions.AddOption(option, value)) { }
     else if (mHttpOptions.AddOption(option, value)) { }
+    else if (mCacheOptions.AddOption(option, value)) { }
     else if (mFuseOptions.AddOption(option, value)) { }
 
     else return false; // not used
@@ -148,3 +162,5 @@ void Options::Validate()
     if (mMountPath.empty())
         throw MissingOptionException("mountpath");
 }
+
+} // namespace AndromedaFuse

@@ -24,7 +24,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std
 Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
     PlainFolder(backend), mDebug("Filesystem",this) 
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     Initialize(data); mParent = parent;
 
@@ -44,7 +44,7 @@ const std::string& Filesystem::GetID()
 /*****************************************************/
 void Filesystem::LoadItems()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()");
 
     const nlohmann::json data(mBackend.GetFSRoot(mFsid));
 

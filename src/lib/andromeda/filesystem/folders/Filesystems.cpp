@@ -14,7 +14,7 @@ namespace Folders {
 Filesystems::Filesystems(BackendImpl& backend, Folder& parent) : 
     Folder(backend), mDebug("Filesystems",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     backend.RequireAuthentication();
 
@@ -25,7 +25,7 @@ Filesystems::Filesystems(BackendImpl& backend, Folder& parent) :
 /*****************************************************/
 void Filesystems::LoadItems()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     nlohmann::json data(mBackend.GetFilesystems());
 

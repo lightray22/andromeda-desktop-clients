@@ -110,9 +110,6 @@ public:
      */
     virtual void Validate() { };
 
-    /** Returns the desired debug level */
-    Debug::Level GetDebugLevel() const { return mDebugLevel; }
-
 protected:
 
     /** Retrieve the standard help text string */
@@ -120,10 +117,6 @@ protected:
 
     /** Retrieve the standard help text string */
     static std::string OtherBaseHelpText();
-
-private:
-
-    Debug::Level mDebugLevel { Debug::Level::NONE };
 };
 
 } // namespace Andromeda

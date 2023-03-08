@@ -14,6 +14,8 @@ namespace Andromeda {
     namespace Filesystem { class Folder; }
 }
 
+namespace AndromedaGui {
+
 /** Encapsulates a FUSE mount and root folder */
 class MountContext
 {
@@ -42,12 +44,12 @@ public:
     /**
      * Create a new MountContext
      * @param backend the backend resource to use
-     * @param home if true, mountPath is home-relative
+     * @param homeRel if true, mountPath is $HOME-relative
      * @param mountPath filesystem path to mount
      * @param options FUSE adapter options
      */
     MountContext(Andromeda::Backend::BackendImpl& backend,
-        bool home, std::string mountPath, 
+        bool homeRel, std::string mountPath, 
         AndromedaFuse::FuseOptions& options);
 
     virtual ~MountContext();
@@ -57,16 +59,15 @@ public:
 
 private:
 
-    /** Sets up and returns the path to HOMEDIR/Andromeda */
-    const std::string& InitHomeRoot();
-
-    /** The path to the user's HOMEDIR (if init'd) */
-    std::string mHomeRoot;
+    /** True if the mount point is home-relative */
+    bool mHomeRelative { false };
 
     std::unique_ptr<Andromeda::Filesystem::Folder> mRootFolder;
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace AndromedaGui
 
 #endif // A2GUI_MOUNTCONTEXT_H

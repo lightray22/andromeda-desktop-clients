@@ -7,8 +7,14 @@
 #include "andromeda-fuse/FuseOptions.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/backend/ConfigOptions.hpp"
-#include "andromeda/backend/HTTPOptions.hpp"
+
+namespace Andromeda {
+    struct ConfigOptions;
+    namespace Backend { struct HTTPOptions; }
+    namespace Filesystem { namespace Filedata { struct CacheOptions; } }
+}
+
+namespace AndromedaFuse {
 
 /** Manages command line options and config */
 class Options : public Andromeda::BaseOptions
@@ -21,10 +27,12 @@ public:
     /**
      * @param configOptions Config options ref to fill
      * @param httpOptions HTTPRunner options ref to fill
+     * @param cacheOptions CacheManager options ref to fill
      * @param fuseOptions FUSE options ref to fill
      */
-    Options(Andromeda::Backend::ConfigOptions& configOptions, 
+    Options(Andromeda::ConfigOptions& configOptions, 
             Andromeda::Backend::HTTPOptions& httpOptions, 
+            Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions,
             AndromedaFuse::FuseOptions& fuseOptions);
 
     virtual bool AddFlag(const std::string& flag) override;
@@ -89,10 +97,14 @@ public:
     /** Returns the specified mount item ID */
     std::string GetMountItemID() const { return mMountItemID; }
 
+    /** Returns true if we should run in the foreground */
+    bool isForeground() const { return mForeground; }
+
 private:
 
-    Andromeda::Backend::ConfigOptions& mConfigOptions;
+    Andromeda::ConfigOptions& mConfigOptions;
     Andromeda::Backend::HTTPOptions& mHttpOptions;
+    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
     AndromedaFuse::FuseOptions& mFuseOptions;
 
     ApiType mApiType { static_cast<ApiType>(-1) };
@@ -108,6 +120,10 @@ private:
     
     RootType mMountRootType { RootType::SUPERROOT };
     std::string mMountItemID;
+
+    bool mForeground { false };
 };
+
+} // namespace AndromedaFuse
 
 #endif // A2FUSE_OPTIONS_H_

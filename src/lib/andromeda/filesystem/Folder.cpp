@@ -3,12 +3,12 @@
 
 #include "Folder.hpp"
 #include "File.hpp"
+#include "andromeda/ConfigOptions.hpp"
+using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/backend/ConfigOptions.hpp"
-using Andromeda::Backend::ConfigOptions;
 #include "andromeda/filesystem/folders/PlainFolder.hpp"
 using Andromeda::Filesystem::Folders::PlainFolder;
 
@@ -21,13 +21,13 @@ namespace Filesystem {
 Folder::Folder(BackendImpl& backend) : 
     Item(backend), mDebug("Folder",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 Item& Folder::GetItemByPath(std::string path)
 {
-    mDebug << mName << ":" << __func__ << "(path:" << path << ")"; mDebug.Info();
+    ITDBG_INFO("(path:" << path << ")");
 
     if (path[0] == '/') path.erase(0,1);
 
@@ -84,10 +84,7 @@ const Folder::ItemMap& Folder::GetItems()
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
-    bool noCache { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE }; // load always
-    bool memory  { mBackend.GetOptions().cacheType == ConfigOptions::CacheType::MEMORY }; // load once
-
-    if (!mHaveItems || (expired && !memory) || noCache) 
+    if (!mHaveItems || (expired && !mBackend.isMemory()))
     {
         LoadItems(); mRefreshed = steady_clock::now();
     }
@@ -99,7 +96,7 @@ const Folder::ItemMap& Folder::GetItems()
 /*****************************************************/
 void Folder::LoadItemsFrom(const nlohmann::json& data)
 {
-    mDebug << mName << ":" << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()");
 
     Folder::NewItemMap newItems;
 
@@ -131,7 +128,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
 /*****************************************************/
 void Folder::SyncContents(const Folder::NewItemMap& newItems)
 {
-    mDebug << mName << ":" << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()");
 
     for (const NewItemMap::value_type& newIt : newItems)
     {
@@ -151,8 +148,12 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
     ItemMap::const_iterator oldIt { mItemMap.begin() };
     for (; oldIt != mItemMap.end();)
     {
-        if (newItems.find(oldIt->first) == newItems.end())
+        const bool ignore { oldIt->second->GetType() == Type::FILE &&
+            !dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend() };
+
+        if (!ignore && newItems.find(oldIt->first) == newItems.end())
         {
+            ITDBG_INFO("... remote deleted: " << oldIt->second->GetName());
             oldIt = mItemMap.erase(oldIt); // deleted on server
         }
         else ++oldIt;
@@ -162,7 +163,7 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
 /*****************************************************/
 void Folder::CreateFile(const std::string& name)
 {
-    mDebug << mName << ":" << __func__ << "(name:" << name << ")"; mDebug.Info();
+    ITDBG_INFO("(name:" << name << ")");
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
@@ -174,7 +175,7 @@ void Folder::CreateFile(const std::string& name)
 /*****************************************************/
 void Folder::CreateFolder(const std::string& name)
 {
-    mDebug << mName << ":" << __func__ << "(name:" << name << ")"; mDebug.Info();
+    ITDBG_INFO("(name:" << name << ")");
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
@@ -186,7 +187,7 @@ void Folder::CreateFolder(const std::string& name)
 /*****************************************************/
 void Folder::DeleteItem(const std::string& name)
 {
-    mDebug << mName << ":" << __func__ << "(name:" << name << ")"; mDebug.Info();
+    ITDBG_INFO("(name:" << name << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
@@ -197,7 +198,7 @@ void Folder::DeleteItem(const std::string& name)
 /*****************************************************/
 void Folder::RenameItem(const std::string& oldName, const std::string& newName, bool overwrite)
 {
-    mDebug << mName << ":" << __func__ << "(oldName:" << oldName << " newName:" << newName << ")"; mDebug.Info();
+    ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
@@ -217,7 +218,7 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
 /*****************************************************/
 void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite)
 {
-    mDebug << mName << ":" << __func__ << "(name:" << name << " parent:" << newParent.GetName() << ")"; mDebug.Info();
+    ITDBG_INFO("(name:" << name << " parent:" << newParent.GetName() << ")");
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();

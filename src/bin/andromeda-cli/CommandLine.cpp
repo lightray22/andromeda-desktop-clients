@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 
 #include "CommandLine.hpp"
@@ -12,8 +13,14 @@
 using Andromeda::BaseOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
+#include "andromeda/backend/HTTPRunner.hpp"
+using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/RunnerInput.hpp"
 using Andromeda::Backend::RunnerInput;
+using Andromeda::Backend::RunnerInput_StreamIn;
+using Andromeda::Backend::RunnerInput_StreamOut;
+
+namespace AndromedaCli {
 
 /*****************************************************/
 std::string CommandLine::HelpText()
@@ -43,6 +50,9 @@ std::string CommandLine::HelpText()
 CommandLine::CommandLine(Options& options) : mOptions(options) { }
 
 /*****************************************************/
+CommandLine::~CommandLine() { } // for unique_ptr
+
+/*****************************************************/
 std::string getNextValue(Utilities::StringList& argv, size_t& i)
 {
     return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
@@ -58,8 +68,8 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
 
     if (argc < 2) throw BaseOptions::BadUsageException("missing app/action");
 
-    mInput.app = argv[0];
-    mInput.action = argv[1];
+    std::string app { argv[0] };
+    std::string action { argv[1] };
 
     std::vector<std::string> args;
     for (size_t i = 2; i < argc; i++)
@@ -73,6 +83,10 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
         }
     }
+
+    RunnerInput::Params params;
+    RunnerInput_StreamIn::FileStreams streams;
+    RunnerInput_StreamOut::ReadFunc readfunc;
 
     // see andromeda-server CLI::GetInput()
     for (size_t i = 0; i < args.size(); i++)
@@ -100,10 +114,14 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
                 throw BaseOptions::Exception("Inaccessible file: "+val);
 
             std::ifstream file(val, std::ios::binary);
-            typedef std::istreambuf_iterator<char> FStreamIt;
-            std::string fdat((FStreamIt(file)), (FStreamIt()));
+            std::string fdat; char buf[4096];
+            while (!file.fail())
+            {
+                file.read(buf, static_cast<std::streamsize>(sizeof(buf)));
+                fdat.append(buf, static_cast<std::size_t>(file.gcount()));
+            }
 
-            mInput.params[param] = Utilities::trim(fdat);
+            params[param] = fdat;
         }
         else if (special == '!')
         {
@@ -113,7 +131,7 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             std::cout << "enter " << param << "..." << std::endl;
             std::string val; std::getline(std::cin, val);
 
-            mInput.params[param] = Utilities::trim(val);
+            params[param] = Utilities::trim(val);
         }
         else if (special == '%')
         {
@@ -132,18 +150,54 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             std::string filename { getNextValue(args, i) }; 
             if (filename.empty()) filename = val;
 
-            mInput.sfiles.emplace(param, RunnerInput::FileStream{ filename, file });
+            streams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
+                RunnerInput_StreamIn::FromStream(file) });
         }
         else if (special == '-')
         {
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty - key at action arg "+std::to_string(i));
 
-            mInput.sfiles.emplace(param, RunnerInput::FileStream{ "data", std::cin });
+            streams.emplace(param, RunnerInput_StreamIn::FileStream{ "data", 
+                RunnerInput_StreamIn::FromStream(std::cin) });
         }
         else // plain argument
         {
-            mInput.params[param] = getNextValue(args, i);
+            params[param] = getNextValue(args, i);
         }
     }
+
+    if (readfunc && !streams.empty())
+        throw IncompatibleIOException();
+
+    // TODO add StreamOut CLI option? or maybe just remove StreamOut here?
+    // would be simpler + andromeda_download will get used anyway
+
+    if (readfunc)
+    {
+        mInput_StreamOut = std::make_unique<RunnerInput_StreamOut>(
+            RunnerInput_StreamOut{{app, action, params}, readfunc});
+    }
+    else if (!streams.empty())
+    {
+        mInput_StreamIn = std::make_unique<RunnerInput_StreamIn>(
+            RunnerInput_StreamIn{{{app, action, params}, { }}, streams});
+    }
+    else
+    {
+        mInput = std::make_unique<RunnerInput>(
+            RunnerInput{app, action, params});
+    }
 }
+
+/*****************************************************/
+std::string CommandLine::RunInputAction(HTTPRunner& runner, bool& isJson)
+{
+    if (mInput)           return runner.RunAction(*mInput, isJson);
+    if (mInput_StreamIn)  return runner.RunAction(*mInput_StreamIn, isJson);
+    if (mInput_StreamOut) { runner.RunAction(*mInput_StreamOut, isJson); return ""; }
+
+    throw std::runtime_error("RunInputAction without ParseFullArgs");
+}
+
+} // namespace AndromedaCli

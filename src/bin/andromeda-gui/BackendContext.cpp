@@ -6,13 +6,15 @@ using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/HTTPRunner.hpp"
 using Andromeda::Backend::HTTPRunner;
 
+namespace AndromedaGui {
+
 /*****************************************************/
 BackendContext::BackendContext(
     const std::string& url, const std::string& username, 
     const std::string& password, const std::string& twofactor) : 
-    mDebug("BackendContext") 
+    mDebug("BackendContext",this) 
 {
-    mDebug << __func__ << "(url:" << url << ", username:" << username << ")"; mDebug.Info();
+    MDBG_INFO("(url:" << url << ", username:" << username << ")");
 
     HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
 
@@ -31,5 +33,7 @@ BackendContext::BackendContext(
 /*****************************************************/
 BackendContext::~BackendContext()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
+
+} // namespace AndromedaGui

@@ -24,7 +24,7 @@ std::string BaseOptions::OtherBaseHelpText()
 {
     std::ostringstream output;
 
-    output << "Debugging:       [-d|--debug [0-" << sizeof(Debug::Level) << "]]";
+    output << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+]";
 
     return output.str();
 }
@@ -141,8 +141,6 @@ bool BaseOptions::AddFlag(const std::string& flag)
         throw ShowHelpException();
     else if (flag == "V" || flag == "version")
         throw ShowVersionException();
-    else if (flag == "d" || flag == "debug")
-        mDebugLevel = Debug::Level::ERRORS;
     else return false; // not used
 
     return true;
@@ -153,9 +151,14 @@ bool BaseOptions::AddOption(const std::string& option, const std::string& value)
 {
     if (option == "d" || option == "debug")
     {
-        try { mDebugLevel = static_cast<Debug::Level>(stoul(value)); }
+        try { Debug::SetLevel(static_cast<Debug::Level>(stoul(value))); }
         catch (const std::logic_error& e) { 
             throw BadValueException(option); }
+    }
+    else if (option == "debug-filter")
+    {
+        for (const std::string& name : Utilities::explode(value,","))
+            Debug::AddFilter(name);
     }
     else return false; // not used
 

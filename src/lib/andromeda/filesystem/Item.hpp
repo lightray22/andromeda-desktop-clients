@@ -37,6 +37,12 @@ public:
     class ReadOnlyException : public Exception { public:
         ReadOnlyException() : Exception("Read Only Backend") {}; };
 
+    /** Macro to print the file name at the beginning of debug */
+    #define ITDBG_INFO(strfunc) MDBG_INFO("(" << mName << ")" << strfunc)
+
+    /** Macro to print the file name at the beginning of debug */
+    #define ITDBG_ERROR(strfunc) MDBG_ERROR("(" << mName << ")" << strfunc)
+
     virtual ~Item(){};
 
     /** API date format */
@@ -54,8 +60,20 @@ public:
     /** Returns the FS name */
     virtual const std::string& GetName() const final { return mName; }
 
-    /** Returns the total size */
-    virtual uint64_t GetSize() const final { return mSize; }
+    /** Returns a reference to the backend for this item */
+    virtual Backend::BackendImpl& GetBackend() const final { return mBackend; }
+
+    /** Returns true if this item has a parent */
+    virtual bool HasParent() const { return mParent != nullptr; }
+
+    /** Returns the parent folder */
+    virtual Folder& GetParent() const;
+
+    /** Returns true if this item has FSconfig */
+    virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
+
+    /** Returns the filesystem config */
+    virtual const FSConfig& GetFSConfig() const;
 
     /** Get the created time stamp */
     virtual Date GetCreated() const final { return mCreated; } 
@@ -72,13 +90,13 @@ public:
     /** Refresh the item given updated server JSON data */
     virtual void Refresh(const nlohmann::json& data);
 
-    /** Remove this item from its parent */
-    virtual void Delete(bool internal = false) final;
+    /** Delete this item (and its contents if a folder) */
+    virtual void Delete(bool internal = false) final; // TODO refactor to get rid of "internal"
 
-    /** Set this item's name to the given name, optionally overwrite */
+    /** Set this item's name to the given name, optionally overwrite existing */
     virtual void Rename(const std::string& newName, bool overwrite = false, bool internal = false) final;
 
-    /** Move this item to the given parent folder, optionally overwrite */
+    /** Move this item to the given parent folder, optionally overwrite existing */
     virtual void Move(Folder& newParent, bool overwrite = false, bool internal = false) final;
 
     /** 
@@ -97,18 +115,6 @@ protected:
 
     /** Initialize from the given JSON data */
     virtual void Initialize(const nlohmann::json& data);
-
-    /** Returns true if this item has a parent */
-    virtual bool HasParent() const { return mParent != nullptr; }
-
-    /** Returns the parent folder */
-    virtual Folder& GetParent() const;
-
-    /** Returns true if this item has FSconfig */
-    virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
-
-    /** Returns the filesystem config */
-    virtual const FSConfig& GetFSConfig() const;
 
     /** Item type-specific delete */
     virtual void SubDelete() = 0;
@@ -134,9 +140,6 @@ protected:
     /** Name of the item */
     std::string mName;
 
-    /** Size of the item in bytes */
-    uint64_t mSize { 0 };
-
     /** Item creation timestamp */
     Date mCreated { 0 };
 
@@ -156,4 +159,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_ITEM_H_

@@ -6,6 +6,14 @@
 #include <QtWidgets/QMainWindow>
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+
+namespace Andromeda { 
+    namespace Filesystem { namespace Filedata { struct CacheOptions; } }
+}
+
+namespace AndromedaGui {
+namespace Gui {
 
 class AccountTab;
 
@@ -18,7 +26,7 @@ class MainWindow : public QMainWindow
 
 public:
 
-    MainWindow();
+    explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     virtual ~MainWindow();
 
@@ -43,6 +51,9 @@ public slots:
     /** GUI action to browse the current account's files */
     void BrowseCurrent();
 
+    /** Show the About popup window */
+    void ShowAbout();
+
 private:
 
     /** Returns the current AccountTab or nullptr if none */
@@ -50,7 +61,13 @@ private:
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 
+    /** Global cache manager to apply to all mounts */
+    Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
+
     Andromeda::Debug mDebug;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // A2GUI_MAINWINDOW_H

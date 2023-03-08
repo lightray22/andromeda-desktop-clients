@@ -6,6 +6,7 @@ set(SOURCE_FILES
     Item.cpp 
     )
 
-target_sources(andromeda PRIVATE ${SOURCE_FILES})
+target_sources(libandromeda PRIVATE ${SOURCE_FILES})
 
+add_subdirectory(filedata)
 add_subdirectory(folders)

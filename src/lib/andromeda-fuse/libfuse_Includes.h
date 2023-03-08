@@ -15,7 +15,7 @@
     #define FUSE_USE_VERSION 35
     #include <fuse3/fuse.h>
     #include <fuse3/fuse_lowlevel.h>
-#endif
+#endif // WIN32, LIBFUSE2
 
 #define FUSE_SUCCESS 0
 
@@ -26,6 +26,7 @@
     #define uid_t fuse_uid_t
     #define stat fuse_stat
     #define statvfs fuse_statvfs
+    #define timespec fuse_timespec
     
     #define S_IRUSR 0400
     #define S_IWUSR 0200
@@ -39,7 +40,7 @@
     #define S_IRWXU (S_IRUSR | S_IWUSR | S_IXUSR)
     #define S_IRWXG (S_IRGRP | S_IWGRP | S_IXGRP)
     #define S_IRWXO (S_IROTH | S_IWOTH | S_IXOTH)
-#endif
+#endif // WIN32
 
 #endif // A2FUSE_FUSEINCLUDES_H_
 

@@ -1,8 +1,14 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 if ! [ -e build ]; then mkdir build; fi; cd build
 
-cmake .. -DCMAKE_BUILD_TYPE=Debug \
+BUILD_TYPE=Debug
+if [ "$1" == "rel" ]; then
+   BUILD_TYPE=RelWithDebInfo; shift
+fi
+
+cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DBUILD_TESTING=1 "$@"
 

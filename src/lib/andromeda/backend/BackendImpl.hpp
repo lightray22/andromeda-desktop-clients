@@ -1,26 +1,28 @@
 #ifndef LIBA2_BACKENDIMPL_H_
 #define LIBA2_BACKENDIMPL_H_
 
+#include <atomic>
+#include <functional>
 #include <map>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
 
 #include "Config.hpp"
-#include "ConfigOptions.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
 
-#if WIN32 && defined(CreateFile)
-// thanks for nothing, Windows >:(
-#undef CreateFile
-#endif
-
 namespace Andromeda {
+
+namespace Filesystem { namespace Filedata { class CacheManager; } }
+
 namespace Backend {
 
 class BaseRunner;
 struct RunnerInput;
+struct RunnerInput_FilesIn;
+struct RunnerInput_StreamIn;
 
 /** Manages communication with the backend API */
 class BackendImpl
@@ -50,21 +52,25 @@ public:
         explicit ReadSizeException(size_t wanted, size_t got) : Exception(
             "Wanted "+std::to_string(wanted)+" bytes, got "+std::to_string(got)) {}; };
 
+    /** Exception indicating we set the backend as read-only */
+    class ReadOnlyException : public Exception { public:
+        explicit ReadOnlyException() : Exception("Read Only Backend") {}; };
+
+    /** Base exception for Andromeda-returned errors */
+    class APIException : public Exception { public:
+        using Exception::Exception; // string constructor
+        APIException(int code, const std::string& message) : 
+            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
+
     /** Andromeda exception indicating the requested operation is invalid */
-    class UnsupportedException : public Exception { public:
-        UnsupportedException() : Exception("Invalid Operation") {}; };
+    class UnsupportedException : public APIException { public:
+        UnsupportedException() : APIException("Invalid Operation") {}; };
 
     /** Base exception for Andromeda-returned 403 errors */
-    class DeniedException : public Exception { public:
-        DeniedException() : Exception("Access Denied") {};
+    class DeniedException : public APIException { public:
+        DeniedException() : APIException("Access Denied") {};
         /** @param message message from backend */
-        explicit DeniedException(const std::string& message) : Exception(message) {}; };
-
-    /** Base exception for Andromeda-returned 404 errors */
-    class NotFoundException : public Exception { public:
-        NotFoundException() : Exception("Not Found") {};
-        /** @param message message from backend */
-        explicit NotFoundException(const std::string& message) : Exception(message) {}; };
+        explicit DeniedException(const std::string& message) : APIException(message) {}; };
 
     /** Andromeda exception indicating authentication failed */
     class AuthenticationFailedException : public DeniedException { public:
@@ -75,20 +81,41 @@ public:
         TwoFactorRequiredException() : DeniedException("Two Factor Required") {}; };
 
     /** Andromeda exception indicating the server or FS are read only */
-    class ReadOnlyException : public DeniedException { public:
+    class ReadOnlyFSException : public DeniedException { public:
         /** @param which string describing what is read-only */
-        explicit ReadOnlyException(const std::string& which) : DeniedException("Read Only "+which) {}; };
+        explicit ReadOnlyFSException(const std::string& which) : DeniedException("Read Only "+which) {}; };
 
-    /** @param runner the BaseRunner to use */
-    explicit BackendImpl(const ConfigOptions& options, BaseRunner& runner);
+    /** Base exception for Andromeda-returned 404 errors */
+    class NotFoundException : public APIException { public:
+        NotFoundException() : APIException("Not Found") {};
+        /** @param message message from backend */
+        explicit NotFoundException(const std::string& message) : APIException(message) {}; };
+
+    /**
+     * @param options configuration options
+     * @param runner the BaseRunner to use 
+     */
+    BackendImpl(const Andromeda::ConfigOptions& options, BaseRunner& runner);
 
     virtual ~BackendImpl();
 
     /** Initializes the backend by loading config */
     void Initialize();
 
+    /** Gets the server config object */
+    inline const Config& GetConfig() { return mConfig; }
+
     /** Returns the backend options in use */
-    const ConfigOptions& GetOptions() const { return mOptions; }
+    inline const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
+
+    /** Returns the cache manager if set or nullptr */
+    inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
+
+    /** Sets the cache manager to use (or nullptr) */
+    inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
+
+    /** Returns true if doing memory only */
+    bool isMemory() const;
 
     /** Returns true if the backend is read-only */
     bool isReadOnly() const;
@@ -116,17 +143,20 @@ public:
     /** Closes the existing session */
     void CloseSession();
 
-    /** Throws if a session is not in use */
+    /** 
+     * Throws if a session is not in use 
+     * @throws AuthRequiredException if no session
+     */
     void RequireAuthentication() const;
+
+    /*****************************************************/
+    // ---- Actual backend functions below here ---- //
 
     /**
      * Loads server config
      * @return loaded config as JSON with "core" and "files" keys
      */
     nlohmann::json GetConfigJ();
-
-    /** Gets the server config object */
-    const Config& GetConfig() { return mConfig; }
 
     /** Load limits for the current account */
     nlohmann::json GetAccountLimits();
@@ -165,8 +195,9 @@ public:
      * Creates a new file
      * @param parent parent folder ID
      * @param name name of new file
+     * @param overwrite whether to overwrite existing
      */
-    nlohmann::json CreateFile(const std::string& parent, const std::string& name);
+    nlohmann::json CreateFile(const std::string& parent, const std::string& name, bool overwrite = false);
 
     /**
      * Creates a new folder
@@ -221,6 +252,23 @@ public:
      */
     std::string ReadFile(const std::string& id, const uint64_t offset, const size_t length);
 
+    /** 
+     * A function that supplies a buffer to read output data out of
+     * @param offset offset of the current output data 
+     * @param data pointer to buffer containing data
+     * @param length length of the data buffer
+     */
+    typedef std::function<void(const size_t offset, const char* buf, const size_t length)> ReadFunc;
+
+    /**
+     * Streams data from a file
+     * @param id file ID
+     * @param offset offset to read from
+     * @param length number of bytes to read
+     * @param func data handler function
+     */
+    void ReadFile(const std::string& id, const uint64_t offset, const size_t length, ReadFunc func);
+
     /**
      * Writes data to a file
      * @param id file ID
@@ -228,6 +276,15 @@ public:
      * @param data file data to write
      */
     nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const std::string& data);
+    
+    /**
+     * Creates a new file with data
+     * @param parent parent folder ID
+     * @param name name of new file
+     * @param data file data to write
+     * @param overwrite whether to overwrite existing
+     */
+    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite = false);
 
     /**
      * Truncates a file
@@ -238,22 +295,18 @@ public:
 
 private:
     
-    /** Base exception for Andromeda-returned errors */
-    class APIException : public Exception { public:
-        APIException(int code, const std::string& message) : 
-            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
+    /** Augment input with authentication details */
+    RunnerInput& FinalizeInput(RunnerInput& input);
 
-    /**
-     * Runs an action with authentication details 
-     * @see BaseRunner::RunAction()
-     */
-    std::string RunAction(RunnerInput& input);
+    /** Prints a RunnerInput to the given stream */
+    void PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname);
+    /** Prints a RunnerInput_FilesIn to the given stream */
+    void PrintInput(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    /** Prints a RunnerInput_StreamIn to the given stream */
+    void PrintInput(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
-
-    /** Returns true if doing memory only */
-    bool isMemory() const;
 
     /** True if we created the session in use */
     bool mCreatedSession { false };
@@ -263,10 +316,13 @@ private:
     std::string mSessionID;
     std::string mSessionKey;
     
-    uint64_t mReqCount { 0 };
+    // global backend request counter
+    static std::atomic<uint64_t> sReqCount;
 
     ConfigOptions mOptions;
     BaseRunner& mRunner;
+
+    Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
     Config mConfig;
     Debug mDebug;

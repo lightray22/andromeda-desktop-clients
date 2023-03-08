@@ -7,12 +7,15 @@
 using Andromeda::BaseException;
 #include "andromeda-gui/BackendContext.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
 LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
     mQtUi(std::make_unique<Ui::LoginDialog>()),
-    mDebug("LoginDialog")
+    mDebug("LoginDialog",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mQtUi->setupUi(this);
 }
@@ -20,18 +23,18 @@ LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
 /*****************************************************/
 LoginDialog::~LoginDialog() 
 { 
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 void LoginDialog::accept()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     std::string apiurl { mQtUi->lineEditServerUrl->text().toStdString() };
     std::string username { mQtUi->lineEditUsername->text().toStdString() };
 
-    mDebug << __func__ << "... apiurl:(" << apiurl << ") username:(" << username << ")"; mDebug.Info();
+    MDBG_INFO("... apiurl:(" << apiurl << ") username:(" << username << ")");
 
     try
     {
@@ -42,7 +45,7 @@ void LoginDialog::accept()
     }
     catch (const BaseException& ex)
     {
-        mDebug << __func__ << "... " << ex.what(); mDebug.Error();
+        MDBG_ERROR("... " << ex.what());
 
         QMessageBox::critical(this, "Login Error", ex.what()); return;
     }
@@ -55,3 +58,6 @@ std::unique_ptr<BackendContext> LoginDialog::TakeBackend()
 {
     return std::move(mBackendContext);
 }
+
+} // namespace Gui
+} // namespace AndromedaGui

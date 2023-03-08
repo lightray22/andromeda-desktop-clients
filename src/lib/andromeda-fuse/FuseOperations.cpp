@@ -4,8 +4,8 @@
 #define EHOSTDOWN EIO
 #endif // WIN32
 
-#include <functional>
 #include <bitset>
+#include <functional>
 
 #include "FuseAdapter.hpp"
 using AndromedaFuse::FuseAdapter;
@@ -27,8 +27,10 @@ using Andromeda::Filesystem::Item;
 using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 
-static Debug debug("FuseOperations");
+static Debug debug("FuseOperations",nullptr);
 
 namespace AndromedaFuse {
 
@@ -46,59 +48,65 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     // Item exceptions
     catch (const Folder::NotFileException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EISDIR;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTDIR;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EEXIST;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
     }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOTSUP;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
     }
-    catch (const BackendImpl::ReadOnlyException& e)
+    catch (const BackendImpl::ReadOnlyFSException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EROFS;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
     }
     catch (const BackendImpl::DeniedException& e)
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -EACCES;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -EACCES;
     }
     catch (const BackendImpl::NotFoundException& e)  
     {
-        debug << fname << "... " << e.what(); debug.Info(); return -ENOENT;
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
+    }
+    catch (const CacheManager::MemoryException& e)
+    {
+        DDBG_INFO(": " << fname << "... " << e.what()); return -ENOMEM;
     }
 
     // Error exceptions
     catch (const HTTPRunner::ConnectionException& e)
     {
-        debug << fname << "... " << e.what(); debug.Error(); return -EHOSTDOWN;
+        DDBG_ERROR("... " << fname << "... " << e.what()); return -EHOSTDOWN;
     }
-    catch (const BaseException& e)
+    catch (const BaseException& e) 
+    // BaseRunner::EndpointException (HTTP endpoint errors)
+    // BackendImpl::Exception (others should not happen)
     {
-        debug << fname << "... " << e.what(); debug.Error(); return -EIO;
+        DDBG_ERROR("... " << fname << "... " << e.what()); return -EIO;
     }
 }
 
@@ -109,11 +117,18 @@ void* FuseOperations::init(struct fuse_conn_info* conn)
 void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 #endif // LIBFUSE2
 {
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
 #if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
     cfg->negative_timeout = 1;
+#endif // !LIBFUSE2
+
+    DDBG_INFO("... conn->caps: " << std::bitset<32>(conn->capable));
+    DDBG_INFO("... conn->want: " << std::bitset<32>(conn->want));
+
+#if !LIBFUSE2
+    conn->want &= static_cast<decltype(conn->want)>(~FUSE_CAP_HANDLE_KILLPRIV); // don't support setuid and setgid flags
 #endif // !LIBFUSE2
 
     FuseAdapter& adapter { GetFuseAdapter() };
@@ -126,18 +141,19 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 int FuseOperations::statfs(const char *path, struct statvfs* buf)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     buf->f_namemax = 255;
-    
+
     // TODO temporary garbage so windows writing works...
     #if WIN32
+        // TODO maybe use page size for bsize?
         buf->f_bsize = 4096;
         buf->f_frsize = 4096;
         buf->f_blocks = 1024*1024*1024;
         buf->f_bfree = 1024*1024*1024;
         buf->f_bavail = 1024*1024*1024;
-    #endif
+    #endif // WIN32
         
     // The 'f_favail', 'f_fsid' and 'f_flag' fields are ignored   // TODO implement me
 //           struct statvfs {
@@ -163,13 +179,21 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
     return FUSE_SUCCESS;
 }
 
-#if WIN32
-static void get_timespec(double time, fuse_timespec& spec)
-{
-    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time);
-    spec.tv_nsec = static_cast<decltype(spec.tv_sec)>((time-spec.tv_sec)*1e9);
+// TODO if Windows calls utimens then the conversion of timespec->double->timespec will not match
+// maybe the server will need to actually store timespec sec/nsec...? may be important for syncing
+
+/*****************************************************/
+constexpr Item::Date timespec_to_date(const timespec& t)
+{ 
+    return static_cast<Item::Date>(t.tv_sec) + static_cast<Item::Date>(t.tv_nsec)/1e9; 
 }
-#endif // WIN32
+
+/*****************************************************/
+constexpr void date_to_timespec(const Item::Date time, timespec& spec)
+{
+    spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time); // truncate to int
+    spec.tv_nsec = static_cast<decltype(spec.tv_nsec)>((time-static_cast<Item::Date>(spec.tv_sec))*1e9);
+}
 
 /*****************************************************/
 static void item_stat(const Item& item, struct stat* stbuf)
@@ -183,38 +207,50 @@ static void item_stat(const Item& item, struct stat* stbuf)
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
     
     if (item.isReadOnly()) stbuf->st_mode &= 
-        static_cast<decltype(stbuf->st_mode)>(~S_IWUSR & ~S_IWGRP & ~S_IWOTH); // -Wsign-conversion
+        static_cast<decltype(stbuf->st_mode)>(  // -Wsign-conversion
+            ~S_IWUSR & ~S_IWGRP & ~S_IWOTH);
 
-    stbuf->st_size = static_cast<decltype(stbuf->st_size)>(item.GetSize());
+    stbuf->st_size = (item.GetType() == Item::Type::FILE) ? 
+        static_cast<decltype(stbuf->st_size)>(
+            dynamic_cast<const File&>(item).GetSize()) : 0;
 
-    #if WIN32
-        auto created { item.GetCreated() };
-        auto modified { item.GetModified() };
-        auto accessed { item.GetAccessed() };
+    stbuf->st_blocks = stbuf->st_size ? (stbuf->st_size-1)/512+1 : 0; // 512B blocks
+    //stbuf->st_blksize = 4096; // TODO what to use? page size?
 
-        get_timespec(created, stbuf->st_birthtim);
-        get_timespec(created, stbuf->st_ctim);
-        get_timespec(modified, stbuf->st_mtim);
-        get_timespec(accessed, stbuf->st_atim);
-        
-        if (!modified) stbuf->st_mtim = stbuf->st_ctim;
-        if (!accessed) stbuf->st_atim = stbuf->st_ctim;
-    #else
-        stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(item.GetCreated());
-        stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(item.GetModified());
-        stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(item.GetAccessed());
-        
-        if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
-        if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_ctime;
-    #endif
+    Item::Date created { item.GetCreated() };
+    Item::Date modified { item.GetModified() };
+    Item::Date accessed { item.GetAccessed() };
+
+#if WIN32
+    date_to_timespec(created, stbuf->st_birthtim);
+#endif // WIN32
+
+#ifdef APPLE
+    stbuf->st_ctime = static_cast<decltype(stbuf->st_ctime)>(created);
+    stbuf->st_mtime = static_cast<decltype(stbuf->st_mtime)>(modified);
+    stbuf->st_atime = static_cast<decltype(stbuf->st_atime)>(accessed);
+
+    if (!stbuf->st_mtime) stbuf->st_mtime = stbuf->st_ctime;
+    if (!stbuf->st_atime) stbuf->st_atime = stbuf->st_atime;
+#else // !APPLE
+    date_to_timespec(created, stbuf->st_ctim);
+    date_to_timespec(modified, stbuf->st_mtim);
+    date_to_timespec(accessed, stbuf->st_atim);
+    
+    if (modified == 0) stbuf->st_mtim = stbuf->st_ctim;
+    if (accessed == 0) stbuf->st_atim = stbuf->st_ctim;
+#endif // APPLE
 }
 
 /*****************************************************/
 int FuseOperations::access(const char* path, int mask)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ", mask: " << mask << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", mask:" << mask << ")");
 
+    #if defined(W_OK)
+        static const std::string fname(__func__);
+    #endif // W_OK
     return standardTry(__func__,[&]()->int
     {
         #if defined(W_OK)
@@ -222,7 +258,9 @@ int FuseOperations::access(const char* path, int mask)
 
             if ((mask & W_OK) && item.isReadOnly()) 
             {
-                debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+                debug.Info([&](std::ostream& str){ 
+                    str << fname << "... read-only!"; });
+                return -EACCES;
             }
         #endif // W_OK
             
@@ -230,21 +268,33 @@ int FuseOperations::access(const char* path, int mask)
     });
 }
 
-// TODO should close() be implemented and flush cache?
+// TODO use -o default_permissions and get rid of both of these?
 
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
+    static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        const Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && item.isReadOnly())
+        // TODO need to handle O_APPEND?
+
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file.isReadOnly())
         {
-            debug << __func__ << "... read-only!"; debug.Info(); return -EROFS;
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... read-only!"; });
+            return -EACCES;
+        }
+
+        if (fi->flags & O_TRUNC)
+        {
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... truncating!"; });
+            file.Truncate(0);
         }
 
         return FUSE_SUCCESS;
@@ -254,7 +304,23 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
-    return open(path, fi);
+    while (path[0] == '/') path++;
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+
+    static const std::string fname(__func__);
+    return standardTry(__func__,[&]()->int
+    {
+        const Folder& folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder.isReadOnly())
+        {
+            debug.Info([&](std::ostream& str){ 
+                str << fname << "... read-only!"; });
+            return -EACCES;
+        }
+
+        return FUSE_SUCCESS;
+    });
 }
 
 /*****************************************************/
@@ -262,10 +328,10 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 int FuseOperations::getattr(const char* path, struct stat* stbuf)
 #else
 int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -278,23 +344,23 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 #else
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
+    static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
         const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
 
-        debug << __func__ << "... #items:" << items.size(); debug.Info();
+        debug.Info([&](std::ostream& str){ 
+            str << fname << "... #items:" << items.size(); });
 
         for (const Folder::ItemMap::value_type& pair : items)
         {
             const std::unique_ptr<Item>& item { pair.second };
 
-            debug << __func__ << "... subitem: " << item->GetName(); debug.Info();
-            
 #if LIBFUSE2
             int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
 #else
@@ -305,8 +371,9 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
             else retval = filler(buf, item->GetName().c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
-#endif
-            if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
+#endif // LIBFUSE2
+            if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
+                str << fname << "... filler() failed"; }); return -EIO; }
         }
 
         for (const char* name : {".",".."})
@@ -315,8 +382,9 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             int retval { filler(buf, name, NULL, 0) };
 #else
             int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
-#endif
-            if (retval != FUSE_SUCCESS) { debug << __func__ << "... filler() failed"; debug.Error(); return -EIO; }
+#endif // LIBFUSE2
+            if (retval != FUSE_SUCCESS) { debug.Error([&](std::ostream& str){ 
+                str << fname << "... filler() failed"; }); return -EIO; }
         }
 
         return FUSE_SUCCESS;
@@ -331,7 +399,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
-    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -349,7 +417,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
-    debug << __func__ << "(path:" << path << " name:" << name << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", name:" << name << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -363,7 +431,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 int FuseOperations::unlink(const char* path)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -375,11 +443,15 @@ int FuseOperations::unlink(const char* path)
 int FuseOperations::rmdir(const char* path)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFolderByPath(path).Delete(); return FUSE_SUCCESS;
+        Folder& folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
+
+        if (folder.GetItems().size()) return -ENOTEMPTY;
+
+        folder.Delete(); return FUSE_SUCCESS;
     });
 }
 
@@ -388,7 +460,7 @@ int FuseOperations::rmdir(const char* path)
 int FuseOperations::rename(const char* oldpath, const char* newpath)
 #else
 int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
-#endif
+#endif // LIBFUSE2
 {
     while (oldpath[0] == '/') oldpath++; 
     const Utilities::StringPair pair0(Utilities::split(oldpath,"/",0,true));
@@ -400,7 +472,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
     const std::string& newPath { pair1.first };
     const std::string& newName { pair1.second };
 
-    debug << __func__ << "(oldpath:" << oldpath << " newpath:" << newpath << ")"; debug.Info();
+    DDBG_INFO("(oldpath:" << oldpath << ", newpath:" << newpath << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -410,7 +482,8 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
         {
             //Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
-            debug << "NOT SUPPORTED YET!"; debug.Error(); return -EIO; // TODO implement me
+            DDBG_ERROR("NOT SUPPORTED YET!");
+            return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
@@ -431,7 +504,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -439,7 +512,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
     {
         File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        return static_cast<int>(file.ReadBytes(reinterpret_cast<std::byte*>(buf), static_cast<uint64_t>(off), size));
+        return static_cast<int>(file.ReadBytesMax(buf, static_cast<uint64_t>(off), size));
     });
 }
 
@@ -447,7 +520,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " offset:" << off << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
 
@@ -455,17 +528,20 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
     {
         File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.WriteBytes(reinterpret_cast<const std::byte*>(buf), static_cast<uint64_t>(off), size); 
+        file.WriteBytes(buf, static_cast<uint64_t>(off), size); 
         
         return static_cast<int>(size);
     });
 }
 
+// TODO maybe should only FlushCache() on fsync, not flush? seems to be flush
+// is only for applications->OS and has nothing to do with the storage "media"
+
 /*****************************************************/
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -479,7 +555,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -493,7 +569,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
@@ -504,9 +580,23 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 }
 
 /*****************************************************/
+int FuseOperations::release(const char* path, struct fuse_file_info* fi)
+{
+    while (path[0] == '/') path++;
+    DDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+
+    return standardTry(__func__,[&]()->int
+    {
+        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+
+        file.FlushCache(); return FUSE_SUCCESS;
+    });
+}
+
+/*****************************************************/
 void FuseOperations::destroy(void* private_data)
 {
-    debug << __func__ << "()"; debug.Info();
+    DDBG_INFO("()");
 
     standardTry(__func__,[&]()->int
     {
@@ -520,10 +610,10 @@ void FuseOperations::destroy(void* private_data)
 int FuseOperations::truncate(const char* path, off_t size)
 #else
 int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << " size:" << size << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ", size:" << size << ")");
 
     if (size < 0) return -EINVAL;
 
@@ -540,16 +630,17 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 int FuseOperations::chmod(const char* path, mode_t mode)
 #else
 int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
-    if (!GetFuseAdapter().GetOptions().fakeChmod) return -ENOTSUP;
+    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 
@@ -558,16 +649,17 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 #else
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
-#endif
+#endif // LIBFUSE2
 {
-    if (!GetFuseAdapter().GetOptions().fakeChown) return -ENOTSUP;
+    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 
     while (path[0] == '/') path++;
-    debug << __func__ << "(path:" << path << ")"; debug.Info();
+    DDBG_INFO("(path:" << path << ")");
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 

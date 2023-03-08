@@ -5,6 +5,9 @@
 #include "SystemTray.hpp"
 #include "MainWindow.hpp"
 
+namespace AndromedaGui {
+namespace Gui {
+
 /*****************************************************/
 SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     QSystemTrayIcon(QIcon(QPixmap(32,32))),
@@ -12,9 +15,9 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     mActionExit("Exit"),
     mApplication(application),
     mMainWindow(mainWindow),
-    mDebug("SystemTray")
+    mDebug("SystemTray",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     mContextMenu.addAction(&mActionShow);
     mContextMenu.addAction(&mActionExit);
@@ -33,5 +36,8 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
 /*****************************************************/
 SystemTray::~SystemTray()
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
+
+} // namespace Gui
+} // namespace AndromedaGui

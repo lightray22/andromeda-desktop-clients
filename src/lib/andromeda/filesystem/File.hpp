@@ -2,12 +2,14 @@
 #ifndef LIBA2_FILE_H_
 #define LIBA2_FILE_H_
 
+#include <memory>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
 #include "FSConfig.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
 
@@ -16,20 +18,29 @@ namespace Backend { class BackendImpl; }
 namespace Filesystem {
 class Folder;
 
+namespace Filedata { class PageManager; }
+
 /** An Andromeda file */
 class File : public Item
 {
 public:
 
+    /** Exception indicating that the read goes out of bounds */
+    class ReadBoundsException : public Exception { public:
+        ReadBoundsException() : Exception("Read Out of Range") {}; };
+
     /** Exception indicating that the filesystem does not support writing */
     class WriteTypeException : public Exception { public:
         WriteTypeException() : Exception("Write Type Unsupported") {}; };
 
-    virtual ~File() { }
+    virtual ~File();
 
     virtual void Refresh(const nlohmann::json& data) override;
 
     virtual Type GetType() const override { return Type::FILE; }
+
+    /** Returns the total file size */
+    virtual uint64_t GetSize() const final;
 
     /**
      * @brief Construct a File using backend data
@@ -40,13 +51,34 @@ public:
     File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
     /**
+     * @brief Construct a new file in memory only
+     * @param backend backend reference
+     * @param parent reference to parent folder
+     * @param name name of the new file
+     * @param fsConfig reference to fs config
+     */
+    File(Backend::BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig);
+
+    /** Returns true iff the file exists on the backend (false if waiting for flush) */
+    virtual bool ExistsOnBackend() const;
+
+    /**
      * Read data from the file
      * @param buffer pointer to buffer to fill
      * @param offset byte offset in file to read
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual size_t ReadBytes(std::byte* buffer, const uint64_t offset, size_t length) final;
+    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength) final;
+
+    /**
+     * Read data from the file
+     * @param buffer pointer to buffer to fill
+     * @param offset byte offset in file to read
+     * @param length exact number of bytes to read
+     * @return the number of bytes read (may be < length if EOF)
+     */
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length) final;
 
     /**
      * Writes data to a file
@@ -54,7 +86,7 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const std::byte* buffer, const uint64_t offset, const size_t length) final;
+    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length) final;
 
     /** Set the file size to the given value */
     virtual void Truncate(uint64_t newSize) final;
@@ -62,6 +94,8 @@ public:
     virtual void FlushCache(bool nothrow = false) override;
 
 protected:
+
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
 
     virtual void SubDelete() override;
 
@@ -74,32 +108,7 @@ private:
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const final;
 
-    size_t mPageSize;
-
-    struct Page
-    {
-        explicit Page(size_t pageSize) : data(pageSize){}
-        typedef std::vector<std::byte> Data; Data data;
-        bool dirty { false };
-    };
-
-    typedef std::map<uint64_t, Page> PageMap; PageMap mPages;
-
-    /** 
-     * Returns a reference to a data page
-     * @param index index of the page to load
-     * @param minsize minimum size of the page for writing
-     */
-    virtual Page& GetPage(const uint64_t index, const size_t minsize = 0) final;
-
-    /** Reads data from the given page index */
-    virtual void ReadPage(std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
-
-    /** Writes data to the given page index */
-    virtual void WritePage(const std::byte* buffer, const uint64_t index, const size_t offset, const size_t length) final;
-
-    /* file size as far as the backend knows */
-    uint64_t mBackendSize;
+    std::unique_ptr<Filedata::PageManager> mPageManager;
 
     /** true if the file was deleted */
     bool mDeleted { false };
@@ -110,4 +119,4 @@ private:
 } // namespace Filesystem
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_FILE_H_

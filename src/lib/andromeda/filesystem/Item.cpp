@@ -14,13 +14,13 @@ namespace Filesystem {
 Item::Item(BackendImpl& backend) : 
     mBackend(backend), mDebug("Item",this)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 }
 
 /*****************************************************/
 void Item::Initialize(const nlohmann::json& data)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    MDBG_INFO("()");
 
     try
     {
@@ -45,19 +45,49 @@ void Item::Initialize(const nlohmann::json& data)
 /*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
-    mDebug << __func__ << "()"; mDebug.Info();
+    ITDBG_INFO("()");
 
     try
     {
-        data.at("name").get_to(mName);
-
-        mDebug << __func__ << "... newName:" << mName; mDebug.Info();
+        decltype(mName) newName; 
+        data.at("name").get_to(newName);
+        if (newName != mName)
+        {
+            mName = newName;
+            ITDBG_INFO("... newName:" << mName);
+        }
+        
+        decltype(mCreated) newCreated; 
+        data.at("dates").at("created").get_to(newCreated);
+        if (newCreated != mCreated)
+        {
+            mCreated = newCreated;
+            ITDBG_INFO("... newCreated:" << mCreated);
+        }
 
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
-        if (!modifiedJ.is_null()) modifiedJ.get_to(mModified);
+        if (!modifiedJ.is_null())
+        {
+            decltype(mModified) newModified; 
+            modifiedJ.get_to(newModified);
+            if (newModified != mModified)
+            {
+                mModified = newModified;
+                ITDBG_INFO("... newModified:" << mModified);
+            }
+        }
 
         const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
-        if (!accessedJ.is_null()) accessedJ.get_to(mAccessed);
+        if (!accessedJ.is_null())
+        {
+            decltype(mAccessed) newAccessed; 
+            accessedJ.get_to(newAccessed);
+            if (newAccessed != mAccessed)
+            {
+                mAccessed = newAccessed;
+                ITDBG_INFO("... newAccessed:" << mAccessed);
+            }
+        }
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

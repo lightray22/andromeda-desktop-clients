@@ -5,28 +5,29 @@ include(../../../andromeda.cmake)
 
 # build the andromeda-fuse library
 
-add_library(andromeda-fuse)
+add_library(libandromeda-fuse)
+set_target_properties(libandromeda-fuse PROPERTIES PREFIX "")
 
 set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp FuseOptions.cpp)
 
-target_sources(andromeda-fuse PRIVATE ${SOURCE_FILES})
-target_include_directories(andromeda-fuse
+target_sources(libandromeda-fuse PRIVATE ${SOURCE_FILES})
+target_include_directories(libandromeda-fuse
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-target_compile_options(andromeda-fuse PRIVATE ${ANDROMEDA_WARNINGS}
-    -D_FILE_OFFSET_BITS=64)
+target_compile_options(libandromeda-fuse PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+target_compile_definitions(libandromeda-fuse PRIVATE ${ANDROMEDA_CXX_DEFS} _FILE_OFFSET_BITS=64)
 
-install(TARGETS andromeda-fuse
+install(TARGETS libandromeda-fuse
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 # include/link libandromeda
 
-if (NOT TARGET andromeda)
+if (NOT TARGET libandromeda)
     add_subdirectory(../andromeda lib/andromeda)
 endif()
 
-target_link_libraries(andromeda-fuse PUBLIC andromeda)
+target_link_libraries(libandromeda-fuse PUBLIC libandromeda)
 
 # include/link libfuse
 
@@ -37,8 +38,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(FUSE REQUIRED)
 
 if (${FUSE_MAJOR_VERSION} MATCHES 2)
-    target_compile_definitions(andromeda-fuse PRIVATE LIBFUSE2=1)
+    target_compile_definitions(libandromeda-fuse PRIVATE LIBFUSE2=1)
 endif()
 
-target_include_directories(andromeda-fuse PRIVATE ${FUSE_INCLUDE_DIR})
-target_link_libraries(andromeda-fuse INTERFACE ${FUSE_LIBRARY})
+target_include_directories(libandromeda-fuse PRIVATE ${FUSE_INCLUDE_DIR})
+target_link_libraries(libandromeda-fuse INTERFACE ${FUSE_LIBRARY})

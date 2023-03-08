@@ -7,7 +7,11 @@
 
 #include "andromeda/Debug.hpp"
 
+namespace AndromedaGui {
 class BackendContext;
+
+namespace Gui {
+
 namespace Ui { class LoginDialog; }
 
 /** The window for logging in (creating backend resources) */
@@ -37,5 +41,8 @@ private:
 
     Andromeda::Debug mDebug;
 };
+
+} // namespace Gui
+} // namespace AndromedaGui
 
 #endif // LOGINDIALOG_HPP

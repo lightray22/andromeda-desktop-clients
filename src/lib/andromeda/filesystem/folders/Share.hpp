@@ -20,4 +20,4 @@ public:
 } // namespace Filesystem
 } // namespace Folders
 
-#endif
+#endif // LIBA2_SHARE_H_

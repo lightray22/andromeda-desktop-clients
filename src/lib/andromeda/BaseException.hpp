@@ -13,4 +13,4 @@ class BaseException : public std::runtime_error
 
 } // namespace Andromeda
 
-#endif
+#endif // LIBA2_BASEEXCEPTION_H_

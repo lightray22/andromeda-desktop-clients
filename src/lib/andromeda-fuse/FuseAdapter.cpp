@@ -1,6 +1,12 @@
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <sstream>
+
+#ifdef APPLE
+#include <sys/mount.h> // unmount
+#endif
 
 #include "libfuse_Includes.h"
 #include "FuseAdapter.hpp"
@@ -12,7 +18,9 @@ using Andromeda::Debug;
 using Andromeda::Filesystem::Folder;
 
 static a2fuse_operations a2fuse_ops;
-static Debug sDebug("FuseAdapter");
+static Debug sDebug("FuseAdapter",nullptr);
+
+typedef std::unique_lock<std::mutex> UniqueLock;
 
 namespace AndromedaFuse {
 
@@ -22,15 +30,15 @@ struct FuseArguments
 {
     FuseArguments(): mFuseArgs(FUSE_ARGS_INIT(0,NULL))
     {
-        sDebug << __func__ << "() fuse_opt_add_arg()"; sDebug.Info();
+        SDBG_INFO("() fuse_opt_add_arg()");
 
         int retval; if ((retval = fuse_opt_add_arg(&mFuseArgs, "andromeda-fuse")) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()1 failed",retval);
     };
 
     ~FuseArguments()
     { 
-        sDebug << __func__ << "() fuse_opt_free_args()"; sDebug.Info();
+        SDBG_INFO("() fuse_opt_free_args()");
 
         fuse_opt_free_args(&mFuseArgs); 
     };
@@ -38,56 +46,44 @@ struct FuseArguments
     /** @param arg -o fuse argument */
     void AddArg(const std::string& arg)
     { 
-        sDebug << __func__ << "(arg:" << arg << ")"; sDebug.Info(); int retval;
+        SDBG_INFO("(arg:" << arg << ")"); int retval;
 
         if ((retval = fuse_opt_add_arg(&mFuseArgs, "-o")) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()2 failed",retval);
 
         if ((retval = fuse_opt_add_arg(&mFuseArgs, arg.c_str())) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_opt_add_arg()3 failed",retval);
     };
     /** fuse_args struct */
     struct fuse_args mFuseArgs;
 };
 
-/*****************************************************/
-/** Run fuse_daemonize (detach from terminal) */
-static void FuseDaemonize()
-{
-    sDebug << __func__ << "... fuse_daemonize()"; sDebug.Info();
-
-    int retval; if ((retval = fuse_daemonize(0)) != FUSE_SUCCESS)
-        throw FuseAdapter::Exception("fuse_daemonize() failed: "+std::to_string(retval));
-}
-
 #if LIBFUSE2
 
 /*****************************************************/
-/** Scope-managed fuse_mount/fuse_unmount */
+/** fuse_mount (manual unmount, not scope-managed) */
 struct FuseMount
 {
     /** @param fargs FuseArguments reference
-     * @param path filesystem path to mount */
+      * @param path filesystem path to mount */
     FuseMount(FuseArguments& fargs, const char* const path): mPath(path)
     {
-        sDebug << __func__ << "() fuse_mount()"; sDebug.Info();
-        
+        SDBG_INFO("() fuse_mount(path:" << path << ")");
+
         mFuseChan = fuse_mount(mPath, &fargs.mFuseArgs);
-        
         if (!mFuseChan) throw FuseAdapter::Exception("fuse_mount() failed");
     };
 
+    /** Unmount the FUSE session */
     void Unmount()
     {
         if (mFuseChan == nullptr) return;
+        mFuseChan = nullptr;
 
-        sDebug << __func__ << "() fuse_unmount()"; sDebug.Info();
-        
-        fuse_unmount(mPath, mFuseChan); mFuseChan = nullptr;
+        SDBG_INFO("() fuse_unmount()");
+        fuse_unmount(mPath, mFuseChan); 
     };
 
-    ~FuseMount(){ Unmount(); };
-    
     /** mounted path */
     const char* const mPath;
     /** fuse_chan pointer */
@@ -95,29 +91,61 @@ struct FuseMount
 };
 
 /*****************************************************/
-/** Scope-managed fuse_new/fuse_destroy */
+/** Scope-managed fuse_new/fuse_destroy (also unmounts) */
 struct FuseContext
 {
     /** @param mount FuseMount reference 
-     * @param fargs FuseArguments reference */
-    FuseContext(FuseMount& mount, FuseArguments& fargs, FuseAdapter& adapter): mMount(mount)
+      * @param fargs FuseArguments reference */
+    FuseContext(FuseAdapter& adapter, FuseMount& mount, FuseArguments& fargs): 
+        mAdapter(adapter), mMount(mount)
     { 
-        sDebug << __func__ << "() fuse_new()"; sDebug.Info();
+        SDBG_INFO("() fuse_new()");
 
         mFuse = fuse_new(mMount.mFuseChan, &(fargs.mFuseArgs), 
             &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
         if (!mFuse) throw FuseAdapter::Exception("fuse_new() failed");
+
+        mAdapter.mFuseContext = this; // register with adapter
     };
 
     ~FuseContext()
     {
+        mAdapter.mFuseContext = nullptr;
+
+        SDBG_INFO("()");
         mMount.Unmount(); 
 
-        sDebug << __func__ << "() fuse_destroy()"; sDebug.Info();
-
+        SDBG_INFO("... fuse_destroy()");
         fuse_destroy(mFuse);
     };
 
+    /** Exit and unmount the FUSE session */
+    void TriggerUnmount()
+    {
+        SDBG_INFO("() fuse_exit()");
+        fuse_exit(mFuse); // flag loop to stop
+
+        // fuse_exit does not interrupt the loop, so to prevent it hanging until the next FS operation
+        // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
+        // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
+
+        #if APPLE
+            // OSX hangs our whole process (not just this thread) 60 seconds if we start a
+            // background process but fortunately it allows unmount() without being a superuser
+            SDBG_INFO("... calling unmount(2)");
+            unmount(mMount.mPath, MNT_FORCE);
+            SDBG_INFO("... unmount returned");
+        #else
+            std::stringstream cmd;
+            cmd << "umount \"" << mMount.mPath << "\"&";
+
+            SDBG_INFO("... " << cmd.str());
+            int retval { std::system(cmd.str().c_str()) }; // can fail
+            SDBG_INFO("... system returned: " << retval);
+        #endif
+    }
+
+    FuseAdapter& mAdapter;
     /** Fuse context pointer */
     struct fuse* mFuse;
     /** Fuse mount reference */
@@ -131,9 +159,9 @@ struct FuseContext
 struct FuseContext
 {
     /** @param fargs FuseArguments reference */
-    FuseContext(FuseArguments& fargs, FuseAdapter& adapter)
+    FuseContext(FuseAdapter& adapter, FuseArguments& fargs)
     {
-        sDebug << __func__ << "() fuse_new()"; sDebug.Info();
+        SDBG_INFO("() fuse_new()");
 
         mFuse = fuse_new(&(fargs.mFuseArgs), 
             &a2fuse_ops, sizeof(a2fuse_ops), static_cast<void*>(&adapter));
@@ -142,8 +170,7 @@ struct FuseContext
 
     ~FuseContext()
     {
-        sDebug << __func__ << "() fuse_destroy()"; sDebug.Info();
-
+        SDBG_INFO("() fuse_destroy()");
         fuse_destroy(mFuse);
     };
 
@@ -156,23 +183,49 @@ struct FuseContext
 struct FuseMount
 {
     /** @param context FuseContext reference
-     * @param path filesystem path to mount */
-    FuseMount(FuseContext& context, const char* path): mContext(context)
+      * @param path filesystem path to mount */
+    FuseMount(FuseAdapter& adapter, FuseContext& context, const char* const path): 
+        mAdapter(adapter), mContext(context), mPath(path)
     {
-        sDebug << __func__ << "() fuse_mount()"; sDebug.Info();
+        SDBG_INFO("() fuse_mount(path:" << path << ")");
 
         int retval; if ((retval = fuse_mount(mContext.mFuse, path)) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_mount() failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_mount() failed",retval);
+        mAdapter.mFuseMount = this; // register with adapter
     };
 
-    ~FuseMount()
+    /** Exit and unmount the FUSE session */
+    void TriggerUnmount()
     {
-        sDebug << __func__ << "() fuse_unmount()"; sDebug.Info();
+        SDBG_INFO("() fuse_exit()");
+        fuse_exit(mContext.mFuse);// flag loop to stop
+
+        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent it hanging until the next FS operation
+        // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
+        // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
         
+        #if !WIN32
+            std::stringstream cmd;
+            cmd << "umount \"" << mPath << "\"&";
+
+            SDBG_INFO("... " << cmd.str());
+            int retval { std::system(cmd.str().c_str()) }; // can fail
+            SDBG_INFO("... system returned: " << retval);
+        #endif
+    }
+
+    ~FuseMount() 
+    {
+        mAdapter.mFuseMount = nullptr;
+
+        SDBG_INFO("() fuse_unmount()");
         fuse_unmount(mContext.mFuse);
     }
 
+    FuseAdapter& mAdapter;
     FuseContext& mContext;
+    /** mounted path */
+    const char* const mPath;
 };
 
 #endif // LIBFUSE2
@@ -184,17 +237,17 @@ struct FuseSignals
     /** @param context FuseContext reference */
     explicit FuseSignals(FuseContext& context)
     { 
-        sDebug << __func__ << "() fuse_set_signal_handlers()"; sDebug.Info();
+        SDBG_INFO("() fuse_set_signal_handlers()");
 
         mFuseSession = fuse_get_session(context.mFuse);
 
         int retval; if ((retval = fuse_set_signal_handlers(mFuseSession)) != FUSE_SUCCESS)
-            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed: "+std::to_string(retval));
+            throw FuseAdapter::Exception("fuse_set_signal_handlers() failed",retval);
     };
 
     ~FuseSignals()
     {
-        sDebug << __func__ << "() fuse_remove_signal_handlers()"; sDebug.Info();
+        SDBG_INFO("() fuse_remove_signal_handlers()");
 
         fuse_remove_signal_handlers(mFuseSession); 
     }
@@ -204,134 +257,124 @@ struct FuseSignals
 };
 
 /*****************************************************/
-/** Scope-managed fuse event loop - blocks */
-struct FuseLoop
-{
-    /** @param context FUSE context reference */
-    explicit FuseLoop(FuseContext& context, FuseAdapter& adapter): 
-        mContext(context), mAdapter(adapter)
-    {
-        sDebug << __func__ << "() fuse_loop()"; sDebug.Info();
-
-        { // scoped lock
-            const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
-            mAdapter.mFuseLoop = this; // register with adapter
-        }
-        
-        int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
-            throw FuseAdapter::Exception("fuse_loop() failed: "+std::to_string(retval));
-
-        sDebug << __func__ << "() fuse_loop() returned!"; sDebug.Info();
-    }
-
-    ~FuseLoop()
-    {
-        const std::lock_guard<std::mutex> lock(mAdapter.mFuseLoopMutex);
-        mAdapter.mFuseLoop = nullptr;
-    }
-
-    /** Flags the fuse session to terminate */
-    void ExitLoop() 
-    {
-        sDebug << __func__ << "()"; sDebug.Info();
-
-        fuse_exit(mContext.mFuse); 
-    }
-
-    FuseContext& mContext;
-    FuseAdapter& mAdapter;
-};
-
-/*****************************************************/
-FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options, RunMode runMode)
+FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options)
     : mMountPath(mountPath), mRootFolder(root), mOptions(options)
 {
-    sDebug << __func__ << "(path:" << mMountPath << ")"; sDebug.Info();
+    SDBG_INFO("(path:" << mMountPath << ")");
+}
+
+/*****************************************************/
+void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::ForkFunc& forkFunc)
+{
+    if (mFuseThread.joinable())
+        mFuseThread.join();
 
     if (runMode == RunMode::THREAD)
     {
-        mFuseThread = std::thread(&FuseAdapter::RunFuse, this, runMode);
+        mFuseThread = std::thread(&FuseAdapter::FuseMain, this,
+        // do not register signal handlers, do not daemonize
+            false, false, std::ref(forkFunc));
 
-        sDebug << __func__ << "... waiting for init"; sDebug.Info();
+        SDBG_INFO("... waiting for init");
 
-        std::unique_lock<std::mutex> initLock(mInitMutex);
+        UniqueLock initLock(mInitMutex);
         while (!mInitialized) mInitCV.wait(initLock);
 
-        sDebug << __func__ << "... init complete!"; sDebug.Info();
+        SDBG_INFO("... init complete!");
     }
-    else RunFuse(runMode); // blocking
+    else FuseMain(true, (runMode == RunMode::DAEMON), forkFunc); // blocking
 
     if (mInitError)
     {
         if (runMode == RunMode::THREAD)
             mFuseThread.join();
-        
+
         std::rethrow_exception(mInitError);
     }
 }
 
 /*****************************************************/
-void FuseAdapter::RunFuse(RunMode runMode)
+void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc)
 {
-    sDebug << __func__ << "()"; sDebug.Info();
+    SDBG_INFO("()");
 
     try
     {
         FuseArguments fuseArgs; 
+    #if WIN32
+        // For WinFSP, use the current user
+        fuseArgs.AddArg("uid=-1,gid=-1");
+    #endif // WIN32
         for (const std::string& fuseArg : mOptions.fuseArgs)
             fuseArgs.AddArg(fuseArg);
 
     #if LIBFUSE2
         FuseMount mount(fuseArgs, mMountPath.c_str());
-        FuseContext context(mount, fuseArgs, *this);
+        FuseContext context(*this, mount, fuseArgs);
     #else // !LIBFUSE2
-        FuseContext context(fuseArgs, *this);
-        FuseMount mount(context, mMountPath.c_str());
+        FuseContext context(*this, fuseArgs);
+        FuseMount mount(*this, context, mMountPath.c_str());
     #endif // LIBFUSE2
-        
-        if (runMode == RunMode::DAEMON) FuseDaemonize();
 
-        std::unique_ptr<FuseSignals> signals; 
-        if (runMode != RunMode::THREAD) 
-            signals = std::make_unique<FuseSignals>(context);
+        if (daemonize)
+        {
+            SDBG_INFO("... fuse_daemonize()");
+
+            int retval; if ((retval = fuse_daemonize(0)) != FUSE_SUCCESS)
+                throw FuseAdapter::Exception("fuse_daemonize() failed",retval);
+
+            if (forkFunc) forkFunc();
+        }
         
-        FuseLoop loop(context, *this); // blocks until done
+        std::unique_ptr<FuseSignals> signalsPtr {
+            regSignals ? std::make_unique<FuseSignals>(context) : nullptr };
+        
+        SDBG_INFO("() fuse_loop()");
+
+        { int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
+            throw FuseAdapter::Exception("fuse_loop() failed",retval); }
+
+        SDBG_INFO("() fuse_loop() returned!");
     }
     catch (const Exception& ex)
     {
-        sDebug << __func__ << "(error: " << ex.what() << ")"; sDebug.Error();
-
+        SDBG_ERROR("... error: " << ex.what());
         mInitError = std::current_exception();
     }
 
-    SignalInit(); // outside catch just in case fuse fails but doesn't throw
+    SignalInit(); // just in case fuse fails but doesn't throw
 }
 
 /*****************************************************/
 void FuseAdapter::SignalInit()
 {
-    sDebug << __func__ << "()"; sDebug.Info();
+    SDBG_INFO("()");
 
-    std::unique_lock<std::mutex> initLock(mInitMutex);
-    mInitialized = true; mInitCV.notify_all();
+    UniqueLock initLock(mInitMutex);
+    mInitialized = true; 
+    mInitCV.notify_all();
 }
 
 /*****************************************************/
 FuseAdapter::~FuseAdapter()
 {
-    sDebug << __func__ << "()"; sDebug.Info();
+    SDBG_INFO("()");
     
-    { // scoped lock
-        const std::lock_guard<std::mutex> lock(mFuseLoopMutex);
-        if (mFuseLoop) mFuseLoop->ExitLoop();
-    }
-
-    sDebug << __func__ << "... waiting"; sDebug.Info();
+#if LIBFUSE2
+    if (mFuseContext) 
+        mFuseContext->TriggerUnmount();
+#else // !LIBFUSE2
+    if (mFuseMount) 
+        mFuseMount->TriggerUnmount();
+#endif // LIBFUSE2
 
     if (mFuseThread.joinable())
+    {
+        SDBG_INFO("... waiting");
         mFuseThread.join();
+    }
 
-    sDebug << __func__ << "... return!"; sDebug.Info();
+    SDBG_INFO("... return!");
 }
 
 /*****************************************************/

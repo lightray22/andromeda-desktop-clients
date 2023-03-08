@@ -28,14 +28,17 @@ endif()
 FIND_PATH(FUSE_INCLUDE_DIR NAMES ${FUSE_HEADER_NAMES} PATHS ${FUSE_HEADER_PATHS})
 FIND_LIBRARY(FUSE_LIBRARY NAMES ${FUSE_LIBRARY_NAMES} PATHS ${FUSE_LIBRARY_PATHS})
 
-if (${FUSE_LIBRARY} MATCHES fuse3 OR ${FUSE_LIBRARY} MATCHES winfsp)
-   set(FUSE_MAJOR_VERSION 3)
-else()
-   set(FUSE_MAJOR_VERSION 2)
-endif()
-
 include("FindPackageHandleStandardArgs")
 find_package_handle_standard_args("FUSE" DEFAULT_MSG
     FUSE_INCLUDE_DIR FUSE_LIBRARY)
 
 mark_as_advanced(FUSE_INCLUDE_DIR FUSE_LIBRARY)
+
+if (${FUSE_FOUND})
+    if (${FUSE_LIBRARY} MATCHES fuse3 OR ${FUSE_LIBRARY} MATCHES winfsp)
+        set(FUSE_MAJOR_VERSION 3)
+    else()
+        set(FUSE_MAJOR_VERSION 2)
+    endif()
+    message(STATUS "Found FUSE version ${FUSE_MAJOR_VERSION}")
+endif()
