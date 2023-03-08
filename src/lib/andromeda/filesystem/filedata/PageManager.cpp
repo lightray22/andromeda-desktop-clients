@@ -52,7 +52,7 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
 {
     MDBG_INFO("(" << mFile.GetName() << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")");
 
-    if (index*mPageSize+offset+length > mFileSize || !length)
+    if (index*mPageSize + offset+length > mFileSize)
         throw std::invalid_argument(__func__); // fatal
 
     const Page& page { GetPageRead(index, dataLock) };
@@ -68,8 +68,6 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
 void PageManager::WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")");
-
-    if (!length) throw std::invalid_argument(__func__); // fatal
 
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const uint64_t newFileSize = std::max(mFileSize, pageStart+offset+length);
@@ -102,25 +100,14 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
     { PageMap::const_iterator it { mPages.find(index) };
     if (it != mPages.end()) 
     {
+        DoReadAhead(index, pagesLock);
+
         MDBG_INFO("... return existing page");
-
-        // always pre-populate mReadAheadPages ahead (except index 0)
-        if (index > 0) for (uint64_t nextIdx { index+1 }; 
-            nextIdx <= index + mBackend.GetOptions().readAheadBuffer; ++nextIdx)
-        {
-            if (nextIdx*mPageSize >= mFileSize) break; // exit loop
-            const size_t fetchSize { GetFetchSize(nextIdx, pagesLock) };
-            if (fetchSize)
-            {
-                MDBG_INFO("... read-ahead nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
-                StartFetch(nextIdx, fetchSize, pagesLock);
-                break; // exit loop
-            }
-        }
-
+        const Page& page { it->second };
+        
         if (mCacheMgr && !mBackend.isMemory()) 
-            mCacheMgr->InformPage(*this, index, it->second, it->second.mDirty);
-        return it->second;
+            mCacheMgr->InformPage(*this, index, page, page.mDirty);
+        return page;
     } }
 
     if (!isFetchPending(index, pagesLock))
@@ -132,9 +119,9 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
             Page& newPage { mPages.emplace(index, 0).first->second };
 
             ResizePage(newPage, mPageSize, false); // zeroize
+            // hold pagesLock because if inform fails, we will remove this page
             // InformPage() is never synchronous without a dataLockW so holding pagesLock is okay
-            // in fact pagesLock is a must because if Inform fails, we will remove this page
-            InformNewPage(index, newPage, false, &pagesLock, nullptr);
+            InformNewPage(index, newPage, false, true, &pagesLock, nullptr);
             return newPage;
         }
         else StartFetch(index, fetchSize, pagesLock);
@@ -156,10 +143,11 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLockR& da
     }
 
     MDBG_INFO("... returning pended page " << index);
+    const Page& page { it->second };
 
     if (mCacheMgr && !mBackend.isMemory()) 
-        mCacheMgr->InformPage(*this, index, it->second, it->second.mDirty);
-    return it->second;
+        mCacheMgr->InformPage(*this, index, page, page.mDirty);
+    return page;
 }
 
 /*****************************************************/
@@ -196,7 +184,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
         MDBG_INFO("... create empty page");
         Page& newPage { mPages.emplace(index, 0).first->second };
         ResizePage(newPage, pageSize, false); // zeroize
-        InformNewPage(index, newPage, true, nullptr, &dataLock);
+        InformNewPage(index, newPage, true, true, nullptr, &dataLock);
         return newPage;
     }
 
@@ -204,23 +192,22 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
     Page* newPage; mPageBackend.FetchPages(index, 1, // read a single page
         [&](const uint64_t pageIndex, const uint64_t pageStartI, const size_t pageSizeI, Page& page)
     {
-        if (pageSizeI < pageSize) ResizePage(page, pageSize, false);
         newPage = &(mPages.emplace(pageIndex, std::move(page)).first->second);
     });
 
     ResizePage(*newPage, pageSize, false);
-    InformNewPage(index, *newPage, true, nullptr, &dataLock);
+    InformNewPage(index, *newPage, true, true, nullptr, &dataLock);
     MDBG_INFO("... returning pended page " << index);
     return *newPage;
 }
 
 /*****************************************************/
-void PageManager::InformNewPage(const uint64_t index, Page& page, bool dirty, const UniqueLock* pagesLock, const SharedLockW* dataLock)
+void PageManager::InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock* pagesLock, const SharedLockW* dataLock)
 {
     assert(pagesLock != nullptr || dataLock != nullptr);
 
     if (mCacheMgr && !mBackend.isMemory())
-        try { mCacheMgr->InformPage(*this, index, page, dirty, true, dataLock); }
+        try { mCacheMgr->InformPage(*this, index, page, dirty, canWait, dataLock); }
     catch (BaseException& ex)
     {
         mCacheMgr->RemovePage(page);
@@ -246,7 +233,7 @@ void PageManager::InformResizePage(const uint64_t index, Page& page, bool dirty,
 }
 
 /*****************************************************/
-void PageManager::ResizePage(Page& page, const size_t pageSize, bool inform, const SharedLockW* dataLock)
+void PageManager::ResizePage(Page& page, const size_t pageSize, bool cacheMgr, const SharedLockW* dataLock)
 {
     const size_t oldSize { page.size() };
     if (oldSize == pageSize) return; // no-op
@@ -254,7 +241,7 @@ void PageManager::ResizePage(Page& page, const size_t pageSize, bool inform, con
     MDBG_INFO("(pageSize:" << pageSize << ") oldSize:" << oldSize);
 
     // inform the cache manager before resizing in case of an error
-    if (inform && mCacheMgr) 
+    if (cacheMgr && mCacheMgr) 
         mCacheMgr->ResizePage(*this, page, pageSize, dataLock);
 
     page.mData.resize(pageSize);
@@ -355,6 +342,24 @@ size_t PageManager::GetFetchSize(const uint64_t index, const UniqueLock& pagesLo
 }
 
 /*****************************************************/
+void PageManager::DoReadAhead(const uint64_t index, const UniqueLock& pagesLock)
+{
+    // always pre-populate mReadAheadPages ahead (except index 0)
+    if (index > 0) for (uint64_t nextIdx { index+1 }; 
+        nextIdx <= index + mBackend.GetOptions().readAheadBuffer; ++nextIdx)
+    {
+        if (nextIdx*mPageSize >= mFileSize) break; // exit loop
+        const size_t fetchSize { GetFetchSize(nextIdx, pagesLock) };
+        if (fetchSize)
+        {
+            MDBG_INFO("... read-ahead nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
+            StartFetch(nextIdx, fetchSize, pagesLock);
+            break; // exit loop
+        }
+    }
+}
+
+/*****************************************************/
 void PageManager::StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock)
 {
     MDBG_INFO("(index:" << index << ", readCount:" << readCount << ")");
@@ -392,18 +397,14 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
             const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };
             if (pageSize < realSize) ResizePage(page, realSize, false);
 
-            PageMap::const_iterator newIt;
-            { // lock scope 
-                UniqueLock pagesLock(mPagesMutex);
-                newIt = mPages.emplace(pageIndex, std::move(page)).first;
-                RemovePendingFetch(pageIndex, true, pagesLock); 
-            } // unlock to let waiters proceed with page
+            UniqueLock pagesLock(mPagesMutex);
+            // hold pagesLock because if inform fails, we will remove this page
+            PageMap::iterator newIt { mPages.emplace(pageIndex, std::move(page)).first };
 
-            // assume the requesting thread will do InformPage() for the first page
-            if (mCacheMgr && !mBackend.isMemory() && pageIndex > index)
-                mCacheMgr->InformPage(*this, pageIndex, newIt->second, false, false);
+            InformNewPage(pageIndex, newIt->second, false, false, &pagesLock, nullptr);
             // pass false to not block - we have the httplib lock and reclaiming
             // memory may involve httplib flushing pages - would deadlock
+            RemovePendingFetch(pageIndex, true, pagesLock); 
 
             ++nextIndex;
         }) };

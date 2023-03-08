@@ -201,6 +201,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
     UniqueLock lock(mMutex);
 
     const size_t oldSize { EnqueuePage(pageMgr, index, page, dirty, lock) };
+
     if (page.size() > oldSize)
     {
         HandleMemory(pageMgr, page, canWait, lock, mgrLock);
@@ -235,8 +236,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
             mCurrentMemory -= newSize-oldSize;
             itQueue->mPageSize = oldSize;
         }
-    }
-    else { MDBG_INFO("... page not found"); } }
+    } }
 
     { PageItMap::iterator itLookup { mDirtyItMap.find(&page) };
     if (itLookup != mDirtyItMap.end()) 
@@ -256,8 +256,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
             mCurrentDirty -= newSize-oldSize;
             itQueue->mPageSize = oldSize;
         }
-    }
-    else { MDBG_INFO("... page not found"); } }
+    } }
 }
 
 /*****************************************************/
@@ -295,7 +294,6 @@ size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
         mPageItMap.erase(itLookup);
         mPageQueue.erase(itQueue);
     }
-    else { MDBG_INFO("... page not found"); }
 
     RemoveDirty(page, lock);
     return pageSize;
@@ -315,7 +313,6 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
         mDirtyItMap.erase(itLookup);
         mDirtyQueue.erase(itQueue);
     }
-    else { MDBG_INFO("... page not found"); }
 }
 
 /*****************************************************/
@@ -429,9 +426,12 @@ void CacheManager::DoPageEvictions()
     while (evictIt != currentEvicts.end())
     {
         MDBG_INFO("... evicting pages:" << evictIt->second.second.size() << " pageMgr:" << evictIt->first);
-
-        mSkipEvictWait = evictIt->first; // let waiters on this file continue so we can lock
-        mEvictWaitCV.notify_all();
+        
+        { // let waiters on this file continue so we can lock
+            UniqueLock lock(mMutex);
+            mSkipEvictWait = evictIt->first;
+            mEvictWaitCV.notify_all();
+        }
 
         SharedLockW mgrLock { evictIt->first->GetWriteLock() };
         mSkipEvictWait = nullptr; // have the mgrLock now
@@ -501,8 +501,11 @@ void CacheManager::DoPageFlushes()
     {
         MDBG_INFO("... flushing pages:" << flushIt->second.second.size() << " pageMgr:" << flushIt->first);
 
-        mSkipFlushWait = flushIt->first; // let waiters on this file continue so we can lock
-        mFlushWaitCV.notify_all();
+        { // let waiters on this file continue so we can lock
+            UniqueLock lock(mMutex);
+            mSkipFlushWait = flushIt->first;
+            mFlushWaitCV.notify_all();
+        }
 
         SharedLockRP mgrLock { flushIt->first->GetReadPriLock() };
         mSkipFlushWait = nullptr; // have the mgrLock now

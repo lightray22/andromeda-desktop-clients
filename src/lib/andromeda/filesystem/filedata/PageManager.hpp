@@ -122,16 +122,16 @@ private:
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
      * MUST HAVE either dataLockW or pagesLock! (will be checked!)
      */
-    void InformNewPage(const uint64_t index, Page& page, bool dirty, const UniqueLock* pagesLock, const SharedLockW* dataLock);
+    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock* pagesLock, const SharedLockW* dataLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
     void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& dataLock);
 
     /** 
-     * Resizes an existing page to the given size, informing the CacheManager if inform 
+     * Resizes an existing page to the given size, telling the CacheManager if cacheMgr
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
      */
-    void ResizePage(Page& page, const size_t pageSize, bool inform, const SharedLockW* dataLock = nullptr);
+    void ResizePage(Page& page, const size_t pageSize, bool cacheMgr, const SharedLockW* dataLock = nullptr);
 
     /** Returns true if the page at the given index is pending download */
     bool isFetchPending(const uint64_t index, const UniqueLock& pagesLock);
@@ -145,7 +145,10 @@ private:
      */
     size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
 
-    /** Spawns a thread to read some # of pages at the given VALID (mBackendSize) index */
+    /** Starts a fetch if necessary to prepopulate some pages ahead of the given index (options.readAheadBuffer) */
+    void DoReadAhead(const uint64_t index, const UniqueLock& pagesLock);
+
+    /** Spawns a thread to read some # of pages starting at the given VALID (mBackendSize) index */
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
 
     /** 
@@ -168,8 +171,8 @@ private:
 
     /** 
      * Returns a series of **consecutive** dirty pages (total bytes < size_t)
-     * @param pageIt reference to the iterator to start with - will end as the next index not used
-     * @param writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
+     * @param[in,out] pageIt reference to the iterator to start with - will end as the next index not used
+     * @param[out] writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
