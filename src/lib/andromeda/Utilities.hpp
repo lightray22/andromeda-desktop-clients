@@ -57,7 +57,7 @@ public:
 
     /**
      * Silently read a line of input from stdin
-     * @param retval reference to string to fill
+     * @param[out] retval reference to string to fill
      */
     static void SilentReadConsole(std::string& retval);
 

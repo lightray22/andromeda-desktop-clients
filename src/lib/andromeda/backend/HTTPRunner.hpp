@@ -89,16 +89,16 @@ public:
     virtual void RunAction(const RunnerInput_StreamOut& input) override { 
         bool isJson; RunAction(input, isJson); };
 
-    /** @param isJson ref set to whether response is json */
+    /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction(const RunnerInput& input, bool& isJson);
 
-    /** @param isJson ref set to whether response is json */
+    /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction(const RunnerInput_FilesIn& input, bool& isJson);
 
-    /** @param isJson ref set to whether response is json */
+    /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction(const RunnerInput_StreamIn& input, bool& isJson);
 
-    /** @param isJson ref set to whether response is json (before data starts) */
+    /** @param[out] isJson ref set to whether response is json (before data starts) */
     virtual void RunAction(const RunnerInput_StreamOut& input, bool& isJson);
 
     /** Allows automatic retry on HTTP failure */
@@ -124,16 +124,16 @@ private:
 
     /**
      * Performs a series of HTTP request attempts, does not call HandleResponse
-     * @param getResult Function that provides an httplib result
-     * @param canRetry ref set to where retry is allowed
-     * @param doRetry ref to bool set by manual call of HandleResponse
+     * @param[in] getResult Function that provides an httplib result
+     * @param[out] canRetry ref set to where retry is allowed
+     * @param[in] doRetry ref to bool set by manual call of HandleResponse
      */
     void DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry);
 
     /**
      * Performs a series of HTTP request attempts, calling HandleResponse
-     * @param getResult Function that provides an httplib result
-     * @param isJson ref set to whether response is json
+     * @param[in] getResult Function that provides an httplib result
+     * @param[out] isJson ref set to whether response is json
      * @return std::string the body of the response
      */
     std::string DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson);
@@ -149,10 +149,10 @@ private:
 
     /**
      * Handles an httplib response
-     * @param response httplib response object
-     * @param isJson ref set to whether response is json
-     * @param canRetry true if a retry is allowed (else fail)
-     * @param doRetry ref set to whether the request needs retry
+     * @param[in] response httplib response object
+     * @param[out] isJson ref set to whether response is json
+     * @param[in] canRetry true if a retry is allowed (else fail)
+     * @param[out] doRetry ref set to whether the request needs retry
      * @return std::string the body if not doRetry
      * @throws EndpointException if a non-retry error
      */

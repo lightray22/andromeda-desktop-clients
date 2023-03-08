@@ -45,8 +45,8 @@ public:
 
     /** 
      * Returns the runner input from the command line (AFTER ParseFullArgs!)
-     * @param runner reference to the HTTP runner to use
-     * @param isJson set to whether the response is JSON or not
+     * @param[in] runner reference to the HTTP runner to use
+     * @param[out] isJson set to whether the response is JSON or not
      */
     std::string RunInputAction(Andromeda::Backend::HTTPRunner& runner, bool& isJson);
 
