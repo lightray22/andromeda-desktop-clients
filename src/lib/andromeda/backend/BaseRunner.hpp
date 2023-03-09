@@ -2,6 +2,7 @@
 #define LIBA2_BASERUNNER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "andromeda/BaseException.hpp"
@@ -28,6 +29,9 @@ public:
             BaseException("Endpoint Error: "+message) {}; };
 
     virtual ~BaseRunner(){ }; // for unique_ptr
+
+    /** Copies to a new runner with a new backend channel, but the same config */
+    virtual std::unique_ptr<BaseRunner> Clone() = 0;
 
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;

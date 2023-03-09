@@ -19,10 +19,10 @@ namespace Filesystem { namespace Filedata { class CacheManager; } }
 
 namespace Backend {
 
-class BaseRunner;
 struct RunnerInput;
 struct RunnerInput_FilesIn;
 struct RunnerInput_StreamIn;
+class RunnerPool;
 
 /** Manages communication with the backend API */
 class BackendImpl
@@ -93,9 +93,9 @@ public:
 
     /**
      * @param options configuration options
-     * @param runner the BaseRunner to use 
+     * @param runners the RunnerPool to use 
      */
-    BackendImpl(const Andromeda::ConfigOptions& options, BaseRunner& runner);
+    BackendImpl(const Andromeda::ConfigOptions& options, RunnerPool& runners);
 
     virtual ~BackendImpl();
 
@@ -320,7 +320,7 @@ private:
     static std::atomic<uint64_t> sReqCount;
 
     ConfigOptions mOptions;
-    BaseRunner& mRunner;
+    RunnerPool& mRunners;
 
     Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 

@@ -7,7 +7,8 @@
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 
-namespace Andromeda { namespace Backend { class BackendImpl; class HTTPRunner; } }
+namespace Andromeda { namespace Backend { 
+    class BackendImpl; class HTTPRunner; class RunnerPool; } }
 
 namespace AndromedaGui {
 
@@ -34,6 +35,7 @@ private:
     Andromeda::Backend::HTTPOptions mHttpOptions;
     
     std::unique_ptr<Andromeda::Backend::HTTPRunner> mRunner;
+    std::unique_ptr<Andromeda::Backend::RunnerPool> mRunners;
     std::unique_ptr<Andromeda::Backend::BackendImpl> mBackend;
 
     Andromeda::Debug mDebug;

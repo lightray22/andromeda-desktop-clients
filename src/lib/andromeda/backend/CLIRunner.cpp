@@ -17,13 +17,19 @@ namespace Backend {
 
 /*****************************************************/
 CLIRunner::CLIRunner(const std::string& apiPath) :
-    mDebug("CLIRunner",this), mApiPath(apiPath)
+    mDebug(__func__,this), mApiPath(apiPath)
 {
     if (mApiPath.empty()) mApiPath = "andromeda-server";
     else if (std::filesystem::is_directory(mApiPath))
         mApiPath += "/andromeda-server";
 
     MDBG_INFO("(apiPath:" << mApiPath << ")");
+}
+
+/*****************************************************/
+std::unique_ptr<BaseRunner> CLIRunner::Clone()
+{
+    return std::make_unique<CLIRunner>(mApiPath);
 }
 
 /*****************************************************/

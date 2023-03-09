@@ -27,6 +27,8 @@ public:
     /** @param apiPath path to the API index.php */
     explicit CLIRunner(const std::string& apiPath);
 
+    virtual std::unique_ptr<BaseRunner> Clone() override;
+
     virtual std::string GetHostname() const override { return "local"; }
 
     virtual std::string RunAction(const RunnerInput& input) override;
@@ -45,7 +47,7 @@ private:
 
     std::string mApiPath;
 
-    const std::chrono::seconds mTimeout { std::chrono::seconds(120) };
+    const std::chrono::seconds mTimeout { std::chrono::seconds(120) }; // TODO ref to options class
 };
 
 } // namespace Backend

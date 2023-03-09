@@ -29,6 +29,8 @@ using Andromeda::Backend::CLIRunner;
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/backend/RunnerPool.hpp"
+using Andromeda::Backend::RunnerPool;
 
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
@@ -108,7 +110,9 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    BackendImpl backend(configOptions, *runner);
+    RunnerPool runners(*runner);
+    BackendImpl backend(configOptions, runners);
+    
     CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     backend.SetCacheManager(&cacheMgr);
 

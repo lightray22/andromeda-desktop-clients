@@ -60,6 +60,8 @@ public:
      */
     HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options);
 
+    virtual std::unique_ptr<BaseRunner> Clone() override;
+
     typedef std::pair<std::string, std::string> HostUrlPair;
 
     /**
