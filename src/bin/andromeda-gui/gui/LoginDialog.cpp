@@ -13,7 +13,7 @@ namespace Gui {
 /*****************************************************/
 LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
     mQtUi(std::make_unique<Ui::LoginDialog>()),
-    mDebug("LoginDialog",this)
+    mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

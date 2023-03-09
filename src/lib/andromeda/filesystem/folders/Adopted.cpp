@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 Adopted::Adopted(BackendImpl& backend, Folder& parent) :
-    PlainFolder(backend, nullptr, &parent), mDebug("Adopted",this)
+    PlainFolder(backend, nullptr, &parent), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

@@ -27,7 +27,7 @@ const FSConfig& FSConfig::LoadByID(BackendImpl& backend, const std::string& id)
 
 /*****************************************************/
 FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
-    mDebug("FSConfig", this)
+    mDebug(__func__, this)
 {
     if (data.is_null() && lims.is_null()) return;
 

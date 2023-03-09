@@ -9,7 +9,7 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-Config::Config(BackendImpl& backend) : mDebug("Config",this), mBackend(backend) { }
+Config::Config(BackendImpl& backend) : mDebug(__func__,this), mBackend(backend) { }
 
 /*****************************************************/
 void Config::Initialize()

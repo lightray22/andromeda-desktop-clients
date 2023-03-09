@@ -12,7 +12,7 @@ namespace Filesystem {
 
 /*****************************************************/
 Item::Item(BackendImpl& backend) : 
-    mBackend(backend), mDebug("Item",this)
+    mBackend(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 }

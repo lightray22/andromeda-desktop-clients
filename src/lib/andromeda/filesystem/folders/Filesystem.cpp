@@ -22,7 +22,7 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std
 
 /*****************************************************/
 Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
-    PlainFolder(backend), mDebug("Filesystem",this) 
+    PlainFolder(backend), mDebug(__func__,this) 
 {
     MDBG_INFO("()");
 

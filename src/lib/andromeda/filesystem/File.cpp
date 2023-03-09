@@ -21,7 +21,7 @@ namespace Filesystem {
 
 /*****************************************************/
 File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) : 
-    Item(backend), mDebug("File",this)
+    Item(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 
@@ -52,7 +52,7 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
 /*****************************************************/
 File::File(BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig) : 
-    Item(backend), mDebug("File",this)
+    Item(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

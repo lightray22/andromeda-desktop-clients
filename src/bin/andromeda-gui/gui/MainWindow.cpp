@@ -21,7 +21,7 @@ namespace Gui {
 MainWindow::MainWindow(CacheOptions& cacheOptions) : QMainWindow(),
     mQtUi(std::make_unique<Ui::MainWindow>()),
     mCacheManager(cacheOptions),
-    mDebug("MainWindow",this)
+    mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

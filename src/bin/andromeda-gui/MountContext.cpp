@@ -21,7 +21,7 @@ namespace AndromedaGui {
 
 /*****************************************************/
 MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mountPath, FuseOptions& options) : 
-    mHomeRelative(homeRel), mDebug("MountContext",this) 
+    mHomeRelative(homeRel), mDebug(__func__,this) 
 {
     MDBG_INFO("(mountPath:" << mountPath << ")");
 

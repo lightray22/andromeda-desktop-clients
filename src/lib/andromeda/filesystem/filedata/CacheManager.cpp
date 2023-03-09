@@ -16,8 +16,8 @@ namespace Filedata {
 /*****************************************************/
 CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) : 
     mCacheOptions(cacheOptions),
-    mDebug("CacheManager",this),
-    mBandwidth("CacheManager", cacheOptions.maxDirtyTime)
+    mDebug(__func__,this),
+    mBandwidth(__func__, cacheOptions.maxDirtyTime)
 { 
     MDBG_INFO("()");
 

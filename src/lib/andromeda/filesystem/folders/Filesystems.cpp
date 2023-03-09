@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 Filesystems::Filesystems(BackendImpl& backend, Folder& parent) : 
-    Folder(backend), mDebug("Filesystems",this)
+    Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

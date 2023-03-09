@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 SuperRoot::SuperRoot(BackendImpl& backend) : 
-    Folder(backend), mDebug("SuperRoot",this)
+    Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

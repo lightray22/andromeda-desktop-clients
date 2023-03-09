@@ -19,7 +19,7 @@ namespace Filesystem {
 
 /*****************************************************/
 Folder::Folder(BackendImpl& backend) : 
-    Item(backend), mDebug("Folder",this)
+    Item(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 }

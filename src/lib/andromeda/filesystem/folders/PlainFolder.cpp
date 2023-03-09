@@ -27,7 +27,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const s
 
 /*****************************************************/
 PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json* data, Folder* parent, bool haveItems) : 
-    Folder(backend), mDebug("PlainFolder",this)
+    Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

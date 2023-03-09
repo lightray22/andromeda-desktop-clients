@@ -18,13 +18,13 @@ namespace Filedata {
 
 /*****************************************************/
 PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists) :
-    mDebug("PageManager",this),
+    mDebug(__func__,this),
     mFile(file),
     mBackend(file.GetBackend()),
     mCacheMgr(mBackend.GetCacheManager()),
     mPageSize(pageSize), 
     mFileSize(fileSize), 
-    mBandwidth("PageManager", mBackend.GetOptions().readAheadTime),
+    mBandwidth(__func__, mBackend.GetOptions().readAheadTime),
     mPageBackend(file, pageSize, fileSize, backendExists)
 { 
     MDBG_INFO("(file:" << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
