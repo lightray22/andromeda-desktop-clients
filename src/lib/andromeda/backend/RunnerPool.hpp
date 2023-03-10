@@ -10,7 +10,7 @@
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
-class ConfigOptions;
+struct ConfigOptions;
 
 namespace Backend {
 class BaseRunner;
