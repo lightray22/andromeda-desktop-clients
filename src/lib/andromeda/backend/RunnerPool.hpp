@@ -48,11 +48,9 @@ public:
     LockedRunner GetRunner();
 
     /** Returns a const reference to the first runner */
-    const BaseRunner& GetFirst() const { return *mRunnerPool[0]; }
+    const BaseRunner& GetFirst() const;
 
 private:
-
-    friend class LockedRunner;
 
     /** Signal waiting threads */
     void SignalWaiters();

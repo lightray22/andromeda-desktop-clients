@@ -9,6 +9,8 @@
 using Andromeda::BaseOptions;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
 
 namespace AndromedaFuse {
 
@@ -16,10 +18,15 @@ namespace AndromedaFuse {
 std::string FuseOptions::HelpText()
 {
     std::ostringstream output;
+    FuseOptions cfgDefault;
 
     using std::endl;
 
-    output << "FUSE Advanced:    [--no-chmod] [--no-chown] [-o fuseoption]+"; 
+    output << "FUSE Advanced:    [--no-chmod] [--no-chown] [--fuse-threading [bool(" << cfgDefault.enableThreading << ")]]"
+    #if !LIBFUSE2
+        << " [--fuse-max-idle-threads uint(" << cfgDefault.maxIdleThreads << ")]"
+    #endif // !LIBFUSE2
+        << " [-o fuseoption]+"; 
     
 #if !LIBFUSE2
     output << " [--dump-fuse-options]" << endl;
@@ -48,6 +55,8 @@ bool FuseOptions::AddFlag(const std::string& flag)
         fakeChmod = false;
     else if (flag == "no-chown")
         fakeChown = false;
+    else if (flag == "fuse-threading")
+        enableThreading = true;
 #if !LIBFUSE2
     else if (flag == "dump-fuse-options")
     {
@@ -63,7 +72,16 @@ bool FuseOptions::AddFlag(const std::string& flag)
 /*****************************************************/
 bool FuseOptions::AddOption(const std::string& option, const std::string& value)
 {
-    if (option == "o" || option == "option")
+    if (option == "fuse-threading")
+        enableThreading = Utilities::stringToBool(value);
+#if !LIBFUSE2
+    else if (option == "fuse-max-idle-threads")
+    {
+        try { maxIdleThreads = decltype(maxIdleThreads)(stoul(value)); }
+        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+    }
+#endif // !LIBFUSE2
+    else if (option == "o" || option == "option")
     {
         fuseArgs.push_back(value);
     }

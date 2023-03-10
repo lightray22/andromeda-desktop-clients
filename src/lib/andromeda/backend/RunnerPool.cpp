@@ -18,6 +18,9 @@ RunnerPool::RunnerPool(BaseRunner& runner, const ConfigOptions& options) :
 }
 
 /*****************************************************/
+const BaseRunner& RunnerPool::GetFirst() const { return *mRunnerPool[0]; }
+
+/*****************************************************/
 RunnerPool::LockedRunner RunnerPool::GetRunner()
 {
     UniqueLock llock(mMutex);

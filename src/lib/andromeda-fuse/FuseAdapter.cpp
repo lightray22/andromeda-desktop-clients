@@ -331,8 +331,24 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
         
         SDBG_INFO("() fuse_loop()");
 
-        { int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
-            throw FuseAdapter::Exception("fuse_loop() failed",retval); }
+        { // retval scope
+            int retval;
+
+            if (mOptions.enableThreading)
+            {
+            #if LIBFUSE2
+                retval = fuse_loop_mt(context.mFuse);
+            #else // !LIBFUSE2
+                struct fuse_loop_config loop_config { }; // zero
+                loop_config.max_idle_threads = mOptions.maxIdleThreads;
+                retval = fuse_loop_mt(context.mFuse, &loop_config);
+            #endif // LIBFUSE2
+            }
+            else retval = fuse_loop(context.mFuse);
+
+            if (retval < 0)
+                throw FuseAdapter::Exception("fuse_loop() failed",retval); 
+        }
 
         SDBG_INFO("() fuse_loop() returned!");
     }

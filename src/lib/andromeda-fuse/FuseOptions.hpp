@@ -31,6 +31,14 @@ struct FuseOptions
 
     /** Whether fake chown (no-op) is allowed */
     bool fakeChown { true };
+
+    /** True if multi-threading is enabled */
+    bool enableThreading { false }; // TODO !! enable by default once stable
+
+#if !LIBFUSE2
+    /** Maximum number of FUSE idle threads */
+    unsigned int maxIdleThreads { 10 }; // FUSE's default
+#endif // !LIBFUSE2
 };
 
 } // namespace Andromeda
