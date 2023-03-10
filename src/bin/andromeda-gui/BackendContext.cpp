@@ -23,7 +23,7 @@ BackendContext::BackendContext(
     mRunner = std::make_unique<HTTPRunner>(
         urlPair.first, urlPair.second, mHttpOptions);
 
-    mRunners = std::make_unique<RunnerPool>(*mRunner);
+    mRunners = std::make_unique<RunnerPool>(*mRunner, mConfigOptions);
 
     mBackend = std::make_unique<BackendImpl>(mConfigOptions, *mRunners);
     BackendImpl& backend { *mBackend }; // context will get moved

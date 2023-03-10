@@ -402,8 +402,8 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
             PageMap::iterator newIt { mPages.emplace(pageIndex, std::move(page)).first };
 
             InformNewPage(pageIndex, newIt->second, false, false, &pagesLock, nullptr);
-            // pass false to not block - we have the httplib lock and reclaiming
-            // memory may involve httplib flushing pages - would deadlock
+            // pass false to not wait - not allowed to call the backend for evict/flush within this callback
+            // even if canWait was true, the CacheManager could have us skip the wait to get our W lock for evict
             RemovePendingFetch(pageIndex, true, pagesLock); 
 
             ++nextIndex;

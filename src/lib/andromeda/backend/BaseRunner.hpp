@@ -52,6 +52,7 @@ public:
     
     /**
      * Runs an API call and returns the result
+     * MUST NOT call another action within the callback!
      * @param input input params struct with file streams
      * @return result string from API
      */
@@ -59,12 +60,13 @@ public:
     
     /**
      * Runs an API call and streams the result
+     * MUST NOT call another action within the callback!
      * @param input input params struct with streamer
      */
     virtual void RunAction(const RunnerInput_StreamOut& input) = 0;
 
     /** Returns true if the backend requires sessions */
-    virtual bool RequiresSession() = 0;
+    virtual bool RequiresSession() const = 0;
 };
 
 } // namespace Backend

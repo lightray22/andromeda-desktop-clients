@@ -67,6 +67,9 @@ struct ConfigOptions
      * CPU usage and possibly wasted bandwidth and cache. Overall effect is small.
      */
     size_t readAheadBuffer { 2 };
+
+    /** The maximum number of concurrent backend runners, never zero! */
+    size_t runnerPoolSize { 2 };
 };
 
 } // namespace Andromeda

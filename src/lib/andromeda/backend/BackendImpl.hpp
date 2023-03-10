@@ -254,6 +254,7 @@ public:
 
     /** 
      * A function that supplies a buffer to read output data out of
+     * MUST NOT call another backend action within the callback!
      * @param offset offset of the current output data 
      * @param data pointer to buffer containing data
      * @param length length of the data buffer
@@ -296,7 +297,8 @@ public:
 private:
     
     /** Augment input with authentication details */
-    RunnerInput& FinalizeInput(RunnerInput& input);
+    template <class InputT>
+    InputT& FinalizeInput(InputT& input);
 
     /** Prints a RunnerInput to the given stream */
     void PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname);
@@ -307,6 +309,10 @@ private:
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
+
+    /** Finalizes input, runs the action, returns JSON */
+    template<class InputT>
+    nlohmann::json RunAction(InputT& input);
 
     /** True if we created the session in use */
     bool mCreatedSession { false };

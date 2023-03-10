@@ -18,7 +18,7 @@ std::string ConfigOptions::HelpText()
     const auto defReadAhead(cfgDefault.readAheadTime.count());
 
     using std::endl; output 
-        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal]" << endl
+        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << cfgDefault.runnerPoolSize << ")]" << endl
         << "Data Advanced:   [--pagesize bytes32(" << cfgDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
             << " [--read-max-cache-frac uint(" << cfgDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << cfgDefault.readAheadBuffer << ")]";
 
@@ -48,6 +48,13 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     {
         try { refreshTime = decltype(refreshTime)(stoul(value)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+    }
+    else if (option == "backend-runners")
+    {
+        try { runnerPoolSize = decltype(runnerPoolSize)(stoul(value)); }
+        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+
+        if (!runnerPoolSize) throw BaseOptions::BadValueException(option);
     }
     else if (option == "pagesize")
     {

@@ -39,7 +39,7 @@ public:
     
     virtual void RunAction(const RunnerInput_StreamOut& input) override;
 
-    virtual bool RequiresSession() override { return false; }
+    virtual bool RequiresSession() const override { return false; }
 
 private:
 

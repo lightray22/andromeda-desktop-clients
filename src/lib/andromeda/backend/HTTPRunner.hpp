@@ -109,7 +109,7 @@ public:
     /** Returns whether retry is enabled or disabled */
     virtual bool GetCanRetry() const final { return mCanRetry; }
 
-    virtual bool RequiresSession() override { return true; }
+    virtual bool RequiresSession() const override { return true; }
 
 private:
 

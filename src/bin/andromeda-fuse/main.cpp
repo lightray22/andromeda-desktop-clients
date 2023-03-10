@@ -110,9 +110,9 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    RunnerPool runners(*runner);
+    RunnerPool runners(*runner, configOptions);
     BackendImpl backend(configOptions, runners);
-    
+
     CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     backend.SetCacheManager(&cacheMgr);
 
