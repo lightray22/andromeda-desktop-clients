@@ -97,7 +97,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
         while (canWait && mCurrentMemory > mCacheOptions.memoryLimit && 
             &mPageQueue.front().mPageMgr == &pageMgr &&
-            mPageQueue.front().mPagePtr != &page)
+            &mPageQueue.front().mPageRef != &page)
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
@@ -139,7 +139,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         // so we can directly pick up errors (they could be missed due to mSkipFlushWait)
         while (canWait && mCurrentDirty > mDirtyLimit && 
             &mDirtyQueue.front().mPageMgr == &pageMgr &&
-            mDirtyQueue.front().mPagePtr != &page)
+            &mDirtyQueue.front().mPageRef != &page)
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
@@ -174,7 +174,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
 size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
-    PageInfo pageInfo { pageMgr, index, &page, page.size() };
+    PageInfo pageInfo { pageMgr, index, page, page.size() };
 
     mPageQueue.emplace_back(pageInfo);
     mPageItMap[&page] = std::prev(mPageQueue.end());
@@ -413,7 +413,7 @@ void CacheManager::DoPageEvictions()
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
 
             if (!evictSet.first) 
-                RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+                RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {
                 evictSet.second.push_back(pageInfo); // copy
@@ -446,9 +446,9 @@ void CacheManager::DoPageEvictions()
                 MDBG_ERROR("... " << ex.what());
                 
                 // move the failed page to the end so we try a different (maybe non-dirty) one next
-                if (RemovePage(*pageInfo.mPagePtr, lock))
+                if (RemovePage(pageInfo.mPageRef, lock))
                     EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
-                    *pageInfo.mPagePtr, pageInfo.mPagePtr->mDirty, lock);
+                    pageInfo.mPageRef, pageInfo.mPageRef.mDirty, lock);
 
                 mEvictFailure = std::current_exception();
                 mEvictWaitCV.notify_all();
@@ -488,7 +488,7 @@ void CacheManager::DoPageFlushes()
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
 
             if (!flushSet.first) 
-                RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+                RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {
                 flushSet.second.push_back(pageInfo); // copy

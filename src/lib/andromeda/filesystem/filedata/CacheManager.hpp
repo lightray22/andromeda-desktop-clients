@@ -166,8 +166,8 @@ private:
         PageManager& mPageMgr;
         /** Index of the page in the pageMgr */
         const uint64_t mPageIndex;
-        /** Pointer to the page object */
-        const Page* mPagePtr;
+        /** Reference to the page object */
+        const Page& mPageRef;
         /** Size of the page when it was added */
         size_t mPageSize;
     } PageInfo;
