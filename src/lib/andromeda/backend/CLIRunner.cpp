@@ -16,8 +16,8 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-CLIRunner::CLIRunner(const std::string& apiPath) :
-    mDebug(__func__,this), mApiPath(apiPath)
+CLIRunner::CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout) :
+    mDebug(__func__,this), mApiPath(apiPath), mTimeout(timeout)
 {
     if (mApiPath.empty()) mApiPath = "andromeda-server";
     else if (std::filesystem::is_directory(mApiPath))
@@ -29,7 +29,7 @@ CLIRunner::CLIRunner(const std::string& apiPath) :
 /*****************************************************/
 std::unique_ptr<BaseRunner> CLIRunner::Clone()
 {
-    return std::make_unique<CLIRunner>(mApiPath);
+    return std::make_unique<CLIRunner>(mApiPath, mTimeout);
 }
 
 /*****************************************************/

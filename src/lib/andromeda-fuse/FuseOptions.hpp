@@ -33,8 +33,8 @@ struct FuseOptions
     bool fakeChown { true };
 
     /** True if multi-threading is enabled */
-    bool enableThreading { false }; // TODO !! enable by default once stable
-
+    bool enableThreading { true };
+    
 #if !LIBFUSE2
     /** Maximum number of FUSE idle threads */
     unsigned int maxIdleThreads { 10 }; // FUSE's default

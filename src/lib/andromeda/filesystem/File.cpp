@@ -60,7 +60,7 @@ File::File(BackendImpl& backend, Folder& parent, const std::string& name, const 
     mParent = &parent;
     mName = name;
 
-    mCreated = static_cast<decltype(mCreated)>(std::time(nullptr));
+    mCreated = static_cast<decltype(mCreated)>(std::time(nullptr)); // now
 
     const size_t fsChunk { mFsConfig->GetChunkSize() };
     const size_t cfChunk { mBackend.GetOptions().pageSize };

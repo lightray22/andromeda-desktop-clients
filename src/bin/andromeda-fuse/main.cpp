@@ -106,7 +106,7 @@ int main(int argc, char** argv)
         case Options::ApiType::API_PATH:
         {
             runner = std::make_unique<CLIRunner>(
-                options.GetApiPath()); break;
+                options.GetApiPath(), httpOptions.timeout); break;
         }; break;
     }
 

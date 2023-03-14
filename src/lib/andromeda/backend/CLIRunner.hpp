@@ -24,8 +24,11 @@ public:
         explicit Exception(const std::string& msg) : 
             EndpointException("Subprocess Error: "+msg) {} };
 
-    /** @param apiPath path to the API index.php */
-    explicit CLIRunner(const std::string& apiPath);
+    /** 
+     * @param apiPath path to the API index.php 
+     * @param timeout the timeout for each CLI call
+     */
+    explicit CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout);
 
     virtual std::unique_ptr<BaseRunner> Clone() override;
 
@@ -47,7 +50,7 @@ private:
 
     std::string mApiPath;
 
-    const std::chrono::seconds mTimeout { std::chrono::seconds(120) }; // TODO ref to options class
+    const std::chrono::seconds mTimeout;
 };
 
 } // namespace Backend

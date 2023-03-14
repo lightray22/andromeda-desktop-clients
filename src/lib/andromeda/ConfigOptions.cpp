@@ -12,18 +12,19 @@ namespace Andromeda {
 std::string ConfigOptions::HelpText()
 {
     std::ostringstream output;
-    ConfigOptions cfgDefault;
+    ConfigOptions optDefault;
 
-    const auto defRefresh(cfgDefault.refreshTime.count());
-    const auto defReadAhead(cfgDefault.readAheadTime.count());
+    const auto defRefresh(optDefault.refreshTime.count());
+    const auto defReadAhead(optDefault.readAheadTime.count());
 
     using std::endl; output 
-        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << cfgDefault.runnerPoolSize << ")]" << endl
-        << "Data Advanced:   [--pagesize bytes32(" << cfgDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
-            << " [--read-max-cache-frac uint(" << cfgDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << cfgDefault.readAheadBuffer << ")]";
+        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << optDefault.runnerPoolSize << ")]" << endl
+        << "Data Advanced:   [--pagesize bytes32(" << optDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
+            << " [--read-max-cache-frac uint(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
 
     return output.str();
 }
+
 /*****************************************************/
 bool ConfigOptions::AddFlag(const std::string& flag)
 {

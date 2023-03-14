@@ -103,12 +103,8 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     uint64_t writeStart { index*mPageSize };
     MDBG_INFO("... WRITING " << buf.size() << " to " << writeStart);
 
-    if (!mBackendExists && index != 0) // can't use Upload()
-    {
-        mFile.Refresh(mBackend.CreateFile(
-             mFile.GetParent().GetID(), mFile.GetName()));
-        mBackendExists = true;
-    }
+    if (!mBackendExists && index != 0)
+        FlushCreate(); // can't use Upload()
 
     if (!mBackendExists)
     {
