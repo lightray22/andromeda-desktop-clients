@@ -114,15 +114,6 @@ protected:
     /** The folder-type-specific create subfolder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
-    /** The folder-type-specific delete subitem */
-    virtual void SubDeleteItem(Item& item) = 0;
-
-    /** The folder-type-specific rename subitem */
-    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) = 0;
-
-    /** The folder-type-specific move subitem */
-    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) = 0;
-
     /** map of subitems */
     ItemMap mItemMap;
 

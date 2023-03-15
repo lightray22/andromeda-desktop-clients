@@ -91,13 +91,13 @@ public:
     virtual void Refresh(const nlohmann::json& data);
 
     /** Delete this item (and its contents if a folder) */
-    virtual void Delete(bool internal = false) final; // TODO refactor to get rid of "internal"
+    virtual void Delete() final;
 
     /** Set this item's name to the given name, optionally overwrite existing */
-    virtual void Rename(const std::string& newName, bool overwrite = false, bool internal = false) final;
+    virtual void Rename(const std::string& newName, bool overwrite = false) final;
 
     /** Move this item to the given parent folder, optionally overwrite existing */
-    virtual void Move(Folder& newParent, bool overwrite = false, bool internal = false) final;
+    virtual void Move(Folder& newParent, bool overwrite = false) final;
 
     /** 
      * Flushes all dirty pages to the backend 
@@ -114,7 +114,9 @@ protected:
     Item(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
-    virtual void Initialize(const nlohmann::json& data);
+    virtual void Initialize(const nlohmann::json& data); // TODO !! these should go away with FromJson()
+
+    friend class Folder;
 
     /** Item type-specific delete */
     virtual void SubDelete() = 0;
@@ -124,15 +126,15 @@ protected:
 
     /** Item type-specific move */
     virtual void SubMove(Folder& newParent, bool overwrite) = 0;
-    
+
     /** Reference to the API backend */
     Backend::BackendImpl& mBackend;
 
     /** Pointer to parent folder */
-    Folder* mParent { nullptr };
+    Folder* mParent { nullptr }; // TODO !! Remove HasParent(), want this never null (reorganize)
 
     /** Pointer to filesystem config */
-    const FSConfig* mFsConfig { nullptr };
+    const FSConfig* mFsConfig { nullptr }; // TODO !! Remove HasFSConfig(), want this never null (reorganize)
 
     /** Backend object ID */
     std::string mId;

@@ -29,7 +29,7 @@ Item& Folder::GetItemByPath(std::string path)
 {
     ITDBG_INFO("(path:" << path << ")");
 
-    if (path[0] == '/') path.erase(0,1);
+    while (path[0] == '/') path.erase(0,1);
 
     if (path.empty()) return *this;    
 
@@ -189,16 +189,21 @@ void Folder::DeleteItem(const std::string& name)
 {
     ITDBG_INFO("(name:" << name << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
-    SubDeleteItem(*(it->second)); mItemMap.erase(it);
+    it->second->SubDelete(); 
+    mItemMap.erase(it);
 }
 
 /*****************************************************/
 void Folder::RenameItem(const std::string& oldName, const std::string& newName, bool overwrite)
 {
     ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
+
+    if (isReadOnly()) throw ReadOnlyException();
 
     GetItems(); ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
@@ -207,9 +212,10 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
     if (!overwrite && dup != mItemMap.end())
         throw DuplicateItemException();
 
-    SubRenameItem(*(it->second), newName, overwrite);
+    it->second->SubRename(newName, overwrite);
 
-    if (dup != mItemMap.end()) mItemMap.erase(dup);
+    if (dup != mItemMap.end()) 
+        mItemMap.erase(dup);
 
     ItemMap::node_type node(mItemMap.extract(it));
     node.key() = newName; mItemMap.insert(std::move(node));
@@ -220,6 +226,8 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite
 {
     ITDBG_INFO("(name:" << name << " parent:" << newParent.GetName() << ")");
 
+    if (isReadOnly()) throw ReadOnlyException();
+
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
@@ -229,9 +237,10 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite
     if (!overwrite && dup != newParent.mItemMap.end())
         throw DuplicateItemException();
 
-    SubMoveItem(*(it->second), newParent, overwrite);
+    it->second->SubMove(newParent, overwrite);
 
-    if (dup != newParent.mItemMap.end()) newParent.mItemMap.erase(dup);
+    if (dup != newParent.mItemMap.end()) 
+        newParent.mItemMap.erase(dup);
 
     newParent.mItemMap.insert(mItemMap.extract(it));
 }

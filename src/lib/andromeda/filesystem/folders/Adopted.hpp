@@ -31,9 +31,7 @@ protected:
 
     /** populate itemMap from the backend */
     virtual void LoadItems() override;
-        
-    virtual bool isReadOnly() const override { return true; }
-
+    
     virtual void SubDelete() override { throw ModifyException(); }
 
     virtual void SubRename(const std::string& newName, bool overwrite = false) override { throw ModifyException(); }

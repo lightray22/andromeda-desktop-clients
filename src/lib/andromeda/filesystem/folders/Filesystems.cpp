@@ -49,18 +49,6 @@ void Filesystems::LoadItems()
     SyncContents(newItems);
 }
 
-/*****************************************************/
-void Filesystems::SubDeleteItem(Item& item)
-{
-    item.Delete(true);
-}
-
-/*****************************************************/
-void Filesystems::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
-{
-    item.Rename(newName, overwrite, true);
-}
-
 } // namespace Andromeda
 } // namespace Filesystem
 } // namespace Folders

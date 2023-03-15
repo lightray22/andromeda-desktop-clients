@@ -46,12 +46,6 @@ protected:
     virtual void SubCreateFile(const std::string& name) override;
 
     virtual void SubCreateFolder(const std::string& name) override;
-    
-    virtual void SubDeleteItem(Item& item) override;
-
-    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override;
-
-    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) override;
 
     virtual void SubDelete() override;
 

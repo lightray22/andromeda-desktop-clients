@@ -80,6 +80,13 @@ Utilities::StringPair Utilities::split(
 }
 
 /*****************************************************/
+Utilities::StringPair Utilities::splitPath(std::string str)
+{
+    if (str[0] != '/') str.insert(0,"/");
+    return split(str,"/",0,true);
+}
+
+/*****************************************************/
 bool Utilities::startsWith(const std::string& str, const std::string& start)
 {
     if (start.size() > str.size()) return false;

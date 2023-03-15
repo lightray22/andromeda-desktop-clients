@@ -43,6 +43,9 @@ public:
         const std::string& str, const std::string& delim, 
         const size_t skip = 0, const bool reverse = false);
 
+    /** Splits a path into its dirname and basename */
+    static StringPair splitPath(std::string str); // TODO unit test
+
     /** Returns true iff str starts with start */
     static bool startsWith(const std::string& str, const std::string& start);
 

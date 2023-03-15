@@ -94,24 +94,6 @@ void PlainFolder::SubCreateFolder(const std::string& name)
 }
 
 /*****************************************************/
-void PlainFolder::SubDeleteItem(Item& item)
-{
-    item.Delete(true);
-}
-
-/*****************************************************/
-void PlainFolder::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
-{
-    item.Rename(newName, overwrite, true);
-}
-
-/*****************************************************/
-void PlainFolder::SubMoveItem(Item& item, Folder& newParent, bool overwrite)
-{
-    item.Move(newParent, overwrite, true);
-}
-
-/*****************************************************/
 void PlainFolder::SubDelete()
 {
     ITDBG_INFO("()");

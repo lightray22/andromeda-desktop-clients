@@ -122,32 +122,36 @@ bool Item::isReadOnly() const
 }
 
 /*****************************************************/
-void Item::Delete(bool internal)
+void Item::Delete()
 {
-    if (internal || !HasParent()) SubDelete();
+    ITDBG_INFO("()");
+
+    if (!HasParent()) SubDelete();
     else GetParent().DeleteItem(mName);
 }
 
 /*****************************************************/
-void Item::Rename(const std::string& newName, bool overwrite, bool internal)
+void Item::Rename(const std::string& newName, bool overwrite)
 {
-    if (internal || !HasParent())
+    ITDBG_INFO("(newName:" << newName << ")");
+
+    if (!HasParent())
+        SubRename(newName, overwrite);
+    else
     {
-        SubRename(newName, overwrite); 
+        GetParent().RenameItem(mName, newName, overwrite);
         mName = newName;
     }
-    else GetParent().RenameItem(mName, newName, overwrite);
 }
 
 /*****************************************************/
-void Item::Move(Folder& newParent, bool overwrite, bool internal)
+void Item::Move(Folder& newParent, bool overwrite)
 {
-    if (internal)
-    {
-        SubMove(newParent, overwrite); 
-        mParent = &newParent;
-    }
-    else GetParent().MoveItem(mName, newParent, overwrite);
+    ITDBG_INFO("(newParent:" << newParent.GetName() << ")");
+
+    // GetParent() will throw if parent is null
+    GetParent().MoveItem(mName, newParent, overwrite);
+    mParent = &newParent;
 }
 
 } // namespace Filesystem
