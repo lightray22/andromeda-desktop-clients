@@ -18,7 +18,8 @@ Item::Item(BackendImpl& backend) :
 }
 
 /*****************************************************/
-void Item::Initialize(const nlohmann::json& data)
+Item::Item(BackendImpl& backend, const nlohmann::json& data) : 
+    mBackend(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

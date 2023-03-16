@@ -28,7 +28,6 @@ BackendContext::BackendContext(
     mBackend = std::make_unique<BackendImpl>(mConfigOptions, *mRunners);
     BackendImpl& backend { *mBackend }; // context will get moved
 
-    backend.Initialize();
     backend.Authenticate(username, password, twofactor);
 
     mRunner->EnableRetry(); // no retry during init

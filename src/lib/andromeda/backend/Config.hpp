@@ -41,9 +41,6 @@ public:
         explicit AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
-    /** Loads config from the given backend */
-    void Initialize();
-
     /** Adds account-specific limits */
     void LoadAccountLimits(BackendImpl& backend);
 

@@ -2,6 +2,7 @@
 #ifndef LIBA2_FILE_H_
 #define LIBA2_FILE_H_
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
@@ -18,7 +19,7 @@ namespace Backend { class BackendImpl; }
 namespace Filesystem {
 class Folder;
 
-namespace Filedata { class PageManager; }
+namespace Filedata { class PageManager; class PageBackend; }
 
 /** An Andromeda file */
 class File : public Item
@@ -50,14 +51,23 @@ public:
      */
     File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
+    /** Function to create the file on the backend and return its JSON */
+    typedef std::function<nlohmann::json(const std::string& name)> CreateFunc;
+    /** Function to upload the file on the backend and return its JSON */
+    typedef std::function<nlohmann::json(const std::string& name, const std::string& data)> UploadFunc;
+
     /**
-     * @brief Construct a new file in memory only
+     * @brief Construct a new file in memory only to be created on the backend when flushed
      * @param backend backend reference
      * @param parent reference to parent folder
      * @param name name of the new file
      * @param fsConfig reference to fs config
+     * @param createFunc function to create on the backend
+     * @param uploadFunc function to upload on the backend
      */
-    File(Backend::BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig);
+    File(Backend::BackendImpl& backend, Folder& parent, 
+        const std::string& name, const FSConfig& fsConfig,
+        const CreateFunc& createFunc, const UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend (false if waiting for flush) */
     virtual bool ExistsOnBackend() const;
@@ -101,19 +111,23 @@ protected:
 
     virtual void SubRename(const std::string& newName, bool overwrite) override;
 
-    virtual void SubMove(Folder& newParent, bool overwrite) override;
+    virtual void SubMove(const std::string& parentID, bool overwrite) override;
 
 private:
 
     /** Checks the FS and account limits for the allowed write mode */
     virtual FSConfig::WriteMode GetWriteMode() const final;
 
+    /** Returns the page size calculated from the backend.pageSize and fsConfig.chunkSize */
+    virtual size_t CalcPageSize() const;
+
     std::unique_ptr<Filedata::PageManager> mPageManager;
+    std::unique_ptr<Filedata::PageBackend> mPageBackend;
 
     /** true if the file was deleted */
     bool mDeleted { false };
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
 } // namespace Filesystem

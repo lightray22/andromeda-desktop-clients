@@ -48,11 +48,12 @@ public:
     /** 
      * Construct a new file page manager
      * @param file reference to the parent file
-     * @param fileSize current file size
+     * @param fileID reference to the file's backend ID
+     * @param fileSize initial file size
      * @param pageSize size of pages to use (const)
-     * @param backendExists true if the file exists on the backend
+     * @param pageBackend page backend reference
      */
-    PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists);
+    PageManager(File& file, const uint64_t fileSize, const size_t pageSize, PageBackend& pageBackend);
 
     virtual ~PageManager();
 
@@ -193,17 +194,15 @@ private:
     /** 
      * Writes a series of **consecutive** pages (total < size_t) - MUST HAVE DATALOCKR/W!
      * Also marks each page not dirty and informs the cache manager
-     * Also creates the file on the backend if necessary (see mBackendExists)
+     * Also creates the file on the backend if necessary
      * @param index the starting index of the page list
      * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
      */
     size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const UniqueLock& flushLock);
 
-    /** 
-     * Asserts the file is created on the backend (see mBackendExists) - MUST HAVE DATALOCKR/W!
-     * Also calls truncate if max(mBackendSize,maxDirty) < mFileSize 
-     */
+    /** Asserts the file on the backend has the proper size in case we
+     * were truncated larger before mBackendExists - MUST HAVE DATALOCKR/W! */
     void FlushTruncate(const UniqueLock& flushLock);
 
     Debug mDebug;
@@ -254,7 +253,7 @@ private:
     /** Bandwidth measurement tool for mFetchSize */
     BandwidthMeasure mBandwidth;
     /** Page to/from backend interface */
-    PageBackend mPageBackend;
+    PageBackend& mPageBackend;
 };
 
 } // namespace Filedata

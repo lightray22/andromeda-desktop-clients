@@ -36,19 +36,19 @@ public:
      * @param data pre-loaded JSON data
      * @param parent optional pointer to parent
      */
-    Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent = nullptr);
-
-    virtual const std::string& GetID() override;
+    Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
     virtual void Refresh(const nlohmann::json& data) override { }
 
 protected:
 
+    virtual const std::string& GetID() override;
+
     virtual void LoadItems() override;
 
     virtual void SubDelete() override { throw ModifyException(); }
 
-    virtual void SubMove(Folder& newParent, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(const std::string& parentID, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

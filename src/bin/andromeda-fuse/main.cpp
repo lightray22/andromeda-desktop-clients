@@ -120,8 +120,6 @@ int main(int argc, char** argv)
     
     try
     {
-        backend.Initialize();
-
         if (options.HasSession())
             backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
         else if (options.HasUsername())

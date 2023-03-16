@@ -99,9 +99,6 @@ public:
 
     virtual ~BackendImpl();
 
-    /** Initializes the backend by loading config */
-    void Initialize();
-
     /** Gets the server config object */
     inline const Config& GetConfig() { return mConfig; }
 
@@ -330,8 +327,8 @@ private:
 
     Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
-    Config mConfig;
     Debug mDebug;
+    Config mConfig;
 };
 
 } // namespace Backend

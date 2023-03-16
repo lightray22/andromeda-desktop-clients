@@ -17,7 +17,7 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, bool backendExists) :
+PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageSize, PageBackend& pageBackend) :
     mDebug(__func__,this),
     mFile(file),
     mBackend(file.GetBackend()),
@@ -25,7 +25,7 @@ PageManager::PageManager(File& file, const uint64_t fileSize, const size_t pageS
     mPageSize(pageSize), 
     mFileSize(fileSize), 
     mBandwidth(__func__, mBackend.GetOptions().readAheadTime),
-    mPageBackend(file, pageSize, fileSize, backendExists)
+    mPageBackend(pageBackend)
 { 
     MDBG_INFO("(file:" << file.GetName() << ", size:" << fileSize << ", pageSize:" << pageSize << ")");
 }
@@ -632,8 +632,6 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
 void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock)
 {
     MDBG_INFO("()");
-
-    mPageBackend.FlushCreate();
 
     uint64_t maxDirty { 0 }; // byte after last dirty byte
     { // lock scope

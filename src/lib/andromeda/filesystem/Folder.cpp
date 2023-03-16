@@ -25,6 +25,13 @@ Folder::Folder(BackendImpl& backend) :
 }
 
 /*****************************************************/
+Folder::Folder(BackendImpl& backend, const nlohmann::json& data) : 
+    Item(backend, data), mDebug(__func__,this)
+{
+    MDBG_INFO("()");
+}
+
+/*****************************************************/
 Item& Folder::GetItemByPath(std::string path)
 {
     ITDBG_INFO("(path:" << path << ")");
@@ -104,7 +111,7 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
         return std::make_unique<File>(mBackend, fileJ, *this); } };
 
     NewItemFunc newFolder { [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
-        return std::make_unique<Folders::PlainFolder>(mBackend, &folderJ, this); } };
+        return std::make_unique<Folders::PlainFolder>(mBackend, folderJ, false, this); } };
 
     try
     {
@@ -231,13 +238,15 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite
     GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
-    newParent.GetItems(); if (newParent.isReadOnly()) throw ModifyException();
+    newParent.GetItems(); 
+    if (newParent.isReadOnly()) throw ReadOnlyException();
+    if (newParent.GetID().empty()) throw ModifyException();
 
     ItemMap::const_iterator dup { newParent.mItemMap.find(name) };
     if (!overwrite && dup != newParent.mItemMap.end())
         throw DuplicateItemException();
 
-    it->second->SubMove(newParent, overwrite);
+    it->second->SubMove(newParent.GetID(), overwrite);
 
     if (dup != newParent.mItemMap.end()) 
         newParent.mItemMap.erase(dup);

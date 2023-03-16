@@ -17,18 +17,18 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std
 
     const nlohmann::json data(backend.GetFilesystem(fsid));
 
-    return std::make_unique<Filesystem>(backend, data);
+    return std::make_unique<Filesystem>(backend, data, nullptr);
 }
 
 /*****************************************************/
 Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
-    PlainFolder(backend), mDebug(__func__,this) 
+    PlainFolder(backend, data, parent), mDebug(__func__,this) 
 {
     MDBG_INFO("()");
 
-    Initialize(data); mParent = parent;
-
     mFsid = mId; mId = "";
+    // our JSON ID is the FS ID
+    // use mId for the root folder
 
     mFsConfig = &FSConfig::LoadByID(backend, mFsid);
 }

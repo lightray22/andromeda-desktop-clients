@@ -93,6 +93,9 @@ protected:
      */
     Folder(Backend::BackendImpl& backend);
 
+    /** Initialize from the given JSON data */
+    Folder(Backend::BackendImpl& backend, const nlohmann::json& data);
+
     /** populate itemMap from the backend */
     virtual void LoadItems() = 0;
 

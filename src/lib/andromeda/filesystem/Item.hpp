@@ -54,9 +54,6 @@ public:
     /** Returns the FS type */
     virtual Type GetType() const = 0;
 
-    /** Returns the Andromeda object ID */
-    virtual const std::string& GetID() { return mId; }
-
     /** Returns the FS name */
     virtual const std::string& GetName() const final { return mName; }
 
@@ -114,9 +111,12 @@ protected:
     Item(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
-    virtual void Initialize(const nlohmann::json& data); // TODO !! these should go away with FromJson()
+    Item(Backend::BackendImpl& backend, const nlohmann::json& data);
 
-    friend class Folder;
+    /** Returns the Andromeda object ID */
+    virtual const std::string& GetID() { return mId; }
+
+    friend class Folder; // calls SubDelete(), SubRename(), SubMove()
 
     /** Item type-specific delete */
     virtual void SubDelete() = 0;
@@ -125,16 +125,16 @@ protected:
     virtual void SubRename(const std::string& newName, bool overwrite) = 0;
 
     /** Item type-specific move */
-    virtual void SubMove(Folder& newParent, bool overwrite) = 0;
+    virtual void SubMove(const std::string& parentID, bool overwrite) = 0;
 
     /** Reference to the API backend */
     Backend::BackendImpl& mBackend;
 
     /** Pointer to parent folder */
-    Folder* mParent { nullptr }; // TODO !! Remove HasParent(), want this never null (reorganize)
+    Folder* mParent { nullptr };
 
     /** Pointer to filesystem config */
-    const FSConfig* mFsConfig { nullptr }; // TODO !! Remove HasFSConfig(), want this never null (reorganize)
+    const FSConfig* mFsConfig { nullptr };
 
     /** Backend object ID */
     std::string mId;

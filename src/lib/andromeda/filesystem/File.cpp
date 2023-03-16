@@ -10,22 +10,21 @@ using Andromeda::ConfigOptions;
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
+#include "andromeda/filesystem/filedata/PageBackend.hpp"
+using Andromeda::Filesystem::Filedata::PageBackend;
 #include "andromeda/filesystem/filedata/PageManager.hpp"
 using Andromeda::Filesystem::Filedata::PageManager;
 
 namespace Andromeda {
 namespace Filesystem {
 
-// TODO consider changing this pattern so the constructor take only real params and then we have a static FromData()
-// this way things can be actually initialized at construction and won't need Initialize()
-
 /*****************************************************/
 File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) : 
-    Item(backend), mDebug(__func__,this)
+    Item(backend, data), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 
-    Initialize(data); mParent = &parent;
+    mParent = &parent;
 
     uint64_t fileSize;
     std::string fsid; 
@@ -39,19 +38,16 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
     mFsConfig = &FSConfig::LoadByID(mBackend, fsid);
 
-    const size_t fsChunk { mFsConfig->GetChunkSize() };
-    const size_t cfChunk { mBackend.GetOptions().pageSize };
+    MDBG_INFO("... ID:" << mId << " name:" << mName);
 
-    auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
-    const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
-    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize, true);
-
-    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
-        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
+    const size_t pageSize { CalcPageSize() };
+    mPageBackend = std::make_unique<PageBackend>(*this, mId, fileSize, pageSize);
+    mPageManager = std::make_unique<PageManager>(*this, fileSize, pageSize, *mPageBackend);
 }
 
 /*****************************************************/
-File::File(BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig) : 
+File::File(BackendImpl& backend, Folder& parent, const std::string& name, const FSConfig& fsConfig,
+    const File::CreateFunc& createFunc, const File::UploadFunc& uploadFunc) : 
     Item(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
@@ -62,30 +58,40 @@ File::File(BackendImpl& backend, Folder& parent, const std::string& name, const 
 
     mCreated = static_cast<decltype(mCreated)>(std::time(nullptr)); // now
 
+    MDBG_INFO("... ID:" << mId << " name:" << mName);
+
+    const size_t pageSize { CalcPageSize() };
+    mPageBackend = std::make_unique<PageBackend>(*this, mId, pageSize, createFunc, uploadFunc);
+    mPageManager = std::make_unique<PageManager>(*this, 0, pageSize, *mPageBackend);
+}
+
+/*****************************************************/
+size_t File::CalcPageSize() const
+{
     const size_t fsChunk { mFsConfig->GetChunkSize() };
     const size_t cfChunk { mBackend.GetOptions().pageSize };
 
     auto ceil { [](auto x, auto y) { return (x + y - 1) / y; } };
     const size_t pageSize { fsChunk ? ceil(cfChunk,fsChunk)*fsChunk : cfChunk };
-    mPageManager = std::make_unique<PageManager>(*this, 0, pageSize, false);
 
-    MDBG_INFO("... ID:" << GetID() << " name:" << mName 
-        << " fsChunk:" << fsChunk << " cfChunk:" << cfChunk);
+    MDBG_INFO("... fsChunk:" << fsChunk << " cfChunk:" << cfChunk << " pageSize:" << pageSize);
+
+    return pageSize;
 }
 
 /*****************************************************/
 File::~File() { } // for unique_ptr
 
 /*****************************************************/
-bool File::ExistsOnBackend() const
-{
-    return mPageManager->ExistsOnBackend();
-}
-
-/*****************************************************/
 uint64_t File::GetSize() const 
 { 
     return mPageManager->GetFileSize();
+}
+
+/*****************************************************/
+bool File::ExistsOnBackend() const
+{
+    return mPageManager->ExistsOnBackend();
 }
 
 /*****************************************************/
@@ -131,14 +137,16 @@ void File::SubRename(const std::string& newName, bool overwrite)
 }
 
 /*****************************************************/
-void File::SubMove(Folder& newParent, bool overwrite)
+void File::SubMove(const std::string& parentID, bool overwrite)
 {
-    ITDBG_INFO("(parent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(parent:" << parentID << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend()) // TODO locking here??
-        mBackend.MoveFile(GetID(), newParent.GetID(), overwrite);
+    if (!mPageManager->ExistsOnBackend()) // TODO locking here??
+        FlushCache(); // createFunc would no longer be valid
+    
+    mBackend.MoveFile(GetID(), parentID, overwrite);
 }
 
 /*****************************************************/

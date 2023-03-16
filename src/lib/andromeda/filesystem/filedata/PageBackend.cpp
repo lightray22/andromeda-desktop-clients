@@ -19,11 +19,25 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-PageBackend::PageBackend(File& file, const size_t pageSize, uint64_t backendSize, bool backendExists) :
+PageBackend::PageBackend(File& file, const std::string& fileID, uint64_t backendSize, const size_t pageSize) :
     mPageSize(pageSize),
     mBackendSize(backendSize),
-    mBackendExists(backendExists),
+    mBackendExists(true),
     mFile(file),
+    mFileID(fileID),
+    mBackend(file.GetBackend()),
+    mDebug(__func__,this) { }
+
+/*****************************************************/
+PageBackend::PageBackend(File& file, const std::string& fileID, const size_t pageSize, 
+    const File::CreateFunc& createFunc, const File::UploadFunc& uploadFunc) :
+    mPageSize(pageSize),
+    mBackendSize(0),
+    mBackendExists(false),
+    mCreateFunc(createFunc),
+    mUploadFunc(uploadFunc),
+    mFile(file),
+    mFileID(fileID),
     mBackend(file.GetBackend()),
     mDebug(__func__,this) { }
 
@@ -45,7 +59,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
 
-    mBackend.ReadFile(mFile.GetID(), pageStart, readSize, 
+    mBackend.ReadFile(mFileID, pageStart, readSize, 
         [&](const size_t roffset, const char* rbuf, const size_t rlength)->void
     {
         // this is basically the same as the File::WriteBytes() algorithm
@@ -104,15 +118,14 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     MDBG_INFO("... WRITING " << buf.size() << " to " << writeStart);
 
     if (!mBackendExists && index != 0)
-        FlushCreate(); // can't use Upload()
+        FlushCreate(); // can't use Upload() w/o first page
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mBackend.UploadFile(
-            mFile.GetParent().GetID(), mFile.GetName(), buf));
+        mFile.Refresh(mUploadFunc(mFile.GetName(),buf));
         mBackendExists = true;
     }
-    else mBackend.WriteFile(mFile.GetID(), writeStart, buf);
+    else mBackend.WriteFile(mFileID, writeStart, buf);
 
     mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 
@@ -126,8 +139,7 @@ void PageBackend::FlushCreate()
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mBackend.CreateFile(
-            mFile.GetParent().GetID(), mFile.GetName()));
+        mFile.Refresh(mCreateFunc(mFile.GetName()));
         mBackendExists = true;
     }
 }
@@ -139,7 +151,7 @@ void PageBackend::Truncate(const uint64_t newSize)
 
     if (mBackendExists)
     {
-        mBackend.TruncateFile(mFile.GetID(), newSize); 
+        mBackend.TruncateFile(mFileID, newSize); 
         mBackendSize = newSize;
     }
 }

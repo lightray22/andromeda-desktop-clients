@@ -25,7 +25,7 @@ std::atomic<uint64_t> BackendImpl::sReqCount { 0 };
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, RunnerPool& runners) : 
     mOptions(options), mRunners(runners),
-    mConfig(*this), mDebug("Backend",this) 
+    mDebug("Backend",this) , mConfig(*this)
 { 
     MDBG_INFO("()");
 }
@@ -40,14 +40,6 @@ BackendImpl::~BackendImpl()
     { 
         MDBG_ERROR("... " << ex.what());
     }
-}
-
-/*****************************************************/
-void BackendImpl::Initialize()
-{
-    MDBG_INFO("()");
-
-    mConfig.Initialize();
 }
 
 /*****************************************************/
