@@ -185,21 +185,22 @@ private:
      */
     uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
 
-    /** Flushes the given page if dirty (already have the lock) - MUST HAVE DATALOCKR/W! */
-    size_t FlushPage(const uint64_t index, const UniqueLock& flushLock);
+    /** Flushes the given page if dirty (already have the lock) */
+    size_t FlushPage(const uint64_t index, const UniqueLock& flushLock, const SharedLockAny& dataLock);
 
     /** 
-     * Writes a series of **consecutive** pages (total < size_t) - MUST HAVE DATALOCKR/W!
+     * Writes a series of **consecutive** pages (total < size_t)
      * Also marks each page not dirty and informs the cache manager, and creates the file on the backend if necessary
      * @param index the starting index of the page list
      * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const UniqueLock& flushLock);
+    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, 
+        const UniqueLock& flushLock, const SharedLockAny& dataLock);
 
     /** Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
-     * the file on the backend in case we did a truncate before it existed - MUST HAVE DATALOCKR/W! */
-    void FlushTruncate(const UniqueLock& flushLock);
+     * the file on the backend in case we did a truncate before it existed */
+    void FlushTruncate(const UniqueLock& flushLock, const SharedLockAny& dataLock);
 
     Debug mDebug;
 

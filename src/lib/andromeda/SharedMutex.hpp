@@ -70,22 +70,44 @@ private:
     Semaphor mResQueue;
 };
 
-typedef std::unique_lock<SharedMutex> SharedLockW;
-typedef std::shared_lock<SharedMutex> SharedLockR;
+/** Shared lock of any type */
+class SharedLockAny
+{ 
+protected:
+    explicit inline SharedLockAny(SharedMutex& mutex) : mMutex(mutex){ }
+    inline ~SharedLockAny(){ }
+    SharedMutex& mMutex;
+
+    // disallow copying
+    SharedLockAny(const SharedLockAny&) = delete;
+    SharedLockAny& operator=(const SharedLockAny&) = delete;
+};
+
+/** Scope-managed shared write lock */
+class SharedLockW : public SharedLockAny
+{
+public:
+    explicit inline SharedLockW(SharedMutex& mutex) : 
+        SharedLockAny(mutex){ mMutex.lock(); }
+    inline ~SharedLockW(){ mMutex.unlock(); }
+};
+
+/** Scope-managed shared read lock */
+class SharedLockR : public SharedLockAny
+{
+public:
+    explicit inline SharedLockR(SharedMutex& mutex) : 
+        SharedLockAny(mutex){ mMutex.lock_shared(); }
+    inline ~SharedLockR(){ mMutex.unlock_shared(); }
+};
 
 /** Scope-managed shared read-priority lock */
-class SharedLockRP
+class SharedLockRP : public SharedLockAny
 {
 public:
     explicit inline SharedLockRP(SharedMutex& mutex) : 
-        mMutex(mutex){ mMutex.lock_shared_priority(); }
-    inline ~SharedLockRP() { mMutex.unlock_shared_priority(); }
-
-    // disallow copying
-    SharedLockRP(const SharedLockRP&) = delete;
-    SharedLockRP& operator=(const SharedLockRP&) = delete;
-private:
-    SharedMutex& mMutex;
+        SharedLockAny(mutex){ mMutex.lock_shared_priority(); }
+    inline ~SharedLockRP(){ mMutex.unlock_shared_priority(); }
 };
 
 } // namespace Andromeda

@@ -512,7 +512,7 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
                 GetWriteList(pageItTmp, writeList, pagesLock);
             }
 
-            FlushPageList(index, writeList, flushLock);
+            FlushPageList(index, writeList, flushLock, dataLock);
         }
 
         if (mCacheMgr) mCacheMgr->RemovePage(pageIt->second);
@@ -527,18 +527,18 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
 size_t PageManager::FlushPage(const uint64_t index, const SharedLockRP& dataLock)
 {
     UniqueLock flushLock(mFlushMutex);
-    return FlushPage(index, flushLock);
+    return FlushPage(index, flushLock, dataLock);
 }
 
 /*****************************************************/
 size_t PageManager::FlushPage(const uint64_t index, const SharedLockW& dataLock)
 {
     UniqueLock flushLock(mFlushMutex);
-    return FlushPage(index, flushLock);
+    return FlushPage(index, flushLock, dataLock);
 }
 
 /*****************************************************/
-size_t PageManager::FlushPage(const uint64_t index, const UniqueLock& flushLock)
+size_t PageManager::FlushPage(const uint64_t index, const UniqueLock& flushLock, const SharedLockAny& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
@@ -554,7 +554,7 @@ size_t PageManager::FlushPage(const uint64_t index, const UniqueLock& flushLock)
     }
 
     // flush pages first as this may handle truncating
-    size_t written { FlushPageList(index, writeList, flushLock) };
+    size_t written { FlushPageList(index, writeList, flushLock, dataLock) };
 
     MDBG_INFO("... return:" << written); return written;
 }
@@ -591,15 +591,16 @@ void PageManager::FlushPages()
     }
 
     if (!writeLists.size()) // run anyway so FlushCreate() is called
-        FlushPageList(0, PageBackend::PagePtrList(), flushLock);
+        FlushPageList(0, PageBackend::PagePtrList(), flushLock, dataLock);
     else for (const decltype(writeLists)::value_type& writePair : writeLists)
-        FlushPageList(writePair.first, writePair.second, flushLock);
+        FlushPageList(writePair.first, writePair.second, flushLock, dataLock);
 
     MDBG_INFO("... returning!");
 }
 
 /*****************************************************/
-size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const PageManager::UniqueLock& flushLock)
+size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, 
+    const PageManager::UniqueLock& flushLock, const SharedLockAny& dataLock)
 {
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
@@ -615,13 +616,13 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
 
-    if (flushTruncate) FlushTruncate(flushLock); // also calls FlushCreate()
+    if (flushTruncate) FlushTruncate(flushLock, dataLock); // also calls FlushCreate()
 
     return totalSize;
 }
 
 /*****************************************************/
-void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock)
+void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock, const SharedLockAny& dataLock)
 {
     MDBG_INFO("()");
 
