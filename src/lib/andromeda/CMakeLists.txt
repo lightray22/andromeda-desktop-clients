@@ -5,7 +5,7 @@ include(../../../andromeda.cmake)
 
 # build the Andromeda library
 
-add_library(libandromeda)
+add_library(libandromeda STATIC)
 set_target_properties(libandromeda PROPERTIES PREFIX "")
 
 set(SOURCE_FILES 
@@ -23,7 +23,7 @@ target_compile_options(libandromeda PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_C
 target_compile_definitions(libandromeda PRIVATE ${ANDROMEDA_CXX_DEFS})
 
 install(TARGETS libandromeda
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 add_subdirectory(backend)

@@ -5,7 +5,7 @@ include(../../../andromeda.cmake)
 
 # build the andromeda-fuse library
 
-add_library(libandromeda-fuse)
+add_library(libandromeda-fuse STATIC)
 set_target_properties(libandromeda-fuse PROPERTIES PREFIX "")
 
 set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp FuseOptions.cpp)
@@ -18,7 +18,7 @@ target_compile_options(libandromeda-fuse PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROM
 target_compile_definitions(libandromeda-fuse PRIVATE ${ANDROMEDA_CXX_DEFS} _FILE_OFFSET_BITS=64)
 
 install(TARGETS libandromeda-fuse
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 # include/link libandromeda

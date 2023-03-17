@@ -5,7 +5,7 @@ include(../../../andromeda.cmake)
 
 # build the andromeda-sync library
 
-#add_library(libandromeda-sync)
+#add_library(libandromeda-sync STATIC)
 #set_target_properties(libandromeda-sync PROPERTIES PREFIX "")
 
 #set(SOURCE_FILES FuseAdapter.cpp)
