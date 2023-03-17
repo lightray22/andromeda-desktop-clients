@@ -443,16 +443,10 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
             MDBG_INFO("... cache limited targetBytes:" << cacheMax);
         }
     }
-
-    mFetchSize = std::max(static_cast<uint64_t>(1), targetBytes/mPageSize);
+    
+    mFetchSize = std::max(static_cast<size_t>(1), // between 1 and size_t:max
+        min64st(targetBytes/mPageSize, std::numeric_limits<size_t>::max()));
     MDBG_INFO("... newFetchSize:" << mFetchSize);
-
-    size_t maxSize { std::numeric_limits<size_t>::max() };
-    if (maxSize < mFetchSize) 
-    { 
-        mFetchSize = maxSize; // size_t readSize
-        MDBG_INFO("... size_t limit:" << maxSize);
-    }
 }
 
 /*****************************************************/
