@@ -596,11 +596,9 @@ void PageManager::FlushPages()
         MDBG_INFO("... write runs:" << writeLists.size());
     }
 
-    // add an empty list so FlushTruncate() gets called
-    if (!writeLists.size()) writeLists.emplace(0, PageBackend::PagePtrList());
-
-    // flush pages first as this may handle truncating
-    for (const decltype(writeLists)::value_type& writePair : writeLists)
+    if (!writeLists.size()) // run anyway so FlushCreate() is called
+        FlushPageList(0, PageBackend::PagePtrList(), flushLock);
+    else for (const decltype(writeLists)::value_type& writePair : writeLists)
         FlushPageList(writePair.first, writePair.second, flushLock);
 
     MDBG_INFO("... returning!");
@@ -623,7 +621,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
 
-    if (flushTruncate) FlushTruncate(flushLock);
+    if (flushTruncate) FlushTruncate(flushLock); // also calls FlushCreate()
 
     return totalSize;
 }
@@ -632,6 +630,8 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
 void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock)
 {
     MDBG_INFO("()");
+
+    mPageBackend.FlushCreate(); // maybe not done yet
 
     uint64_t maxDirty { 0 }; // byte after last dirty byte
     { // lock scope

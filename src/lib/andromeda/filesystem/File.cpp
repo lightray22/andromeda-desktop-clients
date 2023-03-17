@@ -91,7 +91,7 @@ uint64_t File::GetSize() const
 /*****************************************************/
 bool File::ExistsOnBackend() const
 {
-    return mPageManager->ExistsOnBackend();
+    return mPageBackend->ExistsOnBackend();
 }
 
 /*****************************************************/
@@ -119,7 +119,7 @@ void File::SubDelete()
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend()) // TODO locking here??
+    if (ExistsOnBackend()) // TODO locking here??
         mBackend.DeleteFile(GetID());
 
     mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
@@ -132,7 +132,7 @@ void File::SubRename(const std::string& newName, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (mPageManager->ExistsOnBackend()) // TODO locking here??
+    if (ExistsOnBackend()) // TODO locking here??
         mBackend.RenameFile(GetID(), newName, overwrite);
 }
 
@@ -143,7 +143,7 @@ void File::SubMove(const std::string& parentID, bool overwrite)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (!mPageManager->ExistsOnBackend()) // TODO locking here??
+    if (!ExistsOnBackend()) // TODO locking here??
         FlushCache(); // createFunc would no longer be valid
     
     mBackend.MoveFile(GetID(), parentID, overwrite);
