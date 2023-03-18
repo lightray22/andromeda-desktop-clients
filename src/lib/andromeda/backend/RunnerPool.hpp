@@ -31,6 +31,7 @@ public:
 
         ~LockedRunner();
 
+        BaseRunner& operator*() { return mRunner; }
         BaseRunner* operator->() { return &mRunner; }
     private:
         RunnerPool& mPool;

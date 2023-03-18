@@ -1,12 +1,14 @@
 #ifndef LIBA2_ITEM_H_
 #define LIBA2_ITEM_H_
 
+#include <shared_mutex>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/ScopeLocked.hpp"
 
 namespace Andromeda {
 
@@ -43,7 +45,14 @@ public:
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_ERROR(strfunc) MDBG_ERROR("(" << mName << ")" << strfunc)
 
-    virtual ~Item(){};
+    typedef Andromeda::ScopeLocked<Item> ScopeLocked;
+    /** 
+     * Tries to lock mScopeMutex, returns a ref that is maybe locked 
+     * The purpose of scope locking is to make sure the item isn't removed while being used
+     */
+    ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
+
+    virtual ~Item();
 
     /** API date format */
     typedef double Date;
@@ -87,17 +96,23 @@ public:
     /** Refresh the item given updated server JSON data */
     virtual void Refresh(const nlohmann::json& data);
 
-    /** Delete this item (and its contents if a folder) */
-    virtual void Delete() final;
+    /** 
+     * Delete this item (and its contents if a folder) 
+     * @param scopeLock reference to scopeLock which will be unlocked
+     */
+    virtual void Delete(ScopeLocked& scopeLock) final;
 
     /** Set this item's name to the given name, optionally overwrite existing */
     virtual void Rename(const std::string& newName, bool overwrite = false) final;
 
-    /** Move this item to the given parent folder, optionally overwrite existing */
+    /** 
+     * Move this item to the given parent folder, optionally overwrite existing 
+     * REQUIRES that the item currently has a parent
+     */
     virtual void Move(Folder& newParent, bool overwrite = false) final;
 
     /** 
-     * Flushes all dirty pages to the backend 
+     * Flushes all dirty pages and metadata to the backend
      * @param nothrow if true, no exceptions are thrown
      */
     virtual void FlushCache(bool nothrow = false) = 0;
@@ -150,6 +165,9 @@ protected:
 
     /** Item accessed timestamp */
     Date mAccessed { 0 };
+
+    /** Shared mutex that is grabbed exclusively when this class is destructed */
+    std::shared_mutex mScopeMutex;
 
 private:
 

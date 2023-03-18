@@ -110,6 +110,44 @@ static int standardTry(const std::string& fname, std::function<int()> func)
     }
 }
 
+/** Class to track and print FUSE concurrency */
+class ThreadsPrint // TODO remove me later?
+{
+public:
+    inline ThreadsPrint(std::string func, Andromeda::Debug& debug) : 
+        mFunc(func), mDebug(debug)
+    {
+        mDebug.Info([&](std::ostream& str)
+        {
+            std::unique_lock<std::mutex> llock(sMutex);
+            ++sThreads; sPeakThreads = std::max(sThreads, sPeakThreads);
+            str << mFunc << "() ENTER! threads:" << sThreads << " peakThreads:" << sPeakThreads;
+        });
+    }
+
+    inline ~ThreadsPrint()
+    {
+        mDebug.Info([&](std::ostream& str)
+        { 
+            std::unique_lock<std::mutex> llock(sMutex);
+            --sThreads; sPeakThreads = std::max(sThreads, sPeakThreads);
+            str << mFunc << "() EXIT! threads:" << sThreads << " peakThreads:" << sPeakThreads; 
+        });
+    }
+
+private:
+    std::string mFunc;
+    Andromeda::Debug& mDebug;
+
+    static size_t sThreads;
+    static size_t sPeakThreads;
+    static std::mutex sMutex;
+};
+
+size_t ThreadsPrint::sThreads { 0 };
+size_t ThreadsPrint::sPeakThreads { 0 };
+std::mutex ThreadsPrint::sMutex;
+
 /*****************************************************/
 #if LIBFUSE2
 void* FuseOperations::init(struct fuse_conn_info* conn)
@@ -118,6 +156,7 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 #endif // LIBFUSE2
 {
     SDBG_INFO("()");
+    ThreadsPrint(__func__,sDebug);
 
 #if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
@@ -140,8 +179,8 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 /*****************************************************/
 int FuseOperations::statfs(const char *path, struct statvfs* buf)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     buf->f_namemax = 255;
 
@@ -196,9 +235,9 @@ constexpr void date_to_timespec(const Item::Date time, timespec& spec)
 }
 
 /*****************************************************/
-static void item_stat(const Item& item, struct stat* stbuf)
+static void item_stat(const Item::ScopeLocked& item, struct stat* stbuf)
 {
-    switch (item.GetType())
+    switch (item->GetType())
     {
         case Item::Type::FILE: stbuf->st_mode = S_IFREG; break;
         case Item::Type::FOLDER: stbuf->st_mode = S_IFDIR; break;
@@ -206,20 +245,20 @@ static void item_stat(const Item& item, struct stat* stbuf)
 
     stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
     
-    if (item.isReadOnly()) stbuf->st_mode &= 
+    if (item->isReadOnly()) stbuf->st_mode &= 
         static_cast<decltype(stbuf->st_mode)>(  // -Wsign-conversion
             ~S_IWUSR & ~S_IWGRP & ~S_IWOTH);
 
-    stbuf->st_size = (item.GetType() == Item::Type::FILE) ? 
+    stbuf->st_size = (item->GetType() == Item::Type::FILE) ? 
         static_cast<decltype(stbuf->st_size)>(
-            dynamic_cast<const File&>(item).GetSize()) : 0;
+            dynamic_cast<const File&>(*item).GetSize()) : 0;
 
     stbuf->st_blocks = stbuf->st_size ? (stbuf->st_size-1)/512+1 : 0; // 512B blocks
     //stbuf->st_blksize = 4096; // TODO what to use? page size?
 
-    Item::Date created { item.GetCreated() };
-    Item::Date modified { item.GetModified() };
-    Item::Date accessed { item.GetAccessed() };
+    Item::Date created { item->GetCreated() };
+    Item::Date modified { item->GetModified() };
+    Item::Date accessed { item->GetAccessed() };
 
 #if WIN32
     date_to_timespec(created, stbuf->st_birthtim);
@@ -245,8 +284,8 @@ static void item_stat(const Item& item, struct stat* stbuf)
 /*****************************************************/
 int FuseOperations::access(const char* path, int mask)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", mask:" << mask << ")");
+    ThreadsPrint(__func__,sDebug);
 
     #if defined(W_OK)
         static const std::string fname(__func__);
@@ -254,9 +293,9 @@ int FuseOperations::access(const char* path, int mask)
     return standardTry(__func__,[&]()->int
     {
         #if defined(W_OK)
-            Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
+            const Item::ScopeLocked item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
 
-            if ((mask & W_OK) && item.isReadOnly()) 
+            if ((mask & W_OK) && item->isReadOnly()) 
             {
                 sDebug.Info([&](std::ostream& str){ 
                     str << fname << "... read-only!"; });
@@ -273,17 +312,17 @@ int FuseOperations::access(const char* path, int mask)
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
         // TODO need to handle O_APPEND?
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file.isReadOnly())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file->isReadOnly())
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... read-only!"; });
@@ -294,7 +333,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... truncating!"; });
-            file.Truncate(0);
+            file->Truncate(0);
         }
 
         return FUSE_SUCCESS;
@@ -304,15 +343,15 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        const Folder& folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        const Folder::ScopeLocked folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder.isReadOnly())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnly())
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... read-only!"; });
@@ -330,8 +369,8 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf)
 int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
@@ -346,13 +385,13 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif // LIBFUSE2
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path).GetItems());
+        const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path)->GetItems());
 
         sDebug.Info([&](std::ostream& str){ 
             str << fname << "... #items:" << items.size(); });
@@ -366,7 +405,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
-                struct stat stbuf; item_stat(*item, &stbuf);
+                struct stat stbuf; item_stat(item->TryLockScope(), &stbuf);
 
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
@@ -394,64 +433,72 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 /*****************************************************/
 int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
-    while (fullpath[0] == '/') fullpath++; 
-    const Utilities::StringPair pair(Utilities::split(fullpath,"/",0,true));
+    const Utilities::StringPair pair(Utilities::splitPath(fullpath));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
-        parent.CreateFile(name); return FUSE_SUCCESS;
+        parent->CreateFile(name); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 {
-    while (fullpath[0] == '/') fullpath++; 
-    const Utilities::StringPair pair(Utilities::split(fullpath,"/",0,true));
+    const Utilities::StringPair pair(Utilities::splitPath(fullpath));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
-        parent.CreateFolder(name); return FUSE_SUCCESS;
+        parent->CreateFolder(name); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::unlink(const char* path)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        GetFuseAdapter().GetRootFolder().GetFileByPath(path).Delete(); return FUSE_SUCCESS;
+        File::ScopeLocked file { GetFuseAdapter().GetRootFolder().GetFileByPath(path) };
+
+        // need an Item lock to pass to delete, cast from File
+        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(file)) };
+
+        item->Delete(item); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::rmdir(const char* path)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
+        Folder::ScopeLocked folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
 
-        if (folder.GetItems().size()) return -ENOTEMPTY;
+        if (folder->GetItems().size()) return -ENOTEMPTY;
 
-        folder.Delete(); return FUSE_SUCCESS;
+        // need an Item lock to pass to delete, cast from Folder
+        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(folder)) };
+
+        item->Delete(item); return FUSE_SUCCESS;
     });
 }
 
@@ -462,38 +509,39 @@ int FuseOperations::rename(const char* oldpath, const char* newpath)
 int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif // LIBFUSE2
 {
-    while (oldpath[0] == '/') oldpath++; 
-    const Utilities::StringPair pair0(Utilities::split(oldpath,"/",0,true));
-    const std::string& oldPath { pair0.first }; 
+    Utilities::StringPair pair0(Utilities::splitPath(oldpath));
+    const std::string& oldPath { pair0.first };  
     const std::string& oldName { pair0.second };
 
-    while (newpath[0] == '/') newpath++; 
-    const Utilities::StringPair pair1(Utilities::split(newpath,"/",0,true));
-    const std::string& newPath { pair1.first };
+    Utilities::StringPair pair1(Utilities::splitPath(newpath));
+    const std::string& newPath { pair1.first };  
     const std::string& newName { pair1.second };
 
-    SDBG_INFO("(oldpath:" << oldpath << ", newpath:" << newpath << ")");
+    ThreadsPrint(__func__,sDebug);
+
+    SDBG_INFO("... oldPath:" << oldPath << ", oldName:" << oldName);
+    SDBG_INFO("... newPath:" << newPath << ", newName:" << newName);
 
     return standardTry(__func__,[&]()->int
     {
-        Item& item(GetFuseAdapter().GetRootFolder().GetItemByPath(oldpath));
+        Item::ScopeLocked item(GetFuseAdapter().GetRootFolder().GetItemByPath(oldpath));
 
         if (oldPath != newPath && oldName != newName)
         {
-            //Folder& parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
+            //Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
             SDBG_ERROR("NOT SUPPORTED YET!");
             return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
-            Folder& newParent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
+            Folder::ScopeLocked newParent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
 
-            item.Move(newParent, true);
+            item->Move(*newParent, true);
         }
         else if (oldName != newName) 
         {
-            item.Rename(newName, true);
+            item->Rename(newName, true);
         }
 
         return FUSE_SUCCESS;
@@ -503,32 +551,32 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 /*****************************************************/
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
+    ThreadsPrint(__func__,sDebug);
 
     if (off < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        return static_cast<int>(file.ReadBytesMax(buf, static_cast<uint64_t>(off), size));
+        return static_cast<int>(file->ReadBytesMax(buf, static_cast<uint64_t>(off), size));
     });
 }
 
 /*****************************************************/
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
+    ThreadsPrint(__func__,sDebug);
 
     if (off < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.WriteBytes(buf, static_cast<uint64_t>(off), size); 
+        file->WriteBytes(buf, static_cast<uint64_t>(off), size); 
         
         return static_cast<int>(size);
     });
@@ -540,56 +588,56 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 /*****************************************************/
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.FlushCache(); return FUSE_SUCCESS;
+        file->FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.FlushCache(); return FUSE_SUCCESS;
+        file->FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        Folder& folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
 
-        folder.FlushCache(); return FUSE_SUCCESS;
+        folder->FlushCache(); return FUSE_SUCCESS;
     });
 }
 
 /*****************************************************/
 int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.FlushCache(); return FUSE_SUCCESS;
+        file->FlushCache(); return FUSE_SUCCESS;
     });
 }
 
@@ -597,6 +645,7 @@ int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 void FuseOperations::destroy(void* private_data)
 {
     SDBG_INFO("()");
+    ThreadsPrint(__func__,sDebug);
 
     standardTry(__func__,[&]()->int
     {
@@ -612,16 +661,16 @@ int FuseOperations::truncate(const char* path, off_t size)
 int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ", size:" << size << ")");
+    ThreadsPrint(__func__,sDebug);
 
     if (size < 0) return -EINVAL;
 
     return standardTry(__func__,[&]()->int
     {
-        File& file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
 
-        file.Truncate(static_cast<uint64_t>(size)); return FUSE_SUCCESS;
+        file->Truncate(static_cast<uint64_t>(size)); return FUSE_SUCCESS;
     });
 }
 
@@ -635,8 +684,8 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
     FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {
@@ -654,8 +703,8 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_fi
     FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 
-    while (path[0] == '/') path++;
     SDBG_INFO("(path:" << path << ")");
+    ThreadsPrint(__func__,sDebug);
 
     return standardTry(__func__,[&]()->int
     {

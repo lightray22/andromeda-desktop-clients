@@ -9,6 +9,7 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
+#include "File.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
@@ -16,14 +17,13 @@ namespace Andromeda {
 namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
-class File;
 
 /** A common folder interface */
 class Folder : public Item
 {
 public:
 
-    virtual ~Folder(){};
+    virtual ~Folder(){ };
 
     /** Base Exception for all folder issues */
     class Exception : public Item::Exception { public:
@@ -51,16 +51,20 @@ public:
     class ModifyException : public Exception { public:
         ModifyException() : Exception("Immutable Item") {}; };
 
+    typedef Andromeda::ScopeLocked<Folder> ScopeLocked;
+    /** Tries to lock mScopeMutex, returns a ref that is maybe locked */
+    inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
+
     virtual Type GetType() const override final { return Type::FOLDER; }
 
-    /** Load the item with the given relative path */
-    virtual Item& GetItemByPath(std::string path) final;
+    /** Load the item with the given relative path, returning it with a pre-checked ScopeLock */
+    virtual Item::ScopeLocked GetItemByPath(std::string path) final;
 
-    /** Load the file with the given relative path */
-    virtual File& GetFileByPath(const std::string& path) final;
+    /** Load the file with the given relative path, returning it with a pre-checked ScopeLock */
+    virtual File::ScopeLocked GetFileByPath(const std::string& path) final;
 
-    /** Load the folder with the given relative path */
-    virtual Folder& GetFolderByPath(const std::string& path) final;
+    /** Load the folder with the given relative path, returning it with a pre-checked ScopeLock */
+    virtual Folder::ScopeLocked GetFolderByPath(const std::string& path) final;
 
     /** Map of sub-item name to Item objects */
     typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;

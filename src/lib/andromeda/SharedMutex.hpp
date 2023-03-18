@@ -74,8 +74,8 @@ private:
 class SharedLockAny
 { 
 protected:
-    explicit inline SharedLockAny(SharedMutex& mutex) : mMutex(mutex){ }
-    inline ~SharedLockAny(){ }
+    explicit inline SharedLockAny(SharedMutex& mutex) 
+        : mMutex(mutex){ }
     SharedMutex& mMutex;
 
     // disallow copying

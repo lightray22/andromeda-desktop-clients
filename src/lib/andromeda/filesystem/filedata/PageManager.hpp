@@ -17,6 +17,7 @@
 #include "Page.hpp"
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
@@ -75,10 +76,12 @@ public:
     /** Returns a write lock for page data */
     SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
 
-    typedef std::shared_lock<std::shared_mutex> ScopeLock;
-
-    /** Tries to lock mScopeMutex, returns a lock object that is maybe locked */
-    ScopeLock TryGetScopeLock() { return ScopeLock(mScopeMutex, std::try_to_lock); }
+    typedef Andromeda::ScopeLocked<PageManager> ScopeLocked;
+    /** 
+     * Tries to lock mScopeMutex, returns a ref that is maybe locked 
+     * This protects the pageManager from being deleted while this lock is held
+     */
+    ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
     /** Reads data from the given page index into buffer */
     void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock);

@@ -393,7 +393,7 @@ void CacheManager::DoPageEvictions()
     MDBG_INFO("()");
 
     // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLock, PageList> EvictSet;
+    typedef std::pair<PageManager::ScopeLocked, PageList> EvictSet;
     std::map<PageManager*, EvictSet> currentEvicts;
 
     { // lock scope
@@ -410,7 +410,7 @@ void CacheManager::DoPageEvictions()
 
             decltype(currentEvicts)::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
             EvictSet& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
             if (!evictSet.first) 
                 RemovePage(pageInfo.mPageRef, lock); // being deleted
@@ -469,7 +469,7 @@ void CacheManager::DoPageFlushes()
     MDBG_INFO("()");
 
     // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLock, PageList> FlushSet;
+    typedef std::pair<PageManager::ScopeLocked, PageList> FlushSet;
     std::map<PageManager*, FlushSet> currentFlushes;
 
     { // lock scope
@@ -485,7 +485,7 @@ void CacheManager::DoPageFlushes()
 
             decltype(currentFlushes)::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
             FlushSet& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
             if (!flushSet.first) 
                 RemovePage(pageInfo.mPageRef, lock); // being deleted

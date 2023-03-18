@@ -2,7 +2,6 @@
 #include <nlohmann/json.hpp>
 
 #include "Folder.hpp"
-#include "File.hpp"
 #include "andromeda/ConfigOptions.hpp"
 using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
@@ -32,18 +31,24 @@ Folder::Folder(BackendImpl& backend, const nlohmann::json& data) :
 }
 
 /*****************************************************/
-Item& Folder::GetItemByPath(std::string path)
+Item::ScopeLocked Folder::GetItemByPath(std::string path)
 {
     ITDBG_INFO("(path:" << path << ")");
 
     while (path[0] == '/') path.erase(0,1);
 
-    if (path.empty()) return *this;    
+    if (path.empty()) // return self;
+    {
+        Item::ScopeLocked self { Item::TryLockScope() };
+        if (self) return self; else throw NotFoundException();
+    }
 
     Utilities::StringList parts { Utilities::explode(path,"/") };
 
     // iteratively (not recursively) find the correct parent/subitem
-    Folder* parent { this }; 
+    Folder::ScopeLocked parent { TryLockScope() };
+    if (!parent) throw NotFoundException(); // was deleted
+
     for (Utilities::StringList::iterator pIt { parts.begin() }; 
         pIt != parts.end(); ++pIt )
     {
@@ -51,38 +56,39 @@ Item& Folder::GetItemByPath(std::string path)
         ItemMap::const_iterator it { items.find(*pIt) };
         if (it == items.end()) throw NotFoundException();
 
-        Item& item { *(it->second) };
+        Item::ScopeLocked item { it->second->TryLockScope() };
+        if (!item) throw NotFoundException(); // was deleted
 
         if (std::next(pIt) == parts.end()) return item; // last part of path
 
-        if (item.GetType() != Type::FOLDER) throw NotFolderException();
+        if (item->GetType() != Type::FOLDER) throw NotFolderException();
 
-        parent = dynamic_cast<Folder*>(&item);
+        parent = ScopeLocked::FromBase(std::move(item));
     }
 
     throw NotFoundException(); // should never get here
 }
 
 /*****************************************************/
-File& Folder::GetFileByPath(const std::string& path)
+File::ScopeLocked Folder::GetFileByPath(const std::string& path)
 {
-    Item& item { GetItemByPath(path) };
+    Item::ScopeLocked item { GetItemByPath(path) };
 
-    if (item.GetType() != Type::FILE)
+    if (item->GetType() != Type::FILE)
         throw NotFileException();
 
-    return dynamic_cast<File&>(item);
+    return File::ScopeLocked::FromBase(std::move(item));
 }
 
 /*****************************************************/
-Folder& Folder::GetFolderByPath(const std::string& path)
+Folder::ScopeLocked Folder::GetFolderByPath(const std::string& path)
 {
-    Item& item { GetItemByPath(path) };
+    Item::ScopeLocked item { GetItemByPath(path) };
 
-    if (item.GetType() != Type::FOLDER)
+    if (item->GetType() != Type::FOLDER)
         throw NotFolderException();
 
-    return dynamic_cast<Folder&>(item);
+    return Folder::ScopeLocked::FromBase(std::move(item));
 }
 
 /*****************************************************/

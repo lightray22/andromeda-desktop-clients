@@ -44,6 +44,16 @@ Item::Item(BackendImpl& backend, const nlohmann::json& data) :
 }
 
 /*****************************************************/
+Item::~Item()
+{
+    MDBG_INFO("() waiting for lock");
+
+    mScopeMutex.lock(); // exclusive, forever
+
+    MDBG_INFO("... returning!");
+}
+
+/*****************************************************/
 void Item::Refresh(const nlohmann::json& data)
 {
     ITDBG_INFO("()");
@@ -123,12 +133,24 @@ bool Item::isReadOnly() const
 }
 
 /*****************************************************/
-void Item::Delete()
+void Item::Delete(Item::ScopeLocked& scopeLock)
 {
     ITDBG_INFO("()");
 
     if (!HasParent()) SubDelete();
-    else GetParent().DeleteItem(mName);
+    else
+    {
+        // deleting the item involves grabbing its scopeLock exclusively, so we need to unlock our scopeLock
+        // before doing that, we need to get the parent's scopeLock though since we no longer have the protection
+        // where the parent can't go out of scope while any children's scopeLocks are held.  This does introduce
+        // a small window where someone could concurrently delete the file before us, but if that happens we'll just
+        // throw a NotFoundException when we tell the parent to delete, which is fine.  A child reaching into its
+        // parent to lock is backwards and hints at deadlock but really is okay because it's a shared lock.
+        Folder::ScopeLocked parent { GetParent().TryLockScope() };
+
+        scopeLock.unlock();
+        parent->DeleteItem(mName);
+    }
 }
 
 /*****************************************************/
@@ -136,10 +158,10 @@ void Item::Rename(const std::string& newName, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
 
-    if (!HasParent())
-        SubRename(newName, overwrite);
+    if (!HasParent()) SubRename(newName, overwrite);
     else
     {
+        // no GetParent() scopeLock, parent cannot go out of scope until all children are gone
         GetParent().RenameItem(mName, newName, overwrite);
         mName = newName;
     }

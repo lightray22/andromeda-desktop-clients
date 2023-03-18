@@ -34,6 +34,10 @@ public:
     class WriteTypeException : public Exception { public:
         WriteTypeException() : Exception("Write Type Unsupported") {}; };
 
+    typedef Andromeda::ScopeLocked<File> ScopeLocked;
+    /** Tries to lock mScopeMutex, returns a ref that is maybe locked */
+    ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
+
     virtual ~File();
 
     virtual void Refresh(const nlohmann::json& data) override;
