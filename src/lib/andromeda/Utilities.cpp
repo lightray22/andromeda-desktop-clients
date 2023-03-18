@@ -73,8 +73,11 @@ Utilities::StringPair Utilities::split(
 {
     Utilities::StringList list { explode(str, delim, skip, reverse, 2) };
 
-    if (list.size() < 1) list.push_back("");
-    if (list.size() < 2) list.push_back("");
+    while (list.size() < 2)
+    {
+        if (!reverse) list.push_back("");
+        else list.insert(list.begin(),"");
+    }
 
     return Utilities::StringPair { list[0], list[1] };
 }
@@ -82,7 +85,6 @@ Utilities::StringPair Utilities::split(
 /*****************************************************/
 Utilities::StringPair Utilities::splitPath(std::string str)
 {
-    if (str[0] != '/') str.insert(0,"/");
     return split(str,"/",0,true);
 }
 

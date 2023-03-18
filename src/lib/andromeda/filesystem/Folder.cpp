@@ -180,7 +180,8 @@ void Folder::CreateFile(const std::string& name)
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (items.count(name) || name.empty()) 
+        throw DuplicateItemException();
 
     SubCreateFile(name);
 }
@@ -192,7 +193,8 @@ void Folder::CreateFolder(const std::string& name)
 
     const ItemMap& items { GetItems() }; // pre-populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (items.count(name) || name.empty()) 
+        throw DuplicateItemException();
 
     SubCreateFolder(name);
 }
@@ -222,7 +224,7 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
     if (it == mItemMap.end()) throw NotFoundException();
 
     ItemMap::const_iterator dup { mItemMap.find(newName) };
-    if (!overwrite && dup != mItemMap.end())
+    if ((!overwrite && dup != mItemMap.end()) || newName.empty())
         throw DuplicateItemException();
 
     it->second->SubRename(newName, overwrite);
