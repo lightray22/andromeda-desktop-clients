@@ -55,7 +55,7 @@ protected:
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void LoadItems() override;
+    virtual void SubLoadItems() override;
 
     virtual void SubCreateFile(const std::string& name) override;
 

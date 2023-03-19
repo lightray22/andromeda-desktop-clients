@@ -44,7 +44,7 @@ protected:
 
     virtual const std::string& GetID() override;
 
-    virtual void LoadItems() override;
+    virtual void SubLoadItems() override;
 
     virtual void SubDelete() override { throw ModifyException(); }
 

@@ -66,11 +66,14 @@ public:
     /** Load the folder with the given relative path, returning it with a pre-checked ScopeLock */
     virtual Folder::ScopeLocked GetFolderByPath(const std::string& path) final;
 
-    /** Map of sub-item name to Item objects */
-    typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;
+    /** Map of sub-item name to ScopeLocked Item objects */
+    typedef std::map<std::string, Item::ScopeLocked> LockedItemMap;
 
     /** Load the map of child items */
-    virtual const ItemMap& GetItems() final;
+    virtual LockedItemMap GetItems() final;
+
+    /** Returns the count of child items */
+    virtual size_t CountItems() final;
 
     /** Create a new subfile with the given name */
     virtual void CreateFile(const std::string& name) final;
@@ -100,10 +103,13 @@ protected:
     /** Initialize from the given JSON data */
     Folder(Backend::BackendImpl& backend, const nlohmann::json& data);
 
-    /** populate itemMap from the backend */
-    virtual void LoadItems() = 0;
+    /** Makes sure mItemMap is populated and refreshed */
+    virtual void LoadItems();
 
-    /** Populate/merge itemMap using the given JSON */
+    /** populate itemMap from the backend */
+    virtual void SubLoadItems() = 0;
+
+    /** Populate/merge itemMap using the given files/folders JSON */
     virtual void LoadItemsFrom(const nlohmann::json& data);
 
     /** Function that returns a new Item given its JSON data */
@@ -121,19 +127,21 @@ protected:
     /** The folder-type-specific create subfolder */
     virtual void SubCreateFolder(const std::string& name) = 0;
 
+protected:
+
+    /** Map of sub-item name to Item objects */
+    typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;
+
     /** map of subitems */
     ItemMap mItemMap;
-
-    /** Returns true iff the itemMap is loaded */
-    virtual bool HaveItems() const { return mHaveItems; }
-
-private:
 
     /** true if itemMap is loaded */
     bool mHaveItems { false };
 
     /** time point when contents were loaded */
     std::chrono::steady_clock::time_point mRefreshed;
+
+private:
 
     Debug mDebug;
 };

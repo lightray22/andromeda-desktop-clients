@@ -23,7 +23,7 @@ public:
 
 protected:
 
-    virtual void LoadItems() override;
+    virtual void SubLoadItems() override;
 
     virtual void SubCreateFile(const std::string& name) override { throw ModifyException(); }
 

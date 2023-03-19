@@ -391,21 +391,21 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     static const std::string fname(__func__);
     return standardTry(__func__,[&]()->int
     {
-        const Folder::ItemMap& items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path)->GetItems());
+        const Folder::LockedItemMap items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path)->GetItems());
 
         sDebug.Info([&](std::ostream& str){ 
             str << fname << "... #items:" << items.size(); });
 
-        for (const Folder::ItemMap::value_type& pair : items)
+        for (const decltype(items)::value_type& pair : items)
         {
-            const std::unique_ptr<Item>& item { pair.second };
+            const Item::ScopeLocked& item { pair.second };
 
 #if LIBFUSE2
             int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
-                struct stat stbuf; item_stat(item->TryLockScope(), &stbuf);
+                struct stat stbuf; item_stat(item, &stbuf);
 
                 retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
@@ -493,7 +493,7 @@ int FuseOperations::rmdir(const char* path)
     {
         Folder::ScopeLocked folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
 
-        if (folder->GetItems().size()) return -ENOTEMPTY;
+        if (folder->CountItems()) return -ENOTEMPTY;
 
         // need an Item lock to pass to delete, cast from Folder
         Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(folder)) };

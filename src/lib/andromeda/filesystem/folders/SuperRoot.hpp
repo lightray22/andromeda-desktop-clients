@@ -23,6 +23,8 @@ protected:
 
     virtual void LoadItems() override;
 
+    virtual void SubLoadItems() override { }; // unused
+
     virtual void SubCreateFile(const std::string& name) override { throw ModifyException(); }
 
     virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }

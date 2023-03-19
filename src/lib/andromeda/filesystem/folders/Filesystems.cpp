@@ -23,7 +23,7 @@ Filesystems::Filesystems(BackendImpl& backend, Folder& parent) :
 }
 
 /*****************************************************/
-void Filesystems::LoadItems()
+void Filesystems::SubLoadItems()
 {
     MDBG_INFO("()");
 

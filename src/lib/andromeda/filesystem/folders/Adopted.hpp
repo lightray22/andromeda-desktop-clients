@@ -29,8 +29,7 @@ public:
 
 protected:
 
-    /** populate itemMap from the backend */
-    virtual void LoadItems() override;
+    virtual void SubLoadItems() override;
     
     virtual void SubDelete() override { throw ModifyException(); }
 

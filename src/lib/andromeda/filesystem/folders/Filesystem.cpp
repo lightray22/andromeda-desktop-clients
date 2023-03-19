@@ -36,13 +36,13 @@ Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder*
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    if (mId.empty()) LoadItems(); // populates ID
+    if (mId.empty()) SubLoadItems(); // populates ID
 
     return mId;
 }
 
 /*****************************************************/
-void Filesystem::LoadItems()
+void Filesystem::SubLoadItems()
 {
     ITDBG_INFO("()");
 
@@ -50,12 +50,12 @@ void Filesystem::LoadItems()
 
     try
     {
-        data.at("id").get_to(mId); // late load
+        data.at("id").get_to(mId); // have root folder ID now
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    Folder::LoadItemsFrom(data);
+    LoadItemsFrom(data);
 }
 
 } // namespace Andromeda

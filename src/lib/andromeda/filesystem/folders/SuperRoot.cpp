@@ -24,7 +24,7 @@ SuperRoot::SuperRoot(BackendImpl& backend) :
 /*****************************************************/
 void SuperRoot::LoadItems()
 {
-    if (HaveItems()) return; // never refresh
+    if (mHaveItems) return; // never refresh
 
     MDBG_INFO("()");
 
@@ -33,6 +33,8 @@ void SuperRoot::LoadItems()
 
     std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
     mItemMap[filesystems->GetName()] = std::move(filesystems);
+
+    mHaveItems = true;
 }
 
 } // namespace Andromeda

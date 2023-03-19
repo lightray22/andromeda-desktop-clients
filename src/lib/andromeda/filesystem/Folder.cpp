@@ -45,14 +45,16 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
 
     Utilities::StringList parts { Utilities::explode(path,"/") };
 
-    // iteratively (not recursively) find the correct parent/subitem
+    // iteratively find the correct parent/subitem
     Folder::ScopeLocked parent { TryLockScope() };
     if (!parent) throw NotFoundException(); // was deleted
 
     for (Utilities::StringList::iterator pIt { parts.begin() }; 
         pIt != parts.end(); ++pIt )
     {
-        const ItemMap& items { parent->GetItems() };
+        parent->LoadItems(); // populate items
+        const ItemMap& items { parent->mItemMap };
+
         ItemMap::const_iterator it { items.find(*pIt) };
         if (it == items.end()) throw NotFoundException();
 
@@ -62,7 +64,6 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
         if (std::next(pIt) == parts.end()) return item; // last part of path
 
         if (item->GetType() != Type::FOLDER) throw NotFolderException();
-
         parent = ScopeLocked::FromBase(std::move(item));
     }
 
@@ -92,18 +93,40 @@ Folder::ScopeLocked Folder::GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-const Folder::ItemMap& Folder::GetItems()
+Folder::LockedItemMap Folder::GetItems()
+{
+    LoadItems(); // populate
+
+    Folder::LockedItemMap itemMap;
+
+    for (decltype(mItemMap)::value_type& it : mItemMap)
+    {
+        // don't check lock, can't go out of scope with R lock
+        itemMap[it.first] = it.second->TryLockScope();
+    }
+
+    return itemMap;
+}
+
+/*****************************************************/
+size_t Folder::CountItems()
+{
+    LoadItems(); // populate
+    return mItemMap.size();
+}
+
+/*****************************************************/
+void Folder::LoadItems()
 {
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
     if (!mHaveItems || (expired && !mBackend.isMemory()))
     {
-        LoadItems(); mRefreshed = steady_clock::now();
+        SubLoadItems(); // populate mItemMap
+        mRefreshed = steady_clock::now();
+        mHaveItems = true;
     }
-
-    mHaveItems = true;
-    return mItemMap;
 }
 
 /*****************************************************/
@@ -133,9 +156,6 @@ void Folder::LoadItemsFrom(const nlohmann::json& data)
         throw BackendImpl::JSONErrorException(ex.what()); }
 
     SyncContents(newItems);
-
-    mHaveItems = true;
-    mRefreshed = steady_clock::now();
 }
 
 /*****************************************************/
@@ -178,9 +198,9 @@ void Folder::CreateFile(const std::string& name)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    const ItemMap& items { GetItems() }; // pre-populate items
+    LoadItems(); // populate items
 
-    if (items.count(name) || name.empty()) 
+    if (mItemMap.count(name) || name.empty()) 
         throw DuplicateItemException();
 
     SubCreateFile(name);
@@ -191,9 +211,9 @@ void Folder::CreateFolder(const std::string& name)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    const ItemMap& items { GetItems() }; // pre-populate items
+    LoadItems(); // populate items
 
-    if (items.count(name) || name.empty()) 
+    if (mItemMap.count(name) || name.empty()) 
         throw DuplicateItemException();
 
     SubCreateFolder(name);
@@ -206,7 +226,8 @@ void Folder::DeleteItem(const std::string& name)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
+    LoadItems(); // populate items
+    ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
     it->second->SubDelete(); 
@@ -220,7 +241,8 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(oldName) };
+    LoadItems(); // populate items
+    ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
 
     ItemMap::const_iterator dup { mItemMap.find(newName) };
@@ -243,10 +265,11 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
+    LoadItems(); // populate items
+    ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
-    newParent.GetItems(); 
+    newParent.LoadItems(); // populate items
     if (newParent.isReadOnly()) throw ReadOnlyException();
     if (newParent.GetID().empty()) throw ModifyException();
 

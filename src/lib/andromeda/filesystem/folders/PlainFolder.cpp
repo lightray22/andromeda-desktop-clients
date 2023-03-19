@@ -62,11 +62,11 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool 
 }
 
 /*****************************************************/
-void PlainFolder::LoadItems()
+void PlainFolder::SubLoadItems()
 {
     ITDBG_INFO("()");
 
-    Folder::LoadItemsFrom(mBackend.GetFolder(GetID()));
+    LoadItemsFrom(mBackend.GetFolder(GetID()));
 }
 
 /*****************************************************/
