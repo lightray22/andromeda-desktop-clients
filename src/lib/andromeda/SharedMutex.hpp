@@ -71,42 +71,42 @@ private:
 };
 
 /** Shared lock of any type */
-class SharedLockAny
+class SharedLock
 { 
 protected:
-    explicit inline SharedLockAny(SharedMutex& mutex) 
+    explicit inline SharedLock(SharedMutex& mutex) 
         : mMutex(mutex){ }
     SharedMutex& mMutex;
 
     // disallow copying
-    SharedLockAny(const SharedLockAny&) = delete;
-    SharedLockAny& operator=(const SharedLockAny&) = delete;
+    SharedLock(const SharedLock&) = delete;
+    SharedLock& operator=(const SharedLock&) = delete;
 };
 
 /** Scope-managed shared write lock */
-class SharedLockW : public SharedLockAny
+class SharedLockW : public SharedLock
 {
 public:
     explicit inline SharedLockW(SharedMutex& mutex) : 
-        SharedLockAny(mutex){ mMutex.lock(); }
+        SharedLock(mutex){ mMutex.lock(); }
     inline ~SharedLockW(){ mMutex.unlock(); }
 };
 
 /** Scope-managed shared read lock */
-class SharedLockR : public SharedLockAny
+class SharedLockR : public SharedLock
 {
 public:
     explicit inline SharedLockR(SharedMutex& mutex) : 
-        SharedLockAny(mutex){ mMutex.lock_shared(); }
+        SharedLock(mutex){ mMutex.lock_shared(); }
     inline ~SharedLockR(){ mMutex.unlock_shared(); }
 };
 
 /** Scope-managed shared read-priority lock */
-class SharedLockRP : public SharedLockAny
+class SharedLockRP : public SharedLock
 {
 public:
     explicit inline SharedLockRP(SharedMutex& mutex) : 
-        SharedLockAny(mutex){ mMutex.lock_shared_priority(); }
+        SharedLock(mutex){ mMutex.lock_shared_priority(); }
     inline ~SharedLockRP(){ mMutex.unlock_shared_priority(); }
 };
 

@@ -538,7 +538,7 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockW& dataLock)
 }
 
 /*****************************************************/
-size_t PageManager::FlushPage(const uint64_t index, const UniqueLock& flushLock, const SharedLockAny& dataLock)
+size_t PageManager::FlushPage(const uint64_t index, const UniqueLock& flushLock, const SharedLock& dataLock)
 {
     MDBG_INFO("(" << mFile.GetName() << ") (index:" << index << ")");
 
@@ -600,7 +600,7 @@ void PageManager::FlushPages()
 
 /*****************************************************/
 size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, 
-    const PageManager::UniqueLock& flushLock, const SharedLockAny& dataLock)
+    const PageManager::UniqueLock& flushLock, const SharedLock& dataLock)
 {
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
@@ -622,7 +622,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
 }
 
 /*****************************************************/
-void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock, const SharedLockAny& dataLock)
+void PageManager::FlushTruncate(const PageManager::UniqueLock& flushLock, const SharedLock& dataLock)
 {
     MDBG_INFO("()");
 
