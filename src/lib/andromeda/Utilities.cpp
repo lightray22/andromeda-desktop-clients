@@ -83,7 +83,7 @@ Utilities::StringPair Utilities::split(
 }
 
 /*****************************************************/
-Utilities::StringPair Utilities::splitPath(std::string str)
+Utilities::StringPair Utilities::splitPath(const std::string& str)
 {
     return split(str,"/",0,true);
 }

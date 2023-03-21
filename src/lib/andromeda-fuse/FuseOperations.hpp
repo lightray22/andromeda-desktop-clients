@@ -24,7 +24,6 @@ struct FuseOperations
     static int fsync(const char* path, int datasync, struct fuse_file_info* fi);
     static int fsyncdir(const char* path, int datasync, struct fuse_file_info* fi);
     static int release(const char* path, struct fuse_file_info* fi);
-    static void destroy(void* private_data);
 
     #if LIBFUSE2
     static void* init(struct fuse_conn_info* conn);
@@ -71,7 +70,6 @@ struct a2fuse_operations : public fuse_operations
         readdir = AndromedaFuse::FuseOperations::readdir;
         fsyncdir = AndromedaFuse::FuseOperations::fsyncdir;
         init = AndromedaFuse::FuseOperations::init;
-        destroy = AndromedaFuse::FuseOperations::destroy;
         access = AndromedaFuse::FuseOperations::access;
         create = AndromedaFuse::FuseOperations::create;
     }

@@ -89,7 +89,8 @@ class SharedLockW : public SharedLock
 public:
     explicit inline SharedLockW(SharedMutex& mutex) : 
         SharedLock(mutex){ mMutex.lock(); }
-    inline ~SharedLockW(){ mMutex.unlock(); }
+    inline void unlock(){ mMutex.unlock(); }
+    inline ~SharedLockW(){ unlock(); }
 };
 
 /** Scope-managed shared read lock */
@@ -98,7 +99,8 @@ class SharedLockR : public SharedLock
 public:
     explicit inline SharedLockR(SharedMutex& mutex) : 
         SharedLock(mutex){ mMutex.lock_shared(); }
-    inline ~SharedLockR(){ mMutex.unlock_shared(); }
+    inline void unlock(){ mMutex.unlock_shared(); }
+    inline ~SharedLockR(){ unlock(); }
 };
 
 /** Scope-managed shared read-priority lock */
@@ -107,7 +109,8 @@ class SharedLockRP : public SharedLock
 public:
     explicit inline SharedLockRP(SharedMutex& mutex) : 
         SharedLock(mutex){ mMutex.lock_shared_priority(); }
-    inline ~SharedLockRP(){ mMutex.unlock_shared_priority(); }
+    inline void unlock(){ mMutex.unlock_shared_priority(); }
+    inline ~SharedLockRP(){ unlock(); }
 };
 
 } // namespace Andromeda

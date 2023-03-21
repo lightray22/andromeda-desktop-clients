@@ -1,16 +1,18 @@
 #ifndef LIBA2_FOLDER_H_
 #define LIBA2_FOLDER_H_
 
-#include <string>
-#include <map>
-#include <memory>
 #include <chrono>
 #include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <string>
 #include <nlohmann/json_fwd.hpp>
 
 #include "Item.hpp"
 #include "File.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/ScopeLocked.hpp"
 
 namespace Andromeda {
 
@@ -58,39 +60,39 @@ public:
     virtual Type GetType() const override final { return Type::FOLDER; }
 
     /** Load the item with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual Item::ScopeLocked GetItemByPath(std::string path) final;
+    virtual Item::ScopeLocked GetItemByPath(std::string path, const SharedLock& itemLock) final;
 
     /** Load the file with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual File::ScopeLocked GetFileByPath(const std::string& path) final;
+    virtual File::ScopeLocked GetFileByPath(const std::string& path, const SharedLock& itemLock) final;
 
     /** Load the folder with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual Folder::ScopeLocked GetFolderByPath(const std::string& path) final;
+    virtual Folder::ScopeLocked GetFolderByPath(const std::string& path, const SharedLock& itemLock) final;
 
     /** Map of sub-item name to ScopeLocked Item objects */
     typedef std::map<std::string, Item::ScopeLocked> LockedItemMap;
 
     /** Load the map of child items */
-    virtual LockedItemMap GetItems() final;
+    virtual LockedItemMap GetItems(const SharedLock& itemLock) final;
 
     /** Returns the count of child items */
-    virtual size_t CountItems() final;
+    virtual size_t CountItems(const SharedLock& itemLock) final;
 
     /** Create a new subfile with the given name */
-    virtual void CreateFile(const std::string& name) final;
+    virtual void CreateFile(const std::string& name, const SharedLockW& itemLock) final;
 
     /** Create a new subfolder with the given name */
-    virtual void CreateFolder(const std::string& name) final;
+    virtual void CreateFolder(const std::string& name, const SharedLockW& itemLock) final;
 
     /** Delete the subitem with the given name */
-    virtual void DeleteItem(const std::string& name) final;
+    virtual void DeleteItem(const std::string& name, const SharedLockW& itemLock) final;
 
     /** Rename the subitem oldName to newName, optionally overwrite */
-    virtual void RenameItem(const std::string& oldName, const std::string& newName, bool overwrite = false) final;
+    virtual void RenameItem(const std::string& oldName, const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) final;
 
     /** Move the subitem name to parent folder, optionally overwrite */
-    virtual void MoveItem(const std::string& name, Folder& newParent, bool overwrite = false) final;
+    virtual void MoveItem(const std::string& name, Folder& newParent, const SharedLockW& itemLock, bool overwrite = false) final;
 
-    virtual void FlushCache(bool nothrow = false) override;
+    virtual void FlushCache(const Andromeda::SharedLockW& itemLock, bool nothrow = false) override;
 
 protected:
 
@@ -103,14 +105,15 @@ protected:
     /** Initialize from the given JSON data */
     Folder(Backend::BackendImpl& backend, const nlohmann::json& data);
 
+    typedef std::unique_lock<std::mutex> UniqueLock;
+
+    // TODO !! mItemMap, locking LoadItems, SubLoadItems, SyncContents (W lock? item map lock?)
+
     /** Makes sure mItemMap is populated and refreshed */
     virtual void LoadItems();
 
     /** populate itemMap from the backend */
     virtual void SubLoadItems() = 0;
-
-    /** Populate/merge itemMap using the given files/folders JSON */
-    virtual void LoadItemsFrom(const nlohmann::json& data);
 
     /** Function that returns a new Item given its JSON data */
     typedef std::function<std::unique_ptr<Item>(const nlohmann::json&)> NewItemFunc;
@@ -122,18 +125,19 @@ protected:
     virtual void SyncContents(const NewItemMap& newItems);
 
     /** The folder-type-specific create subfile */
-    virtual void SubCreateFile(const std::string& name) = 0;
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) = 0;
 
     /** The folder-type-specific create subfolder */
-    virtual void SubCreateFolder(const std::string& name) = 0;
-
-protected:
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) = 0;
 
     /** Map of sub-item name to Item objects */
     typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;
 
     /** map of subitems */
     ItemMap mItemMap;
+
+    /** Mutex that protects that item map between readers */
+    std::mutex mItemsMutex;
 
     /** true if itemMap is loaded */
     bool mHaveItems { false };

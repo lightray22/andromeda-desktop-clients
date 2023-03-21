@@ -57,15 +57,18 @@ protected:
 
     virtual void SubLoadItems() override;
 
-    virtual void SubCreateFile(const std::string& name) override;
+    /** Populate/merge itemMap using the given files/folders JSON */
+    virtual void LoadItemsFrom(const nlohmann::json& data);
 
-    virtual void SubCreateFolder(const std::string& name) override;
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override;
 
-    virtual void SubDelete() override;
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override;
 
-    virtual void SubRename(const std::string& newName, bool overwrite) override;
+    virtual void SubDelete(const SharedLockW& itemLock) override;
 
-    virtual void SubMove(const std::string& parentID, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
+
+    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite) override;
 
 private:
 

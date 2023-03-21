@@ -10,6 +10,7 @@
 #include "Item.hpp"
 #include "FSConfig.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
@@ -21,7 +22,10 @@ class Folder;
 
 namespace Filedata { class PageManager; class PageBackend; }
 
-/** An Andromeda file */
+/** 
+ * An Andromeda file that can be read/written
+ * THREADING - get locks in advance and pass to functions
+ */
 class File : public Item
 {
 public:
@@ -40,12 +44,12 @@ public:
 
     virtual ~File();
 
-    virtual void Refresh(const nlohmann::json& data) override;
+    virtual void Refresh(const nlohmann::json& data, const SharedLockW& itemLock) override;
 
     virtual Type GetType() const override { return Type::FILE; }
 
     /** Returns the total file size */
-    virtual uint64_t GetSize() const final;
+    virtual uint64_t GetSize(const SharedLock& itemLock) const final;
 
     /**
      * @brief Construct a File using backend data
@@ -74,7 +78,7 @@ public:
         const CreateFunc& createFunc, const UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend (false if waiting for flush) */
-    virtual bool ExistsOnBackend() const;
+    virtual bool ExistsOnBackend(const SharedLock& itemLock) const;
 
     /**
      * Read data from the file
@@ -83,7 +87,7 @@ public:
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength) final;
+    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength, const SharedLock& itemLock) final;
 
     /**
      * Read data from the file
@@ -92,7 +96,7 @@ public:
      * @param length exact number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length) final;
+    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLock& itemLock) final;
 
     /**
      * Writes data to a file
@@ -100,22 +104,20 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length) final;
+    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& itemLock) final;
 
     /** Set the file size to the given value */
-    virtual void Truncate(uint64_t newSize) final;
+    virtual void Truncate(uint64_t newSize, const SharedLockW& itemLock) final;
 
-    virtual void FlushCache(bool nothrow = false) override;
+    virtual void FlushCache(const SharedLockW& itemLock, bool nothrow = false) override;
 
 protected:
 
-    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock) final;
+    virtual void SubDelete(const SharedLockW& itemLock) override;
 
-    virtual void SubDelete() override;
+    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
 
-    virtual void SubRename(const std::string& newName, bool overwrite) override;
-
-    virtual void SubMove(const std::string& parentID, bool overwrite) override;
+    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite) override;
 
 private:
 

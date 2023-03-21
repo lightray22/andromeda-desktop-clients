@@ -20,13 +20,13 @@
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
 
+#include "andromeda/filesystem/File.hpp"
+
 namespace Andromeda {
 
 namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
-class File;
-
 namespace Filedata {
 
 class CacheManager;
@@ -41,6 +41,7 @@ class CacheManager;
  *  - caches writes until flushed (write-back cache) (see FlushPage)
  *  - writes back consecutive ranges of pages to maximize throughput
  *  - supports delayed file Create to combine Create+Write to Upload
+ * THREADING - get locks in advance and pass to functions (this uses the parent File's lock)
  */
 class PageManager
 {
@@ -62,19 +63,16 @@ public:
     size_t GetPageSize() const { return mPageSize; }
 
     /** Returns the current file size including dirty writes */
-    uint64_t GetFileSize() const { return mFileSize; }
-
-    /** Returns the current size on the backend (we may have dirty writes) */
-    uint64_t GetBackendSize() const { return mPageBackend.GetBackendSize(); }
+    uint64_t GetFileSize(const SharedLock& dataLock) const { return mFileSize; }
 
     /** Returns a read lock for page data */
-    SharedLockR GetReadLock() { return SharedLockR(mDataMutex); }
+    inline SharedLockR GetReadLock() const { return mFile.GetReadLock(); }
     
     /** Returns a priority read lock for page data */
-    SharedLockRP GetReadPriLock() { return SharedLockRP(mDataMutex); }
+    inline SharedLockRP GetReadPriLock() const { return mFile.GetReadPriLock(); }
     
     /** Returns a write lock for page data */
-    SharedLockW GetWriteLock() { return SharedLockW(mDataMutex); }
+    inline SharedLockW GetWriteLock() { return mFile.GetWriteLock(); }
 
     typedef Andromeda::ScopeLocked<PageManager> ScopeLocked;
     /** 
@@ -84,7 +82,7 @@ public:
     ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
     /** Reads data from the given page index into buffer */
-    void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockR& dataLock);
+    void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLock& dataLock);
 
     /** Writes data to the given page index from buffer */
     void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock);
@@ -100,27 +98,26 @@ public:
      * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPage(const uint64_t index, const SharedLockRP& dataLock);
     size_t FlushPage(const uint64_t index, const SharedLockW& dataLock);
 
     /** Writes back all dirty pages - THREAD SAFE */
-    void FlushPages();
+    void FlushPages(const SharedLockW& dataLock);
 
     /**
      * Informs us of the file changing on the backend - THREAD SAFE
      * @param backendSize new size according to the backend
      */
-    void RemoteChanged(const uint64_t backendSize);
+    void RemoteChanged(const uint64_t backendSize, const SharedLockW& dataLock);
 
     /** Truncate pages according to the given size and inform the backend - THREAD SAFE */
-    void Truncate(const uint64_t newSize);
+    void Truncate(const uint64_t newSize, const SharedLockW& dataLock);
 
 private:
 
     typedef std::unique_lock<std::mutex> UniqueLock;
 
     /** Returns the page at the given index and informs cacheMgr - use GetReadLock() first! */
-    const Page& GetPageRead(const uint64_t index, const SharedLockR& dataLock);
+    const Page& GetPageRead(const uint64_t index, const SharedLock& dataLock);
 
     /** 
      * Returns the page at the given index and marks dirty/informs cacheMgr - use GetWriteLock() first! 
@@ -154,10 +151,10 @@ private:
      * Returns the read-ahead size to be used for the given VALID (mFileSize) index 
      * Returns 0 if the page exists or the index does not exist on the backend (see mBackendSize)
      */
-    size_t GetFetchSize(const uint64_t index, const UniqueLock& pagesLock);
+    size_t GetFetchSize(const uint64_t index, const SharedLock& dataLock, const UniqueLock& pagesLock);
 
     /** Starts a fetch if necessary to prepopulate some pages ahead of the given index (options.readAheadBuffer) */
-    void DoAdvanceRead(const uint64_t index, const UniqueLock& pagesLock);
+    void DoAdvanceRead(const uint64_t index, const SharedLock& dataLock, const UniqueLock& pagesLock);
 
     /** Spawns a thread to read some # of pages starting at the given VALID (mBackendSize) index */
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
@@ -186,10 +183,7 @@ private:
      * @param[out] writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
-    uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const UniqueLock& pagesLock);
-
-    /** Flushes the given page if dirty (already have the lock) */
-    size_t FlushPage(const uint64_t index, const UniqueLock& flushLock, const SharedLock& dataLock);
+    uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const SharedLockW& dataLock);
 
     /** 
      * Writes a series of **consecutive** pages (total < size_t)
@@ -198,12 +192,11 @@ private:
      * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, 
-        const UniqueLock& flushLock, const SharedLock& dataLock);
+    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& dataLock);
 
     /** Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
      * the file on the backend in case we did a truncate before it existed */
-    void FlushTruncate(const UniqueLock& flushLock, const SharedLock& dataLock);
+    void FlushTruncate(const SharedLockW& dataLock);
 
     Debug mDebug;
 
@@ -241,14 +234,10 @@ private:
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
 
-    /** Primary shared mutex that protects the manager and data */
-    SharedMutex mDataMutex;
     /** Shared mutex that is grabbed exclusively when this class is destructed */
     std::shared_mutex mScopeMutex;
     /** Mutex that protects the page maps between concurrent readers (not needed for writers) */
     std::mutex mPagesMutex;
-    /** Don't want overlapping flushes, could duplicate writes */
-    std::mutex mFlushMutex;
 
     /** Bandwidth measurement tool for mFetchSize */
     BandwidthMeasure mBandwidth;

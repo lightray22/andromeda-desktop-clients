@@ -12,13 +12,9 @@
 #include "FuseOptions.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/SharedMutex.hpp"
 #include "andromeda/Utilities.hpp"
-
-namespace Andromeda {
-namespace Filesystem { 
-    class Folder;
-} // nanespace Filesystem
-} // namespace Andromeda
+#include "andromeda/filesystem/Folder.hpp"
 
 namespace AndromedaFuse {
 
@@ -85,13 +81,16 @@ public:
     void StartFuse(RunMode runMode, const ForkFunc& forkFunc = {});
 
     /** Returns the mounted filesystem path */
-    const std::string& GetMountPath() const { return mMountPath; }
-
-    /** Returns the root folder */
-    Andromeda::Filesystem::Folder& GetRootFolder() { return mRootFolder; }
+    inline const std::string& GetMountPath() const { return mMountPath; }
 
     /** Returns the FUSE options */
-    const FuseOptions& GetOptions() const { return mOptions; }
+    inline const FuseOptions& GetOptions() const { return mOptions; }
+
+    /** Returns the root folder with a scope lock */
+    inline Andromeda::Filesystem::Folder::ScopeLocked& GetRootFolder() { return mRootFolder; }
+    
+    /** Returns the read lock on the root folder */
+    inline const Andromeda::SharedLockR& GetRootLock() const { return mRootLock; }
 
     /** Print version text to stdout */
     static void ShowVersionText();
@@ -112,8 +111,10 @@ private:
     void SignalInit();
     
     std::string mMountPath;
-    Andromeda::Filesystem::Folder& mRootFolder;
     FuseOptions mOptions;
+
+    Andromeda::Filesystem::Folder::ScopeLocked mRootFolder;
+    Andromeda::SharedLockR mRootLock;
 
     std::thread mFuseThread;
 

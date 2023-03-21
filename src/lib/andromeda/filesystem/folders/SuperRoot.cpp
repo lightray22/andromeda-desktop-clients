@@ -28,11 +28,13 @@ void SuperRoot::LoadItems()
 
     MDBG_INFO("()");
 
-    std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
-    mItemMap[adopted->GetName()] = std::move(adopted);
+    { std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
+    SharedLockR subLock { adopted->GetReadLock() };
+    mItemMap[adopted->GetName(subLock)] = std::move(adopted); }
 
-    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
-    mItemMap[filesystems->GetName()] = std::move(filesystems);
+    { std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
+    SharedLockR subLock { filesystems->GetReadLock() };
+    mItemMap[filesystems->GetName(subLock)] = std::move(filesystems); }
 
     mHaveItems = true;
 }

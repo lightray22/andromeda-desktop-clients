@@ -14,6 +14,8 @@
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/SharedMutex.hpp"
+using Andromeda::SharedLockW;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
@@ -257,8 +259,10 @@ struct FuseSignals
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options)
-    : mMountPath(mountPath), mRootFolder(root), mOptions(options)
+FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options) :
+    mMountPath(mountPath), mOptions(options),
+    mRootFolder(root.TryLockScope()), 
+    mRootLock(root.GetReadLock())
 {
     SDBG_INFO("(path:" << mMountPath << ")");
 }
@@ -389,6 +393,10 @@ FuseAdapter::~FuseAdapter()
         SDBG_INFO("... waiting");
         mFuseThread.join();
     }
+
+    mRootLock.unlock();
+    SharedLockW rootLock { mRootFolder->GetWriteLock() };
+    mRootFolder->FlushCache(rootLock, true); // TODO revisit FUSE destroy
 
     SDBG_INFO("... return!");
 }

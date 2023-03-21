@@ -7,6 +7,7 @@
 
 #include "Page.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/SharedMutex.hpp"
 #include "andromeda/filesystem/File.hpp"
 
 namespace Andromeda {
@@ -17,8 +18,8 @@ namespace Filesystem {
 namespace Filedata {
 
 /** 
- * Handles reading/writing pages from/to the backend 
- * WARNING - NOT thread safe! Use external R/W locking
+ * Handles reading/writing pages from/to the backend
+ * THREADING - get locks in advance and pass to functions (this uses the parent File's lock)
  */
 class PageBackend
 {
@@ -45,13 +46,13 @@ public:
       const File::CreateFunc& createFunc, const File::UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend */
-    bool ExistsOnBackend() const { return mBackendExists; }
+    bool ExistsOnBackend(const SharedLock& dataLock) const { return mBackendExists; }
 
     /** Returns the file size on the backend */
-    uint64_t GetBackendSize() const { return mBackendSize; }
+    uint64_t GetBackendSize(const SharedLock& dataLock) const { return mBackendSize; }
 
     /** Inform us that the size on the backend has changed */
-    void SetBackendSize(uint64_t backendSize) { mBackendSize = backendSize; }
+    void SetBackendSize(uint64_t backendSize, const SharedLockW& dataLock) { mBackendSize = backendSize; }
 
     /** Callback used to process fetched pages in FetchPages() */
     typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
@@ -62,7 +63,7 @@ public:
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
      */
-    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler);
+    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler, const SharedLock& dataLock);
 
     /** List of **consecutive** non-null page pointers */
     typedef std::list<Page*> PagePtrList;
@@ -74,14 +75,13 @@ public:
      * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PagePtrList& pages);
+    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockW& dataLock);
 
-    /** Creates the file on the backend if not
-      * mBackendExists and feeds to file.Refresh() */
-    void FlushCreate();
+    /** Creates the file on the backend if not mBackendExists and feeds to file.Refresh() */
+    void FlushCreate(const SharedLockW& dataLock);
 
     /** Tell the backend to truncate to the given size, if mBackendExists */
-    void Truncate(const uint64_t newSize);
+    void Truncate(const uint64_t newSize, const SharedLockW& dataLock);
 
 private:
 

@@ -54,7 +54,7 @@ Item::~Item()
 }
 
 /*****************************************************/
-void Item::Refresh(const nlohmann::json& data)
+void Item::Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& itemLock)
 {
     ITDBG_INFO("()");
 
@@ -105,7 +105,7 @@ void Item::Refresh(const nlohmann::json& data)
 }
 
 /*****************************************************/
-Folder& Item::GetParent() const     
+Folder& Item::GetParent(const Andromeda::SharedLock& itemLock) const
 {
     if (mParent == nullptr) 
         throw NullParentException();
@@ -133,11 +133,12 @@ bool Item::isReadOnly() const
 }
 
 /*****************************************************/
-void Item::Delete(Item::ScopeLocked& scopeLock)
+void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& itemLock)
 {
     ITDBG_INFO("()");
 
-    if (!HasParent()) SubDelete();
+    if (!HasParent(itemLock)) 
+        SubDelete(itemLock);
     else
     {
         // deleting the item involves grabbing its scopeLock exclusively, so we need to unlock our scopeLock
@@ -146,34 +147,44 @@ void Item::Delete(Item::ScopeLocked& scopeLock)
         // a small window where someone could concurrently delete the file before us, but if that happens we'll just
         // throw a NotFoundException when we tell the parent to delete, which is fine.  A child reaching into its
         // parent to lock is backwards and hints at deadlock but really is okay because it's a shared lock.
-        Folder::ScopeLocked parent { GetParent().TryLockScope() };
-
+        Folder::ScopeLocked parent { GetParent(itemLock).TryLockScope() };
         scopeLock.unlock();
-        parent->DeleteItem(mName);
+        itemLock.unlock();
+
+        SharedLockW parentLock { parent->GetWriteLock() };
+        parent->DeleteItem(mName, parentLock);
     }
 }
 
 /*****************************************************/
-void Item::Rename(const std::string& newName, bool overwrite)
+void Item::Rename(const std::string& newName, SharedLockW& itemLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
 
-    if (!HasParent()) SubRename(newName, overwrite);
+    if (!HasParent(itemLock)) 
+        SubRename(newName, itemLock, overwrite);
     else
     {
-        // no GetParent() scopeLock, parent cannot go out of scope until all children are gone
-        GetParent().RenameItem(mName, newName, overwrite);
+        Folder& parent { GetParent(itemLock) };
+        itemLock.unlock();
+
+        SharedLockW parentLock { parent.GetWriteLock() };
+        parent.RenameItem(mName, newName, parentLock, overwrite);
         mName = newName;
     }
 }
 
 /*****************************************************/
-void Item::Move(Folder& newParent, bool overwrite)
+void Item::Move(Folder& newParent, SharedLockW& itemLock, bool overwrite)
 {
-    ITDBG_INFO("(newParent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(newParent:" << newParent.GetID() << ")");
 
-    // GetParent() will throw if parent is null
-    GetParent().MoveItem(mName, newParent, overwrite);
+    // GetParent() will throw if parent is null - MUST have parent!
+    Folder& parent { GetParent(itemLock) };
+    itemLock.unlock();
+
+    SharedLockW parentLock { parent.GetWriteLock() };
+    parent.MoveItem(mName, newParent, parentLock, overwrite);
     mParent = &newParent;
 }
 

@@ -507,7 +507,7 @@ void CacheManager::DoPageFlushes()
             mFlushWaitCV.notify_all();
         }
 
-        SharedLockRP mgrLock { flushIt->first->GetReadPriLock() };
+        SharedLockW mgrLock { flushIt->first->GetWriteLock() };
         mSkipFlushWait = nullptr; // have the mgrLock now
 
         FlushSet& flushSet { flushIt->second };

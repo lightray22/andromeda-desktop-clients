@@ -25,15 +25,15 @@ protected:
 
     virtual void SubLoadItems() override { }; // unused
 
-    virtual void SubCreateFile(const std::string& name) override { throw ModifyException(); }
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
 
-    virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
 
-    virtual void SubDelete() override { throw ModifyException(); }
+    virtual void SubDelete(const SharedLockW& itemLock) override { throw ModifyException(); }
 
-    virtual void SubRename(const std::string& newName, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
 
-    virtual void SubMove(const std::string& parentID, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

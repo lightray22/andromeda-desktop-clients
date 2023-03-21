@@ -83,21 +83,21 @@ size_t File::CalcPageSize() const
 File::~File() { } // for unique_ptr
 
 /*****************************************************/
-uint64_t File::GetSize() const 
+uint64_t File::GetSize(const SharedLock& itemLock) const 
 { 
-    return mPageManager->GetFileSize();
+    return mPageManager->GetFileSize(itemLock);
 }
 
 /*****************************************************/
-bool File::ExistsOnBackend() const
+bool File::ExistsOnBackend(const SharedLock& itemLock) const
 {
-    return mPageBackend->ExistsOnBackend();
+    return mPageBackend->ExistsOnBackend(itemLock);
 }
 
 /*****************************************************/
-void File::Refresh(const nlohmann::json& data)
+void File::Refresh(const nlohmann::json& data, const SharedLockW& itemLock)
 {
-    Item::Refresh(data);
+    Item::Refresh(data, itemLock);
 
     try
     {
@@ -105,46 +105,46 @@ void File::Refresh(const nlohmann::json& data)
 
         uint64_t newSize;
         data.at("size").get_to(newSize);
-        if (newSize != mPageManager->GetBackendSize())
-            mPageManager->RemoteChanged(newSize);
+        if (newSize != mPageBackend->GetBackendSize(itemLock))
+            mPageManager->RemoteChanged(newSize, itemLock);
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
-void File::SubDelete()
+void File::SubDelete(const SharedLockW& itemLock)
 {
     ITDBG_INFO("()")
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (ExistsOnBackend()) // TODO locking here??
+    if (ExistsOnBackend(itemLock))
         mBackend.DeleteFile(GetID());
 
-    mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
+    mDeleted = true; // TODO !! once threading works better this should not be required, see how pages use locks
 }
 
 /*****************************************************/
-void File::SubRename(const std::string& newName, bool overwrite)
+void File::SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite)
 {
     ITDBG_INFO("(name:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (ExistsOnBackend()) // TODO locking here??
+    if (ExistsOnBackend(itemLock))
         mBackend.RenameFile(GetID(), newName, overwrite);
 }
 
 /*****************************************************/
-void File::SubMove(const std::string& parentID, bool overwrite)
+void File::SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite)
 {
     ITDBG_INFO("(parent:" << parentID << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (!ExistsOnBackend()) // TODO locking here??
-        FlushCache(); // createFunc would no longer be valid
+    if (!ExistsOnBackend(itemLock))
+        FlushCache(itemLock); // createFunc would no longer be valid
     
     mBackend.MoveFile(GetID(), parentID, overwrite);
 }
@@ -164,49 +164,39 @@ FSConfig::WriteMode File::GetWriteMode() const
 }
 
 /*****************************************************/
-void File::FlushCache(bool nothrow)
+void File::FlushCache(const SharedLockW& itemLock, bool nothrow)
 {
     if (mDeleted) return;
 
     ITDBG_INFO("()");
 
-    if (!nothrow) mPageManager->FlushPages();
-    else try { mPageManager->FlushPages(); } catch (BaseException& e){ 
+    if (!nothrow) mPageManager->FlushPages(itemLock);
+    else try { mPageManager->FlushPages(itemLock); } catch (BaseException& e){ 
         ITDBG_ERROR("... ignoring error: " << e.what()); }
 }
 
 /*****************************************************/
-size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength)
+size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength, const SharedLock& itemLock)
 {    
     ITDBG_INFO("(offset:" << offset << " maxLength:" << maxLength << ")");
 
-    SharedLockR dataLock { mPageManager->GetReadLock() };
-
-    const uint64_t fileSize { mPageManager->GetFileSize() };
+    const uint64_t fileSize { mPageManager->GetFileSize(itemLock) };
     ITDBG_INFO("... fileSize:" << fileSize);
 
     if (offset >= fileSize) return 0;
     const size_t length { Filedata::min64st(fileSize-offset, maxLength) };
 
-    ReadBytes(buffer, offset, length, dataLock);
+    ReadBytes(buffer, offset, length, itemLock);
 
     return length;
 }
 
 /*****************************************************/
-void File::ReadBytes(char* buffer, const uint64_t offset, size_t length)
-{    
+void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLock& itemLock)
+{
     ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
-    SharedLockR dataLock { mPageManager->GetReadLock() };
-
-    ReadBytes(buffer, offset, length, dataLock);
-}
-
-/*****************************************************/
-void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLockR& dataLock)
-{
-    if (offset + length > mPageManager->GetFileSize())
+    if (offset + length > mPageManager->GetFileSize(itemLock))
         throw ReadBoundsException();
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
@@ -226,14 +216,14 @@ void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const S
         ITDBG_INFO("... byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
-        mPageManager->ReadPage(buffer, index, pOffset, pLength, dataLock);
+        mPageManager->ReadPage(buffer, index, pOffset, pLength, itemLock);
 
         buffer += pLength; byte += pLength;
     }
 }
 
 /*****************************************************/
-void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length)
+void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& itemLock)
 {
     ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
@@ -242,19 +232,17 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
 
-    SharedLockW dataLock { mPageManager->GetWriteLock() };
-
-    const uint64_t fileSize { mPageManager->GetFileSize() };
+    const uint64_t fileSize { mPageManager->GetFileSize(itemLock) };
     ITDBG_INFO("... fileSize:" << fileSize);
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
         if (writeMode == FSConfig::WriteMode::APPEND 
-            && offset != mPageManager->GetFileSize()) throw WriteTypeException();
+            && offset != mPageManager->GetFileSize(itemLock)) throw WriteTypeException();
 
         const std::string data(buffer, length);
         mBackend.WriteFile(GetID(), offset, data);
-        mPageManager->RemoteChanged(std::max(fileSize, offset+length));
+        mPageManager->RemoteChanged(std::max(fileSize, offset+length), itemLock);
     }
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
@@ -264,7 +252,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         {
             // allowed if (==fileSize and startOfPage) OR (within dirty page)
             if (!(offset == fileSize && offset % pageSize == 0) && 
-                !mPageManager->isDirty(offset/pageSize, dataLock)) throw WriteTypeException();
+                !mPageManager->isDirty(offset/pageSize, itemLock)) throw WriteTypeException();
         }
 
         const uint64_t index { byte / pageSize };
@@ -274,14 +262,14 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         ITDBG_INFO("... byte:" << byte << " index:" << index 
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
-        mPageManager->WritePage(buffer, index, pOffset, pLength, dataLock);
+        mPageManager->WritePage(buffer, index, pOffset, pLength, itemLock);
         
         buffer += pLength; byte += pLength;
     }
 }
 
 /*****************************************************/
-void File::Truncate(const uint64_t newSize)
+void File::Truncate(const uint64_t newSize, const SharedLockW& itemLock)
 {    
     ITDBG_INFO("(size:" << newSize << ")");
 
@@ -289,7 +277,7 @@ void File::Truncate(const uint64_t newSize)
 
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 
-    mPageManager->Truncate(newSize);
+    mPageManager->Truncate(newSize, itemLock);
 }
 
 } // namespace Filesystem

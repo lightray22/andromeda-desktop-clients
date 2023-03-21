@@ -15,6 +15,9 @@ using AndromedaFuse::FuseAdapter;
 using Andromeda::BaseException;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/SharedMutex.hpp"
+using Andromeda::SharedLockR;
+using Andromeda::SharedLockW;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
@@ -35,13 +38,34 @@ static Debug sDebug("FuseOperations",nullptr);
 namespace AndromedaFuse {
 
 /*****************************************************/
-static FuseAdapter& GetFuseAdapter()
+static inline FuseAdapter& GetFuseAdapter()
 {
     return *static_cast<FuseAdapter*>(fuse_get_context()->private_data);
 }
 
 /*****************************************************/
-static int standardTry(const std::string& fname, std::function<int()> func)
+static inline Item::ScopeLocked GetItemByPath(const std::string& path)
+{
+    FuseAdapter& adapter { GetFuseAdapter() };
+    return adapter.GetRootFolder()->GetItemByPath(path, adapter.GetRootLock());
+}
+
+/*****************************************************/
+static inline File::ScopeLocked GetFileByPath(const std::string& path)
+{
+    FuseAdapter& adapter { GetFuseAdapter() };
+    return adapter.GetRootFolder()->GetFileByPath(path, adapter.GetRootLock());
+}
+
+/*****************************************************/
+static inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
+{
+    FuseAdapter& adapter { GetFuseAdapter() };
+    return adapter.GetRootFolder()->GetFolderByPath(path, adapter.GetRootLock());
+}
+
+/*****************************************************/
+static int CatchAsErrno(const std::string& fname, std::function<int()> func)
 {
     try { return func(); }
 
@@ -235,7 +259,7 @@ constexpr void date_to_timespec(const Item::Date time, timespec& spec)
 }
 
 /*****************************************************/
-static void item_stat(const Item::ScopeLocked& item, struct stat* stbuf)
+static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock, struct stat* stbuf)
 {
     switch (item->GetType())
     {
@@ -251,14 +275,14 @@ static void item_stat(const Item::ScopeLocked& item, struct stat* stbuf)
 
     stbuf->st_size = (item->GetType() == Item::Type::FILE) ? 
         static_cast<decltype(stbuf->st_size)>(
-            dynamic_cast<const File&>(*item).GetSize()) : 0;
+            dynamic_cast<const File&>(*item).GetSize(itemLock)) : 0;
 
     stbuf->st_blocks = stbuf->st_size ? (stbuf->st_size-1)/512+1 : 0; // 512B blocks
     //stbuf->st_blksize = 4096; // TODO what to use? page size?
 
-    Item::Date created { item->GetCreated() };
-    Item::Date modified { item->GetModified() };
-    Item::Date accessed { item->GetAccessed() };
+    Item::Date created { item->GetCreated(itemLock) };
+    Item::Date modified { item->GetModified(itemLock) };
+    Item::Date accessed { item->GetAccessed(itemLock) };
 
 #if WIN32
     date_to_timespec(created, stbuf->st_birthtim);
@@ -290,10 +314,10 @@ int FuseOperations::access(const char* path, int mask)
     #if defined(W_OK)
         static const std::string fname(__func__);
     #endif // W_OK
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
         #if defined(W_OK)
-            const Item::ScopeLocked item(GetFuseAdapter().GetRootFolder().GetItemByPath(path));
+            const Item::ScopeLocked item(GetItemByPath(path));
 
             if ((mask & W_OK) && item->isReadOnly()) 
             {
@@ -316,9 +340,10 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
     ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
         // TODO need to handle O_APPEND?
 
@@ -333,7 +358,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... truncating!"; });
-            file->Truncate(0);
+            file->Truncate(0, fileLock);
         }
 
         return FUSE_SUCCESS;
@@ -347,9 +372,9 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
     ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        const Folder::ScopeLocked folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        const Folder::ScopeLocked folder(GetFolderByPath(path));
 
         if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnly())
         {
@@ -372,9 +397,10 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        item_stat(GetFuseAdapter().GetRootFolder().GetItemByPath(path), stbuf); return FUSE_SUCCESS;
+        Item::ScopeLocked item { GetItemByPath(path) };
+        item_stat(item, item->GetReadLock(), stbuf); return FUSE_SUCCESS;
     });
 }
 
@@ -389,27 +415,30 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        const Folder::LockedItemMap items(GetFuseAdapter().GetRootFolder().GetFolderByPath(path)->GetItems());
+        Folder::ScopeLocked parent { GetFolderByPath(path) };
+        SharedLockR parentLock { parent->GetReadLock() };
+        Folder::LockedItemMap items { parent->GetItems(parentLock) };
 
         sDebug.Info([&](std::ostream& str){ 
             str << fname << "... #items:" << items.size(); });
 
-        for (const decltype(items)::value_type& pair : items)
+        for (const Folder::LockedItemMap::value_type& pair : items)
         {
             const Item::ScopeLocked& item { pair.second };
+            const SharedLockR itemLock { item->GetReadLock() };
 
 #if LIBFUSE2
             int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
-                struct stat stbuf; item_stat(item, &stbuf);
+                struct stat stbuf; item_stat(item, itemLock, &stbuf);
 
-                retval = filler(buf, item->GetName().c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
+                retval = filler(buf, item->GetName(itemLock).c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
-            else retval = filler(buf, item->GetName().c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
+            else retval = filler(buf, item->GetName(itemLock).c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed"; }); return -EIO; }
@@ -440,11 +469,12 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked parent(GetFolderByPath(path));
+        const SharedLockW parentLock { parent->GetWriteLock() };
 
-        parent->CreateFile(name); return FUSE_SUCCESS;
+        parent->CreateFile(name, parentLock); return FUSE_SUCCESS;
     });
 }
 
@@ -458,11 +488,12 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked parent(GetFolderByPath(path));
+        const SharedLockW parentLock { parent->GetWriteLock() };
 
-        parent->CreateFolder(name); return FUSE_SUCCESS;
+        parent->CreateFolder(name, parentLock); return FUSE_SUCCESS;
     });
 }
 
@@ -472,14 +503,15 @@ int FuseOperations::unlink(const char* path)
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file { GetFuseAdapter().GetRootFolder().GetFileByPath(path) };
+        File::ScopeLocked file { GetFileByPath(path) };
+        SharedLockW fileLock { file->GetWriteLock() };
 
         // need an Item lock to pass to delete, cast from File
-        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(file)) };
+        Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(file)) };
 
-        item->Delete(item); return FUSE_SUCCESS;
+        file->Delete(scopeLock, fileLock); return FUSE_SUCCESS;
     });
 }
 
@@ -489,16 +521,17 @@ int FuseOperations::rmdir(const char* path)
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked folder { GetFuseAdapter().GetRootFolder().GetFolderByPath(path) };
+        Folder::ScopeLocked folder { GetFolderByPath(path) };
+        SharedLockW folderLock { folder->GetWriteLock() };
 
-        if (folder->CountItems()) return -ENOTEMPTY;
+        if (folder->CountItems(folderLock)) return -ENOTEMPTY;
 
         // need an Item lock to pass to delete, cast from Folder
-        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(folder)) };
+        Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(folder)) };
 
-        item->Delete(item); return FUSE_SUCCESS;
+        folder->Delete(scopeLock, folderLock); return FUSE_SUCCESS;
     });
 }
 
@@ -522,26 +555,27 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
     SDBG_INFO("... oldPath:" << oldPath << ", oldName:" << oldName);
     SDBG_INFO("... newPath:" << newPath << ", newName:" << newName);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        Item::ScopeLocked item(GetFuseAdapter().GetRootFolder().GetItemByPath(oldpath));
+        Item::ScopeLocked item(GetItemByPath(oldpath));
+        SharedLockW itemLock { item->GetWriteLock() };
 
         if (oldPath != newPath && oldName != newName)
         {
-            //Folder::ScopeLocked parent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
+            //Folder::ScopeLocked parent(GetFolderByPath(newPath));
 
             SDBG_ERROR("NOT SUPPORTED YET!");
             return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
-            Folder::ScopeLocked newParent(GetFuseAdapter().GetRootFolder().GetFolderByPath(newPath));
+            Folder::ScopeLocked newParent(GetFolderByPath(newPath));
 
-            item->Move(*newParent, true);
+            item->Move(*newParent, itemLock, true);
         }
         else if (oldName != newName) 
         {
-            item->Rename(newName, true);
+            item->Rename(newName, itemLock, true);
         }
 
         return FUSE_SUCCESS;
@@ -556,11 +590,12 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 
     if (off < 0) return -EINVAL;
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockR fileLock { file->GetReadLock() };
 
-        return static_cast<int>(file->ReadBytesMax(buf, static_cast<uint64_t>(off), size));
+        return static_cast<int>(file->ReadBytesMax(buf, static_cast<uint64_t>(off), size, fileLock));
     });
 }
 
@@ -572,11 +607,12 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 
     if (off < 0) return -EINVAL;
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
-        file->WriteBytes(buf, static_cast<uint64_t>(off), size); 
+        file->WriteBytes(buf, static_cast<uint64_t>(off), size, fileLock); 
         
         return static_cast<int>(size);
     });
@@ -591,11 +627,12 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
-        file->FlushCache(); return FUSE_SUCCESS;
+        file->FlushCache(fileLock); return FUSE_SUCCESS;
     });
 }
 
@@ -605,11 +642,12 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
-        file->FlushCache(); return FUSE_SUCCESS;
+        file->FlushCache(fileLock); return FUSE_SUCCESS;
     });
 }
 
@@ -619,11 +657,12 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked folder(GetFuseAdapter().GetRootFolder().GetFolderByPath(path));
+        Folder::ScopeLocked folder(GetFolderByPath(path));
+        const SharedLockW folderLock { folder->GetWriteLock() };
 
-        folder->FlushCache(); return FUSE_SUCCESS;
+        folder->FlushCache(folderLock); return FUSE_SUCCESS;
     });
 }
 
@@ -633,24 +672,12 @@ int FuseOperations::release(const char* path, struct fuse_file_info* fi)
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
-        file->FlushCache(); return FUSE_SUCCESS;
-    });
-}
-
-/*****************************************************/
-void FuseOperations::destroy(void* private_data)
-{
-    SDBG_INFO("()");
-    ThreadsPrint(__func__,sDebug);
-
-    standardTry(__func__,[&]()->int
-    {
-        FuseAdapter& adapter { *static_cast<FuseAdapter*>(private_data) };
-        adapter.GetRootFolder().FlushCache(true); return FUSE_SUCCESS;
+        file->FlushCache(fileLock); return FUSE_SUCCESS;
     });
 }
 
@@ -666,11 +693,12 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 
     if (size < 0) return -EINVAL;
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFuseAdapter().GetRootFolder().GetFileByPath(path));
+        File::ScopeLocked file(GetFileByPath(path));
+        const SharedLockW fileLock { file->GetWriteLock() };
 
-        file->Truncate(static_cast<uint64_t>(size)); return FUSE_SUCCESS;
+        file->Truncate(static_cast<uint64_t>(size), fileLock); return FUSE_SUCCESS;
     });
 }
 
@@ -681,15 +709,15 @@ int FuseOperations::chmod(const char* path, mode_t mode)
 int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
-    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    const FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        GetItemByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 
@@ -700,15 +728,15 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
-    FuseAdapter& fuseAdapter { GetFuseAdapter() };
+    const FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 
     SDBG_INFO("(path:" << path << ")");
     ThreadsPrint(__func__,sDebug);
 
-    return standardTry(__func__,[&]()->int
+    return CatchAsErrno(__func__,[&]()->int
     {
-        fuseAdapter.GetRootFolder().GetFileByPath(path); return FUSE_SUCCESS; // no-op
+        GetItemByPath(path); return FUSE_SUCCESS; // no-op
     });
 }
 
