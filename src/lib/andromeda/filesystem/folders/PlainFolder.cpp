@@ -143,7 +143,7 @@ void PlainFolder::SubCreateFolder(const std::string& name, const SharedLockW& it
 }
 
 /*****************************************************/
-void PlainFolder::SubDelete(const SharedLockW& itemLock)
+void PlainFolder::SubDelete(const DeleteLock& deleteLock)
 {
     ITDBG_INFO("()");
 

@@ -64,7 +64,7 @@ protected:
 
     virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override;
 
-    virtual void SubDelete(const SharedLockW& itemLock) override;
+    virtual void SubDelete(const DeleteLock& deleteLock) override;
 
     virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
 

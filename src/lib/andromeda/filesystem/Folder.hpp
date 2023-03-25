@@ -73,10 +73,9 @@ public:
 
     /** 
      * Load and return the map of scope-locked child items 
-     * Will acquire a write lock as this may involve reloading from the server!
+     * @param itemLock need an exclusive lock since we may reload the map
      * @return map of all children with accompanying scope locks
      */
-    virtual LockedItemMap GetItems() final;
     virtual LockedItemMap GetItems(const SharedLockW& itemLock) final;
 
     /** Returns the count of child items */

@@ -115,16 +115,16 @@ void File::Refresh(const nlohmann::json& data, const SharedLockW& itemLock)
 }
 
 /*****************************************************/
-void File::SubDelete(const SharedLockW& itemLock)
+void File::SubDelete(const DeleteLock& deleteLock)
 {
     ITDBG_INFO("()")
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (ExistsOnBackend(itemLock))
+    if (ExistsOnBackend(GetWriteLock()))
         mBackend.DeleteFile(GetID());
 
-    mDeleted = true; // TODO !! once threading works better this should not be required, see how pages use locks
+    mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
 }
 
 /*****************************************************/
@@ -194,7 +194,7 @@ size_t File::ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxL
 }
 
 /*****************************************************/
-void File::ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLock& itemLock)
+void File::ReadBytes(char* buffer, const uint64_t offset, const size_t length, const SharedLock& itemLock)
 {
     ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 

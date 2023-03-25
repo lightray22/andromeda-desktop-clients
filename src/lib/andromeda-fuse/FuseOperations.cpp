@@ -98,6 +98,10 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     {
         SDBG_INFO_EXC(e); return -EROFS;
     }
+    catch (const Item::NullParentException& e)
+    {
+        SDBG_INFO_EXC(e); return -ENOTSUP;
+    }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
@@ -372,8 +376,10 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked parent { GetFolderByPath(path) };
-        Folder::LockedItemMap items { parent->GetItems() };
+        Folder::LockedItemMap items; { // lock scope
+            Folder::ScopeLocked parent { GetFolderByPath(path) };
+            items = parent->GetItems(parent->GetWriteLock());
+        }
 
         sDebug.Info([&](std::ostream& str){ 
             str << fname << "... #items:" << items.size(); });

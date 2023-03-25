@@ -36,12 +36,21 @@ Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder*
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    { // lock scope
-        const SharedLockW itemLock(GetWriteLock());
-        if (mId.empty()) LoadItems(itemLock, true); // populates ID
-    }
+    const UniqueLock idLock(mIdMutex);
+    if (mId.empty()) LoadID(mBackend.GetFSRoot(mFsid), idLock);
 
     return mId;
+}
+
+/*****************************************************/
+void Filesystem::LoadID(const nlohmann::json& data, const UniqueLock& idLock)
+{
+    try
+    {
+        data.at("id").get_to(mId);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw BackendImpl::JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
@@ -51,12 +60,10 @@ void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLo
 
     const nlohmann::json data(mBackend.GetFSRoot(mFsid));
 
-    try
-    {
-        data.at("id").get_to(mId); // have root folder ID now
+    { // lock scope
+        const UniqueLock idLock(mIdMutex);
+        if (mId.empty()) LoadID(data, idLock);
     }
-    catch (const nlohmann::json::exception& ex) {
-        throw BackendImpl::JSONErrorException(ex.what()); }
 
     LoadItemsFrom(data, itemsLocks, itemLock);
 }

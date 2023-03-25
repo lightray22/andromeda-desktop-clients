@@ -96,7 +96,7 @@ public:
      * @param length exact number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual void ReadBytes(char* buffer, const uint64_t offset, size_t length, const SharedLock& itemLock) final;
+    virtual void ReadBytes(char* buffer, const uint64_t offset, const size_t length, const SharedLock& itemLock) final;
 
     /**
      * Writes data to a file
@@ -113,7 +113,7 @@ public:
 
 protected:
 
-    virtual void SubDelete(const SharedLockW& itemLock) override;
+    virtual void SubDelete(const DeleteLock& deleteLock) override;
 
     virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
 

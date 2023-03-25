@@ -3,6 +3,7 @@
 #define LIBA2_FILESYSTEM_H_
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
@@ -44,15 +45,20 @@ protected:
 
     virtual const std::string& GetID() override;
 
+    typedef std::unique_lock<std::mutex> UniqueLock;
+    /** Sets the folder ID from the given backend data */
+    virtual void LoadID(const nlohmann::json& data, const UniqueLock& idLock);
+
     virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
 
-    virtual void SubDelete(const SharedLockW& itemLock) override { throw ModifyException(); }
+    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
     virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 
     std::string mFsid;
+    std::mutex mIdMutex; // ID is lazy-loaded
 
     Debug mDebug;
 };

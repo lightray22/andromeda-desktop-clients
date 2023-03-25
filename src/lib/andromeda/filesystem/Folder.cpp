@@ -99,13 +99,6 @@ Folder::ScopeLocked Folder::GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-Folder::LockedItemMap Folder::GetItems()
-{
-    const SharedLockW itemLock { GetWriteLock() };
-    return GetItems(itemLock);
-}
-
-/*****************************************************/
 Folder::LockedItemMap Folder::GetItems(const SharedLockW& itemLock)
 {
     LoadItems(itemLock); // populate
@@ -182,9 +175,12 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
             if (oldIt->second->GetType() != Type::FILE ||
                 dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend(itLock))
             {
-                itLock.unlock(); // item will go out of scope
                 ITDBG_INFO("... remote deleted: " << oldIt->second->GetName(itLock));
-                oldIt = mItemMap.erase(oldIt); // deleted on server
+                itLock.unlock(); // scope locks come first
+
+                DeleteLock deleteLock { oldIt->second->GetDeleteLock() };
+                deleteLock.MarkDeleted();
+                oldIt = mItemMap.erase(oldIt);
             }
             else ++oldIt;
         }
@@ -228,10 +224,10 @@ void Folder::DeleteItem(const std::string& name, const SharedLockW& itemLock)
     LoadItems(itemLock); // populate items
     ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
-    // item scope lock not needed since mItemMap is locked
 
-    SharedLockW subLock { it->second->GetWriteLock() };
-    it->second->SubDelete(subLock); // do first in case of error
+    DeleteLock deleteLock { it->second->GetDeleteLock() };
+    it->second->SubDelete(deleteLock);
+    deleteLock.MarkDeleted();
     mItemMap.erase(it);
 }
 

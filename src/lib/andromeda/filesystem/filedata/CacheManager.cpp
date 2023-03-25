@@ -281,12 +281,11 @@ void CacheManager::RemoveDirty(const Page& page)
 /*****************************************************/
 size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 {
-    MDBG_INFO("(page:" << &page << ")");
-
     size_t pageSize { 0 }; // size of page removed
     PageItMap::iterator itLookup { mPageItMap.find(&page) };
     if (itLookup != mPageItMap.end()) 
     {
+        MDBG_INFO("(page:" << &page << ")");
         PageList::iterator itQueue { itLookup->second };
 
         pageSize = itQueue->mPageSize;
@@ -302,11 +301,10 @@ size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 /*****************************************************/
 void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 {
-    MDBG_INFO("(page:" << &page << ")");
-
     PageItMap::iterator itLookup { mDirtyItMap.find(&page) };
     if (itLookup != mDirtyItMap.end()) 
     {
+        MDBG_INFO("(page:" << &page << ")");
         PageList::iterator itQueue { itLookup->second };
 
         mCurrentDirty -= itQueue->mPageSize;
