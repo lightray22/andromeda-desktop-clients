@@ -51,7 +51,12 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool 
 {
     std::string fsid; try
     {
-        if (haveItems) LoadItemsFrom(data);
+        if (haveItems)
+        {
+            ItemLockMap lockMap; // empty, no existing
+            const SharedLockW itemLock(GetWriteLock());
+            LoadItemsFrom(data, lockMap, itemLock);
+        }
 
         data.at("filesystem").get_to(fsid);
     }
@@ -62,15 +67,15 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool 
 }
 
 /*****************************************************/
-void PlainFolder::SubLoadItems()
+void PlainFolder::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
 {
     ITDBG_INFO("()");
 
-    LoadItemsFrom(mBackend.GetFolder(GetID()));
+    LoadItemsFrom(mBackend.GetFolder(GetID()), itemsLocks, itemLock);
 }
 
 /*****************************************************/
-void PlainFolder::LoadItemsFrom(const nlohmann::json& data)
+void PlainFolder::LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& itemLock)
 {
     ITDBG_INFO("()");
 
@@ -95,7 +100,7 @@ void PlainFolder::LoadItemsFrom(const nlohmann::json& data)
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    SyncContents(newItems);
+    SyncContents(newItems, itemsLocks, itemLock);
 }
 
 /*****************************************************/

@@ -46,91 +46,91 @@ static inline FuseAdapter& GetFuseAdapter()
 /*****************************************************/
 static inline Item::ScopeLocked GetItemByPath(const std::string& path)
 {
-    FuseAdapter& adapter { GetFuseAdapter() };
-    return adapter.GetRootFolder()->GetItemByPath(path, adapter.GetRootLock());
+    return GetFuseAdapter().GetRootFolder()->GetItemByPath(path);
 }
 
 /*****************************************************/
 static inline File::ScopeLocked GetFileByPath(const std::string& path)
 {
-    FuseAdapter& adapter { GetFuseAdapter() };
-    return adapter.GetRootFolder()->GetFileByPath(path, adapter.GetRootLock());
+    return GetFuseAdapter().GetRootFolder()->GetFileByPath(path);
 }
 
 /*****************************************************/
 static inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
 {
-    FuseAdapter& adapter { GetFuseAdapter() };
-    return adapter.GetRootFolder()->GetFolderByPath(path, adapter.GetRootLock());
+    return GetFuseAdapter().GetRootFolder()->GetFolderByPath(path);
 }
 
 /*****************************************************/
-static int CatchAsErrno(const std::string& fname, std::function<int()> func)
+static int CatchAsErrno(const std::string& fname, std::function<int()> func, const char* path)
 {
     try { return func(); }
+
+    #define SDBG_INFO_EXC(e) SDBG_INFO(": " << fname << "... " << path << ": " << e.what());
+    #define SDBG_ERROR_EXC(e) SDBG_ERROR(": " << fname << "... " << path << ": " << e.what());
 
     // Item exceptions
     catch (const Folder::NotFileException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -EISDIR;
+        SDBG_INFO_EXC(e); return -EISDIR;
     }
     catch (const Folder::NotFolderException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOTDIR;
+        SDBG_INFO_EXC(e); return -ENOTDIR;
     }
     catch (const Folder::NotFoundException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
+        SDBG_INFO_EXC(e); return -ENOENT;
     }
     catch (const Folder::DuplicateItemException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -EEXIST;
+        SDBG_INFO_EXC(e); return -EEXIST;
     }
     catch (const Folder::ModifyException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
+        SDBG_INFO_EXC(e); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
+        SDBG_INFO_EXC(e); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
+        SDBG_INFO_EXC(e); return -EROFS;
     }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOTSUP;
+        SDBG_INFO_EXC(e); return -ENOTSUP;
     }
     catch (const BackendImpl::ReadOnlyFSException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -EROFS;
+        SDBG_INFO_EXC(e); return -EROFS;
     }
     catch (const BackendImpl::DeniedException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -EACCES;
+        SDBG_INFO_EXC(e); return -EACCES;
     }
     catch (const BackendImpl::NotFoundException& e)  
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOENT;
+        SDBG_INFO_EXC(e); return -ENOENT;
     }
     catch (const CacheManager::MemoryException& e)
     {
-        SDBG_INFO(": " << fname << "... " << e.what()); return -ENOMEM;
+        SDBG_INFO_EXC(e); return -ENOMEM;
     }
 
     // Error exceptions
     catch (const HTTPRunner::ConnectionException& e)
     {
-        SDBG_ERROR("... " << fname << "... " << e.what()); return -EHOSTDOWN;
+        SDBG_ERROR_EXC(e); return -EHOSTDOWN;
     }
     catch (const BaseException& e) 
     // BaseRunner::EndpointException (HTTP endpoint errors)
     // BackendImpl::Exception (others should not happen)
     {
-        SDBG_ERROR("... " << fname << "... " << e.what()); return -EIO;
+        SDBG_ERROR_EXC(e); return -EIO;
     }
 }
 
@@ -328,7 +328,7 @@ int FuseOperations::access(const char* path, int mask)
         #endif // W_OK
             
         return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 // TODO use -o default_permissions and get rid of both of these?
@@ -362,7 +362,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
         }
 
         return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -384,7 +384,7 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
         }
 
         return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -401,7 +401,7 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
     {
         Item::ScopeLocked item { GetItemByPath(path) };
         item_stat(item, item->GetReadLock(), stbuf); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -418,8 +418,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     return CatchAsErrno(__func__,[&]()->int
     {
         Folder::ScopeLocked parent { GetFolderByPath(path) };
-        SharedLockR parentLock { parent->GetReadLock() };
-        Folder::LockedItemMap items { parent->GetItems(parentLock) };
+        Folder::LockedItemMap items { parent->GetItems() };
 
         sDebug.Info([&](std::ostream& str){ 
             str << fname << "... #items:" << items.size(); });
@@ -456,7 +455,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
         }
 
         return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -475,7 +474,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
         const SharedLockW parentLock { parent->GetWriteLock() };
 
         parent->CreateFile(name, parentLock); return FUSE_SUCCESS;
-    });
+    }, fullpath);
 }
 
 /*****************************************************/
@@ -494,7 +493,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
         const SharedLockW parentLock { parent->GetWriteLock() };
 
         parent->CreateFolder(name, parentLock); return FUSE_SUCCESS;
-    });
+    }, fullpath);
 }
 
 /*****************************************************/
@@ -512,7 +511,7 @@ int FuseOperations::unlink(const char* path)
         Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(file)) };
 
         file->Delete(scopeLock, fileLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -532,7 +531,7 @@ int FuseOperations::rmdir(const char* path)
         Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(folder)) };
 
         folder->Delete(scopeLock, folderLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -579,7 +578,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
         }
 
         return FUSE_SUCCESS;
-    });
+    }, oldpath);
 }
 
 /*****************************************************/
@@ -596,7 +595,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
         const SharedLockR fileLock { file->GetReadLock() };
 
         return static_cast<int>(file->ReadBytesMax(buf, static_cast<uint64_t>(off), size, fileLock));
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -615,7 +614,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
         file->WriteBytes(buf, static_cast<uint64_t>(off), size, fileLock); 
         
         return static_cast<int>(size);
-    });
+    }, path);
 }
 
 // TODO maybe should only FlushCache() on fsync, not flush? seems to be flush
@@ -633,7 +632,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -648,7 +647,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -663,7 +662,7 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
         const SharedLockW folderLock { folder->GetWriteLock() };
 
         folder->FlushCache(folderLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -678,7 +677,7 @@ int FuseOperations::release(const char* path, struct fuse_file_info* fi)
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -699,7 +698,7 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->Truncate(static_cast<uint64_t>(size), fileLock); return FUSE_SUCCESS;
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -718,7 +717,7 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
     return CatchAsErrno(__func__,[&]()->int
     {
         GetItemByPath(path); return FUSE_SUCCESS; // no-op
-    });
+    }, path);
 }
 
 /*****************************************************/
@@ -737,7 +736,7 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_fi
     return CatchAsErrno(__func__,[&]()->int
     {
         GetItemByPath(path); return FUSE_SUCCESS; // no-op
-    });
+    }, path);
 }
 
 } // namespace AndromedaFuse

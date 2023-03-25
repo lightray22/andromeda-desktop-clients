@@ -60,22 +60,27 @@ public:
     virtual Type GetType() const override final { return Type::FOLDER; }
 
     /** Load the item with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual Item::ScopeLocked GetItemByPath(std::string path, const SharedLock& itemLock) final;
+    virtual Item::ScopeLocked GetItemByPath(std::string path) final;
 
     /** Load the file with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual File::ScopeLocked GetFileByPath(const std::string& path, const SharedLock& itemLock) final;
+    virtual File::ScopeLocked GetFileByPath(const std::string& path) final;
 
     /** Load the folder with the given relative path, returning it with a pre-checked ScopeLock */
-    virtual Folder::ScopeLocked GetFolderByPath(const std::string& path, const SharedLock& itemLock) final;
+    virtual Folder::ScopeLocked GetFolderByPath(const std::string& path) final;
 
     /** Map of sub-item name to ScopeLocked Item objects */
     typedef std::map<std::string, Item::ScopeLocked> LockedItemMap;
 
-    /** Load the map of child items */
-    virtual LockedItemMap GetItems(const SharedLock& itemLock) final;
+    /** 
+     * Load and return the map of scope-locked child items 
+     * Will acquire a write lock as this may involve reloading from the server!
+     * @return map of all children with accompanying scope locks
+     */
+    virtual LockedItemMap GetItems() final;
+    virtual LockedItemMap GetItems(const SharedLockW& itemLock) final;
 
     /** Returns the count of child items */
-    virtual size_t CountItems(const SharedLock& itemLock) final;
+    virtual size_t CountItems(const SharedLockW& itemLock) final;
 
     /** Create a new subfile with the given name */
     virtual void CreateFile(const std::string& name, const SharedLockW& itemLock) final;
@@ -87,10 +92,15 @@ public:
     virtual void DeleteItem(const std::string& name, const SharedLockW& itemLock) final;
 
     /** Rename the subitem oldName to newName, optionally overwrite */
-    virtual void RenameItem(const std::string& oldName, const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) final;
+    virtual void RenameItem(const std::string& oldName, const std::string& newName, 
+        const SharedLockW& itemLock, bool overwrite = false) final;
 
-    /** Move the subitem name to parent folder, optionally overwrite */
-    virtual void MoveItem(const std::string& name, Folder& newParent, const SharedLockW& itemLock, bool overwrite = false) final;
+    /** 
+     * Move the subitem name to parent folder, optionally overwrite 
+     * @param itemsLocks a lock pair for both this and the new parent
+     */
+    virtual void MoveItem(const std::string& name, Folder& newParent, 
+        const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
 
     virtual void FlushCache(const Andromeda::SharedLockW& itemLock, bool nothrow = false) override;
 
@@ -107,13 +117,14 @@ protected:
 
     typedef std::unique_lock<std::mutex> UniqueLock;
 
-    // TODO !! mItemMap, locking LoadItems, SubLoadItems, SyncContents (W lock? item map lock?)
-
     /** Makes sure mItemMap is populated and refreshed */
-    virtual void LoadItems();
+    virtual void LoadItems(const SharedLockW& itemLock, bool force = false);
 
-    /** populate itemMap from the backend */
-    virtual void SubLoadItems() = 0;
+    /** Map consisting of an item name -> read lock for the item */
+    typedef std::map<std::string, SharedLockR> ItemLockMap;
+
+    /** Populates the item list with items from the backend */
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) = 0;
 
     /** Function that returns a new Item given its JSON data */
     typedef std::function<std::unique_ptr<Item>(const nlohmann::json&)> NewItemFunc;
@@ -121,8 +132,13 @@ protected:
     /** Map consisting of an item name -> a pair of its JSON data and construct function */
     typedef std::map<std::string, std::pair<const nlohmann::json&, NewItemFunc>> NewItemMap;
 
-    /** Synchronizes in-memory content using the given map with JSON from the backend */
-    virtual void SyncContents(const NewItemMap& newItems);
+    /** 
+     * Synchronizes in-memory content using the given new item map
+     * @param newItems map with items JSON from the backend
+     * @param itemsLocks read locks for every item, locked before the backend was read
+     * @param itemLock writeLock for this folder
+     */
+    virtual void SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& itemLock);
 
     /** The folder-type-specific create subfile */
     virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) = 0;
@@ -135,9 +151,6 @@ protected:
 
     /** map of subitems */
     ItemMap mItemMap;
-
-    /** Mutex that protects that item map between readers */
-    std::mutex mItemsMutex;
 
     /** true if itemMap is loaded */
     bool mHaveItems { false };

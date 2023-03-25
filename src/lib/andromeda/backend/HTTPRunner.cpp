@@ -184,7 +184,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
 {
     MDBG_INFO("() HTTP:" << response.status);
 
-    doRetry = (canRetry && response.status == 503); 
+    doRetry = (canRetry && (response.status == 500 || response.status == 503)); // TODO should not retry on 500 (fix server)
     if (doRetry) return ""; // early return
 
     // if redirected, should remember it for next time

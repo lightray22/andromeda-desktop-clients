@@ -55,10 +55,10 @@ protected:
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void SubLoadItems() override;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
 
-    /** Populate/merge itemMap using the given files/folders JSON */
-    virtual void LoadItemsFrom(const nlohmann::json& data);
+    /** Populates the item list with items using the given files/folders JSON */
+    virtual void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& itemLock);
 
     virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override;
 

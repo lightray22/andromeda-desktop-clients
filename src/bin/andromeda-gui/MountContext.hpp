@@ -45,7 +45,7 @@ public:
      * Create a new MountContext
      * @param backend the backend resource to use
      * @param homeRel if true, mountPath is $HOME-relative
-     * @param mountPath filesystem path to mount
+     * @param mountPath filesystem path to mount - must already exist if not homeRel
      * @param options FUSE adapter options
      */
     MountContext(Andromeda::Backend::BackendImpl& backend,

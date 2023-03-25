@@ -105,6 +105,8 @@ void File::Refresh(const nlohmann::json& data, const SharedLockW& itemLock)
 
         uint64_t newSize;
         data.at("size").get_to(newSize);
+        // TODO use server mtime once supported here to check for changing
+        // will also need a mBackendTime in case of dirty writes
         if (newSize != mPageBackend->GetBackendSize(itemLock))
             mPageManager->RemoteChanged(newSize, itemLock);
     }

@@ -412,7 +412,7 @@ void CacheManager::DoPageEvictions()
             EvictSet& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
-            if (!evictSet.first) 
+            if (!evictSet.first) // scope lock
                 RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {
@@ -487,7 +487,7 @@ void CacheManager::DoPageFlushes()
             FlushSet& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
-            if (!flushSet.first) 
+            if (!flushSet.first) // scope lock
                 RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {

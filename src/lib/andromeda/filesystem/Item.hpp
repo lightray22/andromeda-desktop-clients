@@ -62,6 +62,9 @@ public:
     /** Returns a write lock for this item */
     inline SharedLockW GetWriteLock() { return SharedLockW(mItemMutex); }
 
+    /** Returns a dual write lock for this item and another (deadlock safe) */
+    inline SharedLockW::LockPair GetWriteLockPair(Item& item) { return SharedLockW::get_pair(mItemMutex, item.mItemMutex); }
+
     virtual ~Item();
 
     /** API date format */
@@ -107,19 +110,28 @@ public:
     virtual void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& itemLock);
 
     /** 
-     * Delete this item (and its contents if a folder) 
+     * Delete this item (and its contents if a folder)
+     * If the item has a parent, the delete will be done by calling parent->DeleteItem()
      * @param scopeLock reference to scopeLock which will be unlocked
+     * @param itemLock lock for self - if the item has a parent, this will be unlocked!
+     * @throw Folder::NotFoundException if the item is concurrently changed (call through parent to prevent)
      */
     virtual void Delete(ScopeLocked& scopeLock, Andromeda::SharedLockW& itemLock) final;
 
-    /** Set this item's name to the given name, optionally overwrite existing */
+    /** 
+     * Set this item's name to the given name, optionally overwrite existing 
+     * @param itemLock lock for self - if the item has a parent, this will be unlocked!
+     * @throw Folder::NotFoundException if the item is concurrently changed (call through parent to prevent)
+     */
     virtual void Rename(const std::string& newName, Andromeda::SharedLockW& itemLock, bool overwrite = false) final;
 
     /** 
-     * Move this item to the given parent folder, optionally overwrite existing 
-     * REQUIRES that the item currently has a parent
+     * Move this item to the given parent folder, optionally overwrite existing  - MUST have a existing parent!
+     * This will also temporarily get a W lock on the newParent (deadlock-safe)
+     * @param itemLock lock for self - this will be unlocked!
+     * @throw Folder::NotFoundException if the item is concurrently changed (call through parent to prevent)
      */
-    virtual void Move(Folder& newParent, Andromeda::SharedLockW& itemLock, bool overwrite = false) final;
+    virtual void Move(Folder& newParent, SharedLockW& itemLock, bool overwrite = false) final;
 
     /** 
      * Flushes all dirty pages and metadata to the backend

@@ -22,9 +22,9 @@ SuperRoot::SuperRoot(BackendImpl& backend) :
 }
 
 /*****************************************************/
-void SuperRoot::LoadItems()
+void SuperRoot::LoadItems(const SharedLockW& itemLock, bool force)
 {
-    if (mHaveItems) return; // never refresh
+    if (mHaveItems) return; // ignore force, never refresh
 
     MDBG_INFO("()");
 

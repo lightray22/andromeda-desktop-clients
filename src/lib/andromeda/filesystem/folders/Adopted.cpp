@@ -20,11 +20,11 @@ Adopted::Adopted(BackendImpl& backend, Folder& parent) :
 }
 
 /*****************************************************/
-void Adopted::SubLoadItems()
+void Adopted::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
 {
     MDBG_INFO("()");
 
-    LoadItemsFrom(mBackend.GetAdopted());
+    LoadItemsFrom(mBackend.GetAdopted(), itemsLocks, itemLock);
 }
 
 } // namespace Andromeda

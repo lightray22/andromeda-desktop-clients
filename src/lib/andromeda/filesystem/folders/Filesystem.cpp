@@ -36,13 +36,16 @@ Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder*
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    if (mId.empty()) SubLoadItems(); // populates ID
+    { // lock scope
+        const SharedLockW itemLock(GetWriteLock());
+        if (mId.empty()) LoadItems(itemLock, true); // populates ID
+    }
 
     return mId;
 }
 
 /*****************************************************/
-void Filesystem::SubLoadItems()
+void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
 {
     ITDBG_INFO("()");
 
@@ -55,7 +58,7 @@ void Filesystem::SubLoadItems()
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    LoadItemsFrom(data);
+    LoadItemsFrom(data, itemsLocks, itemLock);
 }
 
 } // namespace Andromeda

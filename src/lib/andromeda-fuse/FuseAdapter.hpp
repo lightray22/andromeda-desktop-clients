@@ -12,7 +12,6 @@
 #include "FuseOptions.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/SharedMutex.hpp"
 #include "andromeda/Utilities.hpp"
 #include "andromeda/filesystem/Folder.hpp"
 
@@ -89,9 +88,6 @@ public:
     /** Returns the root folder with a scope lock */
     inline Andromeda::Filesystem::Folder::ScopeLocked& GetRootFolder() { return mRootFolder; }
     
-    /** Returns the read lock on the root folder */
-    inline const Andromeda::SharedLockR& GetRootLock() const { return mRootLock; }
-
     /** Print version text to stdout */
     static void ShowVersionText();
 
@@ -114,7 +110,6 @@ private:
     FuseOptions mOptions;
 
     Andromeda::Filesystem::Folder::ScopeLocked mRootFolder;
-    Andromeda::SharedLockR mRootLock;
 
     std::thread mFuseThread;
 

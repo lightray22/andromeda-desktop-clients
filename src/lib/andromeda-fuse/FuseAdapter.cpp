@@ -261,8 +261,7 @@ struct FuseSignals
 /*****************************************************/
 FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options) :
     mMountPath(mountPath), mOptions(options),
-    mRootFolder(root.TryLockScope()), 
-    mRootLock(root.GetReadLock())
+    mRootFolder(root.TryLockScope()) // assume valid
 {
     SDBG_INFO("(path:" << mMountPath << ")");
 }
@@ -394,7 +393,6 @@ FuseAdapter::~FuseAdapter()
         mFuseThread.join();
     }
 
-    mRootLock.unlock();
     SharedLockW rootLock { mRootFolder->GetWriteLock() };
     mRootFolder->FlushCache(rootLock, true); // TODO revisit FUSE destroy
 

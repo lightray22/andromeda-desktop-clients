@@ -22,8 +22,15 @@ public:
     inline bool try_lock() noexcept
     {
         std::lock_guard<std::mutex> llock(mMutex);
-        if (!mAvailable) return false;
-        --mAvailable; return true;
+
+        const size_t waitIndex { ++mCurWait };
+        if (!mAvailable || waitIndex + mAvailable != mCurSignal) 
+        {
+            --mCurWait; // restore
+            return false;
+        }
+        --mAvailable; 
+        return true;
     }
 
     inline void lock() noexcept

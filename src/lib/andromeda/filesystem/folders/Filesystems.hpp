@@ -23,7 +23,7 @@ public:
 
 protected:
 
-    virtual void SubLoadItems() override;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
 
     virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
 

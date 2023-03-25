@@ -29,7 +29,7 @@ public:
 
 protected:
 
-    virtual void SubLoadItems() override;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
     
     virtual void SubDelete(const SharedLockW& itemLock) override { throw ModifyException(); }
 

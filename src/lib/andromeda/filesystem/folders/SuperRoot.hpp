@@ -21,9 +21,9 @@ public:
 
 protected:
 
-    virtual void LoadItems() override;
+    virtual void LoadItems(const SharedLockW& itemLock, bool force = false) override;
 
-    virtual void SubLoadItems() override { }; // unused
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override { }; // unused
 
     virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
 
