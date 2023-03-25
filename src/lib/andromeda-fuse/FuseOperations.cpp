@@ -134,44 +134,6 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     }
 }
 
-/** Class to track and print FUSE concurrency */
-class ThreadsPrint // TODO remove me later?
-{
-public:
-    inline ThreadsPrint(std::string func, Andromeda::Debug& debug) : 
-        mFunc(func), mDebug(debug)
-    {
-        mDebug.Info([&](std::ostream& str)
-        {
-            std::unique_lock<std::mutex> llock(sMutex);
-            ++sThreads; sPeakThreads = std::max(sThreads, sPeakThreads);
-            str << mFunc << "() ENTER! threads:" << sThreads << " peakThreads:" << sPeakThreads;
-        });
-    }
-
-    inline ~ThreadsPrint()
-    {
-        mDebug.Info([&](std::ostream& str)
-        { 
-            std::unique_lock<std::mutex> llock(sMutex);
-            --sThreads; sPeakThreads = std::max(sThreads, sPeakThreads);
-            str << mFunc << "() EXIT! threads:" << sThreads << " peakThreads:" << sPeakThreads; 
-        });
-    }
-
-private:
-    std::string mFunc;
-    Andromeda::Debug& mDebug;
-
-    static size_t sThreads;
-    static size_t sPeakThreads;
-    static std::mutex sMutex;
-};
-
-size_t ThreadsPrint::sThreads { 0 };
-size_t ThreadsPrint::sPeakThreads { 0 };
-std::mutex ThreadsPrint::sMutex;
-
 /*****************************************************/
 #if LIBFUSE2
 void* FuseOperations::init(struct fuse_conn_info* conn)
@@ -180,7 +142,6 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 #endif // LIBFUSE2
 {
     SDBG_INFO("()");
-    ThreadsPrint(__func__,sDebug);
 
 #if !LIBFUSE2
     conn->time_gran = 1000; // PHP microseconds
@@ -204,7 +165,6 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
 int FuseOperations::statfs(const char *path, struct statvfs* buf)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     buf->f_namemax = 255;
 
@@ -309,7 +269,6 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
 int FuseOperations::access(const char* path, int mask)
 {
     SDBG_INFO("(path:" << path << ", mask:" << mask << ")");
-    ThreadsPrint(__func__,sDebug);
 
     #if defined(W_OK)
         static const std::string fname(__func__);
@@ -337,7 +296,6 @@ int FuseOperations::access(const char* path, int mask)
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
-    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
@@ -369,7 +327,6 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
-    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
@@ -395,7 +352,6 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
 #endif // LIBFUSE2
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -412,7 +368,6 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #endif // LIBFUSE2
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
@@ -466,7 +421,6 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
     const std::string& name { pair.second };
 
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -485,7 +439,6 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
     const std::string& name { pair.second };
     
     SDBG_INFO("(path:" << path << ", name:" << name << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -500,7 +453,6 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 int FuseOperations::unlink(const char* path)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -518,7 +470,6 @@ int FuseOperations::unlink(const char* path)
 int FuseOperations::rmdir(const char* path)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -548,8 +499,6 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
     Utilities::StringPair pair1(Utilities::splitPath(newpath));
     const std::string& newPath { pair1.first };  
     const std::string& newName { pair1.second };
-
-    ThreadsPrint(__func__,sDebug);
 
     SDBG_INFO("... oldPath:" << oldPath << ", oldName:" << oldName);
     SDBG_INFO("... newPath:" << newPath << ", newName:" << newName);
@@ -585,7 +534,6 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
-    ThreadsPrint(__func__,sDebug);
 
     if (off < 0) return -EINVAL;
 
@@ -602,7 +550,6 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
-    ThreadsPrint(__func__,sDebug);
 
     if (off < 0) return -EINVAL;
 
@@ -624,7 +571,6 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -639,7 +585,6 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -654,7 +599,6 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -669,7 +613,6 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -688,7 +631,6 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 #endif // LIBFUSE2
 {
     SDBG_INFO("(path:" << path << ", size:" << size << ")");
-    ThreadsPrint(__func__,sDebug);
 
     if (size < 0) return -EINVAL;
 
@@ -712,7 +654,6 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
     if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
@@ -731,7 +672,6 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_fi
     if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 
     SDBG_INFO("(path:" << path << ")");
-    ThreadsPrint(__func__,sDebug);
 
     return CatchAsErrno(__func__,[&]()->int
     {
