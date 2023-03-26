@@ -130,9 +130,6 @@ private:
     std::unique_ptr<Filedata::PageManager> mPageManager;
     std::unique_ptr<Filedata::PageBackend> mPageBackend;
 
-    /** true if the file was deleted */
-    bool mDeleted { false };
-
     mutable Debug mDebug;
 };
 

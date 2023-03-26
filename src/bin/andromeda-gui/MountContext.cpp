@@ -69,8 +69,7 @@ MountContext::~MountContext()
 {
     MDBG_INFO("()");
 
-    const std::string mountPath { GetMountPath() }; // copy
-
+    const std::string mountPath { GetMountPath() }; // copy now
     mFuseAdapter.reset(); // unmount before removing dirs
 
     try

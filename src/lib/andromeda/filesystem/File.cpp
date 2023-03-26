@@ -123,8 +123,6 @@ void File::SubDelete(const DeleteLock& deleteLock)
 
     if (ExistsOnBackend(GetWriteLock()))
         mBackend.DeleteFile(GetID());
-
-    mDeleted = true; // TODO once threading works better this should not be required, see how pages use locks
 }
 
 /*****************************************************/
@@ -168,8 +166,6 @@ FSConfig::WriteMode File::GetWriteMode() const
 /*****************************************************/
 void File::FlushCache(const SharedLockW& itemLock, bool nothrow)
 {
-    if (mDeleted) return;
-
     ITDBG_INFO("()");
 
     if (!nothrow) mPageManager->FlushPages(itemLock);

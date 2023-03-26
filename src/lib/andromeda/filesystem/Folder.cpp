@@ -286,6 +286,8 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
 /*****************************************************/
 void Folder::FlushCache(const SharedLockW& itemLock, bool nothrow)
 {
+    ITDBG_INFO("()");
+    
     for (ItemMap::value_type& it : mItemMap)
     {
         SharedLockW subLock { it.second->GetWriteLock() };

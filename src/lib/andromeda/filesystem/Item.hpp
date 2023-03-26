@@ -64,7 +64,7 @@ public:
     class DeleteLock
     {
     public:
-        DeleteLock(Item& item): mItem(item){
+        explicit DeleteLock(Item& item): mItem(item){
             mItem.mScopeMutex.lock();
         }
         ~DeleteLock(){

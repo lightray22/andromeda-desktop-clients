@@ -394,7 +394,7 @@ FuseAdapter::~FuseAdapter()
     }
 
     SharedLockW rootLock { mRootFolder->GetWriteLock() };
-    mRootFolder->FlushCache(rootLock, true); // TODO revisit FUSE destroy
+    mRootFolder->FlushCache(rootLock, true); // dump caches
 
     SDBG_INFO("... return!");
 }
