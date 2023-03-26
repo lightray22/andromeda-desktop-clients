@@ -507,6 +507,7 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& dataLock)
             PageMap::iterator pageItTmp { pageIt }; // copy
 
             GetWriteList(pageItTmp, writeList, dataLock);
+            // writeList won't be empty as the start page is dirty
             FlushPageList(index, writeList, dataLock);
         }
 
@@ -530,7 +531,7 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockW& dataLock)
         GetWriteList(pageIt, writeList, dataLock);
     else { MDBG_INFO(" ... page not found"); }
     
-    // flush pages first as this may handle truncating
+    // might be an empty list - this is OK (will run FlushTruncate)
     size_t written { FlushPageList(index, writeList, dataLock) };
 
     MDBG_INFO("... return:" << written); return written;

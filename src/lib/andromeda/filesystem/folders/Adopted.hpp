@@ -31,6 +31,10 @@ protected:
 
     virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
     
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
+
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
+
     virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
     virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
