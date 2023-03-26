@@ -16,7 +16,7 @@ class Semaphor
 public:
 
     /** @param max maximum number of concurrent lock holders */
-    Semaphor(size_t max = 1, bool debug = false) :
+    Semaphor(size_t max = 1) :
         mAvailable(max), mMaxCount(max), mCurSignal(max+1) { }
 
     inline bool try_lock() noexcept

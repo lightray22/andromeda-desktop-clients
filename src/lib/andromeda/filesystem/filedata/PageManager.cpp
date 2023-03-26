@@ -126,14 +126,15 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& dat
         else StartFetch(index, fetchSize, pagesLock);
     }
 
-    MDBG_INFO("... waiting for pending " << index);
-
     PageMap::const_iterator it;
     std::exception_ptr fail;
 
     while ((it = mPages.find(index)) == mPages.end() &&
             !(fail = isFetchFailed(index, pagesLock)))
+    {
+        MDBG_INFO("... waiting for pending " << index);
         mPagesCV.wait(pagesLock);
+    }
 
     if (fail != nullptr)
     {
@@ -292,6 +293,8 @@ void PageManager::RemovePendingFetch(const uint64_t index, bool idxOnly, const U
             mPagesCV.notify_all(); return;
         }
     }
+
+    MDBG_ERROR("... page:" << index << " was not pending!");
 }
 
 /*****************************************************/
@@ -377,11 +380,11 @@ void PageManager::StartFetch(const uint64_t index, const size_t readCount, const
 /*****************************************************/
 void PageManager::FetchPages(const uint64_t index, const size_t count)
 {
-    MDBG_INFO("(index:" << index << " count:" << count << ")");
-
     // use a read-priority lock since the caller is waiting on us, 
     // if another write happens in the middle we would deadlock
-    SharedLockRP dataLock(GetReadPriLock());
+    SharedLockRP dataLock { GetReadPriLock() };
+
+    MDBG_INFO("(index:" << index << " count:" << count << ")");
 
     std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
 

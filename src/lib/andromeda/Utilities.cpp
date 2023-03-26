@@ -85,6 +85,7 @@ Utilities::StringPair Utilities::split(
 /*****************************************************/
 Utilities::StringPair Utilities::splitPath(const std::string& str)
 {
+    // TODO does this work if str ends with / ?
     return split(str,"/",0,true);
 }
 

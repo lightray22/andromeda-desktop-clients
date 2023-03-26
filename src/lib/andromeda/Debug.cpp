@@ -20,7 +20,7 @@ Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
 
 static std::ostream& sOutstr { std::cerr };
-//static std::ofstream sOutstr("debug.log", std::ofstream::out);
+//static std::ofstream sOutstr("/tmp/debug.log", std::ofstream::out);
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)

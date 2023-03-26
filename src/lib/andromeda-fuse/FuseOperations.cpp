@@ -280,7 +280,7 @@ int FuseOperations::access(const char* path, int mask)
     return CatchAsErrno(__func__,[&]()->int
     {
         #if defined(W_OK)
-            const Item::ScopeLocked item(GetItemByPath(path));
+            const Item::ScopeLocked item { GetItemByPath(path) };
 
             if ((mask & W_OK) && item->isReadOnly()) 
             {
@@ -304,7 +304,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         // TODO need to handle O_APPEND?
@@ -335,7 +335,7 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
     static const std::string fname(__func__);
     return CatchAsErrno(__func__,[&]()->int
     {
-        const Folder::ScopeLocked folder(GetFolderByPath(path));
+        const Folder::ScopeLocked folder { GetFolderByPath(path) };
 
         if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnly())
         {
@@ -430,7 +430,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked parent(GetFolderByPath(path));
+        Folder::ScopeLocked parent { GetFolderByPath(path) };
         const SharedLockW parentLock { parent->GetWriteLock() };
 
         parent->CreateFile(name, parentLock); return FUSE_SUCCESS;
@@ -448,7 +448,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked parent(GetFolderByPath(path));
+        Folder::ScopeLocked parent { GetFolderByPath(path) };
         const SharedLockW parentLock { parent->GetWriteLock() };
 
         parent->CreateFolder(name, parentLock); return FUSE_SUCCESS;
@@ -511,20 +511,19 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        Item::ScopeLocked item(GetItemByPath(oldpath));
+        Item::ScopeLocked item { GetItemByPath(oldpath) };
         SharedLockW itemLock { item->GetWriteLock() };
 
         if (oldPath != newPath && oldName != newName)
         {
-            //Folder::ScopeLocked parent(GetFolderByPath(newPath));
+            //Folder::ScopeLocked parent { GetFolderByPath(newPath) };
 
             SDBG_ERROR("NOT SUPPORTED YET!");
             return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)
         {
-            Folder::ScopeLocked newParent(GetFolderByPath(newPath));
-
+            Folder::ScopeLocked newParent { GetFolderByPath(newPath) };
             item->Move(*newParent, itemLock, true);
         }
         else if (oldName != newName) 
@@ -545,7 +544,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockR fileLock { file->GetReadLock() };
 
         return static_cast<int>(file->ReadBytesMax(buf, static_cast<uint64_t>(off), size, fileLock));
@@ -561,7 +560,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->WriteBytes(buf, static_cast<uint64_t>(off), size, fileLock); 
@@ -580,7 +579,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
@@ -594,7 +593,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
@@ -608,7 +607,7 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        Folder::ScopeLocked folder(GetFolderByPath(path));
+        Folder::ScopeLocked folder { GetFolderByPath(path) };
         const SharedLockW folderLock { folder->GetWriteLock() };
 
         folder->FlushCache(folderLock); return FUSE_SUCCESS;
@@ -622,7 +621,7 @@ int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->FlushCache(fileLock); return FUSE_SUCCESS;
@@ -642,7 +641,7 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        File::ScopeLocked file(GetFileByPath(path));
+        File::ScopeLocked file { GetFileByPath(path) };
         const SharedLockW fileLock { file->GetWriteLock() };
 
         file->Truncate(static_cast<uint64_t>(size), fileLock); return FUSE_SUCCESS;
@@ -663,6 +662,7 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
 
     return CatchAsErrno(__func__,[&]()->int
     {
+        // do GetItem just to check it exists
         GetItemByPath(path); return FUSE_SUCCESS; // no-op
     }, path);
 }
@@ -681,6 +681,7 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_fi
 
     return CatchAsErrno(__func__,[&]()->int
     {
+        // do GetItem just to check it exists
         GetItemByPath(path); return FUSE_SUCCESS; // no-op
     }, path);
 }

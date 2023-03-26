@@ -91,7 +91,8 @@ public:
     inline SharedLockW GetWriteLock() { return SharedLockW(mItemMutex); }
 
     /** Returns a dual write lock for this item and another (deadlock safe) */
-    inline SharedLockW::LockPair GetWriteLockPair(Item& item) { return SharedLockW::get_pair(mItemMutex, item.mItemMutex); }
+    inline SharedLockW::LockPair GetWriteLockPair(Item& item) { 
+        return SharedLockW::get_pair(mItemMutex, item.mItemMutex); }
 
     virtual ~Item(){ }
 

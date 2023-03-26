@@ -91,6 +91,7 @@ protected:
     // disallow copying
     SharedLock(const SharedLock&) = delete;
     SharedLock& operator=(const SharedLock&) = delete;
+    SharedLock& operator=(SharedLock&&) = delete;
 };
 
 /** Scope-managed shared read lock */
@@ -116,7 +117,8 @@ public:
     }
 
     explicit inline SharedLockR(SharedLockR&& lock) : // move
-         SharedLock(lock.mMutex, lock.mLocked){ }
+        SharedLock(lock.mMutex, lock.mLocked){ 
+            lock.mLocked = false; }
 };
 
 /** Scope-managed shared read-priority lock */
@@ -142,8 +144,8 @@ public:
     }
     
     explicit inline SharedLockRP(SharedLockRP&& lock) : // move
-         SharedLock(lock.mMutex, lock.mLocked){ }
-
+         SharedLock(lock.mMutex, lock.mLocked){ 
+            lock.mLocked = false; }
 };
 
 /** Scope-managed shared write lock */
@@ -169,14 +171,17 @@ public:
     }
 
     explicit inline SharedLockW(SharedLockW&& lock) : // move
-         SharedLock(lock.mMutex, lock.mLocked){ }
+         SharedLock(lock.mMutex, lock.mLocked){ 
+            lock.mLocked = false; }
 
     /** Get a SharedLockW for each of two locks, deadlock-safe */
     typedef std::pair<SharedLockW, SharedLockW> LockPair;
-    static LockPair get_pair(SharedMutex& mutex, SharedMutex& mutex2)
+    static LockPair get_pair(SharedMutex& mutex1, SharedMutex& mutex2)
     {
-        std::lock(mutex, mutex2); // no deadlock
-        return std::make_pair(SharedLockW(mutex,true), SharedLockW(mutex2,true));
+        std::lock(mutex1, mutex2); // no deadlock
+        return std::make_pair(
+            SharedLockW(mutex1, true), 
+            SharedLockW(mutex2, true));
     }
 
 protected:

@@ -59,7 +59,10 @@ public:
 
     virtual Type GetType() const override final { return Type::FOLDER; }
 
-    /** Load the item with the given relative path, returning it with a pre-checked ScopeLock */
+    /** 
+     * Load the item with the given relative path, returning it with a pre-checked ScopeLock 
+     * Will get a write lock on this folder - DO NOT ACQUIRE FIRST!
+     */
     virtual Item::ScopeLocked GetItemByPath(std::string path) final;
 
     /** Load the file with the given relative path, returning it with a pre-checked ScopeLock */
@@ -119,8 +122,8 @@ protected:
     /** Makes sure mItemMap is populated and refreshed */
     virtual void LoadItems(const SharedLockW& itemLock, bool force = false);
 
-    /** Map consisting of an item name -> read lock for the item */
-    typedef std::map<std::string, SharedLockR> ItemLockMap;
+    /** Map consisting of an item name -> write lock for the item */
+    typedef std::map<std::string, SharedLockW> ItemLockMap;
 
     /** Populates the item list with items from the backend */
     virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) = 0;

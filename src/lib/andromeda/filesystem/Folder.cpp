@@ -130,9 +130,9 @@ void Folder::LoadItems(const SharedLockW& itemLock, bool force)
     {
         ITDBG_INFO("... expired!");
 
-        ItemLockMap lockMap; // get locks for all existing items to prevent backend changes
+        ItemLockMap lockMap; // get locks for all existing items now to prevent backend changes
         for (const ItemMap::value_type& it : mItemMap)
-            lockMap.emplace(it.first, it.second->GetReadLock());
+            lockMap.emplace(it.first, it.second->GetWriteLock());
         // item scope lock not needed since mItemMap is locked
 
         SubLoadItems(lockMap, itemLock); // populate mItemMap
@@ -158,11 +158,8 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
             NewItemFunc newFunc(newIt.second.second);
             mItemMap[name] = newFunc(data);
         }
-        else 
-        {
-            const SharedLockW itLock { existIt->second->GetWriteLock() };
-            existIt->second->Refresh(data, itLock); // update existing
-        }
+        else existIt->second->Refresh(data, 
+                itemsLocks.at(existIt->first)); // update existing
     }
 
     ItemMap::const_iterator oldIt { mItemMap.begin() };
@@ -170,7 +167,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
     {
         if (newItems.find(oldIt->first) == newItems.end())
         {
-            SharedLockR& itLock { itemsLocks.at(oldIt->first) };
+            SharedLockW& itLock { itemsLocks.at(oldIt->first) };
 
             if (oldIt->second->GetType() != Type::FILE ||
                 dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend(itLock))
