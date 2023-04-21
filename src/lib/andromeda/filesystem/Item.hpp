@@ -240,7 +240,9 @@ private:
 
     Debug mDebug;
 
-    Item(const Item&) = delete; // no copy
+    Item(const Item&) = delete; // no copying
+    Item& operator=(const Item&) = delete;
+    Item& operator=(Item&&) = delete;
 };
 
 } // namespace Filesystem

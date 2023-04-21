@@ -225,6 +225,10 @@ private:
 
     /** Bandwidth measurement tool for mDirtyLimit */
     BandwidthMeasure mBandwidth;
+    
+    CacheManager(const CacheManager&) = delete; // no copying
+    CacheManager& operator=(const CacheManager&) = delete;
+    CacheManager& operator=(CacheManager&&) = delete;
 };
 
 } // namespace Filedata

@@ -90,11 +90,13 @@ void PlainFolder::LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLo
     {
         for (const nlohmann::json& fileJ : data.at("files"))
             newItems.emplace(std::piecewise_construct,
-                std::forward_as_tuple(fileJ.at("name")), std::forward_as_tuple(fileJ, newFile));
+                std::forward_as_tuple(fileJ.at("name")), 
+                std::forward_as_tuple(fileJ, newFile));
 
         for (const nlohmann::json& folderJ : data.at("folders"))
             newItems.emplace(std::piecewise_construct,
-                std::forward_as_tuple(folderJ.at("name")), std::forward_as_tuple(folderJ, newFolder));
+                std::forward_as_tuple(folderJ.at("name")), 
+                std::forward_as_tuple(folderJ, newFolder));
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

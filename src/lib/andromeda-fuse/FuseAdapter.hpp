@@ -127,6 +127,8 @@ private:
     std::exception_ptr mInitError;
 
     FuseAdapter(const FuseAdapter&) = delete; // no copying
+    FuseAdapter& operator=(const FuseAdapter&) = delete;
+    FuseAdapter& operator=(FuseAdapter&&) = delete;
 };
 
 } // namespace AndromedaFuse

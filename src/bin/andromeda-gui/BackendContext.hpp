@@ -39,6 +39,10 @@ private:
     std::unique_ptr<Andromeda::Backend::BackendImpl> mBackend;
 
     Andromeda::Debug mDebug;
+
+    BackendContext(const BackendContext&) = delete; // no copying
+    BackendContext& operator=(const BackendContext&) = delete;
+    BackendContext& operator=(BackendContext&&) = delete;
 };
 
 } // namespace AndromedaGui

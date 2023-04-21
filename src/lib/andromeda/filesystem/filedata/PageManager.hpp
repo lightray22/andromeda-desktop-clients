@@ -246,6 +246,10 @@ private:
     BandwidthMeasure mBandwidth;
     /** Page to/from backend interface */
     PageBackend& mPageBackend;
+    
+    PageManager(const PageManager&) = delete; // no copying
+    PageManager& operator=(const PageManager&) = delete;
+    PageManager& operator=(PageManager&&) = delete;
 };
 
 } // namespace Filedata

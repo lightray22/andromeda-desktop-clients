@@ -71,6 +71,10 @@ private:
     std::condition_variable mCV;
 
     Andromeda::Debug mDebug;
+    
+    RunnerPool(const RunnerPool&) = delete; // no copying
+    RunnerPool& operator=(const RunnerPool&) = delete;
+    RunnerPool& operator=(RunnerPool&&) = delete;
 };
 
 } // namespace Backend

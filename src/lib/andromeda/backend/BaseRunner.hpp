@@ -31,6 +31,7 @@ public:
         explicit EndpointException(const std::string& message) :
             BaseException("Endpoint Error: "+message) {}; };
 
+    BaseRunner() = default;
     virtual ~BaseRunner(){ }; // for unique_ptr
 
     /** Copies to a new runner with a new backend channel, but the same config */
@@ -70,6 +71,10 @@ public:
 
     /** Returns true if the backend requires sessions */
     virtual bool RequiresSession() const = 0;
+    
+    BaseRunner(const BaseRunner&) = delete; // no copying
+    BaseRunner& operator=(const BaseRunner&) = delete;
+    BaseRunner& operator=(BaseRunner&&) = delete;
 };
 
 } // namespace Backend

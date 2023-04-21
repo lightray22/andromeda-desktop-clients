@@ -105,6 +105,10 @@ private:
     Backend::BackendImpl& mBackend;
 
     Debug mDebug;
+    
+    PageBackend(const PageBackend&) = delete; // no copying
+    PageBackend& operator=(const PageBackend&) = delete;
+    PageBackend& operator=(PageBackend&&) = delete;
 };
 
 } // namespace Filedata

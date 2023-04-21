@@ -66,6 +66,10 @@ private:
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;
 
     Andromeda::Debug mDebug;
+
+    MountContext(const MountContext&) = delete; // no copying
+    MountContext& operator=(const MountContext&) = delete;
+    MountContext& operator=(MountContext&&) = delete;
 };
 
 } // namespace AndromedaGui

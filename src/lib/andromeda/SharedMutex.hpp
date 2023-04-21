@@ -88,8 +88,7 @@ protected:
     SharedMutex& mMutex;
     bool mLocked;
 
-    // disallow copying
-    SharedLock(const SharedLock&) = delete;
+    SharedLock(const SharedLock&) = delete; // no copying
     SharedLock& operator=(const SharedLock&) = delete;
     SharedLock& operator=(SharedLock&&) = delete;
 };
