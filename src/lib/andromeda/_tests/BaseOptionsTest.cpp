@@ -5,6 +5,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "BaseOptions.hpp"
+#include "Utilities.hpp"
 
 namespace Andromeda {
 
@@ -40,44 +41,44 @@ TEST_CASE("ParseArgs", "[BaseOptions]")
 {
     {
         const char* args[] { "test" };
-        TestOptions options; options.ParseArgs(1, args);
+        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
         REQUIRE(options.flags == BaseOptions::Flags{});
         REQUIRE(options.options == BaseOptions::Options{});
     }
 
     {
         const char* args[] { "test", "-d" };
-        TestOptions options; options.ParseArgs(2, args);
+        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
         REQUIRE(options.flags == BaseOptions::Flags{"d"});
         REQUIRE(options.options == BaseOptions::Options{});
     }
 
     {
-        const char* args[] { "test", "-a", "-b1", "-c", "2", "--test", "--test2", "val", "--test3", "" };
-        TestOptions options; options.ParseArgs(10, args);
+        const char* args[] { "test", "-a", "-b1", "-c", "2", "-x=5", "--y=6", "--test", "--test2", "val", "--test3", "" };
+        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
         REQUIRE(options.flags == BaseOptions::Flags{"a","test"});
-        REQUIRE(options.options == BaseOptions::Options{{"b","1"},{"c","2"},{"test2","val"},{"test3",""}});
+        REQUIRE(options.options == BaseOptions::Options{{"b","1"},{"c","2"},{"x","5"},{"y","6"},{"test2","val"},{"test3",""}});
     }
 
     {
         const char* args[] { "test", "-a", "test1", "" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
-        REQUIRE_THROWS_AS(options.ParseArgs(4, args, true), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args, true), BaseOptions::BadUsageException);
     }
 
     {
         const char* args[] { "test", "--a", "test1", "--" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
-        REQUIRE_THROWS_AS(options.ParseArgs(4, args, true), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args, true), BaseOptions::BadUsageException);
     }
 
     {
         const char* args[] { "test", "-a", "test1", "test2" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(4, args), BaseOptions::BadUsageException);
-        REQUIRE(options.ParseArgs(4, args, true) == 3);
+        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
+        REQUIRE(options.ParseArgs(ARRSIZE(args), args, true) == ARRSIZE(args)-1);
         REQUIRE(options.flags == BaseOptions::Flags{});
         REQUIRE(options.options == BaseOptions::Options{{"a","test1"}});
     }

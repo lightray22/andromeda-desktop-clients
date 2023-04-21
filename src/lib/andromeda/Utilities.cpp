@@ -124,6 +124,36 @@ bool Utilities::stringToBool(const std::string& stri)
 }
 
 /*****************************************************/
+uint64_t Utilities::stringToBytes(const std::string& stri)
+{
+    std::string str { trim(stri) };
+    if (str.empty()) return 0;
+
+    const char unit { str.at(str.size()-1) };
+    
+    if (unit < '0' || unit > '9')
+    {
+        str.pop_back(); str = trim(str);
+        if (str.empty()) return 0;
+    }
+
+    // stoul throws std::logic_error
+    uint64_t num { stoul(str) };
+
+    switch (unit)
+    {
+        case 'T': num *= 1024;
+        [[fallthrough]];
+        case 'G': num *= 1024;
+        [[fallthrough]];
+        case 'M': num *= 1024;
+        [[fallthrough]];
+        case 'K': num *= 1024;
+    }
+    return num;
+}
+
+/*****************************************************/
 void Utilities::SilentReadConsole(std::string& retval)
 {
     #if WIN32

@@ -52,11 +52,16 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool noerr)
             throw BadUsageException(
                 "empty key at arg "+std::to_string(i));
         
-        if (!ext && key.size() > 1)
+        if (key.find('=') != std::string::npos) // -x=3 or --x=3
+        {
+            const Utilities::StringPair pair { Utilities::split(key, "=") };
+            options.emplace(pair.first, pair.second);
+        }
+        else if (!ext && key.size() > 1)
             options.emplace(key.substr(0, 1), key.substr(1)); // -x3
         else if (argc > i+1 && argv[i+1][0] != '-')
-            options.emplace(key, argv[++i]); // -x 3
-        else flags.push_back(key); // -x
+            options.emplace(key, argv[++i]); // -x 3, --x 3
+        else flags.push_back(key); // -x, --x
     }
 
     for (const decltype(flags)::value_type& flag : flags) 

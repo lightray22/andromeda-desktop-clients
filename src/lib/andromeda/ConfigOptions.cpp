@@ -3,6 +3,7 @@
 
 #include "ConfigOptions.hpp"
 #include "BaseOptions.hpp"
+#include "Utilities.hpp"
 
 using namespace std::chrono;
 
@@ -59,7 +60,7 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "pagesize")
     {
-        try { pageSize = stoul(value); }
+        try { pageSize = Utilities::stringToBytes(value); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 

@@ -77,7 +77,7 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
     }
     else if (option == "stream-buffer-size")
     {
-        try { streamBufferSize = stoul(value); }
+        try { streamBufferSize = Utilities::stringToBytes(value); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 

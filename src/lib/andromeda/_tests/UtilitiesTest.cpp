@@ -5,6 +5,19 @@
 namespace Andromeda {
 
 /*****************************************************/
+TEST_CASE("arrsize", "[Utilities]")
+{
+    int test1[] { };
+    REQUIRE(ARRSIZE(test1) == 0);
+
+    int test2[] { 5, 6, 7 };
+    REQUIRE(ARRSIZE(test2) == 3);
+
+    const char* test3[] { "test", "1", "567", "abc" };
+    REQUIRE(ARRSIZE(test3) == 4);
+}
+
+/*****************************************************/
 TEST_CASE("explode", "[Utilities]")
 {
     typedef std::vector<std::string> Strings; Strings result;
@@ -160,6 +173,27 @@ TEST_CASE("stringToBool", "[Utilities]")
     REQUIRE(Utilities::stringToBool("yes") == true);
 
     REQUIRE(Utilities::stringToBool("test") == true);
+}
+
+/*****************************************************/
+TEST_CASE("stringToBytes", "[Utilities]")
+{
+    REQUIRE(Utilities::stringToBytes("") == 0);
+    REQUIRE(Utilities::stringToBytes(" ") == 0);
+    REQUIRE(Utilities::stringToBytes("0") == 0);
+
+    REQUIRE(Utilities::stringToBytes("1") == 1);
+    REQUIRE(Utilities::stringToBytes(" 4567 ") == 4567);
+
+    REQUIRE(Utilities::stringToBytes("1K") == 1024);
+    REQUIRE(Utilities::stringToBytes(" 5 K ") == 5*1024);
+    REQUIRE(Utilities::stringToBytes("256M") == 256*1024*1024);
+    REQUIRE(Utilities::stringToBytes("2837483M") == (uint64_t)2837483*1024*1024);
+    REQUIRE(Utilities::stringToBytes("57G") == (uint64_t)57*1024*1024*1024);
+    REQUIRE(Utilities::stringToBytes("13T") == (uint64_t)13*1024*1024*1024*1024);
+
+    REQUIRE_THROWS_AS(Utilities::stringToBytes("R2D2"), std::logic_error);
+
 }
 
 } // namespace Andromeda

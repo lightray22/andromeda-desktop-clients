@@ -3,6 +3,7 @@
 
 #include "CacheOptions.hpp"
 #include "andromeda/BaseOptions.hpp"
+#include "andromeda/Utilities.hpp"
 
 using namespace std::chrono;
 
@@ -34,7 +35,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     }
     else if (option == "memory-limit")
     {
-        try { memoryLimit = stoull(value); }
+        try { memoryLimit = Utilities::stringToBytes(value); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }

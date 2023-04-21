@@ -6,6 +6,8 @@
 #include <utility>
 #include <vector>
 
+#define ARRSIZE(x) (sizeof(x)/sizeof(decltype(*x)))
+
 namespace Andromeda {
 
 /** Misc Utilities */
@@ -57,6 +59,12 @@ public:
 
     /** Returns false if the trimmed string is a false-like value */
     static bool stringToBool(const std::string& stri);
+
+    /** 
+     * Returns a string like "4096" or "256M" as # of bytes 
+     * @throws std::logic_error if we fail to convert to a number
+     */
+    static uint64_t stringToBytes(const std::string& stri);
 
     /**
      * Silently read a line of input from stdin
