@@ -22,7 +22,7 @@ SuperRoot::SuperRoot(BackendImpl& backend) :
 }
 
 /*****************************************************/
-void SuperRoot::LoadItems(const SharedLockW& itemLock, bool force)
+void SuperRoot::LoadItems(const SharedLockW& thisLock, bool force)
 {
     if (mHaveItems) return; // ignore force, never refresh
 

@@ -99,9 +99,9 @@ Folder::ScopeLocked Folder::GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-Folder::LockedItemMap Folder::GetItems(const SharedLockW& itemLock)
+Folder::LockedItemMap Folder::GetItems(const SharedLockW& thisLock)
 {
-    LoadItems(itemLock); // populate
+    LoadItems(thisLock); // populate
 
     Folder::LockedItemMap itemMap;
     for (decltype(mItemMap)::value_type& it : mItemMap)
@@ -114,14 +114,14 @@ Folder::LockedItemMap Folder::GetItems(const SharedLockW& itemLock)
 }
 
 /*****************************************************/
-size_t Folder::CountItems(const SharedLockW& itemLock)
+size_t Folder::CountItems(const SharedLockW& thisLock)
 {
-    LoadItems(itemLock); // populate
+    LoadItems(thisLock); // populate
     return mItemMap.size();
 }
 
 /*****************************************************/
-void Folder::LoadItems(const SharedLockW& itemLock, bool force)
+void Folder::LoadItems(const SharedLockW& thisLock, bool force)
 {
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
@@ -135,14 +135,14 @@ void Folder::LoadItems(const SharedLockW& itemLock, bool force)
             lockMap.emplace(it.first, it.second->GetWriteLock());
         // item scope lock not needed since mItemMap is locked
 
-        SubLoadItems(lockMap, itemLock); // populate mItemMap
+        SubLoadItems(lockMap, thisLock); // populate mItemMap
         mRefreshed = steady_clock::now();
         mHaveItems = true;
     }
 }
 
 /*****************************************************/
-void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& itemLock)
+void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -186,39 +186,39 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
 }
 
 /*****************************************************/
-void Folder::CreateFile(const std::string& name, const SharedLockW& itemLock)
+void Folder::CreateFile(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    LoadItems(itemLock); // populate items
+    LoadItems(thisLock); // populate items
 
     if (mItemMap.count(name) || name.empty()) 
         throw DuplicateItemException();
 
-    SubCreateFile(name, itemLock);
+    SubCreateFile(name, thisLock);
 }
 
 /*****************************************************/
-void Folder::CreateFolder(const std::string& name, const SharedLockW& itemLock)
+void Folder::CreateFolder(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    LoadItems(itemLock); // populate items
+    LoadItems(thisLock); // populate items
 
     if (mItemMap.count(name) || name.empty()) 
         throw DuplicateItemException();
 
-    SubCreateFolder(name, itemLock);
+    SubCreateFolder(name, thisLock);
 }
 
 /*****************************************************/
-void Folder::DeleteItem(const std::string& name, const SharedLockW& itemLock)
+void Folder::DeleteItem(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    LoadItems(itemLock); // populate items
+    LoadItems(thisLock); // populate items
     ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
@@ -229,13 +229,13 @@ void Folder::DeleteItem(const std::string& name, const SharedLockW& itemLock)
 }
 
 /*****************************************************/
-void Folder::RenameItem(const std::string& oldName, const std::string& newName, const SharedLockW& itemLock, bool overwrite)
+void Folder::RenameItem(const std::string& oldName, const std::string& newName, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    LoadItems(itemLock); // populate items
+    LoadItems(thisLock); // populate items
     ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
     // item scope lock not needed since mItemMap is locked
@@ -284,7 +284,7 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
 }
 
 /*****************************************************/
-void Folder::FlushCache(const SharedLockW& itemLock, bool nothrow)
+void Folder::FlushCache(const SharedLockW& thisLock, bool nothrow)
 {
     ITDBG_INFO("()");
     

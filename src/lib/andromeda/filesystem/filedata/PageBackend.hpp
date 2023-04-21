@@ -46,13 +46,13 @@ public:
       const File::CreateFunc& createFunc, const File::UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend */
-    bool ExistsOnBackend(const SharedLock& dataLock) const { return mBackendExists; }
+    bool ExistsOnBackend(const SharedLock& thisLock) const { return mBackendExists; }
 
     /** Returns the file size on the backend */
-    uint64_t GetBackendSize(const SharedLock& dataLock) const { return mBackendSize; }
+    uint64_t GetBackendSize(const SharedLock& thisLock) const { return mBackendSize; }
 
     /** Inform us that the size on the backend has changed */
-    void SetBackendSize(uint64_t backendSize, const SharedLockW& dataLock) { mBackendSize = backendSize; }
+    void SetBackendSize(uint64_t backendSize, const SharedLockW& thisLock) { mBackendSize = backendSize; }
 
     /** Callback used to process fetched pages in FetchPages() */
     typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
@@ -63,7 +63,7 @@ public:
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
      */
-    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler, const SharedLock& dataLock);
+    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler, const SharedLock& thisLock);
 
     /** List of **consecutive** non-null page pointers */
     typedef std::list<Page*> PagePtrList;
@@ -75,13 +75,13 @@ public:
      * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockW& dataLock);
+    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockW& thisLock);
 
     /** Creates the file on the backend if not mBackendExists and feeds to file.Refresh() */
-    void FlushCreate(const SharedLockW& dataLock);
+    void FlushCreate(const SharedLockW& thisLock);
 
     /** Tell the backend to truncate to the given size, if mBackendExists */
-    void Truncate(const uint64_t newSize, const SharedLockW& dataLock);
+    void Truncate(const uint64_t newSize, const SharedLockW& thisLock);
 
 private:
 

@@ -23,7 +23,7 @@ Filesystems::Filesystems(BackendImpl& backend, Folder& parent) :
 }
 
 /*****************************************************/
-void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
+void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     MDBG_INFO("()");
 
@@ -46,7 +46,7 @@ void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemL
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    SyncContents(newItems, itemsLocks, itemLock);
+    SyncContents(newItems, itemsLocks, thisLock);
 }
 
 } // namespace Andromeda

@@ -43,7 +43,7 @@ PageBackend::PageBackend(File& file, const std::string& fileID, const size_t pag
 
 /*****************************************************/
 size_t PageBackend::FetchPages(const uint64_t index, const size_t count, 
-    const PageBackend::PageHandler& pageHandler, const SharedLock& dataLock)
+    const PageBackend::PageHandler& pageHandler, const SharedLock& thisLock)
 {
     MDBG_INFO("(index:" << index << " count:" << count << ")");
 
@@ -97,7 +97,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 }
 
 /*****************************************************/
-size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& dataLock)
+size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& thisLock)
 {
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
@@ -118,11 +118,11 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     MDBG_INFO("... WRITING " << buf.size() << " to " << writeStart);
 
     if (!mBackendExists && index != 0)
-        FlushCreate(dataLock); // can't use Upload() w/o first page
+        FlushCreate(thisLock); // can't use Upload() w/o first page
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mUploadFunc(mFile.GetName(dataLock),buf),dataLock);
+        mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),buf),thisLock);
         mBackendExists = true;
     }
     else mBackend.WriteFile(mFileID, writeStart, buf);
@@ -133,19 +133,19 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
 }
 
 /*****************************************************/
-void PageBackend::FlushCreate(const SharedLockW& dataLock)
+void PageBackend::FlushCreate(const SharedLockW& thisLock)
 {
     MDBG_INFO("()");
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mCreateFunc(mFile.GetName(dataLock)),dataLock);
+        mFile.Refresh(mCreateFunc(mFile.GetName(thisLock)),thisLock);
         mBackendExists = true;
     }
 }
 
 /*****************************************************/
-void PageBackend::Truncate(const uint64_t newSize, const SharedLockW& dataLock)
+void PageBackend::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
 {
     MDBG_INFO("(newSize:" << newSize << ")");
 

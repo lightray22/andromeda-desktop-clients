@@ -54,8 +54,7 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool 
         if (haveItems)
         {
             ItemLockMap lockMap; // empty, no existing
-            const SharedLockW itemLock(GetWriteLock());
-            LoadItemsFrom(data, lockMap, itemLock);
+            LoadItemsFrom(data, lockMap, GetWriteLock());
         }
 
         data.at("filesystem").get_to(fsid);
@@ -67,15 +66,15 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool 
 }
 
 /*****************************************************/
-void PlainFolder::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
+void PlainFolder::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
-    LoadItemsFrom(mBackend.GetFolder(GetID()), itemsLocks, itemLock);
+    LoadItemsFrom(mBackend.GetFolder(GetID()), itemsLocks, thisLock);
 }
 
 /*****************************************************/
-void PlainFolder::LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& itemLock)
+void PlainFolder::LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -100,11 +99,11 @@ void PlainFolder::LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLo
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    SyncContents(newItems, itemsLocks, itemLock);
+    SyncContents(newItems, itemsLocks, thisLock);
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& itemLock)
+void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
@@ -128,7 +127,7 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& item
 }
 
 /*****************************************************/
-void PlainFolder::SubCreateFolder(const std::string& name, const SharedLockW& itemLock)
+void PlainFolder::SubCreateFolder(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
@@ -153,7 +152,7 @@ void PlainFolder::SubDelete(const DeleteLock& deleteLock)
 }
 
 /*****************************************************/
-void PlainFolder::SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite)
+void PlainFolder::SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(name:" << newName << ")");
 
@@ -163,7 +162,7 @@ void PlainFolder::SubRename(const std::string& newName, const SharedLockW& itemL
 }
 
 /*****************************************************/
-void PlainFolder::SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite)
+void PlainFolder::SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(parent:" << parentID << ")");
 

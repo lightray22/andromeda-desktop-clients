@@ -44,7 +44,7 @@ Item::Item(BackendImpl& backend, const nlohmann::json& data) :
 }
 
 /*****************************************************/
-void Item::Refresh(const nlohmann::json& data, const SharedLockW& itemLock)
+void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -95,7 +95,7 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& itemLock)
 }
 
 /*****************************************************/
-Folder& Item::GetParent(const SharedLock& itemLock) const
+Folder& Item::GetParent(const SharedLock& thisLock) const
 {
     if (mParent == nullptr) 
         throw NullParentException();
@@ -123,11 +123,11 @@ bool Item::isReadOnly() const
 }
 
 /*****************************************************/
-void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& itemLock)
+void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
-    if (HasParent(itemLock))
+    if (HasParent(thisLock))
         throw HasParentException();
 
     SubDelete(deleteLock);
@@ -135,7 +135,7 @@ void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& itemLock)
 }
 
 /*****************************************************/
-void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& itemLock)
+void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -145,10 +145,10 @@ void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& itemLock)
 
     // The delete must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be deleted elsewhere - will cause NotFoundException
-    Folder::ScopeLocked parent { GetParent(itemLock).TryLockScope() };
+    Folder::ScopeLocked parent { GetParent(thisLock).TryLockScope() };
     if (!parent) throw Folder::NotFoundException();
 
-    itemLock.unlock();
+    thisLock.unlock();
     scopeLock.unlock();
 
     SharedLockW parentLock { parent->GetWriteLock() };
@@ -156,25 +156,25 @@ void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& itemLock)
 }
 
 /*****************************************************/
-void Item::RenameSelf(const std::string& newName, const SharedLockW& itemLock, bool overwrite)
+void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
 
-    if (HasParent(itemLock))
+    if (HasParent(thisLock))
         throw HasParentException();
 
-    SubRename(newName, itemLock, overwrite);
+    SubRename(newName, thisLock, overwrite);
 }
 
 /*****************************************************/
-void Item::Rename(const std::string& newName, SharedLockW& itemLock, bool overwrite)
+void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
 
     // The rename must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be renamed elsewhere - will cause NotFoundException
-    Folder& parent { GetParent(itemLock) };
-    itemLock.unlock();
+    Folder& parent { GetParent(thisLock) };
+    thisLock.unlock();
 
     // need a lock on the parent, not a lock on us
     SharedLockW parentLock { parent.GetWriteLock() };
@@ -183,14 +183,14 @@ void Item::Rename(const std::string& newName, SharedLockW& itemLock, bool overwr
 }
 
 /*****************************************************/
-void Item::Move(Folder& newParent, SharedLockW& itemLock, bool overwrite)
+void Item::Move(Folder& newParent, SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newParent:" << newParent.GetID() << ")");
 
     // The move must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be moved elsewhere - will cause NotFoundException
-    Folder& parent { GetParent(itemLock) };
-    itemLock.unlock();
+    Folder& parent { GetParent(thisLock) };
+    thisLock.unlock();
 
     // need a lock on the parent, not a lock on us
     SharedLockW::LockPair parentLocks { parent.GetWriteLockPair(newParent) };

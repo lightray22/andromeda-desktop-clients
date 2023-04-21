@@ -63,7 +63,7 @@ public:
     size_t GetPageSize() const { return mPageSize; }
 
     /** Returns the current file size including dirty writes */
-    uint64_t GetFileSize(const SharedLock& dataLock) const { return mFileSize; }
+    uint64_t GetFileSize(const SharedLock& thisLock) const { return mFileSize; }
 
     /** Returns a read lock for page data */
     inline SharedLockR GetReadLock() const { return mFile.GetReadLock(); }
@@ -82,64 +82,64 @@ public:
     ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
     /** Reads data from the given page index into buffer */
-    void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLock& dataLock);
+    void ReadPage(char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLock& thisLock);
 
     /** Writes data to the given page index from buffer */
-    void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& dataLock);
+    void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& thisLock);
 
     /** Returns true if the page at the given index is dirty */
-    bool isDirty(const uint64_t index, const SharedLockW& dataLock);
+    bool isDirty(const uint64_t index, const SharedLockW& thisLock);
 
     /** Removes the given page, writing it if dirty */
-    void EvictPage(const uint64_t index, const SharedLockW& dataLock);
+    void EvictPage(const uint64_t index, const SharedLockW& thisLock);
 
     /** 
      * Flushes the given page if dirty
      * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPage(const uint64_t index, const SharedLockW& dataLock);
+    size_t FlushPage(const uint64_t index, const SharedLockW& thisLock);
 
     /** Writes back all dirty pages - THREAD SAFE */
-    void FlushPages(const SharedLockW& dataLock);
+    void FlushPages(const SharedLockW& thisLock);
 
     /**
      * Informs us of the file changing on the backend - THREAD SAFE
      * @param backendSize new size according to the backend
      */
-    void RemoteChanged(const uint64_t backendSize, const SharedLockW& dataLock);
+    void RemoteChanged(const uint64_t backendSize, const SharedLockW& thisLock);
 
     /** Truncate pages according to the given size and inform the backend - THREAD SAFE */
-    void Truncate(const uint64_t newSize, const SharedLockW& dataLock);
+    void Truncate(const uint64_t newSize, const SharedLockW& thisLock);
 
 private:
 
     typedef std::unique_lock<std::mutex> UniqueLock;
 
     /** Returns the page at the given index and informs cacheMgr - use GetReadLock() first! */
-    const Page& GetPageRead(const uint64_t index, const SharedLock& dataLock);
+    const Page& GetPageRead(const uint64_t index, const SharedLock& thisLock);
 
     /** 
      * Returns the page at the given index and marks dirty/informs cacheMgr - use GetWriteLock() first! 
      * @param pageSize the desired size of the page for writing
      * @param partial if true, pre-populate the page with backend data
      */
-    Page& GetPageWrite(const uint64_t index, const size_t pageSize, const bool partial, const SharedLockW& dataLock);
+    Page& GetPageWrite(const uint64_t index, const size_t pageSize, const bool partial, const SharedLockW& thisLock);
 
     /** 
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
-     * MUST HAVE either dataLockW or pagesLock! (will be checked!)
+     * MUST HAVE either thisLockW or pagesLock! (will be checked!)
      */
-    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock* pagesLock, const SharedLockW* dataLock);
+    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock* pagesLock, const SharedLockW* thisLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
-    void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& dataLock);
+    void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& thisLock);
 
     /** 
      * Resizes an existing page to the given size, telling the CacheManager if cacheMgr
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
      */
-    void ResizePage(Page& page, const size_t pageSize, bool cacheMgr, const SharedLockW* dataLock = nullptr);
+    void ResizePage(Page& page, const size_t pageSize, bool cacheMgr, const SharedLockW* thisLock = nullptr);
 
     /** Returns true if the page at the given index is pending download */
     bool isFetchPending(const uint64_t index, const UniqueLock& pagesLock);
@@ -151,17 +151,17 @@ private:
      * Returns the read-ahead size to be used for the given VALID (mFileSize) index 
      * Returns 0 if the page exists or the index does not exist on the backend (see mBackendSize)
      */
-    size_t GetFetchSize(const uint64_t index, const SharedLock& dataLock, const UniqueLock& pagesLock);
+    size_t GetFetchSize(const uint64_t index, const SharedLock& thisLock, const UniqueLock& pagesLock);
 
     /** Starts a fetch if necessary to prepopulate some pages ahead of the given index (options.readAheadBuffer) */
-    void DoAdvanceRead(const uint64_t index, const SharedLock& dataLock, const UniqueLock& pagesLock);
+    void DoAdvanceRead(const uint64_t index, const SharedLock& thisLock, const UniqueLock& pagesLock);
 
     /** Spawns a thread to read some # of pages starting at the given VALID (mBackendSize) index */
     void StartFetch(const uint64_t index, const size_t readCount, const UniqueLock& pagesLock);
 
     /** 
      * Reads count# pages from the backend at the given index, adding to the page map
-     * Gets its own R dataLock and informs the cacheManager of all new pages
+     * Gets its own R thisLock and informs the cacheManager of all new pages
      */
     void FetchPages(const uint64_t index, const size_t count);
 
@@ -183,7 +183,7 @@ private:
      * @param[out] writeList reference to a list of pages to fill out - guaranteed not empty if pageIt is dirty
      * @return uint64_t the start index of the write list (not valid if writeList is empty!)
      */
-    uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const SharedLockW& dataLock);
+    uint64_t GetWriteList(PageMap::iterator& pageIt, PageBackend::PagePtrList& writeList, const SharedLockW& thisLock);
 
     /** 
      * Writes a series of **consecutive** pages (total < size_t)
@@ -192,11 +192,11 @@ private:
      * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& dataLock);
+    size_t FlushPageList(const uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& thisLock);
 
     /** Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
      * the file on the backend in case we did a truncate before it existed */
-    void FlushTruncate(const SharedLockW& dataLock);
+    void FlushTruncate(const SharedLockW& thisLock);
 
     Debug mDebug;
 

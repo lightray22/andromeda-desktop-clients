@@ -155,7 +155,7 @@ private:
 
     /** Calls flush on a page and updates the bandwidth measurement */
     template<class T>
-    void FlushPage(PageManager& pageMgr, const uint64_t index, const T& dataLock);
+    void FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock);
 
     /** Mutex to guard writing data structures */
     std::mutex mMutex;

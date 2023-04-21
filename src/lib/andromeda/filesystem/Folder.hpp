@@ -76,26 +76,26 @@ public:
 
     /** 
      * Load and return the map of scope-locked child items 
-     * @param itemLock need an exclusive lock since we may reload the map
+     * @param thisLock need an exclusive lock since we may reload the map
      * @return map of all children with accompanying scope locks
      */
-    virtual LockedItemMap GetItems(const SharedLockW& itemLock) final;
+    virtual LockedItemMap GetItems(const SharedLockW& thisLock) final;
 
     /** Returns the count of child items */
-    virtual size_t CountItems(const SharedLockW& itemLock) final;
+    virtual size_t CountItems(const SharedLockW& thisLock) final;
 
     /** Create a new subfile with the given name */
-    virtual void CreateFile(const std::string& name, const SharedLockW& itemLock) final;
+    virtual void CreateFile(const std::string& name, const SharedLockW& thisLock) final;
 
     /** Create a new subfolder with the given name */
-    virtual void CreateFolder(const std::string& name, const SharedLockW& itemLock) final;
+    virtual void CreateFolder(const std::string& name, const SharedLockW& thisLock) final;
 
     /** Delete the subitem with the given name */
-    virtual void DeleteItem(const std::string& name, const SharedLockW& itemLock) final;
+    virtual void DeleteItem(const std::string& name, const SharedLockW& thisLock) final;
 
     /** Rename the subitem oldName to newName, optionally overwrite */
     virtual void RenameItem(const std::string& oldName, const std::string& newName, 
-        const SharedLockW& itemLock, bool overwrite = false) final;
+        const SharedLockW& thisLock, bool overwrite = false) final;
 
     /** 
      * Move the subitem name to parent folder, optionally overwrite 
@@ -104,7 +104,7 @@ public:
     virtual void MoveItem(const std::string& name, Folder& newParent, 
         const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
 
-    virtual void FlushCache(const Andromeda::SharedLockW& itemLock, bool nothrow = false) override;
+    virtual void FlushCache(const Andromeda::SharedLockW& thisLock, bool nothrow = false) override;
 
 protected:
 
@@ -120,13 +120,13 @@ protected:
     typedef std::unique_lock<std::mutex> UniqueLock;
 
     /** Makes sure mItemMap is populated and refreshed */
-    virtual void LoadItems(const SharedLockW& itemLock, bool force = false);
+    virtual void LoadItems(const SharedLockW& thisLock, bool force = false);
 
     /** Map consisting of an item name -> write lock for the item */
     typedef std::map<std::string, SharedLockW> ItemLockMap;
 
     /** Populates the item list with items from the backend */
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) = 0;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) = 0;
 
     /** Function that returns a new Item given its JSON data */
     typedef std::function<std::unique_ptr<Item>(const nlohmann::json&)> NewItemFunc;
@@ -138,15 +138,15 @@ protected:
      * Synchronizes in-memory content using the given new item map
      * @param newItems map with items JSON from the backend
      * @param itemsLocks read locks for every item, locked before the backend was read
-     * @param itemLock writeLock for this folder
+     * @param thisLock writeLock for this folder
      */
-    virtual void SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& itemLock);
+    virtual void SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
     /** The folder-type-specific create subfile */
-    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) = 0;
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) = 0;
 
     /** The folder-type-specific create subfolder */
-    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) = 0;
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) = 0;
 
     /** Map of sub-item name to Item objects */
     typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;

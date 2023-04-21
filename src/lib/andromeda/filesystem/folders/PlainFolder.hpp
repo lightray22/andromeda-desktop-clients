@@ -55,20 +55,20 @@ protected:
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
     /** Populates the item list with items using the given files/folders JSON */
-    virtual void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& itemLock);
+    virtual void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
-    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override;
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;
 
-    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override;
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override;
 
     virtual void SubDelete(const DeleteLock& deleteLock) override;
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite) override;
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
 

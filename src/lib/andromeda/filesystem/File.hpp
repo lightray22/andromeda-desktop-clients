@@ -44,12 +44,12 @@ public:
 
     virtual ~File();
 
-    virtual void Refresh(const nlohmann::json& data, const SharedLockW& itemLock) override;
+    virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock) override;
 
     virtual Type GetType() const override { return Type::FILE; }
 
     /** Returns the total file size */
-    virtual uint64_t GetSize(const SharedLock& itemLock) const final;
+    virtual uint64_t GetSize(const SharedLock& thisLock) const final;
 
     /**
      * @brief Construct a File using backend data
@@ -78,7 +78,7 @@ public:
         const CreateFunc& createFunc, const UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend (false if waiting for flush) */
-    virtual bool ExistsOnBackend(const SharedLock& itemLock) const;
+    virtual bool ExistsOnBackend(const SharedLock& thisLock) const;
 
     /**
      * Read data from the file
@@ -87,7 +87,7 @@ public:
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength, const SharedLock& itemLock) final;
+    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength, const SharedLock& thisLock) final;
 
     /**
      * Read data from the file
@@ -96,7 +96,7 @@ public:
      * @param length exact number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual void ReadBytes(char* buffer, const uint64_t offset, const size_t length, const SharedLock& itemLock) final;
+    virtual void ReadBytes(char* buffer, const uint64_t offset, const size_t length, const SharedLock& thisLock) final;
 
     /**
      * Writes data to a file
@@ -104,20 +104,20 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& itemLock) final;
+    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock) final;
 
     /** Set the file size to the given value */
-    virtual void Truncate(uint64_t newSize, const SharedLockW& itemLock) final;
+    virtual void Truncate(uint64_t newSize, const SharedLockW& thisLock) final;
 
-    virtual void FlushCache(const SharedLockW& itemLock, bool nothrow = false) override;
+    virtual void FlushCache(const SharedLockW& thisLock, bool nothrow = false) override;
 
 protected:
 
     virtual void SubDelete(const DeleteLock& deleteLock) override;
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite) override;
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
 

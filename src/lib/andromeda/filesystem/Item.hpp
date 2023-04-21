@@ -109,10 +109,10 @@ public:
     virtual Backend::BackendImpl& GetBackend() const final { return mBackend; }
 
     /** Returns true if this item has a parent */
-    virtual bool HasParent(const SharedLock& itemLock) const { return mParent != nullptr; }
+    virtual bool HasParent(const SharedLock& thisLock) const { return mParent != nullptr; }
 
     /** Returns the parent folder */
-    virtual Folder& GetParent(const SharedLock& itemLock) const;
+    virtual Folder& GetParent(const SharedLock& thisLock) const;
 
     /** Returns true if this item has FSconfig */
     virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
@@ -121,45 +121,45 @@ public:
     virtual const FSConfig& GetFSConfig() const;
 
     /** Returns the item's name */
-    virtual const std::string& GetName(const SharedLock& itemLock) const final { return mName; }
+    virtual const std::string& GetName(const SharedLock& thisLock) const final { return mName; }
 
     /** Get the created time stamp */
-    virtual Date GetCreated(const SharedLock& itemLock) const final { return mCreated; }
+    virtual Date GetCreated(const SharedLock& thisLock) const final { return mCreated; }
 
     /** Get the modified time stamp */
-    virtual Date GetModified(const SharedLock& itemLock) const final { return mModified; }
+    virtual Date GetModified(const SharedLock& thisLock) const final { return mModified; }
 
     /** Get the accessed time stamp */
-    virtual Date GetAccessed(const SharedLock& itemLock) const final { return mAccessed; }
+    virtual Date GetAccessed(const SharedLock& thisLock) const final { return mAccessed; }
 
     /** Returns true if the item is read-only */
     virtual bool isReadOnly() const;
 
     /** Refresh the item given updated server JSON data */
-    virtual void Refresh(const nlohmann::json& data, const SharedLockW& itemLock);
+    virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock);
 
     /** Deletes this item (and its contents if a folder) - MUST NOT have an existing parent! */
-    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& itemLock) final;
+    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock) final;
 
     /** 
      * Delete this item (and its contents if a folder) - MUST have a existing parent!
      * The delete will be done by unlocking self then calling parent->DeleteItem()
      * @param scopeLock reference to scopeLock which will be unlocked
-     * @param itemLock temporary lock for self which will be unlocked
+     * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Delete(ScopeLocked& scopeLock, SharedLockW& itemLock) final;
+    virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock) final;
 
     /** Set this item's name to the given name, optionally overwrite existing - MUST NOT have an existing parent! */
-    virtual void RenameSelf(const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) final;
+    virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) final;
 
     /** 
      * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
      * The rename will be done by unlocking self then calling parent->RenameItem()
-     * @param itemLock temporary lock for self which will be unlocked
+     * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Rename(const std::string& newName, SharedLockW& itemLock, bool overwrite = false) final;
+    virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false) final;
 
     // TODO implement MoveSelf... move is hard because the parent wants the item as a unique_ptr which we can't provide from self
     // maybe have two separate maps - one for objects we own (unique_ptr) and one just for things we point to?
@@ -168,16 +168,16 @@ public:
      * Move this item to the given parent folder, optionally overwrite existing - MUST have a existing parent!
      * The move will be done by unlocking self then calling parent->MoveItem()
      * This will also temporarily get a W lock on the newParent (deadlock-safe)
-     * @param itemLock temporary lock for self which will be unlocked
+     * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Move(Folder& newParent, SharedLockW& itemLock, bool overwrite = false) final;
+    virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false) final;
 
     /** 
      * Flushes all dirty pages and metadata to the backend
      * @param nothrow if true, no exceptions are thrown
      */
-    virtual void FlushCache(const SharedLockW& itemLock, bool nothrow = false) = 0;
+    virtual void FlushCache(const SharedLockW& thisLock, bool nothrow = false) = 0;
 
 protected:
 
@@ -199,10 +199,10 @@ protected:
     virtual void SubDelete(const DeleteLock& deleteLock) = 0;
 
     /** Item type-specific rename */
-    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite) = 0;
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) = 0;
 
     /** Item type-specific move */
-    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite) = 0;
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) = 0;
 
     /** Reference to the API backend */
     Backend::BackendImpl& mBackend;

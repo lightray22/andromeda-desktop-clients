@@ -21,19 +21,19 @@ public:
 
 protected:
 
-    virtual void LoadItems(const SharedLockW& itemLock, bool force = false) override;
+    virtual void LoadItems(const SharedLockW& thisLock, bool force = false) override;
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override { }; // unused
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override { }; // unused
 
-    virtual void SubCreateFile(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubCreateFolder(const std::string& name, const SharedLockW& itemLock) override { throw ModifyException(); }
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
     virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

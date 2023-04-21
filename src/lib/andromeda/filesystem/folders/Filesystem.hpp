@@ -39,7 +39,7 @@ public:
      */
     Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& itemLock) override { }
+    virtual void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& thisLock) override { }
 
 protected:
 
@@ -49,11 +49,11 @@ protected:
     /** Sets the folder ID from the given backend data */
     virtual void LoadID(const nlohmann::json& data, const UniqueLock& idLock);
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock) override;
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
     virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& itemLock, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

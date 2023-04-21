@@ -54,7 +54,7 @@ void Filesystem::LoadID(const nlohmann::json& data, const UniqueLock& idLock)
 }
 
 /*****************************************************/
-void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLock)
+void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -65,7 +65,7 @@ void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& itemLo
         if (mId.empty()) LoadID(data, idLock);
     }
 
-    LoadItemsFrom(data, itemsLocks, itemLock);
+    LoadItemsFrom(data, itemsLocks, thisLock);
 }
 
 } // namespace Andromeda
