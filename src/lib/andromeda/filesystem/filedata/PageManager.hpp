@@ -2,7 +2,6 @@
 #ifndef LIBA2_PAGEMANAGER_H_
 #define LIBA2_PAGEMANAGER_H_
 
-#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <exception>
@@ -41,7 +40,7 @@ class CacheManager;
  *  - caches writes until flushed (write-back cache) (see FlushPage)
  *  - writes back consecutive ranges of pages to maximize throughput
  *  - supports delayed file Create to combine Create+Write to Upload
- * THREADING - get locks in advance and pass to functions (this uses the parent File's lock)
+ * THREAD SAFE (FORCES EXTERNAL LOCKS) (use parent File's lock)
  */
 class PageManager
 {
@@ -100,16 +99,16 @@ public:
      */
     size_t FlushPage(const uint64_t index, const SharedLockW& thisLock);
 
-    /** Writes back all dirty pages - THREAD SAFE */
+    /** Writes back all dirty pages */
     void FlushPages(const SharedLockW& thisLock);
 
     /**
-     * Informs us of the file changing on the backend - THREAD SAFE
+     * Informs us of the file changing on the backend
      * @param backendSize new size according to the backend
      */
     void RemoteChanged(const uint64_t backendSize, const SharedLockW& thisLock);
 
-    /** Truncate pages according to the given size and inform the backend - THREAD SAFE */
+    /** Truncate pages according to the given size and inform the backend */
     void Truncate(const uint64_t newSize, const SharedLockW& thisLock);
 
 private:
@@ -127,10 +126,14 @@ private:
     Page& GetPageWrite(const uint64_t index, const size_t pageSize, const bool partial, const SharedLockW& thisLock);
 
     /** 
-     * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails 
-     * MUST HAVE either thisLockW or pagesLock! (will be checked!)
+     * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails, does not wait for cache space
+     * @param canWait if true, maybe wait for cache space (never synchronously)
      */
-    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock* pagesLock, const SharedLockW* thisLock);
+    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock);
+
+    /** Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails
+     * maybe waits for cache space synchronously, for immediate error-catching */
+    void InformNewPageSync(const uint64_t index, Page& page, bool dirty, const SharedLockW& thisLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
     void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& thisLock);
@@ -196,7 +199,7 @@ private:
 
     /** Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
      * the file on the backend in case we did a truncate before it existed */
-    void FlushTruncate(const SharedLockW& thisLock);
+    void FlushCreate(const SharedLockW& thisLock);
 
     Debug mDebug;
 
@@ -212,7 +215,7 @@ private:
     uint64_t mFileSize;
 
     /** The current read-ahead window (number of pages) (dynamic) - NEVER zero */
-    std::atomic<size_t> mFetchSize { 1 };
+    size_t mFetchSize { 1 };
     /** Mutex that protects mFetchSize and mBandwidthHistory */
     std::mutex mFetchSizeMutex;
 

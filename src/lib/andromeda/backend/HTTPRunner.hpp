@@ -1,6 +1,7 @@
 #ifndef LIBA2_HTTPRUNNER_H_
 #define LIBA2_HTTPRUNNER_H_
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -168,14 +169,14 @@ private:
 
     Debug mDebug;
 
-    HTTPOptions mOptions;
+    const HTTPOptions mOptions;
 
     std::string mProtoHost;
     std::string mBaseURL;
 
     std::unique_ptr<httplib::Client> mHttpClient;
 
-    bool mCanRetry { false };
+    std::atomic<bool> mCanRetry { false };
 };
 
 } // namespace Backend

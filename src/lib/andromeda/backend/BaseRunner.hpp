@@ -15,7 +15,10 @@ struct RunnerInput_FilesIn;
 struct RunnerInput_StreamIn;
 struct RunnerInput_StreamOut;
 
-/** Implements the actual external call to the API */
+/** 
+ * Implements the actual external call to the API 
+ * NOT THREAD SAFE (use a RunnerPool)
+ */
 class BaseRunner
 {
 public:

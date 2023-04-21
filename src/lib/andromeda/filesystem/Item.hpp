@@ -20,7 +20,10 @@ class FSConfig;
 
 class Folder;
 
-/** An abstract item in a filesystem */
+/** 
+ * An abstract item object in a filesystem 
+ * THREAD SAFE (FORCES EXTERNAL LOCKS) - use deleteLock + read/write lock
+ */
 class Item
 {
 public:

@@ -31,6 +31,7 @@ struct CacheOptions;
  * Fully thread-safe. Evict/Flush are synchronous if possible when writing for
  *     error-catching - otherwise, they happen on background threads.
  * Callers adding new/bigger pages will block until memory is available
+ * THREAD SAFE (INTERNAL LOCKS) + external PageManager locking
  */
 class CacheManager
 {
@@ -200,9 +201,9 @@ private:
     std::condition_variable mFlushWaitCV;
 
     /** PageManager that can skip the evict wait (need it to clear its lock queue) */
-    std::atomic<PageManager*> mSkipEvictWait { nullptr };
+    PageManager* mSkipEvictWait { nullptr };
     /** PageManager that can skip the flush wait (need it to clear its lock queue) */
-    std::atomic<PageManager*> mSkipFlushWait { nullptr };
+    PageManager* mSkipFlushWait { nullptr };
 
     /** Reference to CacheOptions */
     const CacheOptions& mCacheOptions;
@@ -211,7 +212,7 @@ private:
     uint64_t mCurrentMemory { 0 };
 
     /** The maximum in-memory dirty page usage before flushing (dynamic) */
-    std::atomic<uint64_t> mDirtyLimit { 0 };
+    uint64_t mDirtyLimit { 0 };
     /** The current total dirty page memory */
     uint64_t mCurrentDirty { 0 };
 

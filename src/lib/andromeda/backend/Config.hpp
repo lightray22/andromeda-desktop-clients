@@ -13,7 +13,10 @@ namespace Backend {
 
 class BackendImpl;
 
-/** Checks and stores backend config */
+/** 
+ * Checks and stores backend config 
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
 class Config
 {
 public:
@@ -60,8 +63,8 @@ private:
     Debug mDebug;
     BackendImpl& mBackend;
 
-    bool mReadOnly { false };
-    bool mRandWrite { true };
+    std::atomic<bool> mReadOnly { false };
+    std::atomic<bool> mRandWrite { true };
 
     std::atomic<size_t> mUploadMaxBytes { 0 };
 };

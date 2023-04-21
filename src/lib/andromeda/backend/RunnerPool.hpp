@@ -15,7 +15,10 @@ struct ConfigOptions;
 namespace Backend {
 class BaseRunner;
 
-/** Manages a thread-safe pool of concurrent backend runners */
+/** 
+ * Manages a pool of concurrent backend runners 
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
 class RunnerPool
 {
 public:

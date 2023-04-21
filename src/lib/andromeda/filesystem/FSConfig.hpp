@@ -12,7 +12,10 @@ namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 
-/** Contains filesystem config */
+/** 
+ * Contains backend filesystem config 
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
 class FSConfig
 {
 public:

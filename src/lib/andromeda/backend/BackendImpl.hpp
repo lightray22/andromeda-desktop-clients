@@ -24,7 +24,10 @@ struct RunnerInput_FilesIn;
 struct RunnerInput_StreamIn;
 class RunnerPool;
 
-/** Manages communication with the backend API */
+/** 
+ * Manages communication with the backend API 
+ * THREAD SAFE (INTERNAL LOCKS) - except Authentication
+ */
 class BackendImpl
 {
 public:

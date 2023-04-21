@@ -432,7 +432,11 @@ void CacheManager::DoPageEvictions()
         }
 
         SharedLockW mgrLock { evictIt->first->GetWriteLock() };
-        mSkipEvictWait = nullptr; // have the mgrLock now
+        
+        { // have the mgrLock now
+            UniqueLock lock(mMutex);
+            mSkipEvictWait = nullptr;
+        }
 
         EvictSet& evictSet { evictIt->second };
         for (PageInfo& pageInfo : evictSet.second)
@@ -506,7 +510,11 @@ void CacheManager::DoPageFlushes()
         }
 
         SharedLockW mgrLock { flushIt->first->GetWriteLock() };
-        mSkipFlushWait = nullptr; // have the mgrLock now
+        
+        { // have the mgrLock now
+            UniqueLock lock(mMutex);
+            mSkipFlushWait = nullptr;
+        }
 
         FlushSet& flushSet { flushIt->second };
         for (PageInfo& pageInfo : flushSet.second)
@@ -535,6 +543,8 @@ void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const T
 {
     std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
     size_t written { pageMgr.FlushPage(index, mgrLock) };
+
+    UniqueLock lock(mMutex); // protect mDirtyLimit
     mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 }
 

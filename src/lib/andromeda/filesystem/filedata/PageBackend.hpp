@@ -19,7 +19,7 @@ namespace Filedata {
 
 /** 
  * Handles reading/writing pages from/to the backend
- * THREADING - get locks in advance and pass to functions (this uses the parent File's lock)
+ * THREAD SAFE (FORCES EXTERNAL LOCKS) (use parent File's lock)
  */
 class PageBackend
 {
@@ -58,7 +58,7 @@ public:
     typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
 
     /** 
-     * Reads pages from the backend
+     * Reads pages from the backend (must mBackendExists!)
      * @param index the page index to start from
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
