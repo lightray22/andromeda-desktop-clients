@@ -19,7 +19,7 @@ public:
     Semaphor(size_t max = 1) :
         mAvailable(max), mMaxCount(max), mCurSignal(max+1) { }
 
-    inline bool try_lock() noexcept
+    inline bool try_lock() noexcept // TODO unit test
     {
         std::lock_guard<std::mutex> llock(mMutex);
 

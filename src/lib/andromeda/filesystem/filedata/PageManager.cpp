@@ -11,6 +11,8 @@ using Andromeda::BaseException;
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/File.hpp"
 using Andromeda::Filesystem::File;
+#include "andromeda/filesystem/Folder.hpp"
+using Andromeda::Filesystem::Folder;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -380,16 +382,18 @@ void PageManager::StartFetch(const uint64_t index, const size_t readCount, const
 /*****************************************************/
 void PageManager::FetchPages(const uint64_t index, const size_t count)
 {
+    ScopeLocked scopeLock { TryLockScope() };
+    if (!scopeLock) throw Folder::NotFoundException();
+
     // use a read-priority lock since the caller is waiting on us, 
     // if another write happens in the middle we would deadlock
     SharedLockRP dataLock { GetReadPriLock() };
 
-    MDBG_INFO("(index:" << index << " count:" << count << ")");
-
-    std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
-
-    uint64_t nextIndex { index }; try
+    uint64_t curIndex { index }; try
     {
+        MDBG_INFO("(index:" << index << " count:" << count << ")");
+        std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
+
         const size_t readSize { mPageBackend.FetchPages(index, count, 
             [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)
         {
@@ -406,7 +410,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
             // even if canWait was true, the CacheManager could have us skip the wait to get our W lock for evict
             RemovePendingFetch(pageIndex, true, pagesLock); 
 
-            ++nextIndex;
+            ++curIndex;
         }, dataLock) };
 
         if (readSize >= mPageSize) // don't consider small reads
@@ -418,10 +422,10 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
         UniqueLock pagesLock(mPagesMutex);
 
         std::exception_ptr exptr { std::current_exception() };
-        for (uint64_t eidx { nextIndex }; eidx < nextIndex+count; ++eidx)
+        for (uint64_t eidx { curIndex }; eidx < curIndex+count; ++eidx)
             mFailedPages[eidx] = exptr; // shared_ptr
 
-        RemovePendingFetch(nextIndex, false, pagesLock);
+        RemovePendingFetch(curIndex, false, pagesLock);
     }
     
     MDBG_INFO("... thread returning!");

@@ -69,7 +69,7 @@ struct ConfigOptions
     size_t readAheadBuffer { 2 };
 
     /** The maximum number of concurrent backend runners, never zero! */
-    size_t runnerPoolSize { 4 };
+    size_t runnerPoolSize { 1 }; // TODO server has threading issues
 };
 
 } // namespace Andromeda
