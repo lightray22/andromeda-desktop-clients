@@ -17,18 +17,18 @@ std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std
 
     const nlohmann::json data(backend.GetFilesystem(fsid));
 
-    return std::make_unique<Filesystem>(backend, data);
+    return std::make_unique<Filesystem>(backend, data, nullptr);
 }
 
 /*****************************************************/
 Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
-    PlainFolder(backend), mDebug("Filesystem",this) 
+    PlainFolder(backend, data, parent), mDebug(__func__,this) 
 {
     MDBG_INFO("()");
 
-    Initialize(data); mParent = parent;
-
     mFsid = mId; mId = "";
+    // our JSON ID is the FS ID
+    // use mId for the root folder
 
     mFsConfig = &FSConfig::LoadByID(backend, mFsid);
 }
@@ -36,26 +36,36 @@ Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder*
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    if (mId.empty()) LoadItems(); // populates ID
+    const UniqueLock idLock(mIdMutex);
+    if (mId.empty()) LoadID(mBackend.GetFSRoot(mFsid), idLock);
 
     return mId;
 }
 
 /*****************************************************/
-void Filesystem::LoadItems()
+void Filesystem::LoadID(const nlohmann::json& data, const UniqueLock& idLock)
+{
+    try
+    {
+        data.at("id").get_to(mId);
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw BackendImpl::JSONErrorException(ex.what()); }
+}
+
+/*****************************************************/
+void Filesystem::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
     const nlohmann::json data(mBackend.GetFSRoot(mFsid));
 
-    try
-    {
-        data.at("id").get_to(mId); // late load
+    { // lock scope
+        const UniqueLock idLock(mIdMutex);
+        if (mId.empty()) LoadID(data, idLock);
     }
-    catch (const nlohmann::json::exception& ex) {
-        throw BackendImpl::JSONErrorException(ex.what()); }
 
-    Folder::LoadItemsFrom(data);
+    LoadItemsFrom(data, itemsLocks, thisLock);
 }
 
 } // namespace Andromeda

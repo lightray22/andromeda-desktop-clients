@@ -2,6 +2,7 @@
 #define LIBA2_BASERUNNER_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "andromeda/BaseException.hpp"
@@ -14,7 +15,10 @@ struct RunnerInput_FilesIn;
 struct RunnerInput_StreamIn;
 struct RunnerInput_StreamOut;
 
-/** Implements the actual external call to the API */
+/** 
+ * Implements the actual external call to the API 
+ * NOT THREAD SAFE (use a RunnerPool)
+ */
 class BaseRunner
 {
 public:
@@ -28,6 +32,9 @@ public:
             BaseException("Endpoint Error: "+message) {}; };
 
     virtual ~BaseRunner(){ }; // for unique_ptr
+
+    /** Copies to a new runner with a new backend channel, but the same config */
+    virtual std::unique_ptr<BaseRunner> Clone() = 0;
 
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;
@@ -48,6 +55,7 @@ public:
     
     /**
      * Runs an API call and returns the result
+     * MUST NOT call another action within the callback!
      * @param input input params struct with file streams
      * @return result string from API
      */
@@ -55,12 +63,13 @@ public:
     
     /**
      * Runs an API call and streams the result
+     * MUST NOT call another action within the callback!
      * @param input input params struct with streamer
      */
     virtual void RunAction(const RunnerInput_StreamOut& input) = 0;
 
     /** Returns true if the backend requires sessions */
-    virtual bool RequiresSession() = 0;
+    virtual bool RequiresSession() const = 0;
 };
 
 } // namespace Backend

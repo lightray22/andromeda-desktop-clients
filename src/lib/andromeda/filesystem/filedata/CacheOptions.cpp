@@ -14,12 +14,12 @@ namespace Filedata {
 std::string CacheOptions::HelpText()
 {
     std::ostringstream output;
-    CacheOptions cfgDefault;
+    CacheOptions optDefault;
 
-    const auto defDirty(milliseconds(cfgDefault.maxDirtyTime).count());
+    const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
 
     // TODO add utility functions to convert 268435456 <-> 256M + unit test
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << cfgDefault.memoryLimit << ")] [--evict-frac uint(" << cfgDefault.evictSizeFrac << ")]";
+    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << optDefault.memoryLimit << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
 }

@@ -21,25 +21,19 @@ public:
 
 protected:
 
-    virtual void LoadItems() override;
+    virtual void LoadItems(const SharedLockW& thisLock, bool force = false) override;
 
-    virtual void SubCreateFile(const std::string& name) override { throw ModifyException(); }
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override { }; // unused
 
-    virtual void SubCreateFolder(const std::string& name) override { throw ModifyException(); }
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubDeleteItem(Item& item) override { throw ModifyException(); }
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override { throw ModifyException(); }
+    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) override { throw ModifyException(); }
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
-    virtual bool isReadOnly() const override { return true; }
-
-    virtual void SubDelete() override { throw ModifyException(); }
-
-    virtual void SubRename(const std::string& newName, bool overwrite = false) override { throw ModifyException(); }
-
-    virtual void SubMove(Folder& newParent, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

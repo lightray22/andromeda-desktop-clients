@@ -9,10 +9,8 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-Config::Config(BackendImpl& backend) : mDebug("Config",this), mBackend(backend) { }
-
-/*****************************************************/
-void Config::Initialize()
+Config::Config(BackendImpl& backend) : 
+    mDebug(__func__,this), mBackend(backend)
 {
     MDBG_INFO("()");
 
@@ -32,10 +30,11 @@ void Config::Initialize()
             if (apps1.find(app) == apps1.end())
                 throw AppMissingException(app);
 
-        config.at("core").at("features").at("read_only").get_to(mReadOnly);
+        // can't get_to() with std::atomic
+        mReadOnly = config.at("core").at("features").at("read_only").get<bool>();
 
         const nlohmann::json& maxbytes { config.at("files").at("upload_maxbytes") };
-        if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>(); // can't get_to() with std::atomic
+        if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>();
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
@@ -52,7 +51,7 @@ void Config::LoadAccountLimits(BackendImpl& backend)
     {
         if (limits != nullptr)
         {
-            limits.at("features").at("randomwrite").get_to(mRandWrite);
+            mRandWrite = limits.at("features").at("randomwrite").get<bool>();
         }
     }
     catch (const nlohmann::json::exception& ex) {

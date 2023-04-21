@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 Adopted::Adopted(BackendImpl& backend, Folder& parent) :
-    PlainFolder(backend, nullptr, &parent), mDebug("Adopted",this)
+    PlainFolder(backend, &parent), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 
@@ -20,11 +20,11 @@ Adopted::Adopted(BackendImpl& backend, Folder& parent) :
 }
 
 /*****************************************************/
-void Adopted::LoadItems()
+void Adopted::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     MDBG_INFO("()");
 
-    Folder::LoadItemsFrom(mBackend.GetAdopted());
+    LoadItemsFrom(mBackend.GetAdopted(), itemsLocks, thisLock);
 }
 
 } // namespace Andromeda

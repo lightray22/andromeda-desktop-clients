@@ -12,18 +12,19 @@ namespace Andromeda {
 std::string ConfigOptions::HelpText()
 {
     std::ostringstream output;
-    ConfigOptions cfgDefault;
+    ConfigOptions optDefault;
 
-    const auto defRefresh(cfgDefault.refreshTime.count());
-    const auto defReadAhead(cfgDefault.readAheadTime.count());
+    const auto defRefresh(optDefault.refreshTime.count());
+    const auto defReadAhead(optDefault.readAheadTime.count());
 
     using std::endl; output 
-        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal]" << endl
-        << "Data Advanced:   [--pagesize bytes32(" << cfgDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
-            << " [--read-max-cache-frac uint(" << cfgDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << cfgDefault.readAheadBuffer << ")]";
+        << "Advanced:        [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << optDefault.runnerPoolSize << ")]" << endl
+        << "Data Advanced:   [--pagesize bytes32(" << optDefault.pageSize << ")] [--read-ahead ms(" << defReadAhead << ")]"
+            << " [--read-max-cache-frac uint(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
 
     return output.str();
 }
+
 /*****************************************************/
 bool ConfigOptions::AddFlag(const std::string& flag)
 {
@@ -48,6 +49,13 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     {
         try { refreshTime = decltype(refreshTime)(stoul(value)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+    }
+    else if (option == "backend-runners")
+    {
+        try { runnerPoolSize = decltype(runnerPoolSize)(stoul(value)); }
+        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+
+        if (!runnerPoolSize) throw BaseOptions::BadValueException(option);
     }
     else if (option == "pagesize")
     {

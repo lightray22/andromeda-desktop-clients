@@ -24,8 +24,13 @@ public:
         explicit Exception(const std::string& msg) : 
             EndpointException("Subprocess Error: "+msg) {} };
 
-    /** @param apiPath path to the API index.php */
-    explicit CLIRunner(const std::string& apiPath);
+    /** 
+     * @param apiPath path to the API index.php 
+     * @param timeout the timeout for each CLI call
+     */
+    explicit CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout);
+
+    virtual std::unique_ptr<BaseRunner> Clone() override;
 
     virtual std::string GetHostname() const override { return "local"; }
 
@@ -37,7 +42,7 @@ public:
     
     virtual void RunAction(const RunnerInput_StreamOut& input) override;
 
-    virtual bool RequiresSession() override { return false; }
+    virtual bool RequiresSession() const override { return false; }
 
 private:
 
@@ -45,7 +50,7 @@ private:
 
     std::string mApiPath;
 
-    const std::chrono::seconds mTimeout { std::chrono::seconds(120) };
+    const std::chrono::seconds mTimeout;
 };
 
 } // namespace Backend

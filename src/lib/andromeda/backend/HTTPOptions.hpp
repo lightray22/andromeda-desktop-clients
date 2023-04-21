@@ -24,7 +24,7 @@ struct HTTPOptions
     /** The time to wait between each retry */
     std::chrono::seconds retryTime { std::chrono::seconds(5) };
     /** The connection read/write timeout */
-    std::chrono::seconds timeout { std::chrono::seconds(120) };
+    std::chrono::seconds timeout { std::chrono::seconds(60) };
     /** Whether or not redirects are allowed */
     bool followRedirects { true };
     /** Whether or not TLS cert verification is required */

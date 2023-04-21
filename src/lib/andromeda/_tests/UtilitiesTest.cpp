@@ -64,13 +64,13 @@ TEST_CASE("split", "[Utilities]")
     REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
     result = Utilities::split("test", "", 0, true);
-    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
     
     result = Utilities::split("test", "/");
     REQUIRE(result.first == "test"); REQUIRE(result.second == "");
     
     result = Utilities::split("test", "/", 0, true);
-    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
     
     result = Utilities::split("/test/", "/");
     REQUIRE(result.first == ""); REQUIRE(result.second == "test/");

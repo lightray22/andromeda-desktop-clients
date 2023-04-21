@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 SuperRoot::SuperRoot(BackendImpl& backend) : 
-    Folder(backend), mDebug("SuperRoot",this)
+    Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 
@@ -22,17 +22,21 @@ SuperRoot::SuperRoot(BackendImpl& backend) :
 }
 
 /*****************************************************/
-void SuperRoot::LoadItems()
+void SuperRoot::LoadItems(const SharedLockW& thisLock, bool force)
 {
-    if (HaveItems()) return; // never refresh
+    if (mHaveItems) return; // ignore force, never refresh
 
     MDBG_INFO("()");
 
-    std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
-    mItemMap[adopted->GetName()] = std::move(adopted);
+    { std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
+    SharedLockR subLock { adopted->GetReadLock() };
+    mItemMap[adopted->GetName(subLock)] = std::move(adopted); }
 
-    std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
-    mItemMap[filesystems->GetName()] = std::move(filesystems);
+    { std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
+    SharedLockR subLock { filesystems->GetReadLock() };
+    mItemMap[filesystems->GetName(subLock)] = std::move(filesystems); }
+
+    mHaveItems = true;
 }
 
 } // namespace Andromeda

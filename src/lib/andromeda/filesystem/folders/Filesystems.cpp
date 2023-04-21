@@ -12,7 +12,7 @@ namespace Folders {
 
 /*****************************************************/
 Filesystems::Filesystems(BackendImpl& backend, Folder& parent) : 
-    Folder(backend), mDebug("Filesystems",this)
+    Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 
@@ -23,7 +23,7 @@ Filesystems::Filesystems(BackendImpl& backend, Folder& parent) :
 }
 
 /*****************************************************/
-void Filesystems::LoadItems()
+void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     MDBG_INFO("()");
 
@@ -46,19 +46,7 @@ void Filesystems::LoadItems()
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }
 
-    SyncContents(newItems);
-}
-
-/*****************************************************/
-void Filesystems::SubDeleteItem(Item& item)
-{
-    item.Delete(true);
-}
-
-/*****************************************************/
-void Filesystems::SubRenameItem(Item& item, const std::string& newName, bool overwrite)
-{
-    item.Rename(newName, overwrite, true);
+    SyncContents(newItems, itemsLocks, thisLock);
 }
 
 } // namespace Andromeda

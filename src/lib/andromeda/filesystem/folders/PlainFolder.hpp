@@ -30,34 +30,45 @@ public:
     static std::unique_ptr<PlainFolder> LoadByID(Backend::BackendImpl& backend, const std::string& id);
     
     /** 
-     * Construct with JSON data
+     * Construct with JSON data, load fsConfig
+     * @param backend reference to backend
+     * @param data json data from backend
+     * @param haveItems true if JSON has subitems
+     * @param parent pointer to parent
+     */
+    PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, bool haveItems, Folder* parent);
+
+protected:
+    
+    /** 
+     * Construct without JSON data
+     * @param backend reference to backend
+     * @param parent pointer to parent
+     */
+    PlainFolder(Backend::BackendImpl& backend, Folder* parent);
+    
+    /** 
+     * Construct with JSON data without items and NO fsConfig
      * @param backend reference to backend
      * @param data json data from backend
      * @param parent pointer to parent
-     * @param haveItems true if JSON has subitems
      */
-    explicit PlainFolder(Backend::BackendImpl& backend, const nlohmann::json* data = nullptr, 
-        Folder* parent = nullptr, bool haveItems = false);
+    PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-protected:
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
-    virtual void LoadItems() override;
+    /** Populates the item list with items using the given files/folders JSON */
+    virtual void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
-    virtual void SubCreateFile(const std::string& name) override;
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;
 
-    virtual void SubCreateFolder(const std::string& name) override;
-    
-    virtual void SubDeleteItem(Item& item) override;
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override;
 
-    virtual void SubRenameItem(Item& item, const std::string& newName, bool overwrite) override;
+    virtual void SubDelete(const DeleteLock& deleteLock) override;
 
-    virtual void SubMoveItem(Item& item, Folder& newParent, bool overwrite) override;
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
 
-    virtual void SubDelete() override;
-
-    virtual void SubRename(const std::string& newName, bool overwrite) override;
-
-    virtual void SubMove(Folder& newParent, bool overwrite) override;
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
 

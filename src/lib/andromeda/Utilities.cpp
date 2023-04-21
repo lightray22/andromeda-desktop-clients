@@ -73,10 +73,20 @@ Utilities::StringPair Utilities::split(
 {
     Utilities::StringList list { explode(str, delim, skip, reverse, 2) };
 
-    if (list.size() < 1) list.push_back("");
-    if (list.size() < 2) list.push_back("");
+    while (list.size() < 2)
+    {
+        if (!reverse) list.push_back("");
+        else list.insert(list.begin(),"");
+    }
 
     return Utilities::StringPair { list[0], list[1] };
+}
+
+/*****************************************************/
+Utilities::StringPair Utilities::splitPath(const std::string& str)
+{
+    // TODO does this work if str ends with / ?
+    return split(str,"/",0,true);
 }
 
 /*****************************************************/

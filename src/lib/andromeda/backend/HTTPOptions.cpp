@@ -14,16 +14,16 @@ namespace Backend {
 std::string HTTPOptions::HelpText()
 {
     std::ostringstream output;
-    HTTPOptions defaultO;
+    HTTPOptions optDefault;
 
-    const auto defRetry(seconds(defaultO.retryTime).count());
-    const auto defTimeout(seconds(defaultO.timeout).count());
+    const auto defRetry(seconds(optDefault.retryTime).count());
+    const auto defTimeout(seconds(optDefault.timeout).count());
 
     using std::endl;
 
     output 
         << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint16] [--hproxy-user str --hproxy-pass str]] [--no-tls-verify]" << endl
-        << "HTTP Advanced:   [--http-redirect bool(" << defaultO.followRedirects << ")] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << defaultO.maxRetries << ")] [--retry-time secs(" << defRetry << ")] [--stream-buffer-size bytes32(" << defaultO.streamBufferSize << ")]";
+        << "HTTP Advanced:   [--no-http-redirect] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << optDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")] [--stream-buffer-size bytes32(" << optDefault.streamBufferSize << ")]";
 
     return output.str();
 }
@@ -33,6 +33,8 @@ bool HTTPOptions::AddFlag(const std::string& flag)
 {
     if (flag == "no-tls-verify")
         tlsCertVerify = false;
+    else if (flag == "no-http-redirect")
+        followRedirects = false;
     else return false; // not used
 
     return true;
@@ -57,8 +59,6 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
         proxyUsername = value;
     else if (option == "hproxy-pass")
         proxyPassword = value;
-    else if (option == "http-redirect")
-        followRedirects = Utilities::stringToBool(value);
     else if (option == "http-timeout")
     {
         try { timeout = seconds(stoul(value)); }

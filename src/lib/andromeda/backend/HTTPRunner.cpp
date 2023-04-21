@@ -15,13 +15,19 @@ namespace Backend {
 
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options) : 
-    mDebug("HTTPRunner",this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
+    mDebug(__func__,this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
 {
     if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
     MDBG_INFO("(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")");
 
     InitializeClient(mProtoHost);
+}
+
+/*****************************************************/
+std::unique_ptr<BaseRunner> HTTPRunner::Clone()
+{
+    return std::make_unique<HTTPRunner>(mProtoHost, mBaseURL, mOptions);
 }
 
 /*****************************************************/
@@ -178,7 +184,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
 {
     MDBG_INFO("() HTTP:" << response.status);
 
-    doRetry = (canRetry && response.status == 503); 
+    doRetry = (canRetry && (response.status == 500 || response.status == 503)); // TODO should not retry on 500 (fix server)
     if (doRetry) return ""; // early return
 
     // if redirected, should remember it for next time

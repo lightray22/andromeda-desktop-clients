@@ -64,9 +64,12 @@ struct ConfigOptions
      * The number of pages past the current to always pre-populate
      * E.g. if readAhead is 2, then reading page 0 starts a fetch if 0,1,2 are not all populated
      * Larger values may lower latency and increase total throughput at the cost of higher
-     * CPU usage and possibly wasted bandwidth and cache. Overall effect is small.
+     * CPU usage and possibly wasted bandwidth and cache. Overall effect is small either way.
      */
     size_t readAheadBuffer { 2 };
+
+    /** The maximum number of concurrent backend runners, never zero! */
+    size_t runnerPoolSize { 1 }; // TODO server has threading issues
 };
 
 } // namespace Andromeda

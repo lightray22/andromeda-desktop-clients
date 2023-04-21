@@ -29,6 +29,8 @@ using Andromeda::Backend::CLIRunner;
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/backend/RunnerPool.hpp"
+using Andromeda::Backend::RunnerPool;
 
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
@@ -104,11 +106,13 @@ int main(int argc, char** argv)
         case Options::ApiType::API_PATH:
         {
             runner = std::make_unique<CLIRunner>(
-                options.GetApiPath()); break;
+                options.GetApiPath(), httpOptions.timeout); break;
         }; break;
     }
 
-    BackendImpl backend(configOptions, *runner);
+    RunnerPool runners(*runner, configOptions);
+    BackendImpl backend(configOptions, runners);
+
     CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     backend.SetCacheManager(&cacheMgr);
 
@@ -116,8 +120,6 @@ int main(int argc, char** argv)
     
     try
     {
-        backend.Initialize();
-
         if (options.HasSession())
             backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
         else if (options.HasUsername())

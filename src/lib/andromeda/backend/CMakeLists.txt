@@ -6,6 +6,7 @@ set(SOURCE_FILES
     HTTPOptions.cpp
     HTTPRunner.cpp
     RunnerInput.cpp
+    RunnerPool.cpp
     )
 
 target_sources(libandromeda PRIVATE ${SOURCE_FILES})

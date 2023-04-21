@@ -12,7 +12,10 @@ namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
 
-/** Contains filesystem config */
+/** 
+ * Contains backend filesystem config 
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
 class FSConfig
 {
 public:
@@ -38,7 +41,7 @@ public:
     /** Returns true if the filesystem is read-only */
     bool isReadOnly() const { return mReadOnly; }
 
-    /** The overwrite mode supported by the filesystem */
+    /** The modify mode supported by the filesystem */
     enum class WriteMode { NONE, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */
@@ -46,10 +49,11 @@ public:
 
 private:
 
+    /** Chunk size preferred by the backend */
     size_t mChunksize { 0 };
-
+    /** True if the filesystem is read-only */
     bool mReadOnly { false };
-
+    /** WriteMode supported by the filesystem */
     WriteMode mWriteMode { WriteMode::RANDOM };
 
     Debug mDebug;

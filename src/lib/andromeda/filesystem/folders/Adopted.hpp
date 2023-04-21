@@ -29,16 +29,17 @@ public:
 
 protected:
 
-    /** populate itemMap from the backend */
-    virtual void LoadItems() override;
-        
-    virtual bool isReadOnly() const override { return true; }
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
+    
+    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubDelete() override { throw ModifyException(); }
+    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubRename(const std::string& newName, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubMove(Folder& newParent, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
+
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 

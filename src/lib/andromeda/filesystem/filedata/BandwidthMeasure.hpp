@@ -14,6 +14,7 @@ namespace Filedata {
 /** 
  * Keeps a history of bandwidth measurements to
  * calculate the ideal size for network transfers
+ * NOT THREAD SAFE (protect externally)
  */
 class BandwidthMeasure
 {

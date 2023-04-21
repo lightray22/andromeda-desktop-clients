@@ -7,18 +7,19 @@
 
 #include "Page.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/SharedMutex.hpp"
+#include "andromeda/filesystem/File.hpp"
 
 namespace Andromeda {
 namespace Backend { class BackendImpl; }
 
 namespace Filesystem {
-class File;
 
 namespace Filedata {
 
 /** 
- * Handles reading/writing pages from/to the backend 
- * WARNING - NOT thread safe! Use external R/W locking
+ * Handles reading/writing pages from/to the backend
+ * THREAD SAFE (FORCES EXTERNAL LOCKS) (use parent File's lock)
  */
 class PageBackend
 {
@@ -27,31 +28,42 @@ public:
     /** 
      * Construct a new file page backend
      * @param file reference to the parent file
-     * @param pageSize size of pages to use (const)
+     * @param fileID reference to the file's backend ID
      * @param backendSize current size of the file on the backend
-     * @param backendExists true if the file exists on the backend
+     * @param pageSize size of pages to use (const)
      */
-    PageBackend(File& file, const size_t pageSize, uint64_t backendSize, bool backendExists);
+    PageBackend(File& file, const std::string& fileID, uint64_t backendSize, const size_t pageSize);
+
+    /** 
+     * Construct a new file page backend for a file that doesn't exist yet
+     * @param file reference to the parent file
+     * @param fileID reference to the file's backend ID
+     * @param pageSize size of pages to use (const)
+     * @param createFunc function to create the file
+     * @param uploadFunc function to upload the file
+     */
+    PageBackend(File& file, const std::string& fileID, const size_t pageSize,
+      const File::CreateFunc& createFunc, const File::UploadFunc& uploadFunc);
 
     /** Returns true iff the file exists on the backend */
-    bool ExistsOnBackend() const { return mBackendExists; }
+    bool ExistsOnBackend(const SharedLock& thisLock) const { return mBackendExists; }
 
     /** Returns the file size on the backend */
-    uint64_t GetBackendSize() const { return mBackendSize; }
+    uint64_t GetBackendSize(const SharedLock& thisLock) const { return mBackendSize; }
 
     /** Inform us that the size on the backend has changed */
-    void SetBackendSize(uint64_t backendSize) { mBackendSize = backendSize; }
+    void SetBackendSize(uint64_t backendSize, const SharedLockW& thisLock) { mBackendSize = backendSize; }
 
     /** Callback used to process fetched pages in FetchPages() */
     typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
 
     /** 
-     * Reads pages from the backend
+     * Reads pages from the backend (must mBackendExists!)
      * @param index the page index to start from
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
      */
-    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler);
+    size_t FetchPages(const uint64_t index, const size_t count, const PageHandler& pageHandler, const SharedLock& thisLock);
 
     /** List of **consecutive** non-null page pointers */
     typedef std::list<Page*> PagePtrList;
@@ -63,14 +75,13 @@ public:
      * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
      */
-    size_t FlushPageList(const uint64_t index, const PagePtrList& pages);
+    size_t FlushPageList(const uint64_t index, const PagePtrList& pages, const SharedLockW& thisLock);
 
-    /** Creates the file on the backend if not
-      * mBackendExists and feeds to file.Refresh() */
-    void FlushCreate();
+    /** Creates the file on the backend if not mBackendExists and feeds to file.Refresh() */
+    void FlushCreate(const SharedLockW& thisLock);
 
     /** Tell the backend to truncate to the given size, if mBackendExists */
-    void Truncate(const uint64_t newSize);
+    void Truncate(const uint64_t newSize, const SharedLockW& thisLock);
 
 private:
 
@@ -78,11 +89,18 @@ private:
     const size_t mPageSize;
     /** The file size as far as the backend knows */
     uint64_t mBackendSize;
+
     /** true iff the file has been created on the backend (false if waiting for flush) */
     bool mBackendExists;
+    /** Function to create the file if not mBackendExists */
+    const File::CreateFunc mCreateFunc;
+    /** Function to upload the file if not mBackendExists */
+    const File::UploadFunc mUploadFunc;
 
     /** Reference to the parent file */
     File& mFile;
+    /** The file's ID on the backend, valid only if mBackendExists */
+    const std::string& mFileID;
     /** Reference to the file's backend */
     Backend::BackendImpl& mBackend;
 

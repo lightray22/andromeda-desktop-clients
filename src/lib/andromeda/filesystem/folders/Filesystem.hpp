@@ -3,6 +3,7 @@
 #define LIBA2_FILESYSTEM_H_
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <nlohmann/json_fwd.hpp>
 
@@ -36,23 +37,28 @@ public:
      * @param data pre-loaded JSON data
      * @param parent optional pointer to parent
      */
-    Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent = nullptr);
+    Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual const std::string& GetID() override;
-
-    virtual void Refresh(const nlohmann::json& data) override { }
+    virtual void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& thisLock) override { }
 
 protected:
 
-    virtual void LoadItems() override;
+    virtual const std::string& GetID() override;
 
-    virtual void SubDelete() override { throw ModifyException(); }
+    typedef std::unique_lock<std::mutex> UniqueLock;
+    /** Sets the folder ID from the given backend data */
+    virtual void LoadID(const nlohmann::json& data, const UniqueLock& idLock);
 
-    virtual void SubMove(Folder& newParent, bool overwrite = false) override { throw ModifyException(); }
+    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
+
+    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
+
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 
     std::string mFsid;
+    std::mutex mIdMutex; // ID is lazy-loaded
 
     Debug mDebug;
 };

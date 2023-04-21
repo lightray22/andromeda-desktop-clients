@@ -14,6 +14,8 @@
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/SharedMutex.hpp"
+using Andromeda::SharedLockW;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
@@ -257,8 +259,9 @@ struct FuseSignals
 };
 
 /*****************************************************/
-FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options)
-    : mMountPath(mountPath), mRootFolder(root), mOptions(options)
+FuseAdapter::FuseAdapter(const std::string& mountPath, Folder& root, const FuseOptions& options) :
+    mMountPath(mountPath), mOptions(options),
+    mRootFolder(root.TryLockScope()) // assume valid
 {
     SDBG_INFO("(path:" << mMountPath << ")");
 }
@@ -331,8 +334,24 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
         
         SDBG_INFO("() fuse_loop()");
 
-        { int retval; if ((retval = fuse_loop(context.mFuse)) < 0)
-            throw FuseAdapter::Exception("fuse_loop() failed",retval); }
+        { // retval scope
+            int retval;
+
+            if (mOptions.enableThreading)
+            {
+            #if LIBFUSE2
+                retval = fuse_loop_mt(context.mFuse);
+            #else // !LIBFUSE2
+                struct fuse_loop_config loop_config { }; // zero
+                loop_config.max_idle_threads = mOptions.maxIdleThreads;
+                retval = fuse_loop_mt(context.mFuse, &loop_config);
+            #endif // LIBFUSE2
+            }
+            else retval = fuse_loop(context.mFuse);
+
+            if (retval < 0)
+                throw FuseAdapter::Exception("fuse_loop() failed",retval); 
+        }
 
         SDBG_INFO("() fuse_loop() returned!");
     }
@@ -373,6 +392,9 @@ FuseAdapter::~FuseAdapter()
         SDBG_INFO("... waiting");
         mFuseThread.join();
     }
+
+    SharedLockW rootLock { mRootFolder->GetWriteLock() };
+    mRootFolder->FlushCache(rootLock, true); // dump caches
 
     SDBG_INFO("... return!");
 }

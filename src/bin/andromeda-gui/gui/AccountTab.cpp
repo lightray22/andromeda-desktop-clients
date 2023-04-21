@@ -25,7 +25,7 @@ namespace Gui {
 AccountTab::AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext) : QWidget(&parent),
     mBackendContext(std::move(backendContext)),
     mQtUi(std::make_unique<Ui::AccountTab>()),
-    mDebug("AccountTab",this)
+    mDebug(__func__,this)
 {
     MDBG_INFO("()");
 

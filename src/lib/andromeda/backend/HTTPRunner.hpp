@@ -1,6 +1,7 @@
 #ifndef LIBA2_HTTPRUNNER_H_
 #define LIBA2_HTTPRUNNER_H_
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -60,6 +61,8 @@ public:
      */
     HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options);
 
+    virtual std::unique_ptr<BaseRunner> Clone() override;
+
     typedef std::pair<std::string, std::string> HostUrlPair;
 
     /**
@@ -107,7 +110,7 @@ public:
     /** Returns whether retry is enabled or disabled */
     virtual bool GetCanRetry() const final { return mCanRetry; }
 
-    virtual bool RequiresSession() override { return true; }
+    virtual bool RequiresSession() const override { return true; }
 
 private:
 
@@ -166,14 +169,14 @@ private:
 
     Debug mDebug;
 
-    HTTPOptions mOptions;
+    const HTTPOptions mOptions;
 
     std::string mProtoHost;
     std::string mBaseURL;
 
     std::unique_ptr<httplib::Client> mHttpClient;
 
-    bool mCanRetry { false };
+    std::atomic<bool> mCanRetry { false };
 };
 
 } // namespace Backend

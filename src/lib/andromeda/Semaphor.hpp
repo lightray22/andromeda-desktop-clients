@@ -16,14 +16,21 @@ class Semaphor
 public:
 
     /** @param max maximum number of concurrent lock holders */
-    Semaphor(size_t max = 1, bool debug = false) :
+    Semaphor(size_t max = 1) :
         mAvailable(max), mMaxCount(max), mCurSignal(max+1) { }
 
-    inline bool try_lock() noexcept
+    inline bool try_lock() noexcept // TODO unit test
     {
         std::lock_guard<std::mutex> llock(mMutex);
-        if (!mAvailable) return false;
-        --mAvailable; return true;
+
+        const size_t waitIndex { ++mCurWait };
+        if (!mAvailable || waitIndex + mAvailable != mCurSignal) 
+        {
+            --mCurWait; // restore
+            return false;
+        }
+        --mAvailable; 
+        return true;
     }
 
     inline void lock() noexcept

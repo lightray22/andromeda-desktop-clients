@@ -19,12 +19,15 @@ namespace Filesystem { namespace Filedata { class CacheManager; } }
 
 namespace Backend {
 
-class BaseRunner;
 struct RunnerInput;
 struct RunnerInput_FilesIn;
 struct RunnerInput_StreamIn;
+class RunnerPool;
 
-/** Manages communication with the backend API */
+/** 
+ * Manages communication with the backend API 
+ * THREAD SAFE (INTERNAL LOCKS) - except Authentication
+ */
 class BackendImpl
 {
 public:
@@ -93,14 +96,11 @@ public:
 
     /**
      * @param options configuration options
-     * @param runner the BaseRunner to use 
+     * @param runners the RunnerPool to use 
      */
-    BackendImpl(const Andromeda::ConfigOptions& options, BaseRunner& runner);
+    BackendImpl(const Andromeda::ConfigOptions& options, RunnerPool& runners);
 
     virtual ~BackendImpl();
-
-    /** Initializes the backend by loading config */
-    void Initialize();
 
     /** Gets the server config object */
     inline const Config& GetConfig() { return mConfig; }
@@ -254,6 +254,7 @@ public:
 
     /** 
      * A function that supplies a buffer to read output data out of
+     * MUST NOT call another backend action within the callback!
      * @param offset offset of the current output data 
      * @param data pointer to buffer containing data
      * @param length length of the data buffer
@@ -296,7 +297,8 @@ public:
 private:
     
     /** Augment input with authentication details */
-    RunnerInput& FinalizeInput(RunnerInput& input);
+    template <class InputT>
+    InputT& FinalizeInput(InputT& input);
 
     /** Prints a RunnerInput to the given stream */
     void PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname);
@@ -307,6 +309,10 @@ private:
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
+
+    /** Finalizes input, runs the action, returns JSON */
+    template<class InputT>
+    nlohmann::json RunAction(InputT& input);
 
     /** True if we created the session in use */
     bool mCreatedSession { false };
@@ -320,12 +326,12 @@ private:
     static std::atomic<uint64_t> sReqCount;
 
     ConfigOptions mOptions;
-    BaseRunner& mRunner;
+    RunnerPool& mRunners;
 
     Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
-    Config mConfig;
     Debug mDebug;
+    Config mConfig;
 };
 
 } // namespace Backend

@@ -1,12 +1,15 @@
 #ifndef LIBA2_ITEM_H_
 #define LIBA2_ITEM_H_
 
+#include <shared_mutex>
 #include <string>
 
 #include <nlohmann/json_fwd.hpp>
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/ScopeLocked.hpp"
+#include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
 
@@ -17,7 +20,10 @@ class FSConfig;
 
 class Folder;
 
-/** An abstract item in a filesystem */
+/** 
+ * An abstract item object in a filesystem 
+ * THREAD SAFE (FORCES EXTERNAL LOCKS) - use deleteLock + read/write lock
+ */
 class Item
 {
 public:
@@ -28,6 +34,10 @@ public:
     /** Exception indicating this item has no parent */
     class NullParentException : public Exception { public:
         NullParentException() : Exception("Null Parent") {}; };
+
+    /** Exception indicating this item has a parent */
+    class HasParentException : public Exception { public:
+        HasParentException() : Exception("Non-null Parent") {}; };
 
     /** Exception indicating the item has no filesystem */
     class NullFSConfigException : public Exception { public:
@@ -43,7 +53,51 @@ public:
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_ERROR(strfunc) MDBG_ERROR("(" << mName << ")" << strfunc)
 
-    virtual ~Item(){};
+    typedef Andromeda::ScopeLocked<Item> ScopeLocked;
+    /** 
+     * Tries to lock mScopeMutex, returns a ref that is maybe locked 
+     * The purpose of scope locking is to make sure the item isn't removed while being used
+     */
+    inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
+
+    /** 
+     * Class that acquires the scope mutex exclusively and maybe unlocks when destructed 
+     * If there is an error deleting (before MarkFinal), we will unlock again in the destructor
+     */
+    class DeleteLock
+    {
+    public:
+        explicit DeleteLock(Item& item): mItem(item){
+            mItem.mScopeMutex.lock();
+        }
+        ~DeleteLock(){
+            if (mDeleted) return;
+            mItem.mScopeMutex.unlock();
+        }
+        /** Marks the deletion as "done" so we don't unlock in the destructor */
+        void MarkDeleted(){ mDeleted = true; }
+    private:
+        Item& mItem;
+        bool mDeleted { false };
+    };
+
+    /** Permanently, exclusively locks the scope lock if not acquired (use before deleting) */
+    inline DeleteLock GetDeleteLock() { return DeleteLock(*this); }
+
+    /** Returns a read lock for this item */
+    inline SharedLockR GetReadLock() const { return SharedLockR(mItemMutex); }
+    
+    /** Returns a priority read lock for this item */
+    inline SharedLockRP GetReadPriLock() const { return SharedLockRP(mItemMutex); }
+    
+    /** Returns a write lock for this item */
+    inline SharedLockW GetWriteLock() { return SharedLockW(mItemMutex); }
+
+    /** Returns a dual write lock for this item and another (deadlock safe) */
+    inline SharedLockW::LockPair GetWriteLockPair(Item& item) { 
+        return SharedLockW::get_pair(mItemMutex, item.mItemMutex); }
+
+    virtual ~Item(){ }
 
     /** API date format */
     typedef double Date;
@@ -54,20 +108,14 @@ public:
     /** Returns the FS type */
     virtual Type GetType() const = 0;
 
-    /** Returns the Andromeda object ID */
-    virtual const std::string& GetID() { return mId; }
-
-    /** Returns the FS name */
-    virtual const std::string& GetName() const final { return mName; }
-
     /** Returns a reference to the backend for this item */
     virtual Backend::BackendImpl& GetBackend() const final { return mBackend; }
 
     /** Returns true if this item has a parent */
-    virtual bool HasParent() const { return mParent != nullptr; }
+    virtual bool HasParent(const SharedLock& thisLock) const { return mParent != nullptr; }
 
     /** Returns the parent folder */
-    virtual Folder& GetParent() const;
+    virtual Folder& GetParent(const SharedLock& thisLock) const;
 
     /** Returns true if this item has FSconfig */
     virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
@@ -75,35 +123,64 @@ public:
     /** Returns the filesystem config */
     virtual const FSConfig& GetFSConfig() const;
 
+    /** Returns the item's name */
+    virtual const std::string& GetName(const SharedLock& thisLock) const final { return mName; }
+
     /** Get the created time stamp */
-    virtual Date GetCreated() const final { return mCreated; } 
+    virtual Date GetCreated(const SharedLock& thisLock) const final { return mCreated; }
 
     /** Get the modified time stamp */
-    virtual Date GetModified() const final { return mModified; } 
+    virtual Date GetModified(const SharedLock& thisLock) const final { return mModified; }
 
     /** Get the accessed time stamp */
-    virtual Date GetAccessed() const final { return mAccessed; } 
+    virtual Date GetAccessed(const SharedLock& thisLock) const final { return mAccessed; }
 
     /** Returns true if the item is read-only */
     virtual bool isReadOnly() const;
 
     /** Refresh the item given updated server JSON data */
-    virtual void Refresh(const nlohmann::json& data);
+    virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock);
 
-    /** Delete this item (and its contents if a folder) */
-    virtual void Delete(bool internal = false) final; // TODO refactor to get rid of "internal"
-
-    /** Set this item's name to the given name, optionally overwrite existing */
-    virtual void Rename(const std::string& newName, bool overwrite = false, bool internal = false) final;
-
-    /** Move this item to the given parent folder, optionally overwrite existing */
-    virtual void Move(Folder& newParent, bool overwrite = false, bool internal = false) final;
+    /** Deletes this item (and its contents if a folder) - MUST NOT have an existing parent! */
+    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock) final;
 
     /** 
-     * Flushes all dirty pages to the backend 
+     * Delete this item (and its contents if a folder) - MUST have a existing parent!
+     * The delete will be done by unlocking self then calling parent->DeleteItem()
+     * @param scopeLock reference to scopeLock which will be unlocked
+     * @param thisLock temporary lock for self which will be unlocked
+     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     */
+    virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock) final;
+
+    /** Set this item's name to the given name, optionally overwrite existing - MUST NOT have an existing parent! */
+    virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) final;
+
+    /** 
+     * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
+     * The rename will be done by unlocking self then calling parent->RenameItem()
+     * @param thisLock temporary lock for self which will be unlocked
+     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     */
+    virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false) final;
+
+    // TODO implement MoveSelf... move is hard because the parent wants the item as a unique_ptr which we can't provide from self
+    // maybe have two separate maps - one for objects we own (unique_ptr) and one just for things we point to?
+
+    /** 
+     * Move this item to the given parent folder, optionally overwrite existing - MUST have a existing parent!
+     * The move will be done by unlocking self then calling parent->MoveItem()
+     * This will also temporarily get a W lock on the newParent (deadlock-safe)
+     * @param thisLock temporary lock for self which will be unlocked
+     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     */
+    virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false) final;
+
+    /** 
+     * Flushes all dirty pages and metadata to the backend
      * @param nothrow if true, no exceptions are thrown
      */
-    virtual void FlushCache(bool nothrow = false) = 0;
+    virtual void FlushCache(const SharedLockW& thisLock, bool nothrow = false) = 0;
 
 protected:
 
@@ -114,17 +191,22 @@ protected:
     Item(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
-    virtual void Initialize(const nlohmann::json& data);
+    Item(Backend::BackendImpl& backend, const nlohmann::json& data);
+
+    friend class Folder; // calls SubDelete(), SubRename(), SubMove(), GetDeleteLock()
+
+    /** Returns the Andromeda object ID */
+    virtual const std::string& GetID() { return mId; }
 
     /** Item type-specific delete */
-    virtual void SubDelete() = 0;
+    virtual void SubDelete(const DeleteLock& deleteLock) = 0;
 
     /** Item type-specific rename */
-    virtual void SubRename(const std::string& newName, bool overwrite) = 0;
+    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) = 0;
 
     /** Item type-specific move */
-    virtual void SubMove(Folder& newParent, bool overwrite) = 0;
-    
+    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) = 0;
+
     /** Reference to the API backend */
     Backend::BackendImpl& mBackend;
 
@@ -148,6 +230,11 @@ protected:
 
     /** Item accessed timestamp */
     Date mAccessed { 0 };
+
+    /** Shared mutex that is grabbed exclusively when this class is destructed */
+    mutable std::shared_mutex mScopeMutex;
+    /** Primary shared mutex that protects this item */
+    mutable SharedMutex mItemMutex;
 
 private:
 

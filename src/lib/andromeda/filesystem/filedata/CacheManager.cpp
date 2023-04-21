@@ -16,8 +16,8 @@ namespace Filedata {
 /*****************************************************/
 CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) : 
     mCacheOptions(cacheOptions),
-    mDebug("CacheManager",this),
-    mBandwidth("CacheManager", cacheOptions.maxDirtyTime)
+    mDebug(__func__,this),
+    mBandwidth(__func__, cacheOptions.maxDirtyTime)
 { 
     MDBG_INFO("()");
 
@@ -97,7 +97,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
         while (canWait && mCurrentMemory > mCacheOptions.memoryLimit && 
             &mPageQueue.front().mPageMgr == &pageMgr &&
-            mPageQueue.front().mPagePtr != &page)
+            &mPageQueue.front().mPageRef != &page)
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
@@ -139,7 +139,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         // so we can directly pick up errors (they could be missed due to mSkipFlushWait)
         while (canWait && mCurrentDirty > mDirtyLimit && 
             &mDirtyQueue.front().mPageMgr == &pageMgr &&
-            mDirtyQueue.front().mPagePtr != &page)
+            &mDirtyQueue.front().mPageRef != &page)
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
@@ -174,7 +174,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
 size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
-    PageInfo pageInfo { pageMgr, index, &page, page.size() };
+    PageInfo pageInfo { pageMgr, index, page, page.size() };
 
     mPageQueue.emplace_back(pageInfo);
     mPageItMap[&page] = std::prev(mPageQueue.end());
@@ -281,12 +281,11 @@ void CacheManager::RemoveDirty(const Page& page)
 /*****************************************************/
 size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 {
-    MDBG_INFO("(page:" << &page << ")");
-
     size_t pageSize { 0 }; // size of page removed
     PageItMap::iterator itLookup { mPageItMap.find(&page) };
     if (itLookup != mPageItMap.end()) 
     {
+        MDBG_INFO("(page:" << &page << ")");
         PageList::iterator itQueue { itLookup->second };
 
         pageSize = itQueue->mPageSize;
@@ -302,11 +301,10 @@ size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 /*****************************************************/
 void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 {
-    MDBG_INFO("(page:" << &page << ")");
-
     PageItMap::iterator itLookup { mDirtyItMap.find(&page) };
     if (itLookup != mDirtyItMap.end()) 
     {
+        MDBG_INFO("(page:" << &page << ")");
         PageList::iterator itQueue { itLookup->second };
 
         mCurrentDirty -= itQueue->mPageSize;
@@ -393,7 +391,7 @@ void CacheManager::DoPageEvictions()
     MDBG_INFO("()");
 
     // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLock, PageList> EvictSet;
+    typedef std::pair<PageManager::ScopeLocked, PageList> EvictSet;
     std::map<PageManager*, EvictSet> currentEvicts;
 
     { // lock scope
@@ -410,10 +408,10 @@ void CacheManager::DoPageEvictions()
 
             decltype(currentEvicts)::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
             EvictSet& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
-            if (!evictSet.first) 
-                RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+            if (!evictSet.first) // scope lock
+                RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {
                 evictSet.second.push_back(pageInfo); // copy
@@ -434,7 +432,11 @@ void CacheManager::DoPageEvictions()
         }
 
         SharedLockW mgrLock { evictIt->first->GetWriteLock() };
-        mSkipEvictWait = nullptr; // have the mgrLock now
+        
+        { // have the mgrLock now
+            UniqueLock lock(mMutex);
+            mSkipEvictWait = nullptr;
+        }
 
         EvictSet& evictSet { evictIt->second };
         for (PageInfo& pageInfo : evictSet.second)
@@ -446,9 +448,9 @@ void CacheManager::DoPageEvictions()
                 MDBG_ERROR("... " << ex.what());
                 
                 // move the failed page to the end so we try a different (maybe non-dirty) one next
-                if (RemovePage(*pageInfo.mPagePtr, lock))
+                if (RemovePage(pageInfo.mPageRef, lock))
                     EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
-                    *pageInfo.mPagePtr, pageInfo.mPagePtr->mDirty, lock);
+                    pageInfo.mPageRef, pageInfo.mPageRef.mDirty, lock);
 
                 mEvictFailure = std::current_exception();
                 mEvictWaitCV.notify_all();
@@ -469,7 +471,7 @@ void CacheManager::DoPageFlushes()
     MDBG_INFO("()");
 
     // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLock, PageList> FlushSet;
+    typedef std::pair<PageManager::ScopeLocked, PageList> FlushSet;
     std::map<PageManager*, FlushSet> currentFlushes;
 
     { // lock scope
@@ -485,10 +487,10 @@ void CacheManager::DoPageFlushes()
 
             decltype(currentFlushes)::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
             FlushSet& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryGetScopeLock(), PageList())).first->second };
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
-            if (!flushSet.first) 
-                RemovePage(*pageInfo.mPagePtr, lock); // being deleted
+            if (!flushSet.first) // scope lock
+                RemovePage(pageInfo.mPageRef, lock); // being deleted
             else
             {
                 flushSet.second.push_back(pageInfo); // copy
@@ -507,8 +509,12 @@ void CacheManager::DoPageFlushes()
             mFlushWaitCV.notify_all();
         }
 
-        SharedLockRP mgrLock { flushIt->first->GetReadPriLock() };
-        mSkipFlushWait = nullptr; // have the mgrLock now
+        SharedLockW mgrLock { flushIt->first->GetWriteLock() };
+        
+        { // have the mgrLock now
+            UniqueLock lock(mMutex);
+            mSkipFlushWait = nullptr;
+        }
 
         FlushSet& flushSet { flushIt->second };
         for (PageInfo& pageInfo : flushSet.second)
@@ -537,6 +543,8 @@ void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const T
 {
     std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
     size_t written { pageMgr.FlushPage(index, mgrLock) };
+
+    UniqueLock lock(mMutex); // protect mDirtyLimit
     mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 }
 

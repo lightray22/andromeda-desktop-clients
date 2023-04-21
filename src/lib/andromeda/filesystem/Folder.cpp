@@ -2,15 +2,12 @@
 #include <nlohmann/json.hpp>
 
 #include "Folder.hpp"
-#include "File.hpp"
 #include "andromeda/ConfigOptions.hpp"
 using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/filesystem/folders/PlainFolder.hpp"
-using Andromeda::Filesystem::Folders::PlainFolder;
 
 using namespace std::chrono;
 
@@ -19,114 +16,133 @@ namespace Filesystem {
 
 /*****************************************************/
 Folder::Folder(BackendImpl& backend) : 
-    Item(backend), mDebug("Folder",this)
+    Item(backend), mDebug(__func__,this)
 {
     MDBG_INFO("()");
 }
 
 /*****************************************************/
-Item& Folder::GetItemByPath(std::string path)
+Folder::Folder(BackendImpl& backend, const nlohmann::json& data) : 
+    Item(backend, data), mDebug(__func__,this)
+{
+    MDBG_INFO("()");
+}
+
+/*****************************************************/
+Item::ScopeLocked Folder::GetItemByPath(std::string path)
 {
     ITDBG_INFO("(path:" << path << ")");
 
-    if (path[0] == '/') path.erase(0,1);
+    while (path[0] == '/') path.erase(0,1);
 
-    if (path.empty()) return *this;    
+    if (path.empty()) // return self
+    {
+        Item::ScopeLocked self { Item::TryLockScope() };
+        if (!self) { ITDBG_INFO("... self deleted(1)"); 
+            throw NotFoundException(); }
+        return Item::TryLockScope();
+    }
 
     Utilities::StringList parts { Utilities::explode(path,"/") };
 
-    // iteratively (not recursively) find the correct parent/subitem
-    Folder* parent { this }; 
+    // iteratively find the correct parent/subitem
+    Folder::ScopeLocked parent { TryLockScope() };
+    if (!parent) { ITDBG_INFO("... self deleted(2)"); 
+        throw NotFoundException(); }
+
     for (Utilities::StringList::iterator pIt { parts.begin() }; 
         pIt != parts.end(); ++pIt )
     {
-        const ItemMap& items { parent->GetItems() };
-        ItemMap::const_iterator it { items.find(*pIt) };
-        if (it == items.end()) throw NotFoundException();
+        const SharedLockW parentLock { parent->GetWriteLock() };
+        parent->LoadItems(parentLock); // populate items
+        const ItemMap& items { parent->mItemMap };
 
-        Item& item { *(it->second) };
+        ItemMap::const_iterator it { items.find(*pIt) };
+        if (it == items.end()) {
+            ITDBG_INFO("... not in map: " << *pIt); 
+            throw NotFoundException(); }
+
+        Item::ScopeLocked item { it->second->TryLockScope() };
+        if (!item) { ITDBG_INFO("... item deleted: " << *pIt); 
+            throw NotFoundException(); }
 
         if (std::next(pIt) == parts.end()) return item; // last part of path
 
-        if (item.GetType() != Type::FOLDER) throw NotFolderException();
-
-        parent = dynamic_cast<Folder*>(&item);
+        if (item->GetType() != Type::FOLDER) throw NotFolderException();
+        parent = ScopeLocked::FromBase(std::move(item));
     }
 
+    ITDBG_ERROR("... PAST LOOP!");
     throw NotFoundException(); // should never get here
 }
 
 /*****************************************************/
-File& Folder::GetFileByPath(const std::string& path)
+File::ScopeLocked Folder::GetFileByPath(const std::string& path)
 {
-    Item& item { GetItemByPath(path) };
+    Item::ScopeLocked item { GetItemByPath(path) };
 
-    if (item.GetType() != Type::FILE)
+    if (item->GetType() != Type::FILE)
         throw NotFileException();
 
-    return dynamic_cast<File&>(item);
+    return File::ScopeLocked::FromBase(std::move(item));
 }
 
 /*****************************************************/
-Folder& Folder::GetFolderByPath(const std::string& path)
+Folder::ScopeLocked Folder::GetFolderByPath(const std::string& path)
 {
-    Item& item { GetItemByPath(path) };
+    Item::ScopeLocked item { GetItemByPath(path) };
 
-    if (item.GetType() != Type::FOLDER)
+    if (item->GetType() != Type::FOLDER)
         throw NotFolderException();
 
-    return dynamic_cast<Folder&>(item);
+    return Folder::ScopeLocked::FromBase(std::move(item));
 }
 
 /*****************************************************/
-const Folder::ItemMap& Folder::GetItems()
+Folder::LockedItemMap Folder::GetItems(const SharedLockW& thisLock)
+{
+    LoadItems(thisLock); // populate
+
+    Folder::LockedItemMap itemMap;
+    for (decltype(mItemMap)::value_type& it : mItemMap)
+    {
+        // don't check lock, can't go out of scope with map lock
+        itemMap[it.first] = it.second->TryLockScope();
+    }
+
+    return itemMap;
+}
+
+/*****************************************************/
+size_t Folder::CountItems(const SharedLockW& thisLock)
+{
+    LoadItems(thisLock); // populate
+    return mItemMap.size();
+}
+
+/*****************************************************/
+void Folder::LoadItems(const SharedLockW& thisLock, bool force)
 {
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
-    if (!mHaveItems || (expired && !mBackend.isMemory()))
+    if (force || !mHaveItems || (expired && !mBackend.isMemory()))
     {
-        LoadItems(); mRefreshed = steady_clock::now();
-    }
+        ITDBG_INFO("... expired!");
 
-    mHaveItems = true;
-    return mItemMap;
+        ItemLockMap lockMap; // get locks for all existing items now to prevent backend changes
+        for (const ItemMap::value_type& it : mItemMap)
+            lockMap.emplace(it.first, it.second->GetWriteLock());
+        // item scope lock not needed since mItemMap is locked
+
+        SubLoadItems(lockMap, thisLock); // populate mItemMap
+        mRefreshed = steady_clock::now();
+        mHaveItems = true;
+    }
 }
 
 /*****************************************************/
-void Folder::LoadItemsFrom(const nlohmann::json& data)
-{
-    ITDBG_INFO("()");
-
-    Folder::NewItemMap newItems;
-
-    NewItemFunc newFile { [&](const nlohmann::json& fileJ)->std::unique_ptr<Item> {
-        return std::make_unique<File>(mBackend, fileJ, *this); } };
-
-    NewItemFunc newFolder { [&](const nlohmann::json& folderJ)->std::unique_ptr<Item> {
-        return std::make_unique<Folders::PlainFolder>(mBackend, &folderJ, this); } };
-
-    try
-    {
-        for (const nlohmann::json& fileJ : data.at("files"))
-            newItems.emplace(std::piecewise_construct,
-                std::forward_as_tuple(fileJ.at("name")), std::forward_as_tuple(fileJ, newFile));
-
-        for (const nlohmann::json& folderJ : data.at("folders"))
-            newItems.emplace(std::piecewise_construct,
-                std::forward_as_tuple(folderJ.at("name")), std::forward_as_tuple(folderJ, newFolder));
-    }
-    catch (const nlohmann::json::exception& ex) {
-        throw BackendImpl::JSONErrorException(ex.what()); }
-
-    SyncContents(newItems);
-
-    mHaveItems = true;
-    mRefreshed = steady_clock::now();
-}
-
-/*****************************************************/
-void Folder::SyncContents(const Folder::NewItemMap& newItems)
+void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
@@ -142,105 +158,141 @@ void Folder::SyncContents(const Folder::NewItemMap& newItems)
             NewItemFunc newFunc(newIt.second.second);
             mItemMap[name] = newFunc(data);
         }
-        else existIt->second->Refresh(data); // update existing
+        else existIt->second->Refresh(data, 
+                itemsLocks.at(existIt->first)); // update existing
     }
 
     ItemMap::const_iterator oldIt { mItemMap.begin() };
     for (; oldIt != mItemMap.end();)
     {
-        const bool ignore { oldIt->second->GetType() == Type::FILE &&
-            !dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend() };
-
-        if (!ignore && newItems.find(oldIt->first) == newItems.end())
+        if (newItems.find(oldIt->first) == newItems.end())
         {
-            ITDBG_INFO("... remote deleted: " << oldIt->second->GetName());
-            oldIt = mItemMap.erase(oldIt); // deleted on server
+            SharedLockW& itLock { itemsLocks.at(oldIt->first) };
+
+            if (oldIt->second->GetType() != Type::FILE ||
+                dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend(itLock))
+            {
+                ITDBG_INFO("... remote deleted: " << oldIt->second->GetName(itLock));
+                itLock.unlock(); // scope locks come first
+
+                DeleteLock deleteLock { oldIt->second->GetDeleteLock() };
+                deleteLock.MarkDeleted();
+                oldIt = mItemMap.erase(oldIt);
+            }
+            else ++oldIt;
         }
         else ++oldIt;
     }
 }
 
 /*****************************************************/
-void Folder::CreateFile(const std::string& name)
+void Folder::CreateFile(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    const ItemMap& items { GetItems() }; // pre-populate items
+    LoadItems(thisLock); // populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (mItemMap.count(name) || name.empty()) 
+        throw DuplicateItemException();
 
-    SubCreateFile(name);
+    SubCreateFile(name, thisLock);
 }
 
 /*****************************************************/
-void Folder::CreateFolder(const std::string& name)
+void Folder::CreateFolder(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    const ItemMap& items { GetItems() }; // pre-populate items
+    LoadItems(thisLock); // populate items
 
-    if (items.count(name)) throw DuplicateItemException();
+    if (mItemMap.count(name) || name.empty()) 
+        throw DuplicateItemException();
 
-    SubCreateFolder(name);
+    SubCreateFolder(name, thisLock);
 }
 
 /*****************************************************/
-void Folder::DeleteItem(const std::string& name)
+void Folder::DeleteItem(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
+    if (isReadOnly()) throw ReadOnlyException();
+
+    LoadItems(thisLock); // populate items
+    ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
-    SubDeleteItem(*(it->second)); mItemMap.erase(it);
+    DeleteLock deleteLock { it->second->GetDeleteLock() };
+    it->second->SubDelete(deleteLock);
+    deleteLock.MarkDeleted();
+    mItemMap.erase(it);
 }
 
 /*****************************************************/
-void Folder::RenameItem(const std::string& oldName, const std::string& newName, bool overwrite)
+void Folder::RenameItem(const std::string& oldName, const std::string& newName, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(oldName) };
+    if (isReadOnly()) throw ReadOnlyException();
+
+    LoadItems(thisLock); // populate items
+    ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
+    // item scope lock not needed since mItemMap is locked
 
     ItemMap::const_iterator dup { mItemMap.find(newName) };
-    if (!overwrite && dup != mItemMap.end())
+    if ((!overwrite && dup != mItemMap.end()) || newName.empty())
         throw DuplicateItemException();
 
-    SubRenameItem(*(it->second), newName, overwrite);
+    SharedLockW subLock { it->second->GetWriteLock() };
+    it->second->SubRename(newName, subLock, overwrite);
 
-    if (dup != mItemMap.end()) mItemMap.erase(dup);
+    if (dup != mItemMap.end()) 
+        mItemMap.erase(dup);
 
     ItemMap::node_type node(mItemMap.extract(it));
     node.key() = newName; mItemMap.insert(std::move(node));
 }
 
 /*****************************************************/
-void Folder::MoveItem(const std::string& name, Folder& newParent, bool overwrite)
+void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLockW::LockPair& itemLocks, bool overwrite)
 {
-    ITDBG_INFO("(name:" << name << " parent:" << newParent.GetName() << ")");
+    ITDBG_INFO("(name:" << name << " parent:" << newParent.GetID() << ")");
 
-    GetItems(); ItemMap::const_iterator it { mItemMap.find(name) };
+    if (isReadOnly()) throw ReadOnlyException();
+
+    LoadItems(itemLocks.first); // populate items
+    ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
+    // item scope lock not needed since mItemMap is locked
 
-    newParent.GetItems(); if (newParent.isReadOnly()) throw ModifyException();
+    newParent.LoadItems(itemLocks.second); // populate items
+    if (newParent.isReadOnly()) throw ReadOnlyException();
+    if (newParent.GetID().empty()) throw ModifyException();
 
     ItemMap::const_iterator dup { newParent.mItemMap.find(name) };
     if (!overwrite && dup != newParent.mItemMap.end())
         throw DuplicateItemException();
 
-    SubMoveItem(*(it->second), newParent, overwrite);
+    SharedLockW subLock { it->second->GetWriteLock() };
+    it->second->SubMove(newParent.GetID(), subLock, overwrite);
 
-    if (dup != newParent.mItemMap.end()) newParent.mItemMap.erase(dup);
+    if (dup != newParent.mItemMap.end()) 
+        newParent.mItemMap.erase(dup);
 
     newParent.mItemMap.insert(mItemMap.extract(it));
 }
 
 /*****************************************************/
-void Folder::FlushCache(bool nothrow)
+void Folder::FlushCache(const SharedLockW& thisLock, bool nothrow)
 {
+    ITDBG_INFO("()");
+    
     for (ItemMap::value_type& it : mItemMap)
-        it.second->FlushCache(nothrow);
+    {
+        SharedLockW subLock { it.second->GetWriteLock() };
+        it.second->FlushCache(subLock, nothrow);
+    }
 }
 
 } // namespace Filesystem
