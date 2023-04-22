@@ -144,7 +144,7 @@ Given HTTP server URLs can optionally include the protocol, the port number, and
 Any option or flag accepted on the command line can also be listed in a config file.
 Common config in `andromeda.conf` is loaded first (but ignored for andromeda-gui), then per-binary config (e.g. `andromeda-fuse.conf`).
 The config files can be located in `/etc/andromeda`, `/usr/local/etc/andromeda`, `~/.config/andromeda`, or the current directory.
-A custom path to a config file can also be specified with the `-c` or `--config-file` option.
+A custom path to a config file can also be specified with the `-c` or `--config-file` option, and is loaded last.
 
 Config Example:
 ```
