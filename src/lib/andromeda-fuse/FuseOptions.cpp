@@ -34,7 +34,8 @@ std::string FuseOptions::HelpText()
     output << endl;
 #endif // LIBFUSE2
 
-    output << "FUSE Permissions: [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other] [-o default_permissions]";
+    output << "FUSE Permissions: [--file_perm " << std::oct << optDefault.filePerms << "] [--dir_perm " << optDefault.dirPerms << "]"
+        << " [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other]";
 
     return output.str();
 }
@@ -75,6 +76,18 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     if (option == "o" || option == "option")
     {
         fuseArgs.push_back(value);
+    }
+    else if (option == "file_perm")
+    {
+        if (option.size() != 3) throw BaseOptions::BadValueException(option);
+        try { filePerms = decltype(filePerms)(stoul(value,nullptr,8)); }
+        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+    }
+    else if (option == "dir_perm")
+    {
+        if (option.size() != 3) throw BaseOptions::BadValueException(option);
+        try { dirPerms = decltype(dirPerms)(stoul(value,nullptr,8)); }
+        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
     }
 #if !LIBFUSE2
     else if (option == "fuse-max-idle-threads")

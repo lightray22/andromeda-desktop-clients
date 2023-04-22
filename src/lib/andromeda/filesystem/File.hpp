@@ -51,6 +51,9 @@ public:
     /** Returns the total file size */
     virtual uint64_t GetSize(const SharedLock& thisLock) const final;
 
+    /** Returns the file's data page size */
+    virtual size_t GetPageSize() const;
+
     /**
      * @brief Construct a File using backend data
      * @param backend backend reference

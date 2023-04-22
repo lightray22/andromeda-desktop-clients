@@ -19,7 +19,6 @@ std::string CacheOptions::HelpText()
 
     const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
 
-    // TODO add utility functions to convert 268435456 <-> 256M + unit test
     output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << optDefault.memoryLimit << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();

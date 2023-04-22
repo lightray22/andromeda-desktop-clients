@@ -304,6 +304,7 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
     try
     {
         FuseArguments fuseArgs; 
+        fuseArgs.AddArg("default_permissions");
     #if WIN32
         // For WinFSP, use the current user
         fuseArgs.AddArg("uid=-1,gid=-1");

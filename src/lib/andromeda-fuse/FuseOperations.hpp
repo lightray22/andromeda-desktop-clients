@@ -11,7 +11,6 @@ class FuseAdapter;
 struct FuseOperations
 {
     static int statfs(const char *path, struct statvfs* buf);
-    static int access(const char* path, int mask);
     static int open(const char* path, struct fuse_file_info* fi);
     static int opendir(const char* path, struct fuse_file_info* fi);
     static int create(const char* path, mode_t mode, struct fuse_file_info* fi);
@@ -70,7 +69,6 @@ struct a2fuse_operations : public fuse_operations
         readdir = AndromedaFuse::FuseOperations::readdir;
         fsyncdir = AndromedaFuse::FuseOperations::fsyncdir;
         init = AndromedaFuse::FuseOperations::init;
-        access = AndromedaFuse::FuseOperations::access;
         create = AndromedaFuse::FuseOperations::create;
     }
 };

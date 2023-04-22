@@ -44,8 +44,8 @@ public:
         NullFSConfigException() : Exception("Null FSConfig") {}; };
 
     /** Exception indicating the item is read-only */
-    class ReadOnlyException : public Exception { public:
-        ReadOnlyException() : Exception("Read Only Backend") {}; };
+    class ReadOnlyFSException : public Exception { public:
+        ReadOnlyFSException() : Exception("Read Only Backend") {}; };
 
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_INFO(strfunc) MDBG_INFO("(" << mName << ")" << strfunc)
@@ -136,7 +136,7 @@ public:
     virtual Date GetAccessed(const SharedLock& thisLock) const final { return mAccessed; }
 
     /** Returns true if the item is read-only */
-    virtual bool isReadOnly() const;
+    virtual bool isReadOnlyFS() const;
 
     /** Refresh the item given updated server JSON data */
     virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock);

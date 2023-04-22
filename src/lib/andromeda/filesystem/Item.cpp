@@ -113,7 +113,7 @@ const FSConfig& Item::GetFSConfig() const
 }
 
 /*****************************************************/
-bool Item::isReadOnly() const
+bool Item::isReadOnlyFS() const
 {
     bool retval { mBackend.isReadOnly() };
 

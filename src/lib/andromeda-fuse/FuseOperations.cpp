@@ -94,7 +94,7 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     {
         SDBG_INFO_EXC(e); return -ENOTSUP;
     }
-    catch (const Item::ReadOnlyException& e)
+    catch (const Item::ReadOnlyFSException& e)
     {
         SDBG_INFO_EXC(e); return -EROFS;
     }
@@ -224,25 +224,31 @@ constexpr void date_to_timespec(const Item::Date time, timespec& spec)
 
 /*****************************************************/
 static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock, struct stat* stbuf)
-{
-    switch (item->GetType())
+{    
+    const Item::Type itemType { item->GetType() };
+    if (itemType == Item::Type::FILE)
     {
-        case Item::Type::FILE: stbuf->st_mode = S_IFREG; break;
-        case Item::Type::FOLDER: stbuf->st_mode = S_IFDIR; break;
+        stbuf->st_mode = S_IFREG | static_cast<decltype(stbuf->st_mode)>(
+            GetFuseAdapter().GetOptions().filePerms); 
+
+        const File& file { dynamic_cast<const File&>(*item) };
+        stbuf->st_size = static_cast<decltype(stbuf->st_size)>(file.GetSize(itemLock));
+        stbuf->st_blksize = static_cast<decltype(stbuf->st_blksize)>(file.GetPageSize());
+    }
+    else if (itemType == Item::Type::FOLDER)
+    {
+        stbuf->st_mode = S_IFDIR | static_cast<decltype(stbuf->st_mode)>(
+            GetFuseAdapter().GetOptions().dirPerms);
+
+        stbuf->st_size = 0;
+        stbuf->st_blksize = 4096; // meaningless?
     }
 
-    stbuf->st_mode |= S_IRWXU | S_IRWXG | S_IRWXO;
-    
-    if (item->isReadOnly()) stbuf->st_mode &= 
-        static_cast<decltype(stbuf->st_mode)>(  // -Wsign-conversion
-            ~S_IWUSR & ~S_IWGRP & ~S_IWOTH);
+    stbuf->st_uid = fuse_get_context()->uid;
+    stbuf->st_gid = fuse_get_context()->gid;
 
-    stbuf->st_size = (item->GetType() == Item::Type::FILE) ? 
-        static_cast<decltype(stbuf->st_size)>(
-            dynamic_cast<const File&>(*item).GetSize(itemLock)) : 0;
-
-    stbuf->st_blocks = stbuf->st_size ? (stbuf->st_size-1)/512+1 : 0; // 512B blocks
-    //stbuf->st_blksize = 4096; // TODO what to use? page size?
+    stbuf->st_blocks = !stbuf->st_size ? 0 :
+        (stbuf->st_size-1)/512+1; // # of 512B blocks
 
     Item::Date created { item->GetCreated(itemLock) };
     Item::Date modified { item->GetModified(itemLock) };
@@ -270,33 +276,6 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
 }
 
 /*****************************************************/
-int FuseOperations::access(const char* path, int mask)
-{
-    SDBG_INFO("(path:" << path << ", mask:" << mask << ")");
-
-    #if defined(W_OK)
-        static const std::string fname(__func__);
-    #endif // W_OK
-    return CatchAsErrno(__func__,[&]()->int
-    {
-        #if defined(W_OK)
-            const Item::ScopeLocked item { GetItemByPath(path) };
-
-            if ((mask & W_OK) && item->isReadOnly()) 
-            {
-                sDebug.Info([&](std::ostream& str){ 
-                    str << fname << "... read-only!"; });
-                return -EACCES;
-            }
-        #endif // W_OK
-            
-        return FUSE_SUCCESS;
-    }, path);
-}
-
-// TODO use -o default_permissions and get rid of both of these?
-
-/*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
@@ -309,11 +288,11 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 
         // TODO need to handle O_APPEND?
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file->isReadOnly())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file->isReadOnlyFS())
         {
             sDebug.Info([&](std::ostream& str){ 
-                str << fname << "... read-only!"; });
-            return -EACCES;
+                str << fname << "... read-only FS!"; });
+            return -EROFS;
         }
 
         if (fi->flags & O_TRUNC)
@@ -337,11 +316,11 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
     {
         const Folder::ScopeLocked folder { GetFolderByPath(path) };
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnly())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnlyFS())
         {
             sDebug.Info([&](std::ostream& str){ 
-                str << fname << "... read-only!"; });
-            return -EACCES;
+                str << fname << "... read-only FS!"; });
+            return -EROFS;
         }
 
         return FUSE_SUCCESS;

@@ -89,6 +89,12 @@ uint64_t File::GetSize(const SharedLock& thisLock) const
 }
 
 /*****************************************************/
+size_t File::GetPageSize() const
+{
+    return mPageManager->GetPageSize();
+}
+
+/*****************************************************/
 bool File::ExistsOnBackend(const SharedLock& thisLock) const
 {
     return mPageBackend->ExistsOnBackend(thisLock);
@@ -119,7 +125,7 @@ void File::SubDelete(const DeleteLock& deleteLock)
 {
     ITDBG_INFO("()")
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     if (ExistsOnBackend(GetWriteLock()))
         mBackend.DeleteFile(GetID());
@@ -130,7 +136,7 @@ void File::SubRename(const std::string& newName, const SharedLockW& thisLock, bo
 {
     ITDBG_INFO("(name:" << newName << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     if (ExistsOnBackend(thisLock))
         mBackend.RenameFile(GetID(), newName, overwrite);
@@ -141,7 +147,7 @@ void File::SubMove(const std::string& parentID, const SharedLockW& thisLock, boo
 {
     ITDBG_INFO("(parent:" << parentID << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     if (!ExistsOnBackend(thisLock))
         FlushCache(thisLock); // createFunc would no longer be valid
@@ -225,7 +231,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
 {
     ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     const FSConfig::WriteMode writeMode(GetWriteMode());
     if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
@@ -271,7 +277,7 @@ void File::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
 {    
     ITDBG_INFO("(size:" << newSize << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
 

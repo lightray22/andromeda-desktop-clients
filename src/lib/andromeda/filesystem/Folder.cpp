@@ -216,7 +216,7 @@ void Folder::DeleteItem(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(thisLock); // populate items
     ItemMap::const_iterator it { mItemMap.find(name) };
@@ -233,7 +233,7 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
 {
     ITDBG_INFO("(oldName:" << oldName << " newName:" << newName << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(thisLock); // populate items
     ItemMap::const_iterator it { mItemMap.find(oldName) };
@@ -259,7 +259,7 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
 {
     ITDBG_INFO("(name:" << name << " parent:" << newParent.GetID() << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(itemLocks.first); // populate items
     ItemMap::const_iterator it { mItemMap.find(name) };
@@ -267,7 +267,7 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
     // item scope lock not needed since mItemMap is locked
 
     newParent.LoadItems(itemLocks.second); // populate items
-    if (newParent.isReadOnly()) throw ReadOnlyException();
+    if (newParent.isReadOnlyFS()) throw ReadOnlyFSException();
     if (newParent.GetID().empty()) throw ModifyException();
 
     ItemMap::const_iterator dup { newParent.mItemMap.find(name) };

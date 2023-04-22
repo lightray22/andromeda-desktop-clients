@@ -109,7 +109,7 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& this
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     std::unique_ptr<File> file;
 
@@ -133,7 +133,7 @@ void PlainFolder::SubCreateFolder(const std::string& name, const SharedLockW& th
 {
     ITDBG_INFO("(name:" << name << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     nlohmann::json data(mBackend.CreateFolder(GetID(), name));
 
@@ -148,7 +148,7 @@ void PlainFolder::SubDelete(const DeleteLock& deleteLock)
 {
     ITDBG_INFO("()");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     mBackend.DeleteFolder(GetID());
 }
@@ -158,7 +158,7 @@ void PlainFolder::SubRename(const std::string& newName, const SharedLockW& thisL
 {
     ITDBG_INFO("(name:" << newName << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     mBackend.RenameFolder(GetID(), newName, overwrite);
 }
@@ -168,7 +168,7 @@ void PlainFolder::SubMove(const std::string& parentID, const SharedLockW& thisLo
 {
     ITDBG_INFO("(parent:" << parentID << ")");
 
-    if (isReadOnly()) throw ReadOnlyException();
+    if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     mBackend.MoveFolder(GetID(), parentID, overwrite);
 }

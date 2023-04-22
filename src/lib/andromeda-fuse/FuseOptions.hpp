@@ -26,6 +26,12 @@ struct FuseOptions
     /** List of FUSE library options */
     std::list<std::string> fuseArgs;
 
+    /** Default file permission bits */
+    int filePerms { 0750 }; // RWXR-X---
+
+    /** Default directory permission bits */
+    int dirPerms { 0750 }; // RWXR-X---
+
     /** Whether fake chmod (no-op) is allowed */
     bool fakeChmod { true };
 
