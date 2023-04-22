@@ -20,7 +20,7 @@ struct HTTPOptions
     bool AddOption(const std::string& option, const std::string& value);
 
     /** maximum retries before throwing */
-    unsigned long maxRetries { 12 };
+    unsigned long maxRetries { 3 };
     /** The time to wait between each retry */
     std::chrono::seconds retryTime { std::chrono::seconds(5) };
     /** The connection read/write timeout */

@@ -18,7 +18,7 @@ using Andromeda::ConfigOptions;
 namespace Andromeda {
 namespace Backend {
 
-#define BOOLSTR(x) x ? "true" : "false"
+#define BOOLSTR(x) (x ? "true" : "false")
 
 std::atomic<uint64_t> BackendImpl::sReqCount { 0 };
 

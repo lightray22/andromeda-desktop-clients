@@ -352,7 +352,7 @@ void CacheManager::EvictThread()
                 mEvictThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
-            MDBG_INFO("... DOING CLEANUP!");
+            MDBG_INFO("... DOING EVICTS!");
         }
 
         DoPageEvictions();
@@ -376,7 +376,7 @@ void CacheManager::FlushThread()
                 mFlushThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
-            MDBG_INFO("... DOING CLEANUP!");
+            MDBG_INFO("... DOING FLUSHES!");
         }
 
         DoPageFlushes();
