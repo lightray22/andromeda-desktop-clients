@@ -60,7 +60,7 @@ std::string BackendImpl::GetName(bool human) const
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname)
 {
     str << ++sReqCount << " " << myfname << "()"
         << " app:" << input.app << " action:" << input.action;
@@ -70,18 +70,18 @@ void BackendImpl::PrintInput(RunnerInput& input, std::ostream& str, const std::s
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname)
 {
-    PrintInput(static_cast<RunnerInput&>(input), str, myfname);
+    PrintInput(static_cast<const RunnerInput&>(input), str, myfname);
 
     for (const auto& [key,file] : input.files)
         str << " " << key << ":" << file.name << ":" << file.data.size();
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname)
 {
-    PrintInput(static_cast<RunnerInput_FilesIn&>(input), str, myfname);
+    PrintInput(static_cast<const RunnerInput_FilesIn&>(input), str, myfname);
 
     for (const auto& [key,fstr] : input.fstreams)
         str << " " << key << ":" << fstr.name << ":" << "(stream)";

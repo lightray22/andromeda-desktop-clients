@@ -301,11 +301,11 @@ private:
     InputT& FinalizeInput(InputT& input);
 
     /** Prints a RunnerInput to the given stream */
-    void PrintInput(RunnerInput& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_FilesIn to the given stream */
-    void PrintInput(RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_StreamIn to the given stream */
-    void PrintInput(RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
+    void PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);

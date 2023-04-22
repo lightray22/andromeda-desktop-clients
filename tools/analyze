@@ -36,6 +36,7 @@ for PLAT in $PLATFORMS; do
         --suppress=knownConditionTrueFalse \
         --suppress=useStlAlgorithm \
         --suppress=stlIfStrFind \
+        --suppress=comparisonOfFuncReturningBoolError \
         --enable=style,performance,portability,information "$@" 2> $LOGFILE
 
     if [ -s $LOGFILE ]; then

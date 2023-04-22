@@ -129,11 +129,11 @@ private:
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails, does not wait for cache space
      * @param canWait if true, maybe wait for cache space (never synchronously)
      */
-    void InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock);
+    void InformNewPage(const uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock);
 
     /** Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails
      * maybe waits for cache space synchronously, for immediate error-catching */
-    void InformNewPageSync(const uint64_t index, Page& page, bool dirty, const SharedLockW& thisLock);
+    void InformNewPageSync(const uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock);
 
     /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
     void InformResizePage(const uint64_t index, Page& page, bool dirty, const size_t pageSize, const SharedLockW& thisLock);

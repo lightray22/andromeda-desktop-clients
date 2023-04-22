@@ -122,10 +122,10 @@ protected:
 private:
 
     /** Checks the FS and account limits for the allowed write mode */
-    virtual FSConfig::WriteMode GetWriteMode() const final;
+    FSConfig::WriteMode GetWriteMode() const;
 
     /** Returns the page size calculated from the backend.pageSize and fsConfig.chunkSize */
-    virtual size_t CalcPageSize() const;
+    size_t CalcPageSize() const;
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
     std::unique_ptr<Filedata::PageBackend> mPageBackend;

@@ -33,7 +33,7 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
 {
     ITDBG_INFO("(path:" << path << ")");
 
-    while (path[0] == '/') path.erase(0,1);
+    while (!path.empty() && path[0] == '/') path.erase(0,1);
 
     if (path.empty()) // return self
     {

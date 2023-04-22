@@ -204,7 +204,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
 }
 
 /*****************************************************/
-void PageManager::InformNewPage(const uint64_t index, Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock)
+void PageManager::InformNewPage(const uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock)
 {
     if (mCacheMgr && !mBackend.isMemory())
         try { mCacheMgr->InformPage(*this, index, page, dirty, canWait); }
@@ -217,7 +217,7 @@ void PageManager::InformNewPage(const uint64_t index, Page& page, bool dirty, bo
 }
 
 /*****************************************************/
-void PageManager::InformNewPageSync(const uint64_t index, Page& page, bool dirty, const SharedLockW& thisLock)
+void PageManager::InformNewPageSync(const uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock)
 {
     if (mCacheMgr && !mBackend.isMemory())
         try { mCacheMgr->InformPage(*this, index, page, dirty, true, &thisLock); }
@@ -642,7 +642,7 @@ void PageManager::RemoteChanged(const uint64_t backendSize, const SharedLockW& t
     uint64_t maxDirty { 0 };  // byte after last dirty byte
     for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); )
     {
-        Page& page { it->second };
+        const Page& page { it->second };
         if (!page.mDirty) // evict all non-dirty
         {
             if (mCacheMgr) mCacheMgr->RemovePage(page);

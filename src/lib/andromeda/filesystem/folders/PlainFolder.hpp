@@ -58,7 +58,7 @@ protected:
     virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
     /** Populates the item list with items using the given files/folders JSON */
-    virtual void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
+    void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
     virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;
 

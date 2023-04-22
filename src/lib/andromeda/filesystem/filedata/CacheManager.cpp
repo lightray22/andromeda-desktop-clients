@@ -231,7 +231,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
 
         if (newSize > oldSize)
             try { HandleMemory(pageMgr, page, true, lock, mgrLock); }
-        catch (BaseException& e)
+        catch (const BaseException& e)
         {
             mCurrentMemory -= newSize-oldSize;
             itQueue->mPageSize = oldSize;
@@ -251,7 +251,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
 
         if (newSize > oldSize)
             try { HandleDirtyMemory(pageMgr, page, true, lock, mgrLock); }
-        catch (BaseException& e)
+        catch (const BaseException& e)
         {
             mCurrentDirty -= newSize-oldSize;
             itQueue->mPageSize = oldSize;
