@@ -24,7 +24,8 @@ std::string BaseOptions::OtherBaseHelpText()
 {
     std::ostringstream output;
 
-    output << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+]";
+    output << "Config File:     [-c|--config-file path]" << std::endl
+           << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+]";
 
     return output.str();
 }
@@ -154,6 +155,12 @@ bool BaseOptions::AddFlag(const std::string& flag)
 /*****************************************************/
 bool BaseOptions::AddOption(const std::string& option, const std::string& value)
 {
+    if (option == "c" || option == "config")
+    {
+        if (std::filesystem::is_regular_file(value))
+            ParseFile(value);
+        else throw BadValueException(option);
+    }
     if (option == "d" || option == "debug")
     {
         try { Debug::SetLevel(static_cast<Debug::Level>(stoul(value))); }

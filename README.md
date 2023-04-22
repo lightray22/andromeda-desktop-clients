@@ -139,8 +139,14 @@ The Qt GUI client implements a GUI for mounting Andromeda storage using FUSE.   
 
 Given HTTP server URLs can optionally include the protocol, the port number, and URL variables.  For example both of the following are valid: `myhostname` and `https://myhostname.tld:4430/test.php?urlvar`.  The default protocol is HTTP, so specifying `https://` ensures TLS is always used even if the server is not setup to redirect HTTP to HTTPS.
 
-Any option or flag accepted on the command line can also be listed in a config file named after the binary, e.g. `andromeda-fuse.conf`. 
-Example:
+## Config Files
+
+Any option or flag accepted on the command line can also be listed in a config file.
+Common config in `andromeda.conf` is loaded first (but ignored for andromeda-gui), then per-binary config (e.g. `andromeda-fuse.conf`).
+The config files can be located in `/etc/andromeda`, `/usr/local/etc/andromeda`, `~/.config/andromeda`, or the current directory.
+A custom path to a config file can also be specified with the `-c` or `--config-file` option.
+
+Config Example:
 ```
 # Example config file
 apiurl=myserv.tld

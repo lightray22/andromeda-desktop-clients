@@ -66,6 +66,7 @@ int main(int argc, char** argv)
 
     try
     {
+        options.ParseConfig("andromeda");
         options.ParseConfig("andromeda-fuse");
 
         options.ParseArgs(static_cast<size_t>(argc), argv);
