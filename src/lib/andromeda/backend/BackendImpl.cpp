@@ -201,6 +201,8 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
     {
         if (password.empty())
         {
+            if (mOptions.quiet) throw AuthenticationFailedException();
+
             std::cout << "Password? ";
             Utilities::SilentReadConsole(password);
         }
@@ -211,6 +213,8 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
         }
         catch (const TwoFactorRequiredException&)
         {
+            if (mOptions.quiet) std::rethrow_exception(std::current_exception());
+
             std::string twofactor; std::cout << "Two Factor? ";
             Utilities::SilentReadConsole(twofactor);
 

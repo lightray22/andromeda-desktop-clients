@@ -34,7 +34,7 @@ std::string FuseOptions::HelpText()
     output << endl;
 #endif // LIBFUSE2
 
-    output << "FUSE Permissions: [--file_perm " << std::oct << optDefault.filePerms << "] [--dir_perm " << optDefault.dirPerms << "]"
+    output << "FUSE Permissions: [--file-mode " << std::oct << optDefault.fileMode << "] [--dir-mode " << optDefault.dirMode << "]"
         << " [-o uid=N] [-o gid=N] [-o umask=N] [-o allow_root] [-o allow_other]";
 
     return output.str();
@@ -77,16 +77,16 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     {
         fuseArgs.push_back(value);
     }
-    else if (option == "file_perm")
+    else if (option == "file-mode")
     {
-        if (option.size() != 3) throw BaseOptions::BadValueException(option);
-        try { filePerms = decltype(filePerms)(stoul(value,nullptr,8)); }
+        if (value.size() != 4 || value[0] != '0') throw BaseOptions::BadValueException(option);
+        try { fileMode = decltype(fileMode)(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
     }
-    else if (option == "dir_perm")
+    else if (option == "dir-mode")
     {
-        if (option.size() != 3) throw BaseOptions::BadValueException(option);
-        try { dirPerms = decltype(dirPerms)(stoul(value,nullptr,8)); }
+        if (value.size() != 4 || value[0] != '0') throw BaseOptions::BadValueException(option);
+        try { dirMode = decltype(dirMode)(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
     }
 #if !LIBFUSE2

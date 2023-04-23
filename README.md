@@ -119,6 +119,10 @@ inaccessible.  You can force the use of a session with `--force-session`.  This 
 downside of potentially exposing authentication details to other processes as they are placed
 on the command line in cleartext.
 
+There is also a `mount.andromeda` wrapper for mounting via posix `mount` or `fstab`.
+The mount wrapper uses the `dev path [-o opt1,opt2]` format and cannot prompt interactively.
+Options beginning with "-" are passed to andromeda, otherwise they are passed to FUSE via "-o".  
+
 ## Debug
 
 The `--cachemode enum` option is also useful for debugging caching.

@@ -229,7 +229,7 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
     if (itemType == Item::Type::FILE)
     {
         stbuf->st_mode = S_IFREG | static_cast<decltype(stbuf->st_mode)>(
-            GetFuseAdapter().GetOptions().filePerms); 
+            GetFuseAdapter().GetOptions().fileMode); 
 
         const File& file { dynamic_cast<const File&>(*item) };
         stbuf->st_size = static_cast<decltype(stbuf->st_size)>(file.GetSize(itemLock));
@@ -238,7 +238,7 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
     else if (itemType == Item::Type::FOLDER)
     {
         stbuf->st_mode = S_IFDIR | static_cast<decltype(stbuf->st_mode)>(
-            GetFuseAdapter().GetOptions().dirPerms);
+            GetFuseAdapter().GetOptions().dirMode);
 
         stbuf->st_size = 0;
         stbuf->st_blksize = 4096; // meaningless?
