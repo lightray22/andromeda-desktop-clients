@@ -369,7 +369,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             const SharedLockR itemLock { item->GetReadLock() };
 
 #if LIBFUSE2
-            int retval { filler(buf, item->GetName().c_str(), NULL, 0) };
+            int retval { filler(buf, item->GetName(itemLock).c_str(), NULL, 0) };
 #else
             int retval; if (flags & FUSE_READDIR_PLUS)
             {
