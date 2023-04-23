@@ -57,6 +57,9 @@ public:
     /** Returns the string with leading/trailing whitespace stripped */
     static std::string trim(const std::string& str);
 
+    /** Returns the string str with all occurences of from replaced by to */
+    static std::string replaceAll(const std::string& str, const std::string& from, const std::string& to);
+
     /** Returns false if the trimmed string is a false-like value */
     static bool stringToBool(const std::string& stri);
 

@@ -244,8 +244,9 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
         stbuf->st_blksize = 4096; // meaningless?
     }
 
-    stbuf->st_uid = fuse_get_context()->uid;
-    stbuf->st_gid = fuse_get_context()->gid;
+    const fuse_context* fuse_context { fuse_get_context() };
+    stbuf->st_uid = fuse_context->uid;
+    stbuf->st_gid = fuse_context->gid;
 
     stbuf->st_blocks = !stbuf->st_size ? 0 :
         (stbuf->st_size-1)/512+1; // # of 512B blocks

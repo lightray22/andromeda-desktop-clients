@@ -7,6 +7,7 @@ include(../../../andromeda.cmake)
 
 set(SOURCE_FILES main.cpp Options.cpp)
 add_executable(andromeda-fuse ${SOURCE_FILES})
+set(EXECUTABLES andromeda-fuse)
 
 install(TARGETS andromeda-fuse
     BUNDLE  DESTINATION .
@@ -15,14 +16,15 @@ install(TARGETS andromeda-fuse
 
 if (NOT WIN32)
     add_executable(mount.andromeda mount.cpp)
+    list(APPEND EXECUTABLES mount.andromeda)
+    
+    install(TARGETS mount.andromeda
+        BUNDLE  DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
+    )
 endif()
 
-install(TARGETS mount.andromeda
-    BUNDLE  DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR}
-)
-
-foreach(EXECUTABLE andromeda-fuse mount.andromeda)
+foreach(EXECUTABLE ${EXECUTABLES})
 
     target_compile_options(${EXECUTABLE} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
     target_compile_definitions(${EXECUTABLE} PRIVATE ${ANDROMEDA_CXX_DEFS})

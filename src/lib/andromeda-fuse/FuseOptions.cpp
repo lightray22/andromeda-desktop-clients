@@ -79,13 +79,13 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     }
     else if (option == "file-mode")
     {
-        if (value.size() != 4 || value[0] != '0') throw BaseOptions::BadValueException(option);
+        if (value.size() != 3) throw BaseOptions::BadValueException(option);
         try { fileMode = decltype(fileMode)(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
     }
     else if (option == "dir-mode")
     {
-        if (value.size() != 4 || value[0] != '0') throw BaseOptions::BadValueException(option);
+        if (value.size() != 3) throw BaseOptions::BadValueException(option);
         try { dirMode = decltype(dirMode)(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
     }

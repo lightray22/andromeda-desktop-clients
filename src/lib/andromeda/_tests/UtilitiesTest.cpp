@@ -159,6 +159,25 @@ TEST_CASE("trim", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("replaceAll", "[Utilities]")
+{
+    REQUIRE(Utilities::replaceAll("","","") == "");
+    REQUIRE(Utilities::replaceAll("","a","") == "");
+    REQUIRE(Utilities::replaceAll("","a","b") == "");
+
+    REQUIRE(Utilities::replaceAll("a","","") == "a");
+    REQUIRE(Utilities::replaceAll("a","a","") == "");
+    REQUIRE(Utilities::replaceAll("a","a","b") == "b");
+    REQUIRE(Utilities::replaceAll("a","b","a") == "a");
+
+    REQUIRE(Utilities::replaceAll("start,end","start","") == ",end");
+    REQUIRE(Utilities::replaceAll("start,end","end","") == "start,");
+
+    REQUIRE(Utilities::replaceAll("test,test2,test3,test4",",",",,") == "test,,test2,,test3,,test4");
+    REQUIRE(Utilities::replaceAll("str\"thing\"str2","\"","\\\"") == "str\\\"thing\\\"str2");
+}
+
+/*****************************************************/
 TEST_CASE("stringToBool", "[Utilities]") 
 {
     REQUIRE(Utilities::stringToBool("") == false);

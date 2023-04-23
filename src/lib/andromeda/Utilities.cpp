@@ -85,7 +85,7 @@ Utilities::StringPair Utilities::split(
 /*****************************************************/
 Utilities::StringPair Utilities::splitPath(const std::string& str)
 {
-    // TODO does this work if str ends with / ?
+    // TODO does this work if str ends with / ? why own function?
     return split(str,"/",0,true);
 }
 
@@ -114,6 +114,17 @@ std::string Utilities::trim(const std::string& str)
     size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
 
     return str.substr(start, end-start);
+}
+
+/*****************************************************/
+std::string Utilities::replaceAll(const std::string& str, const std::string& from, const std::string& to)
+{
+    if (!str.size() || !from.size()) return str; // invalid
+    std::string retval(str); // copy
+
+    for (size_t pos = 0; (pos = retval.find(from, pos)) != std::string::npos; pos += to.size())
+        retval.replace(pos, from.size(), to);
+    return retval;
 }
 
 /*****************************************************/
