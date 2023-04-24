@@ -90,20 +90,6 @@ public:
     /** Create a new subfolder with the given name */
     virtual void CreateFolder(const std::string& name, const SharedLockW& thisLock) final;
 
-    /** Delete the subitem with the given name */
-    virtual void DeleteItem(const std::string& name, const SharedLockW& thisLock) final;
-
-    /** Rename the subitem oldName to newName, optionally overwrite */
-    virtual void RenameItem(const std::string& oldName, const std::string& newName, 
-        const SharedLockW& thisLock, bool overwrite = false) final;
-
-    /** 
-     * Move the subitem name to parent folder, optionally overwrite 
-     * @param itemsLocks a lock pair for both this and the new parent
-     */
-    virtual void MoveItem(const std::string& name, Folder& newParent, 
-        const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
-
     virtual void FlushCache(const Andromeda::SharedLockW& thisLock, bool nothrow = false) override;
 
 protected:
@@ -116,6 +102,22 @@ protected:
 
     /** Initialize from the given JSON data */
     Folder(Backend::BackendImpl& backend, const nlohmann::json& data);
+
+    friend class Item; // calls DeleteItem(), RenameItem(), MoveItem()
+
+    /** Delete the subitem with the given name */
+    virtual void DeleteItem(const std::string& name, const SharedLockW& thisLock) final;
+
+    /** Rename the subitem oldName to newName, optionally overwrite */
+    virtual void RenameItem(const std::string& oldName, const std::string& newName, 
+        const SharedLockW& thisLock, bool overwrite = false) final;
+
+    /** 
+     * Move the subitem name to parent folder, optionally overwrite
+     * @param itemsLocks a lock pair for both this and the new parent
+     */
+    virtual void MoveItem(const std::string& name, Folder& newParent, 
+        const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
 
     typedef std::unique_lock<std::mutex> UniqueLock;
 

@@ -117,6 +117,9 @@ public:
     /** Returns the parent folder */
     virtual Folder& GetParent(const SharedLock& thisLock) const;
 
+    /** Returns the parent folder or null if not set */
+    virtual Folder* TryGetParent(const SharedLock& thisLock) const { return mParent; }
+
     /** Returns true if this item has FSconfig */
     virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
 
@@ -142,7 +145,7 @@ public:
     virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock);
 
     /** Deletes this item (and its contents if a folder) - MUST NOT have an existing parent! */
-    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock) final;
+    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock);
 
     /** 
      * Delete this item (and its contents if a folder) - MUST have a existing parent!
@@ -151,10 +154,10 @@ public:
      * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock) final;
+    virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock);
 
     /** Set this item's name to the given name, optionally overwrite existing - MUST NOT have an existing parent! */
-    virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) final;
+    virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false);
 
     /** 
      * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
@@ -162,7 +165,7 @@ public:
      * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false) final;
+    virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false);
 
     // TODO implement MoveSelf... move is hard because the parent wants the item as a unique_ptr which we can't provide from self
     // maybe have two separate maps - one for objects we own (unique_ptr) and one just for things we point to?
@@ -174,7 +177,7 @@ public:
      * @param thisLock temporary lock for self which will be unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
-    virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false) final;
+    virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false);
 
     /** 
      * Flushes all dirty pages and metadata to the backend
