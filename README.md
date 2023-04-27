@@ -54,7 +54,7 @@ Run `tools/buildrel` for a release build.  Run `tools/builddev` for a developmen
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 - andromeda-gui
-  - Qt (Windows/macOS: >= 6.4, Linux: >= 5.12)
+  - Qt (Windows/macOS: >= 6.5, Linux: >= 5.12)
 
 These libraries are dynamically linked and must be available at runtime.
 Some other dependencies will be fetched by cmake and built in-tree.

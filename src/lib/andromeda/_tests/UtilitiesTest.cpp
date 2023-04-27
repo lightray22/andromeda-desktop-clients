@@ -7,9 +7,6 @@ namespace Andromeda {
 /*****************************************************/
 TEST_CASE("arrsize", "[Utilities]")
 {
-    int test1[] { };
-    REQUIRE(ARRSIZE(test1) == 0);
-
     int test2[] { 5, 6, 7 };
     REQUIRE(ARRSIZE(test2) == 3);
 

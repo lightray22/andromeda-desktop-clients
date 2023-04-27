@@ -50,7 +50,7 @@ install(TARGETS andromeda-gui
 if (WIN32 OR APPLE)
     qt_generate_deploy_app_script(
         TARGET andromeda-gui
-        FILENAME_VARIABLE deploy_script
+        OUTPUT_SCRIPT deploy_script
     )
     install(SCRIPT ${deploy_script})
 endif()
