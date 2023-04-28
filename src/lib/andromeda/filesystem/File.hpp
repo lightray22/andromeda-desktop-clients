@@ -12,6 +12,8 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/backend/RunnerInput.hpp"
+using Andromeda::Backend::WriteFunc;
 
 namespace Andromeda {
 
@@ -65,7 +67,7 @@ public:
     /** Function to create the file on the backend and return its JSON */
     typedef std::function<nlohmann::json(const std::string& name)> CreateFunc;
     /** Function to upload the file on the backend and return its JSON */
-    typedef std::function<nlohmann::json(const std::string& name, const std::string& data)> UploadFunc;
+    typedef std::function<nlohmann::json(const std::string& name, const WriteFunc& writeFunc)> UploadFunc;
 
     /**
      * @brief Construct a new file in memory only to be created on the backend when flushed

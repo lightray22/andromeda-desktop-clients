@@ -184,7 +184,7 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
         MDBG_INFO("... sessionID:" << mSessionID);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw BackendImpl::JSONErrorException(ex.what()); }
+        throw JSONErrorException(ex.what()); }
 
     mUsername = username;
     mConfig.LoadAccountLimits(*this);
@@ -248,7 +248,7 @@ void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::strin
         resp.at("username").get_to(mUsername);
     }
     catch (const nlohmann::json::exception& ex) {
-        throw BackendImpl::JSONErrorException(ex.what()); }
+        throw JSONErrorException(ex.what()); }
 }
 
 /*****************************************************/
@@ -326,7 +326,7 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    if (isMemory())
+    if (isMemory()) /** debug only */
     {
         nlohmann::json retval;
         retval["id"] = id;
@@ -345,7 +345,7 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    if (isMemory())
+    if (isMemory()) /** debug only */
     {
         nlohmann::json retval;
         retval["id"] = id;
@@ -410,7 +410,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory())
+    if (isMemory()) /** debug only */
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}, {"filesystem", ""}};
 
@@ -432,7 +432,7 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory())
+    if (isMemory()) /** debug only */
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"filesystem", ""}};
 
@@ -456,7 +456,7 @@ void BackendImpl::DeleteFile(const std::string& id)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return;
+    if (isMemory()) /** debug only */ return;
 
     RunnerInput input {"files", "deletefile", {{"file", id}}}; MDBG_BACKEND(input);
     
@@ -471,7 +471,7 @@ void BackendImpl::DeleteFolder(const std::string& id)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return;
+    if (isMemory()) /** debug only */ return;
 
     RunnerInput input {"files", "deletefolder", {{"folder", id}}}; MDBG_BACKEND(input);
     
@@ -486,7 +486,7 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
     RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
 
@@ -500,7 +500,7 @@ nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::strin
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
     RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
 
@@ -514,7 +514,7 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
     RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
 
@@ -528,7 +528,7 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
     RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
 
@@ -545,18 +545,18 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
-    if (isMemory()) return std::string(length,'\0');
+    if (isMemory()) /** debug only */ return std::string(length,'\0');
 
     RunnerInput input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}; MDBG_BACKEND(input);
-    std::string data { mRunners.GetRunner()->RunAction(FinalizeInput(input)) }; // Not JSON
 
+    std::string data { mRunners.GetRunner()->RunAction(FinalizeInput(input)) }; // not JSON
     if (data.size() != length) throw ReadSizeException(length, data.size());
 
     return data;
 }
 
 /*****************************************************/
-void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, BackendImpl::ReadFunc func)
+void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const size_t length, const ReadFunc& userFunc)
 {
     if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return; }
 
@@ -565,12 +565,12 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
-    if (isMemory()) { func(0, std::string(length,'\0').data(), length); return; }
+    if (isMemory()) /** debug only */ { userFunc(0, std::string(length,'\0').data(), length); return; }
 
     size_t read = 0; RunnerInput_StreamOut input {{"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}, 
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
-        func(soffset, buf, buflen); read += buflen;
+        userFunc(soffset, buf, buflen); read += buflen;
     }}; MDBG_BACKEND(input);
 
     mRunners.GetRunner()->RunAction(FinalizeInput(input)); // Not JSON
@@ -590,40 +590,19 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 
+    return WriteFile(id, offset, RunnerInput_StreamIn::FromString(data));
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const WriteFunc& userFunc)
+{
+    MDBG_INFO("(id:" << id << " offset:" << offset << ")");
+
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
-    nlohmann::json retval; // return last retval
-    for (size_t byte { 0 }; byte < data.size(); ) // chunk by maxSize
-    {
-        bool retry { true }; while (retry) // may need to retry a smaller maxSize
-        {
-            const size_t maxSize { mConfig.GetUploadMaxBytes() };
-            MDBG_INFO("... maxSize:" << maxSize);
-
-            const std::string subdata{maxSize ? data.substr(byte, maxSize) : ""}; // infile takes a string&
-            const RunnerInput_FilesIn::FileData infile { "data", !subdata.empty() ? subdata : data };
-            MDBG_INFO("... byte:" << byte << " size:" << infile.data.size());
-
-            RunnerInput_FilesIn input {{"files", "writefile", {{"file", id}, 
-                {"offset", std::to_string(offset+byte)}}}, {{"data", infile}}};
-            MDBG_BACKEND(input);
-
-            try
-            {
-                retval = RunAction(input);
-                byte += infile.data.size(); retry = false;
-            }
-            catch (const HTTPRunner::InputSizeException& e)
-            {
-                MDBG_INFO("... caught InputSizeException! retry");
-                if (maxSize && maxSize < UPLOAD_MINSIZE) throw;
-                mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(infile.data.size()));
-            }
-        }
-    }
-    return retval;
+    return SendFile(userFunc, id, offset, nullptr);
 }
 
 /*****************************************************/
@@ -633,51 +612,80 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
 
     MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
 
+    return UploadFile(parent, name, RunnerInput_StreamIn::FromString(data), overwrite);
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, bool overwrite)
+{
+    MDBG_INFO("(parent:" << parent << " name:" << name << ")");
+
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory())
+    if (isMemory()) /** debug only */
     {
-        nlohmann::json retval {{"id", ""}, {"name", name}, {"size", data.size()}, {"filesystem", ""}};
-
+        nlohmann::json retval {{"id", ""}, {"name", name}, 
+            {"size", RunnerInput_StreamIn::StreamSize(userFunc)}, {"filesystem", ""}};
         retval["dates"] = {{"created",0},{"modified",nullptr},{"accessed",nullptr}};
-        
         return retval;
     }
 
-    nlohmann::json retval; // return last retval
-    size_t byte { 0 }; 
-    bool retry { true }; while (retry) // may need to retry a smaller maxSize
+    return SendFile(userFunc, "", 0, [&](const WriteFunc& writeFunc)->RunnerInput_StreamIn
+    {
+        return {{"files", "upload", {{"parent", parent}, {"name", name}, 
+            {"overwrite", BOOLSTR(overwrite)}}}, {{"file", {name, writeFunc}}}};
+    });
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload)
+{
+    nlohmann::json retval;    // last json response to return
+    size_t byte { 0 };        // starting stream offset to read
+    bool streamCont { true }; // true if the userFunc has more
+    
+    while (streamCont) // retry or chunk by MaxBytes
     {
         const size_t maxSize { mConfig.GetUploadMaxBytes() };
-        MDBG_INFO("... maxSize:" << maxSize);
+        MDBG_INFO("... byte:" << byte << " maxSize:" << maxSize);
 
-        const std::string subdata{maxSize ? data.substr(0, maxSize) : ""}; // infile takes a string&
-        const RunnerInput_FilesIn::FileData infile { name, !subdata.empty() ? subdata : data };
-        MDBG_INFO("... size:" << infile.data.size());
+        size_t streamSize { 0 }; // total bytes read during stream
+        const WriteFunc& writeFunc { [&](const size_t soffset, char* const buf, const size_t buflen, size_t& sread)->bool
+        {
+            if (maxSize && soffset >= maxSize) return false; // end of chunk
+            const size_t strSize { maxSize ? std::min(buflen,maxSize) : buflen };
 
-        RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}, 
-            {"overwrite", BOOLSTR(overwrite)}}}, {{"file", infile}}};
+            streamCont = userFunc(soffset+byte, buf, strSize, sread);
+            streamSize += sread; return streamCont;
+        }};
+
+        RunnerInput_StreamIn input;
+        if (!byte && getUpload) // upload file
+            input = getUpload(writeFunc);
+        else // write file
+        {
+            input = {{"files", "writefile", {{"file", id}, 
+                {"offset", std::to_string(offset+byte)}}}, {{"data", {"data", writeFunc}}}};
+        }
         MDBG_BACKEND(input);
 
         try
         {
             retval = RunAction(input);
-            byte += infile.data.size();
-            retry = false;
+            retval.at("id").get_to(id);
+            byte += streamSize; // next chunk
         }
         catch (const HTTPRunner::InputSizeException& e)
         {
-            MDBG_INFO("... caught InputSizeException! retry");
+            MDBG_INFO("... caught InputSizeException! streamSize:" << streamSize);
             if (maxSize && maxSize < UPLOAD_MINSIZE) { 
                 MDBG_ERROR("... below UPLOAD_MINSIZE!"); throw; }
-            mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(infile.data.size()));
-        }
-    }
 
-    if (byte < data.size()) // write remaining chunks
-    {
-        std::string id; retval.at("id").get_to(id);
-        retval = WriteFile(id, byte, data.substr(byte));
+            mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(streamSize));
+            streamCont = true; // need to retry
+        }
+        catch (const nlohmann::json::exception& ex) {
+            throw JSONErrorException(ex.what()); }
     }
     return retval;
 }
@@ -689,7 +697,7 @@ nlohmann::json BackendImpl::TruncateFile(const std::string& id, const uint64_t s
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) return nullptr;
+    if (isMemory()) /** debug only */ return nullptr;
 
     RunnerInput input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}}; MDBG_BACKEND(input);
 

@@ -6,6 +6,8 @@
 using Andromeda::ConfigOptions;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/RunnerInput.hpp"
+using Andromeda::Backend::WriteFunc;
 #include "andromeda/filesystem/FSConfig.hpp"
 using Andromeda::Filesystem::FSConfig;
 #include "andromeda/filesystem/File.hpp"
@@ -121,8 +123,8 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& this
     else file = std::make_unique<File>(mBackend, *this, name, *mFsConfig, // create later
         [&](const std::string& fname){ 
             return mBackend.CreateFile(GetID(), fname); },
-        [&](const std::string& fname, const std::string& fdata){ 
-            return mBackend.UploadFile(GetID(), fname, fdata); });
+        [&](const std::string& fname, const WriteFunc& ffunc){ 
+            return mBackend.UploadFile(GetID(), fname, ffunc); });
 
     SharedLockR subLock { file->GetReadLock() };
     mItemMap[file->GetName(subLock)] = std::move(file);

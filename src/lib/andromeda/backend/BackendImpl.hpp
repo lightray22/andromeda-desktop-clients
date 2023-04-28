@@ -9,6 +9,7 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Config.hpp"
+#include "RunnerInput.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
@@ -18,10 +19,6 @@ namespace Andromeda {
 namespace Filesystem { namespace Filedata { class CacheManager; } }
 
 namespace Backend {
-
-struct RunnerInput;
-struct RunnerInput_FilesIn;
-struct RunnerInput_StreamIn;
 class RunnerPool;
 
 /** 
@@ -252,23 +249,14 @@ public:
      */
     std::string ReadFile(const std::string& id, const uint64_t offset, const size_t length);
 
-    /** 
-     * A function that supplies a buffer to read output data out of
-     * MUST NOT call another backend action within the callback!
-     * @param offset offset of the current output data 
-     * @param data pointer to buffer containing data
-     * @param length length of the data buffer
-     */
-    typedef std::function<void(const size_t offset, const char* buf, const size_t length)> ReadFunc;
-
     /**
      * Streams data from a file
      * @param id file ID
      * @param offset offset to read from
      * @param length number of bytes to read
-     * @param func data handler function
+     * @param userFunc data handler function
      */
-    void ReadFile(const std::string& id, const uint64_t offset, const size_t length, ReadFunc func);
+    void ReadFile(const std::string& id, const uint64_t offset, const size_t length, const ReadFunc& userFunc);
 
     /**
      * Writes data to a file
@@ -279,6 +267,14 @@ public:
     nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const std::string& data);
     
     /**
+     * Writes data to a file (streaming)
+     * @param id file ID
+     * @param offset offset to write to
+     * @param userFunc function to stream data
+     */
+    nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const WriteFunc& userFunc);
+    
+    /**
      * Creates a new file with data
      * @param parent parent folder ID
      * @param name name of new file
@@ -286,6 +282,15 @@ public:
      * @param overwrite whether to overwrite existing
      */
     nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite = false);
+
+    /**
+     * Creates a new file with data (streaming)
+     * @param parent parent folder ID
+     * @param name name of new file
+     * @param userFunc function to stream data
+     * @param overwrite whether to overwrite existing
+     */
+    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, bool overwrite = false);
 
     /**
      * Truncates a file
@@ -313,6 +318,18 @@ private:
     /** Finalizes input, runs the action, returns JSON */
     template<class InputT>
     nlohmann::json RunAction(InputT& input);
+
+    /** Function that is given a WriteFunc and returns a RunnerInput_StreamIn for file upload */
+    typedef std::function<RunnerInput_StreamIn(const WriteFunc& writeFunc)> UploadInput;
+
+    /**
+     * Commonized file upload/write stream with max upload size checking/retries
+     * @param userFunc user-provided data streaming function
+     * @param id ID of the file if already created (getUpload=nullptr)
+     * @param offset offset of the file to write to if already created (getUpload=nullptr)
+     * @param getUpload function to get an input for the initial upload if NOT already created (ignore id,offset)
+     */
+    nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload);
 
     /** True if we created the session in use */
     bool mCreatedSession { false };

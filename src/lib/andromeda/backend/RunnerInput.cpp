@@ -5,10 +5,39 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-RunnerInput_StreamIn::WriteFunc RunnerInput_StreamIn::FromStream(std::istream& data)
+size_t RunnerInput_StreamIn::StreamSize(const WriteFunc& func)
+{
+    size_t retval { 0 }; 
+    bool moreData { true }; while (moreData)
+    {
+        size_t sread { 0 };
+        char buf[1024*1024];
+        moreData = func(retval, buf, sizeof(buf), sread);
+        retval += sread;
+    }
+    return retval;
+}
+
+/*****************************************************/
+WriteFunc RunnerInput_StreamIn::FromString(const std::string& data)
+{
+    return [&](const size_t soffset, char* const buf, const size_t buflen, size_t& sread)->bool
+    {
+        if (soffset >= data.size()) return false;
+
+        const char* sdata { data.data()+soffset };
+        sread = std::min(data.size()-soffset, buflen);
+        
+        std::copy(sdata, sdata+sread, buf); 
+        return soffset+sread < data.size();
+    };
+}
+
+/*****************************************************/
+WriteFunc RunnerInput_StreamIn::FromStream(std::istream& data)
 {
     // curoff is copied to within the std::function and maintains state between successive calls
-    size_t curoff = 0; return [&data,curoff](const size_t offset, char* const buf, const size_t length, size_t& read) mutable ->bool
+    size_t curoff = 0; return [&data,curoff](const size_t offset, char* const buf, const size_t buflen, size_t& read) mutable ->bool
     {
         if (offset != curoff)
         {
@@ -17,7 +46,7 @@ RunnerInput_StreamIn::WriteFunc RunnerInput_StreamIn::FromStream(std::istream& d
             curoff = offset;
         }
 
-        data.read(buf, static_cast<std::streamsize>(length));
+        data.read(buf, static_cast<std::streamsize>(buflen));
         read = static_cast<std::size_t>(data.gcount());
         curoff += read;
 
@@ -29,7 +58,7 @@ RunnerInput_StreamIn::WriteFunc RunnerInput_StreamIn::FromStream(std::istream& d
 }
 
 /*****************************************************/
-RunnerInput_StreamOut::ReadFunc RunnerInput_StreamOut::ToStream(std::ostream& data)
+ReadFunc RunnerInput_StreamOut::ToStream(std::ostream& data)
 {
     // curoff is copied to within the std::function and maintains state between successive calls
     size_t curoff = 0; return [&data,curoff](const size_t offset, const char* buf, const size_t length) mutable ->void 

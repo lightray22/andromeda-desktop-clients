@@ -9,6 +9,8 @@
 #include "andromeda/Semaphor.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/RunnerInput.hpp"
+using Andromeda::Backend::WriteFunc;
 #include "andromeda/filesystem/File.hpp"
 using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
@@ -107,25 +109,34 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     for (const Page* pagePtr : pages)
         totalSize += pagePtr->size();
 
-    std::string buf; buf.resize(totalSize); char* curBuf { buf.data() };
-    for (const Page* pagePtr : pages)
-    {
-        std::copy(pagePtr->mData.cbegin(), pagePtr->mData.cend(), curBuf);
-        curBuf += pagePtr->size();
-    }
+    const uint64_t writeStart { index*mPageSize };
+    MDBG_INFO("... WRITING " << totalSize << " to " << writeStart);
 
-    uint64_t writeStart { index*mPageSize };
-    MDBG_INFO("... WRITING " << buf.size() << " to " << writeStart);
+    WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& read)->bool
+    {
+        const size_t pagesIdx { offset/mPageSize };
+        if (pagesIdx >= pages.size()) return false;
+
+        const Page& page { *pages[pagesIdx] };
+        const size_t pageOffset { offset - pagesIdx*mPageSize };
+        const size_t pageSize { page.mData.size() };
+        if (pageOffset >= pageSize) return false;
+
+        const char* copyData { page.mData.data()+pageOffset };
+        read = std::min(pageSize-pageOffset,buflen);
+        std::copy(copyData, copyData+read, buf); 
+        return true; // initial check will catch when we're done
+    }};
 
     if (!mBackendExists && index != 0)
         FlushCreate(thisLock); // can't use Upload() w/o first page
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),buf),thisLock);
+        mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),writeFunc),thisLock);
         mBackendExists = true;
     }
-    else mBackend.WriteFile(mFileID, writeStart, buf);
+    else mBackend.WriteFile(mFileID, writeStart, writeFunc);
 
     mBackendSize = std::max(mBackendSize, writeStart+totalSize);
 

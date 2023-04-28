@@ -261,7 +261,8 @@ std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJso
         // callback that reads from the provided file stream into our buffer then httplib's buffer
         httplib::ContentProviderWithoutLength sfunc { [&](size_t offset, httplib::DataSink& sink)->bool
         {
-            size_t read; bool hasMore { it.second.streamer(offset, streamBuffer.get(), bufSize, read) };
+            size_t read { 0 };
+            bool hasMore { it.second.streamer(offset, streamBuffer.get(), bufSize, read) };
             sink.os.write(streamBuffer.get(), static_cast<std::streamsize>(read));
             if (!hasMore) sink.done(); 
             return true;

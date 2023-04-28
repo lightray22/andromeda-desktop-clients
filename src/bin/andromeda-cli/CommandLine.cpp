@@ -86,7 +86,7 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
 
     RunnerInput::Params params;
     RunnerInput_StreamIn::FileStreams streams;
-    RunnerInput_StreamOut::ReadFunc readfunc;
+    Andromeda::Backend::ReadFunc readfunc;
 
     // see andromeda-server CLI::GetInput()
     for (size_t i = 0; i < args.size(); i++)
