@@ -30,7 +30,8 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     if (option == "max-dirty")
     {
         try { maxDirtyTime = decltype(maxDirtyTime)(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "memory-limit")
     {

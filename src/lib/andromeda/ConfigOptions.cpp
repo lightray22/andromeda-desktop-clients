@@ -51,18 +51,20 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     else if (option == "dir-refresh")
     {
         try { refreshTime = decltype(refreshTime)(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "backend-runners")
     {
         try { runnerPoolSize = decltype(runnerPoolSize)(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
 
         if (!runnerPoolSize) throw BaseOptions::BadValueException(option);
     }
     else if (option == "pagesize")
     {
-        try { pageSize = Utilities::stringToBytes(value); }
+        try { pageSize = static_cast<size_t>(Utilities::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 
@@ -71,7 +73,8 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     else if (option == "read-ahead")
     {
         try { readAheadTime = decltype(readAheadTime)(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "read-max-cache-frac")
     {

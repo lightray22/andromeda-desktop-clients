@@ -62,7 +62,8 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
     else if (option == "http-timeout")
     {
         try { timeout = seconds(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "max-retries")
     {
@@ -73,11 +74,12 @@ bool HTTPOptions::AddOption(const std::string& option, const std::string& value)
     else if (option == "retry-time")
     {
         try { retryTime = seconds(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "stream-buffer-size")
     {
-        try { streamBufferSize = Utilities::stringToBytes(value); }
+        try { streamBufferSize = static_cast<size_t>(Utilities::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 

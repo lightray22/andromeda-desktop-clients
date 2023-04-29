@@ -81,19 +81,22 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     {
         if (value.size() != 3) throw BaseOptions::BadValueException(option);
         try { fileMode = decltype(fileMode)(stoul(value,nullptr,8)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
     else if (option == "dir-mode")
     {
         if (value.size() != 3) throw BaseOptions::BadValueException(option);
         try { dirMode = decltype(dirMode)(stoul(value,nullptr,8)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
 #if !LIBFUSE2
     else if (option == "fuse-max-idle-threads")
     {
         try { maxIdleThreads = decltype(maxIdleThreads)(stoul(value)); }
-        catch (const std::logic_error& e) { throw BaseOptions::BadValueException(option); }
+        catch (const std::logic_error& e) { 
+            throw BaseOptions::BadValueException(option); }
     }
 #endif // !LIBFUSE2
     else return false; // not used
