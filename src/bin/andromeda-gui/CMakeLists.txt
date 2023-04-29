@@ -51,6 +51,7 @@ if (WIN32 OR APPLE)
     qt_generate_deploy_app_script(
         TARGET andromeda-gui
         OUTPUT_SCRIPT deploy_script
+        NO_TRANSLATIONS
     )
     install(SCRIPT ${deploy_script})
 endif()
