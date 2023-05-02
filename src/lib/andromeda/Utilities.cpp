@@ -165,6 +165,17 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
 }
 
 /*****************************************************/
+std::string Utilities::bytesToString(uint64_t bytes)
+{
+    size_t unit { 0 };
+    const char* units[] { "", "K", "M", "G", "T", "P" };
+    while (bytes >= 1024 && !(bytes % 1024) && unit < ARRSIZE(units)) {
+        ++unit; bytes /= 1024;
+    }
+    return std::to_string(bytes)+units[unit];
+}
+
+/*****************************************************/
 void Utilities::SilentReadConsole(std::string& retval)
 {
     #if WIN32

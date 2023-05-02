@@ -19,7 +19,7 @@ std::string CacheOptions::HelpText()
 
     const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
 
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << optDefault.memoryLimit << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
+    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << Utilities::bytesToString(optDefault.memoryLimit) << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
 }

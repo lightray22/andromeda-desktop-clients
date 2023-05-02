@@ -23,7 +23,8 @@ std::string HTTPOptions::HelpText()
 
     output 
         << "HTTP Options:    [--http-user str --http-pass str] [--hproxy-host host [--hproxy-port uint16] [--hproxy-user str --hproxy-pass str]] [--no-tls-verify]" << endl
-        << "HTTP Advanced:   [--no-http-redirect] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << optDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")] [--stream-buffer-size bytes32(" << optDefault.streamBufferSize << ")]";
+        << "HTTP Advanced:   [--no-http-redirect] [--http-timeout secs(" << defTimeout << ")] [--max-retries uint(" << optDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")] "
+            << "[--stream-buffer-size bytes32(" << Utilities::bytesToString(optDefault.streamBufferSize) << ")]";
 
     return output.str();
 }

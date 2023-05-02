@@ -64,10 +64,16 @@ public:
     static bool stringToBool(const std::string& stri);
 
     /** 
-     * Returns a string like "4096" or "256M" as # of bytes 
+     * Converts a string like "4096" or "256M" to # of bytes
      * @throws std::logic_error if we fail to convert to a number
      */
     static uint64_t stringToBytes(const std::string& stri);
+
+    /**
+     * Converts # of bytes to a string like "256K" or "4M"
+     * stopping at the biggest possible unit (whole numbers only)
+     */
+    static std::string bytesToString(uint64_t bytes);
 
     /**
      * Silently read a line of input from stdin

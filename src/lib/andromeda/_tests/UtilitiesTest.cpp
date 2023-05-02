@@ -209,7 +209,24 @@ TEST_CASE("stringToBytes", "[Utilities]")
     REQUIRE(Utilities::stringToBytes("13T") == (uint64_t)13*1024*1024*1024*1024);
 
     REQUIRE_THROWS_AS(Utilities::stringToBytes("R2D2"), std::logic_error);
+}
 
+/*****************************************************/
+TEST_CASE("bytesToString", "[Utilities]")
+{
+    REQUIRE(Utilities::bytesToString(0) == "0");
+    REQUIRE(Utilities::bytesToString(123) == "123");
+
+    REQUIRE(Utilities::bytesToString(1024) == "1K");
+    REQUIRE(Utilities::bytesToString(4096) == "4K");
+    
+    REQUIRE(Utilities::bytesToString(1048576) == "1M");
+    REQUIRE(Utilities::bytesToString(1048577) == "1048577");
+    REQUIRE(Utilities::bytesToString(1536000) == "1500K");
+    
+    REQUIRE(Utilities::bytesToString((uint64_t)45*1024*1024*1024) == "45G");
+    REQUIRE(Utilities::bytesToString((uint64_t)27*1024*1024*1024*1024) == "27T");
+    REQUIRE(Utilities::bytesToString((uint64_t)69*1024*1024*1024*1024*1024) == "69P");
 }
 
 } // namespace Andromeda
