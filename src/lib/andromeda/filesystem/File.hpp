@@ -56,6 +56,9 @@ public:
     /** Returns the file's data page size */
     virtual size_t GetPageSize() const;
 
+    /** Checks the FS and account limits for the allowed write mode */
+    FSConfig::WriteMode GetWriteMode() const;
+
     /**
      * @brief Construct a File using backend data
      * @param backend backend reference
@@ -125,9 +128,6 @@ protected:
     virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
-
-    /** Checks the FS and account limits for the allowed write mode */
-    FSConfig::WriteMode GetWriteMode() const;
 
     /** Returns the page size calculated from the backend.pageSize and fsConfig.chunkSize */
     size_t CalcPageSize() const;

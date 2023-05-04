@@ -517,7 +517,10 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& thisLock)
     PageMap::iterator pageIt { mPages.find(index) };
     if (pageIt != mPages.end())
     {
-        if (pageIt->second.mDirty)
+        // ignore dirty evictions if we can't random write
+        const bool randWrite { mFile.GetWriteMode() >= FSConfig::WriteMode::RANDOM };
+
+        if (pageIt->second.mDirty && randWrite)
         {
             MDBG_INFO("... page is dirty, writing");
             PageBackend::PagePtrList writeList;
@@ -529,7 +532,9 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& thisLock)
         }
 
         if (mCacheMgr) mCacheMgr->RemovePage(pageIt->second);
-        mPages.erase(pageIt); // need thisLockW for this
+
+        if (!pageIt->second.mDirty || randWrite)
+            mPages.erase(pageIt); // need thisLockW for this
 
         MDBG_INFO("... page removed, numPages:" << mPages.size());
     }
@@ -542,15 +547,21 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockW& thisLock)
     MDBG_INFO("(" << mFile.GetName(thisLock) << ") (index:" << index << ")");
 
     PageBackend::PagePtrList writeList;
-
     PageMap::iterator pageIt { mPages.find(index) };
-    if (pageIt != mPages.end() && pageIt->second.mDirty)
+    if (pageIt != mPages.end() && pageIt->second.mDirty &&
+        // ignore page flushes if we can't random write
+        mFile.GetWriteMode() >= FSConfig::WriteMode::RANDOM)
+    {
         GetWriteList(pageIt, writeList, thisLock);
+    }
     else { MDBG_INFO(" ... page not found"); }
     
-    // might be an empty list - this is OK (will run FlushCreate)
-    size_t written { FlushPageList(index, writeList, thisLock) };
-
+    size_t written { 0 };
+    if (writeList.size())
+        written = FlushPageList(index, writeList, thisLock);
+    else if (mCacheMgr && pageIt != mPages.end()) 
+        mCacheMgr->RemoveDirty(pageIt->second);
+    
     MDBG_INFO("... return:" << written); return written;
 }
 

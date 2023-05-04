@@ -381,7 +381,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             else retval = filler(buf, item->GetName(itemLock).c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
-                str << fname << "... filler() failed"; }); return -EIO; }
+                str << fname << "... filler() failed: " << retval; }); return -EIO; }
         }
 
         for (const char* name : {".",".."})
@@ -392,7 +392,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
             int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
-                str << fname << "... filler() failed"; }); return -EIO; }
+                str << fname << "... filler() failed: " << retval; }); return -EIO; }
         }
 
         return FUSE_SUCCESS;
@@ -597,7 +597,10 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 /*****************************************************/
 int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 {
-    SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
+    SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ", flush:" << fi->flush << ")");
+
+    // TODO this does not seem right.  At least check fi->flush? maybe lowlevel only
+    // if you keep it, add matching releasedir
 
     return CatchAsErrno(__func__,[&]()->int
     {

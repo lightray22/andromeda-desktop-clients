@@ -234,15 +234,15 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     const FSConfig::WriteMode writeMode(GetWriteMode());
-    if (writeMode == FSConfig::WriteMode::NONE) throw WriteTypeException();
 
     const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
     ITDBG_INFO("... fileSize:" << fileSize);
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
-        if (writeMode == FSConfig::WriteMode::APPEND 
-            && offset != mPageManager->GetFileSize(thisLock)) throw WriteTypeException();
+        if (writeMode == FSConfig::WriteMode::UPLOAD
+            || (writeMode == FSConfig::WriteMode::APPEND
+                && offset != mPageManager->GetFileSize(thisLock))) throw WriteTypeException();
 
         const std::string data(buffer, length);
         mBackend.WriteFile(GetID(), offset, data);
@@ -252,12 +252,8 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     {
         const size_t pageSize { mPageManager->GetPageSize() };
 
-        if (writeMode == FSConfig::WriteMode::APPEND)
-        {
-            // allowed if (==fileSize and startOfPage) OR (within dirty page)
-            if (!(offset == fileSize && offset % pageSize == 0) && 
-                !mPageManager->isDirty(offset/pageSize, thisLock)) throw WriteTypeException();
-        }
+        if (writeMode < FSConfig::WriteMode::RANDOM
+            && mPageBackend->ExistsOnBackend(thisLock)) throw WriteTypeException();
 
         const uint64_t index { byte / pageSize };
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
@@ -279,7 +275,11 @@ void File::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
-    if (GetWriteMode() < FSConfig::WriteMode::RANDOM) throw WriteTypeException();
+    const FSConfig::WriteMode writeMode(GetWriteMode());
+
+    if (writeMode == FSConfig::WriteMode::UPLOAD
+        || (writeMode == FSConfig::WriteMode::APPEND
+            && newSize != 0)) throw WriteTypeException();
 
     mPageManager->Truncate(newSize, thisLock);
 }

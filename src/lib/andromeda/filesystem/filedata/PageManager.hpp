@@ -93,13 +93,13 @@ public:
     void EvictPage(const uint64_t index, const SharedLockW& thisLock);
 
     /** 
-     * Flushes the given page if dirty
+     * Flushes the given page if dirty, creating the file on the backend if necessary
      * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
      */
     size_t FlushPage(const uint64_t index, const SharedLockW& thisLock);
 
-    /** Writes back all dirty pages */
+    /** Writes back all dirty pages, creating the file on the backend if necessary */
     void FlushPages(const SharedLockW& thisLock);
 
     /**
