@@ -28,9 +28,6 @@
     #define statvfs fuse_statvfs
     #define timespec fuse_timespec
     
-    #undef ENOTSUP
-    #define ENOTSUP EIO
-    
     #define S_IRUSR 0400
     #define S_IWUSR 0200
     #define S_IXUSR 0100
