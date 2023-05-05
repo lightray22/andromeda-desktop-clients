@@ -160,11 +160,8 @@ FSConfig::WriteMode File::GetWriteMode() const
 {
     FSConfig::WriteMode writeMode(GetFSConfig().GetWriteMode());
 
-    if (writeMode >= FSConfig::WriteMode::RANDOM && 
-        !mBackend.GetConfig().canRandWrite())
-    {
-        writeMode = FSConfig::WriteMode::APPEND;
-    }
+    if (!mBackend.GetConfig().canRandWrite())
+        writeMode = std::min(writeMode, FSConfig::WriteMode::APPEND);
 
     return writeMode;
 }
@@ -248,15 +245,27 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     }
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
-        // UPLOAD/APPEND only allowed if not yet uploaded
-        if (writeMode < FSConfig::WriteMode::RANDOM)
+        if (writeMode <= FSConfig::WriteMode::APPEND)
         {
+            // UPLOAD/APPEND only allowed if not yet uploaded
             if (mPageBackend->ExistsOnBackend(thisLock)) 
                 throw WriteTypeException();
+
+            // if we know the upload will fail, error out early
+            if (writeMode == FSConfig::WriteMode::UPLOAD)
+            {
+                const uint64_t uploadMax { mBackend.GetConfig().GetUploadMaxBytes() };
+                if (uploadMax && offset+length > uploadMax)
+                {
+                    ITDBG_INFO("write exceeds upload max:" << uploadMax);
+                    throw BackendImpl::WriteSizeException();
+                }
+            }
 
             const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
             if (offset > fileSize) // need to fill in holes for sequential upload
             {
+                ITDBG_INFO("... fill write hole:" << fileSize);
                 std::vector<char> buf(offset-fileSize, 0);
                 WriteBytes(buf.data(), fileSize, offset-fileSize, thisLock);
             }

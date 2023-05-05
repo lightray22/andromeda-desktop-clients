@@ -56,6 +56,10 @@ public:
     class ReadOnlyException : public Exception { public:
         explicit ReadOnlyException() : Exception("Read Only Backend") {}; };
 
+    /** Exception indicating the requested write is too large to send */
+    class WriteSizeException : public Exception { public:
+        explicit WriteSizeException() : Exception("Write Size Too Large") {}; };
+
     /** Base exception for Andromeda-returned errors */
     class APIException : public Exception { public:
         using Exception::Exception; // string constructor
@@ -279,18 +283,22 @@ public:
      * @param parent parent folder ID
      * @param name name of new file
      * @param data file data to write
+     * @param oneshot if true, can't split into multiple writes
      * @param overwrite whether to overwrite existing
      */
-    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite = false);
+    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, 
+        bool oneshot = false, bool overwrite = false);
 
     /**
      * Creates a new file with data (streaming)
      * @param parent parent folder ID
      * @param name name of new file
      * @param userFunc function to stream data
+     * @param oneshot if true, can't split into multiple writes
      * @param overwrite whether to overwrite existing
      */
-    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, bool overwrite = false);
+    nlohmann::json UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, 
+        bool oneshot = false, bool overwrite = false);
 
     /**
      * Truncates a file
@@ -328,8 +336,9 @@ private:
      * @param id ID of the file if already created (getUpload=nullptr)
      * @param offset offset of the file to write to if already created (getUpload=nullptr)
      * @param getUpload function to get an input for the initial upload if NOT already created (ignore id,offset)
+     * @param oneshot if true, can't split into multiple writes
      */
-    nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload);
+    nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload, bool oneshot);
 
     /** True if we created the session in use */
     bool mCreatedSession { false };

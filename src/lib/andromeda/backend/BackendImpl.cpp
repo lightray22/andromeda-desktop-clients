@@ -213,7 +213,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
         }
         catch (const TwoFactorRequiredException&)
         {
-            if (mOptions.quiet) std::rethrow_exception(std::current_exception());
+            if (mOptions.quiet) throw; // rethrow
 
             std::string twofactor; std::cout << "Two Factor? ";
             Utilities::SilentReadConsole(twofactor);
@@ -461,7 +461,8 @@ void BackendImpl::DeleteFile(const std::string& id)
     RunnerInput input {"files", "deletefile", {{"file", id}}}; MDBG_BACKEND(input);
     
     try { RunAction(input); }
-    catch (const NotFoundException&) { }
+    catch (const NotFoundException& e) {
+        MDBG_INFO("... backend:" << e.what()); }
 }
 
 /*****************************************************/
@@ -476,7 +477,8 @@ void BackendImpl::DeleteFolder(const std::string& id)
     RunnerInput input {"files", "deletefolder", {{"folder", id}}}; MDBG_BACKEND(input);
     
     try { RunAction(input); }
-    catch (const NotFoundException&) { }
+    catch (const NotFoundException& e) {
+        MDBG_INFO("... backend:" << e.what()); }
 }
 
 /*****************************************************/
@@ -602,21 +604,21 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     if (isMemory()) /** debug only */ return nullptr;
 
-    return SendFile(userFunc, id, offset, nullptr);
+    return SendFile(userFunc, id, offset, nullptr, false);
 }
 
 /*****************************************************/
-nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool overwrite)
+nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const std::string& data, bool oneshot, bool overwrite)
 {
     if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); }
 
     MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
 
-    return UploadFile(parent, name, RunnerInput_StreamIn::FromString(data), overwrite);
+    return UploadFile(parent, name, RunnerInput_StreamIn::FromString(data), overwrite, oneshot);
 }
 
 /*****************************************************/
-nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, bool overwrite)
+nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, bool oneshot, bool overwrite)
 {
     MDBG_INFO("(parent:" << parent << " name:" << name << ")");
 
@@ -634,11 +636,11 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
     {
         return {{"files", "upload", {{"parent", parent}, {"name", name}, 
             {"overwrite", BOOLSTR(overwrite)}}}, {{"file", {name, writeFunc}}}};
-    });
+    }, oneshot);
 }
 
 /*****************************************************/
-nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload)
+nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload, bool oneshot)
 {
     nlohmann::json retval;    // last json response to return
     size_t byte { 0 };        // starting stream offset to read
@@ -652,9 +654,13 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
         size_t streamSize { 0 }; // total bytes read during stream
         const WriteFunc& writeFunc { [&](const size_t soffset, char* const buf, const size_t buflen, size_t& sread)->bool
         {
-            if (maxSize && soffset >= maxSize) return false; // end of chunk
-            const size_t strSize { maxSize ? std::min(buflen,maxSize) : buflen };
+            if (maxSize && soffset >= maxSize)
+            {
+                if (oneshot) throw WriteSizeException();
+                else return false; // end of chunk
+            }
 
+            const size_t strSize { maxSize ? std::min(buflen,maxSize) : buflen };
             streamCont = userFunc(soffset+byte, buf, strSize, sread);
             streamSize += sread; return streamCont;
         }};
@@ -678,11 +684,13 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
         catch (const HTTPRunner::InputSizeException& e)
         {
             MDBG_INFO("... caught InputSizeException! streamSize:" << streamSize);
-            if (maxSize && maxSize < UPLOAD_MINSIZE) { 
-                MDBG_ERROR("... below UPLOAD_MINSIZE!"); throw; }
 
+            if (maxSize && maxSize < UPLOAD_MINSIZE) {
+                MDBG_ERROR("... below UPLOAD_MINSIZE!"); throw; } // rethrow
             mConfig.SetUploadMaxBytes(ADJUST_ATTEMPT(streamSize));
-            streamCont = true; // need to retry
+
+            if (oneshot) throw WriteSizeException();
+            else streamCont = true; // need to retry chunk
         }
         catch (const nlohmann::json::exception& ex) {
             throw JSONErrorException(ex.what()); }

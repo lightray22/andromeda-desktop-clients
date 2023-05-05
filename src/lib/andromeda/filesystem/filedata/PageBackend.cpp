@@ -133,7 +133,8 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
 
     if (!mBackendExists)
     {
-        mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),writeFunc),thisLock);
+        const bool oneshot { mFile.GetWriteMode() <= FSConfig::WriteMode::UPLOAD };
+        mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),writeFunc,oneshot),thisLock);
         mBackendExists = true;
     }
     else mBackend.WriteFile(mFileID, writeStart, writeFunc);

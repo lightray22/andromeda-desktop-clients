@@ -123,8 +123,8 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& this
     else file = std::make_unique<File>(mBackend, *this, name, *mFsConfig, // create later
         [&](const std::string& fname){ 
             return mBackend.CreateFile(GetID(), fname); },
-        [&](const std::string& fname, const WriteFunc& ffunc){ 
-            return mBackend.UploadFile(GetID(), fname, ffunc); });
+        [&](const std::string& fname, const WriteFunc& ffunc, bool oneshot){ 
+            return mBackend.UploadFile(GetID(), fname, ffunc, oneshot); });
 
     SharedLockR subLock { file->GetReadLock() };
     mItemMap[file->GetName(subLock)] = std::move(file);

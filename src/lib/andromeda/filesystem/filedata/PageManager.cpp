@@ -208,7 +208,7 @@ void PageManager::InformNewPage(const uint64_t index, const Page& page, bool dir
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
@@ -221,7 +221,7 @@ void PageManager::InformNewPageSync(const uint64_t index, const Page& page, bool
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
@@ -237,7 +237,7 @@ void PageManager::InformResizePage(const uint64_t index, Page& page, bool dirty,
     {
         mCacheMgr->ResizePage(*this, page, oldSize, &thisLock);
         ResizePage(page, oldSize, false); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
