@@ -56,6 +56,9 @@ public:
     /** Returns the file's data page size */
     virtual size_t GetPageSize() const;
 
+    /** Checks the FS and account limits for the allowed write mode */
+    FSConfig::WriteMode GetWriteMode() const;
+
     /**
      * @brief Construct a File using backend data
      * @param backend backend reference
@@ -67,7 +70,7 @@ public:
     /** Function to create the file on the backend and return its JSON */
     typedef std::function<nlohmann::json(const std::string& name)> CreateFunc;
     /** Function to upload the file on the backend and return its JSON */
-    typedef std::function<nlohmann::json(const std::string& name, const WriteFunc& writeFunc)> UploadFunc;
+    typedef std::function<nlohmann::json(const std::string& name, const WriteFunc& writeFunc, bool oneshot)> UploadFunc;
 
     /**
      * @brief Construct a new file in memory only to be created on the backend when flushed
@@ -109,7 +112,7 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock) final;
+    virtual void WriteBytes(const char* buffer, uint64_t offset, size_t length, const SharedLockW& thisLock) final;
 
     /** Set the file size to the given value */
     virtual void Truncate(uint64_t newSize, const SharedLockW& thisLock) final;
@@ -126,11 +129,20 @@ protected:
 
 private:
 
-    /** Checks the FS and account limits for the allowed write mode */
-    FSConfig::WriteMode GetWriteMode() const;
-
     /** Returns the page size calculated from the backend.pageSize and fsConfig.chunkSize */
     size_t CalcPageSize() const;
+
+    /**
+     * Writes to the backend until it aligns with a page boundary or the buffer runs out
+     * @param buffer data buffer to consume as needed
+     * @param offset byte offset of the data buffer
+     * @param length number of bytes in the buffer
+     * @return size_t number of bytes consumed from buffer
+     */
+    size_t FixPageAlignment(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock);
+
+    /** Calls WriteBytes() with zeroes until the file size equals offset */
+    void FillWriteHole(const uint64_t offset, const SharedLockW& thisLock);
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
     std::unique_ptr<Filedata::PageBackend> mPageBackend;

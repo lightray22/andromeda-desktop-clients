@@ -44,7 +44,7 @@ FSConfig::FSConfig(const nlohmann::json& data, const nlohmann::json& lims) :
 
         const std::string sttype { data.at("sttype").get<std::string>() };
 
-        if (sttype == "S3")  mWriteMode = WriteMode::NONE;
+        if (sttype == "S3")  mWriteMode = WriteMode::UPLOAD;
         if (sttype == "FTP") mWriteMode = WriteMode::APPEND;
 
         if (mWriteMode >= WriteMode::RANDOM)

@@ -53,8 +53,7 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")");
 
-    if (index*mPageSize + offset+length > mFileSize)
-        throw std::invalid_argument(__func__); // fatal
+    if (index*mPageSize + offset+length > mFileSize) { MDBG_ERROR("... invalid read!"); assert(false); }
 
     const Page& page { GetPageRead(index, thisLock) };
 
@@ -78,6 +77,7 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
 
     MDBG_INFO("... pageSize:" << pageSize << " newFileSize:" << newFileSize);
 
+    // mDirty is set LAST since GetPageWrite() may cause a synchronous flush
     Page& page { GetPageWrite(index, pageSize, partial, thisLock) };
     mFileSize = newFileSize; // extend file
     page.mDirty = true;
@@ -94,7 +94,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ")" << " (index:" << index << ")");
 
-    if (index*mPageSize >= mFileSize) throw std::invalid_argument(__func__); // fatal
+    if (index*mPageSize >= mFileSize) { MDBG_ERROR("... invalid read!"); assert(false); }
 
     UniqueLock pagesLock(mPagesMutex);
 
@@ -157,11 +157,6 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ")" << " (index:" << index << " pageSize:" << pageSize << " partial:" << partial << ")");
 
-    // don't need pagesLock, have an exclusive thisLock... also holding pagesLock
-    // could lead to deadlock since InformNewPageSync() may synchronously evict/flush
-
-    // mDirty is set AFTER informing the CacheManager as it may cause a synchronous flush
-
     { PageMap::iterator it = mPages.find(index);
     if (it != mPages.end())
     {
@@ -212,7 +207,7 @@ void PageManager::InformNewPage(const uint64_t index, const Page& page, bool dir
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
@@ -225,7 +220,7 @@ void PageManager::InformNewPageSync(const uint64_t index, const Page& page, bool
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
@@ -241,7 +236,7 @@ void PageManager::InformResizePage(const uint64_t index, Page& page, bool dirty,
     {
         mCacheMgr->ResizePage(*this, page, oldSize, &thisLock);
         ResizePage(page, oldSize, false); // undo memory usage
-        std::rethrow_exception(std::current_exception());
+        throw; // rethrow
     }
 }
 
@@ -261,15 +256,6 @@ void PageManager::ResizePage(Page& page, const size_t pageSize, bool cacheMgr, c
 
     if (pageSize > oldSize) std::memset(
         page.data()+oldSize, 0, pageSize-oldSize);
-}
-
-/*****************************************************/
-bool PageManager::isDirty(const uint64_t index, const SharedLockW& thisLock)
-{
-    const PageMap::const_iterator it { mPages.find(index) };
-    if (it == mPages.cend()) return false;
-
-    return it->second.mDirty;
 }
 
 /*****************************************************/
@@ -512,12 +498,13 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& thisLock)
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ") (index:" << index << ")");
 
-    // don't need mPagesMutex, have thisLockW
-
     PageMap::iterator pageIt { mPages.find(index) };
     if (pageIt != mPages.end())
     {
-        if (pageIt->second.mDirty)
+        // ignore dirty evictions if we can't random write
+        const bool randWrite { mFile.GetWriteMode() >= FSConfig::WriteMode::RANDOM };
+
+        if (pageIt->second.mDirty && randWrite)
         {
             MDBG_INFO("... page is dirty, writing");
             PageBackend::PagePtrList writeList;
@@ -529,7 +516,10 @@ void PageManager::EvictPage(const uint64_t index, const SharedLockW& thisLock)
         }
 
         if (mCacheMgr) mCacheMgr->RemovePage(pageIt->second);
-        mPages.erase(pageIt); // need thisLockW for this
+
+        if (!pageIt->second.mDirty || randWrite)
+            mPages.erase(pageIt);
+        else mDeferredEvicts.push_back(pageIt->first);
 
         MDBG_INFO("... page removed, numPages:" << mPages.size());
     }
@@ -541,16 +531,23 @@ size_t PageManager::FlushPage(const uint64_t index, const SharedLockW& thisLock)
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ") (index:" << index << ")");
 
-    PageBackend::PagePtrList writeList;
-
+    size_t written { 0 };
     PageMap::iterator pageIt { mPages.find(index) };
-    if (pageIt != mPages.end() && pageIt->second.mDirty)
-        GetWriteList(pageIt, writeList, thisLock);
-    else { MDBG_INFO(" ... page not found"); }
+    if (pageIt != mPages.end())
+    {
+        // ignore page flushes if we can't random write
+        const bool randWrite { mFile.GetWriteMode() >= FSConfig::WriteMode::RANDOM };
+        
+        PageBackend::PagePtrList writeList;
+        if (pageIt->second.mDirty && randWrite)
+            GetWriteList(pageIt, writeList, thisLock);
+        else { MDBG_INFO(" ... page not found"); }
+        
+        if (writeList.size())
+            written = FlushPageList(index, writeList, thisLock);
+        else if (mCacheMgr) mCacheMgr->RemoveDirty(pageIt->second);
+    }
     
-    // might be an empty list - this is OK (will run FlushCreate)
-    size_t written { FlushPageList(index, writeList, thisLock) };
-
     MDBG_INFO("... return:" << written); return written;
 }
 
@@ -581,6 +578,10 @@ void PageManager::FlushPages(const SharedLockW& thisLock)
     else for (const decltype(writeLists)::value_type& writePair : writeLists)
         FlushPageList(writePair.first, writePair.second, thisLock);
 
+    for (const uint64_t pageIdx : mDeferredEvicts)
+        EvictPage(pageIdx, thisLock);
+    mDeferredEvicts.clear();
+
     MDBG_INFO("... returning!");
 }
 
@@ -590,7 +591,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
     // truncate is only cached before mBackendExists
-    const bool flushTruncate { !mPageBackend.ExistsOnBackend(thisLock) };
+    const bool flushCreate { !mPageBackend.ExistsOnBackend(thisLock) };
 
     const size_t totalSize { pages.empty() ? 0 : 
         mPageBackend.FlushPageList(index, pages, thisLock) };
@@ -601,7 +602,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
 
-    if (flushTruncate) FlushCreate(thisLock); // also calls FlushCreate()
+    if (flushCreate) FlushCreate(thisLock); // also calls FlushCreate()
 
     return totalSize;
 }
@@ -679,12 +680,16 @@ void PageManager::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
             if (mCacheMgr) mCacheMgr->RemovePage(it->second);
             it = mPages.erase(it);
         }
-        else if (it->first == (newSize-1)/mPageSize) // resize last page
+        else if (it->first == (newSize-1)/mPageSize) // resize new last page
         {
-            size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
-            MDBG_INFO("... resize page:" << it->first << " size:" << pageSize);
-
+            const size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
+            MDBG_INFO("... resize new last page:" << it->first << " size:" << pageSize);
             ResizePage(it->second, pageSize, true, &thisLock); ++it;
+        }
+        else if (it->second.size() != mPageSize) // resize old last page
+        {
+            MDBG_INFO("... resize old last page:" << it->first << " size:" << mPageSize);
+            ResizePage(it->second, mPageSize, true, &thisLock); ++it;
         }
         else ++it;
     }

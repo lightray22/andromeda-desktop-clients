@@ -16,7 +16,7 @@ set(DEPS_BASEURL "https://github.com" CACHE STRING "Base URL for git dependencie
 
 FetchContent_Declare(cpp-httplib
     GIT_REPOSITORY  ${DEPS_BASEURL}/yhirose/cpp-httplib.git
-    GIT_TAG         f2f4728 # v0.12.1
+    GIT_TAG         f977558 # v0.12.3
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 

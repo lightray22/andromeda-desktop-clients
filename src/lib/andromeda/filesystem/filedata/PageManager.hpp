@@ -86,20 +86,17 @@ public:
     /** Writes data to the given page index from buffer */
     void WritePage(const char* buffer, const uint64_t index, const size_t offset, const size_t length, const SharedLockW& thisLock);
 
-    /** Returns true if the page at the given index is dirty */
-    bool isDirty(const uint64_t index, const SharedLockW& thisLock);
-
     /** Removes the given page, writing it if dirty */
     void EvictPage(const uint64_t index, const SharedLockW& thisLock);
 
     /** 
-     * Flushes the given page if dirty
+     * Flushes the given page if dirty, creating the file on the backend if necessary
      * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
      */
     size_t FlushPage(const uint64_t index, const SharedLockW& thisLock);
 
-    /** Writes back all dirty pages */
+    /** Writes back all dirty pages, creating the file on the backend if necessary */
     void FlushPages(const SharedLockW& thisLock);
 
     /**
@@ -236,6 +233,9 @@ private:
     FailureMap mFailedPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
+
+    /** List of pages we didn't evict due to sequential writing */
+    std::list<uint64_t> mDeferredEvicts;
 
     /** Shared mutex that is grabbed exclusively when this class is destructed */
     std::shared_mutex mScopeMutex;

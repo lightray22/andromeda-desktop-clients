@@ -42,7 +42,7 @@ public:
     bool isReadOnly() const { return mReadOnly; }
 
     /** The modify mode supported by the filesystem */
-    enum class WriteMode { NONE, APPEND, RANDOM };
+    enum class WriteMode { UPLOAD, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */
     WriteMode GetWriteMode() const { return mWriteMode; }
