@@ -209,7 +209,7 @@ void File::ReadBytes(char* buffer, const uint64_t offset, const size_t length, c
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
         const size_t pageSize { mPageManager->GetPageSize() };
-
+        
         const uint64_t index { byte / pageSize };
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
@@ -242,40 +242,43 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
         const std::string data(buffer, length);
         mBackend.WriteFile(GetID(), offset, data);
         mPageManager->RemoteChanged(std::max(fileSize, offset+length), thisLock);
+        return; // early return
     }
-    else for (uint64_t byte { offset }; byte < offset+length; )
+    
+    if (writeMode <= FSConfig::WriteMode::APPEND)
     {
-        if (writeMode <= FSConfig::WriteMode::APPEND)
+        // UPLOAD/APPEND only allowed if not yet uploaded
+        if (mPageBackend->ExistsOnBackend(thisLock)) 
+            throw WriteTypeException();
+
+        // if we know the upload will fail, error out early
+        if (writeMode == FSConfig::WriteMode::UPLOAD)
         {
-            // UPLOAD/APPEND only allowed if not yet uploaded
-            if (mPageBackend->ExistsOnBackend(thisLock)) 
-                throw WriteTypeException();
-
-            // if we know the upload will fail, error out early
-            if (writeMode == FSConfig::WriteMode::UPLOAD)
+            const uint64_t uploadMax { mBackend.GetConfig().GetUploadMaxBytes() };
+            if (uploadMax && offset+length > uploadMax)
             {
-                const uint64_t uploadMax { mBackend.GetConfig().GetUploadMaxBytes() };
-                if (uploadMax && offset+length > uploadMax)
-                {
-                    ITDBG_INFO("write exceeds upload max:" << uploadMax);
-                    throw BackendImpl::WriteSizeException();
-                }
-            }
-
-            const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
-            if (offset > fileSize) // need to fill in holes to guarantee sequential upload
-            {
-                std::vector<char> holeBuf(1024*1024, 0); // fill hole in chunks to avoid consuming too much memory
-                for (uint64_t holeOffset = fileSize; holeOffset < offset; holeOffset += holeBuf.size())
-                {
-                    const size_t holeSize { Filedata::min64st(offset-holeOffset, holeBuf.size()) };
-                    ITDBG_INFO("... fill write hole:" << holeSize << "@" << holeOffset);
-                    WriteBytes(holeBuf.data(), holeOffset, holeSize, thisLock);
-                }
+                ITDBG_INFO("write exceeds upload max:" << uploadMax);
+                throw BackendImpl::WriteSizeException();
             }
         }
 
+        const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
+        if (offset > fileSize) // need to fill in holes to guarantee sequential upload
+        {
+            std::vector<char> holeBuf(1024*1024, 0); // fill hole in chunks to avoid consuming too much memory
+            for (uint64_t holeOffset = fileSize; holeOffset < offset; holeOffset += holeBuf.size())
+            {
+                const size_t holeSize { Filedata::min64st(offset-holeOffset, holeBuf.size()) };
+                ITDBG_INFO("... fill write hole:" << holeSize << "@" << holeOffset);
+                WriteBytes(holeBuf.data(), holeOffset, holeSize, thisLock);
+            }
+        }
+    }
+
+    for (uint64_t byte { offset }; byte < offset+length; )
+    {
         const size_t pageSize { mPageManager->GetPageSize() };
+
         const uint64_t index { byte / pageSize };
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
