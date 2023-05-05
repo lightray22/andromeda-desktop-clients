@@ -221,7 +221,6 @@ void File::ReadBytes(char* buffer, const uint64_t offset, const size_t length, c
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->ReadPage(buffer, index, pOffset, pLength, thisLock);
-
         buffer += pLength; byte += pLength;
     }
 }
@@ -229,20 +228,18 @@ void File::ReadBytes(char* buffer, const uint64_t offset, const size_t length, c
 /*****************************************************/
 void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock)
 {
-    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
+    uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
+    ITDBG_INFO("(offset:" << offset << " length:" << length << " fileSize:" << fileSize << ")");
 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
-
     const FSConfig::WriteMode writeMode(GetWriteMode());
-
-    const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
-    ITDBG_INFO("... fileSize:" << fileSize);
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
+        // UPLOAD not allowed, APPEND only if offset == fileSize
         if (writeMode == FSConfig::WriteMode::UPLOAD
-            || (writeMode == FSConfig::WriteMode::APPEND
-                && offset != mPageManager->GetFileSize(thisLock))) throw WriteTypeException();
+            || (writeMode == FSConfig::WriteMode::APPEND && offset != fileSize))
+                throw WriteTypeException();
 
         const std::string data(buffer, length);
         mBackend.WriteFile(GetID(), offset, data);
@@ -250,11 +247,21 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
     }
     else for (uint64_t byte { offset }; byte < offset+length; )
     {
+        // UPLOAD/APPEND only allowed if not yet uploaded
+        if (writeMode < FSConfig::WriteMode::RANDOM)
+        {
+            if (mPageBackend->ExistsOnBackend(thisLock)) 
+                throw WriteTypeException();
+
+            fileSize = mPageManager->GetFileSize(thisLock);
+            if (offset > fileSize) // need to fill in holes for sequential upload
+            {
+                std::vector<char> buf(offset-fileSize, 0);
+                WriteBytes(buf.data(), fileSize, offset-fileSize, thisLock);
+            }
+        }
+
         const size_t pageSize { mPageManager->GetPageSize() };
-
-        if (writeMode < FSConfig::WriteMode::RANDOM
-            && mPageBackend->ExistsOnBackend(thisLock)) throw WriteTypeException();
-
         const uint64_t index { byte / pageSize };
         const size_t pOffset { static_cast<size_t>(byte - index*pageSize) }; // offset within the page
         const size_t pLength { Filedata::min64st(length+offset-byte, pageSize-pOffset) }; // length within the page
@@ -263,7 +270,6 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
             << " pOffset:" << pOffset << " pLength:" << pLength);
 
         mPageManager->WritePage(buffer, index, pOffset, pLength, thisLock);
-        
         buffer += pLength; byte += pLength;
     }
 }
