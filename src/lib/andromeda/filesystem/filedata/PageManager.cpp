@@ -53,8 +53,7 @@ void PageManager::ReadPage(char* buffer, const uint64_t index, const size_t offs
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ")" << " (index:" << index << " offset:" << offset << " length:" << length << ")");
 
-    if (index*mPageSize + offset+length > mFileSize)
-        throw std::invalid_argument(__func__); // fatal
+    if (index*mPageSize + offset+length > mFileSize) { MDBG_ERROR("... invalid read!"); assert(false); }
 
     const Page& page { GetPageRead(index, thisLock) };
 
@@ -95,7 +94,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
 {
     MDBG_INFO("(" << mFile.GetName(thisLock) << ")" << " (index:" << index << ")");
 
-    if (index*mPageSize >= mFileSize) throw std::invalid_argument(__func__); // fatal
+    if (index*mPageSize >= mFileSize) { MDBG_ERROR("... invalid read!"); assert(false); }
 
     UniqueLock pagesLock(mPagesMutex);
 
@@ -592,7 +591,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
     // truncate is only cached before mBackendExists
-    const bool flushTruncate { !mPageBackend.ExistsOnBackend(thisLock) };
+    const bool flushCreate { !mPageBackend.ExistsOnBackend(thisLock) };
 
     const size_t totalSize { pages.empty() ? 0 : 
         mPageBackend.FlushPageList(index, pages, thisLock) };
@@ -603,7 +602,7 @@ size_t PageManager::FlushPageList(const uint64_t index, const PageBackend::PageP
         if (mCacheMgr) mCacheMgr->RemoveDirty(*pagePtr);
     }
 
-    if (flushTruncate) FlushCreate(thisLock); // also calls FlushCreate()
+    if (flushCreate) FlushCreate(thisLock); // also calls FlushCreate()
 
     return totalSize;
 }

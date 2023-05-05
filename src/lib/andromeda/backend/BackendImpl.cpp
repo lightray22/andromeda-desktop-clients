@@ -588,7 +588,7 @@ constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)
 {
-    if (data.empty()) { MDBG_ERROR("() ERROR no data"); throw std::invalid_argument(__func__); } // fatal
+    if (data.empty()) { MDBG_ERROR("() ERROR no data"); assert(false); }
 
     MDBG_INFO("(id:" << id << " offset:" << offset << " size:" << data.size() << ")");
 

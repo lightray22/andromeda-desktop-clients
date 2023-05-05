@@ -112,6 +112,19 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
     const uint64_t writeStart { index*mPageSize };
     MDBG_INFO("... WRITING " << totalSize << " to " << writeStart);
 
+    const FSConfig::WriteMode writeMode { mFile.GetWriteMode() };
+    if (writeMode == FSConfig::WriteMode::UPLOAD && mBackendExists)
+        { MDBG_ERROR("... invalid write for UPLOAD!"); assert(false); }
+    else if (writeMode == FSConfig::WriteMode::APPEND && mBackendExists && writeStart != mBackendSize)
+        { MDBG_ERROR("... invalid write for APPEND!"); assert(false); }
+
+    if (!mBackendExists && index != 0)
+    {
+        if (writeMode < FSConfig::WriteMode::RANDOM)
+            { MDBG_ERROR("... invalid write without RANDOM!"); assert(false); }
+        FlushCreate(thisLock); // can't use Upload() w/o first page
+    }
+
     WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& read)->bool
     {
         const size_t pagesIdx { offset/mPageSize };
@@ -128,12 +141,9 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
         return true; // initial check will catch when we're done
     }};
 
-    if (!mBackendExists && index != 0)
-        FlushCreate(thisLock); // can't use Upload() w/o first page
-
     if (!mBackendExists)
     {
-        const bool oneshot { mFile.GetWriteMode() <= FSConfig::WriteMode::UPLOAD };
+        const bool oneshot { mFile.GetWriteMode() < FSConfig::WriteMode::APPEND };
         mFile.Refresh(mUploadFunc(mFile.GetName(thisLock),writeFunc,oneshot),thisLock);
         mBackendExists = true;
     }

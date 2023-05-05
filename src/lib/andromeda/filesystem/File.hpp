@@ -112,7 +112,7 @@ public:
      * @param offset byte offset in file to write
      * @param length number of bytes to write
      */
-    virtual void WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock) final;
+    virtual void WriteBytes(const char* buffer, uint64_t offset, size_t length, const SharedLockW& thisLock) final;
 
     /** Set the file size to the given value */
     virtual void Truncate(uint64_t newSize, const SharedLockW& thisLock) final;
@@ -131,6 +131,18 @@ private:
 
     /** Returns the page size calculated from the backend.pageSize and fsConfig.chunkSize */
     size_t CalcPageSize() const;
+
+    /**
+     * Writes to the backend until it aligns with a page boundary or the buffer runs out
+     * @param buffer data buffer to consume as needed
+     * @param offset byte offset of the data buffer
+     * @param length number of bytes in the buffer
+     * @return size_t number of bytes consumed from buffer
+     */
+    size_t FixPageAlignment(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock);
+
+    /** Calls WriteBytes() with zeroes until the file size equals offset */
+    void FillWriteHole(const uint64_t offset, const SharedLockW& thisLock);
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
     std::unique_ptr<Filedata::PageBackend> mPageBackend;
