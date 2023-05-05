@@ -228,14 +228,15 @@ void File::ReadBytes(char* buffer, const uint64_t offset, const size_t length, c
 /*****************************************************/
 void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock)
 {
-    uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
-    ITDBG_INFO("(offset:" << offset << " length:" << length << " fileSize:" << fileSize << ")");
+    ITDBG_INFO("(offset:" << offset << " length:" << length << ")");
 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
     const FSConfig::WriteMode writeMode(GetWriteMode());
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
+        const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
+
         // UPLOAD not allowed, APPEND only if offset == fileSize
         if (writeMode == FSConfig::WriteMode::UPLOAD
             || (writeMode == FSConfig::WriteMode::APPEND && offset != fileSize))
@@ -253,7 +254,7 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
             if (mPageBackend->ExistsOnBackend(thisLock)) 
                 throw WriteTypeException();
 
-            fileSize = mPageManager->GetFileSize(thisLock);
+            const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
             if (offset > fileSize) // need to fill in holes for sequential upload
             {
                 std::vector<char> buf(offset-fileSize, 0);
