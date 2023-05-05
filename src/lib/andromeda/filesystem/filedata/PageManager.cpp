@@ -681,12 +681,16 @@ void PageManager::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
             if (mCacheMgr) mCacheMgr->RemovePage(it->second);
             it = mPages.erase(it);
         }
-        else if (it->first == (newSize-1)/mPageSize) // resize last page
+        else if (it->first == (newSize-1)/mPageSize) // resize new last page
         {
-            size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
-            MDBG_INFO("... resize page:" << it->first << " size:" << pageSize);
-
+            const size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
+            MDBG_INFO("... resize new last page:" << it->first << " size:" << pageSize);
             ResizePage(it->second, pageSize, true, &thisLock); ++it;
+        }
+        else if (it->second.size() != mPageSize) // resize old last page
+        {
+            MDBG_INFO("... resize old last page:" << it->first << " size:" << mPageSize);
+            ResizePage(it->second, mPageSize, true, &thisLock); ++it;
         }
         else ++it;
     }

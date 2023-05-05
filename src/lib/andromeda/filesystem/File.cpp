@@ -263,12 +263,15 @@ void File::WriteBytes(const char* buffer, const uint64_t offset, const size_t le
             }
 
             const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
-            if (offset > fileSize) // need to fill in holes for sequential upload
+            if (offset > fileSize) // need to fill in holes to guarantee sequential upload
             {
-                const size_t holeSize { static_cast<size_t>(offset-fileSize) };
-                ITDBG_INFO("... fill write hole:" << holeSize << "@" << fileSize);
-                std::vector<char> holeBuf(holeSize, 0);
-                WriteBytes(holeBuf.data(), fileSize, holeSize, thisLock);
+                std::vector<char> holeBuf(1024*1024, 0); // fill hole in chunks to avoid consuming too much memory
+                for (uint64_t holeOffset = fileSize; holeOffset < offset; holeOffset += holeBuf.size())
+                {
+                    const size_t holeSize { Filedata::min64st(offset-holeOffset, holeBuf.size()) };
+                    ITDBG_INFO("... fill write hole:" << holeSize << "@" << holeOffset);
+                    WriteBytes(holeBuf.data(), holeOffset, holeSize, thisLock);
+                }
             }
         }
 
