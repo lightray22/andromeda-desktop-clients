@@ -88,11 +88,11 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     }
     catch (const Folder::ModifyException& e)
     {
-        SDBG_INFO_EXC(e); return -ENOTSUP;
+        SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
     catch (const File::WriteTypeException& e)
     {
-        SDBG_INFO_EXC(e); return -ENOTSUP;
+        SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
     catch (const Item::ReadOnlyFSException& e)
     {
@@ -100,13 +100,13 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     }
     catch (const Item::NullParentException& e)
     {
-        SDBG_INFO_EXC(e); return -ENOTSUP;
+        SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
     {
-        SDBG_INFO_EXC(e); return -ENOTSUP;
+        SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
     catch (const BackendImpl::ReadOnlyFSException& e)
     {
@@ -120,9 +120,13 @@ static int CatchAsErrno(const std::string& fname, std::function<int()> func, con
     {
         SDBG_INFO_EXC(e); return -ENOENT;
     }
+    catch (const BackendImpl::WriteSizeException& e)
+    {
+        SDBG_ERROR_EXC(e); return -ENOTSUP;
+    }
     catch (const CacheManager::MemoryException& e)
     {
-        SDBG_INFO_EXC(e); return -ENOMEM;
+        SDBG_ERROR_EXC(e); return -ENOMEM;
     }
 
     // Error exceptions
