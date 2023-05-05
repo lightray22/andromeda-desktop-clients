@@ -270,6 +270,7 @@ void File::WriteBytes(const char* buffer, uint64_t offset, size_t length, const 
         }
     }
 
+    // can't write starting after the end of the file w/o RANDOM
     if (writeMode < FSConfig::WriteMode::RANDOM)
         FillWriteHole(offset, thisLock);
 
@@ -294,13 +295,13 @@ size_t File::FixPageAlignment(const char* buffer, const uint64_t offset, const s
 {
     const uint64_t backendSize { mPageBackend->GetBackendSize(thisLock) };
     const size_t pageSize { mPageManager->GetPageSize() };
-    const size_t pageError { backendSize % pageSize };
+    const size_t pageError { static_cast<size_t>(backendSize % pageSize) };
     
     size_t fromBuffer { 0 }; if (pageError != 0)
     {
         // the data string is some zeroes before the buffer, then some data from the buffer
-        const size_t writeSize { std::min(offset+length-backendSize, pageSize-pageError) };
-        const size_t fromZero { std::min(offset-backendSize, writeSize) };
+        const size_t writeSize { Filedata::min64st(offset+length-backendSize, pageSize-pageError) };
+        const size_t fromZero { Filedata::min64st(offset-backendSize, writeSize) };
         fromBuffer = (fromZero < writeSize) ? writeSize-fromZero : 0;
 
         ITDBG_INFO("... write:" << writeSize << "@" << backendSize

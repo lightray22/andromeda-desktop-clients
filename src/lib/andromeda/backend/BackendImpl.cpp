@@ -614,7 +614,7 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
 
     MDBG_INFO("(parent:" << parent << " name:" << name << " size:" << data.size() << ")");
 
-    return UploadFile(parent, name, RunnerInput_StreamIn::FromString(data), overwrite, oneshot);
+    return UploadFile(parent, name, RunnerInput_StreamIn::FromString(data), oneshot, overwrite);
 }
 
 /*****************************************************/
