@@ -298,20 +298,19 @@ size_t File::FixPageAlignment(const char* buffer, const uint64_t offset, const s
     
     size_t fromBuffer { 0 }; if (pageError != 0)
     {
-        // the data string is the space between backendSize->offset + some data from buffer
-        const size_t directSize { std::min(offset+length-backendSize, pageSize-pageError) };
-        
-        const size_t fromZero { offset-backendSize };
-        fromBuffer = fromZero < directSize ? directSize-fromZero : 0;
+        // the data string is some zeroes before the buffer, then some data from the buffer
+        const size_t writeSize { std::min(offset+length-backendSize, pageSize-pageError) };
+        const size_t fromZero { std::min(offset-backendSize, writeSize) };
+        fromBuffer = (fromZero < writeSize) ? writeSize-fromZero : 0;
 
-        ITDBG_INFO("... write:" << directSize << "@" << backendSize
+        ITDBG_INFO("... write:" << writeSize << "@" << backendSize
             << ", fromZero:" << fromZero << " fromBuffer:" << fromBuffer);
 
         std::string data(fromZero, '\0');
         data += std::string(buffer, fromBuffer);
         
         mBackend.WriteFile(GetID(), backendSize, data);
-        mPageManager->RemoteChanged(backendSize+directSize, thisLock);
+        mPageManager->RemoteChanged(backendSize+writeSize, thisLock);
     }
     return fromBuffer;
 }
