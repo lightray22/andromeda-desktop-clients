@@ -31,7 +31,7 @@ set(REPROC_INSTALL OFF)
 
 FetchContent_Declare(reproc
     GIT_REPOSITORY  ${DEPS_BASEURL}/stingray-11/reproc.git
-    GIT_TAG         c1edf03 # master
+    GIT_TAG         a254c0e # main
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
 

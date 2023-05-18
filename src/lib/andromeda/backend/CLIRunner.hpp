@@ -30,7 +30,7 @@ public:
      */
     explicit CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout);
 
-    virtual std::unique_ptr<BaseRunner> Clone() override;
+    virtual std::unique_ptr<BaseRunner> Clone() const override;
 
     virtual std::string GetHostname() const override { return "local"; }
 
@@ -46,9 +46,12 @@ public:
 
 private:
 
+    /** Makes sure the given path ends with andromeda-server */
+    std::string FixApiPath(std::string apiPath);
+
     Debug mDebug;
 
-    std::string mApiPath;
+    const std::string mApiPath;
 
     const std::chrono::seconds mTimeout;
 };

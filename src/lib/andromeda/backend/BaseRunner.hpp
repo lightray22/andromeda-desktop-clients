@@ -35,7 +35,7 @@ public:
     virtual ~BaseRunner(){ }; // for unique_ptr
 
     /** Copies to a new runner with a new backend channel, but the same config */
-    virtual std::unique_ptr<BaseRunner> Clone() = 0;
+    virtual std::unique_ptr<BaseRunner> Clone() const = 0;
 
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;

@@ -25,7 +25,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 }
 
 /*****************************************************/
-std::unique_ptr<BaseRunner> HTTPRunner::Clone()
+std::unique_ptr<BaseRunner> HTTPRunner::Clone() const
 {
     return std::make_unique<HTTPRunner>(mProtoHost, mBaseURL, mOptions);
 }

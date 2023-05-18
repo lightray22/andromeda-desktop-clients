@@ -112,28 +112,27 @@ int main(int argc, char** argv)
     }
 
     RunnerPool runners(*runner, configOptions);
-    BackendImpl backend(configOptions, runners);
 
-    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
-    backend.SetCacheManager(&cacheMgr);
-
+    std::unique_ptr<BackendImpl> backend;
     std::unique_ptr<Folder> folder;
     
     try
     {
+        backend = std::make_unique<BackendImpl>(configOptions, runners);
+
         if (options.HasSession())
-            backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
+            backend->PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
         else if (options.HasUsername())
-            backend.AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
+            backend->AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
 
         switch (options.GetMountRootType())
         {
             case Options::RootType::SUPERROOT:
-                folder = std::make_unique<SuperRoot>(backend); break;
+                folder = std::make_unique<SuperRoot>(*backend); break;
             case Options::RootType::FILESYSTEM:
-                folder = Filesystem::LoadByID(backend, options.GetMountItemID()); break;
+                folder = Filesystem::LoadByID(*backend, options.GetMountItemID()); break;
             case Options::RootType::FOLDER:
-                folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
+                folder = PlainFolder::LoadByID(*backend, options.GetMountItemID()); break;
         }
     }
     catch (const BaseException& ex)
@@ -144,6 +143,9 @@ int main(int argc, char** argv)
 
     try { (dynamic_cast<HTTPRunner&>(*runner)).EnableRetry(); }
     catch (const std::bad_cast& ex) { } // no retries during init
+
+    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
+    backend->SetCacheManager(&cacheMgr);
 
     try
     {
