@@ -10,7 +10,7 @@
 
 namespace Andromeda {
     struct ConfigOptions;
-    namespace Backend { struct HTTPOptions; }
+    namespace Backend { struct HTTPOptions; struct RunnerOptions; }
     namespace Filesystem { namespace Filedata { struct CacheOptions; } }
 }
 
@@ -27,11 +27,13 @@ public:
     /**
      * @param configOptions Config options ref to fill
      * @param httpOptions HTTPRunner options ref to fill
+     * @param runnerOptions BaseRunner options ref to fill
      * @param cacheOptions CacheManager options ref to fill
      * @param fuseOptions FUSE options ref to fill
      */
     Options(Andromeda::ConfigOptions& configOptions, 
             Andromeda::Backend::HTTPOptions& httpOptions, 
+            Andromeda::Backend::RunnerOptions& runnerOptions,
             Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions,
             AndromedaFuse::FuseOptions& fuseOptions);
 
@@ -104,6 +106,7 @@ private:
 
     Andromeda::ConfigOptions& mConfigOptions;
     Andromeda::Backend::HTTPOptions& mHttpOptions;
+    Andromeda::Backend::RunnerOptions& mRunnerOptions;
     Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
     AndromedaFuse::FuseOptions& mFuseOptions;
 

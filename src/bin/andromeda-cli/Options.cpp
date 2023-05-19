@@ -7,6 +7,8 @@
 using Andromeda::BaseOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/backend/RunnerOptions.hpp"
+using Andromeda::Backend::RunnerOptions;
 
 namespace AndromedaCli {
 
@@ -24,7 +26,8 @@ std::string Options::OtherHelpText()
     using std::endl;
 
     output 
-        << HTTPOptions::HelpText() << endl << endl
+        << HTTPOptions::HelpText() << endl 
+        << RunnerOptions::HelpText() << endl << endl
            
         << OtherBaseHelpText();
 
@@ -32,14 +35,15 @@ std::string Options::OtherHelpText()
 }
 
 /*****************************************************/
-Options::Options(HTTPOptions& httpOptions) :
-    mHttpOptions(httpOptions) { }
+Options::Options(HTTPOptions& httpOptions, RunnerOptions& runnerOptions) :
+    mHttpOptions(httpOptions), mRunnerOptions(runnerOptions) { }
 
 /*****************************************************/
 bool Options::AddFlag(const std::string& flag)
 {
     if (BaseOptions::AddFlag(flag)) { }
     else if (mHttpOptions.AddFlag(flag)) { }
+    else if (mRunnerOptions.AddFlag(flag)) { }
     else return false; // not used
     
     return true;
@@ -54,6 +58,7 @@ bool Options::AddOption(const std::string& option, const std::string& value)
     else if (option == "a" || option == "apiurl") mApiUrl = value;
 
     else if (mHttpOptions.AddOption(option, value)) { }
+    else if (mRunnerOptions.AddOption(option, value)) { }
     else return false; // not used
     
     return true;

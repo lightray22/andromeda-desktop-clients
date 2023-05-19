@@ -23,13 +23,12 @@ WriteFunc RunnerInput_StreamIn::FromString(const std::string& data)
 {
     return [&](const size_t soffset, char* const buf, const size_t buflen, size_t& sread)->bool
     {
-        if (soffset >= data.size()) return false;
+        if (soffset >= data.size())
+            { sread = 0; return false; }
 
         const char* sdata { data.data()+soffset };
         sread = std::min(data.size()-soffset, buflen);
-        
-        std::copy(sdata, sdata+sread, buf); 
-        return soffset+sread < data.size();
+        std::copy(sdata, sdata+sread, buf); return true;
     };
 }
 
@@ -37,7 +36,7 @@ WriteFunc RunnerInput_StreamIn::FromString(const std::string& data)
 WriteFunc RunnerInput_StreamIn::FromStream(std::istream& data)
 {
     // curoff is copied to within the std::function and maintains state between successive calls
-    size_t curoff = 0; return [&data,curoff](const size_t offset, char* const buf, const size_t buflen, size_t& read) mutable ->bool
+    size_t curoff = 0; return [&data,curoff](const size_t offset, char* const buf, const size_t buflen, size_t& written) mutable ->bool
     {
         if (offset != curoff)
         {
@@ -47,8 +46,8 @@ WriteFunc RunnerInput_StreamIn::FromStream(std::istream& data)
         }
 
         data.read(buf, static_cast<std::streamsize>(buflen));
-        read = static_cast<std::size_t>(data.gcount());
-        curoff += read;
+        written = static_cast<std::size_t>(data.gcount());
+        curoff += written;
 
         if (data.bad() || (data.fail() && !data.eof()))
             throw StreamFailException();

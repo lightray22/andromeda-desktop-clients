@@ -1,6 +1,7 @@
 #ifndef LIBA2_BASERUNNER_H_
 #define LIBA2_BASERUNNER_H_
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -40,6 +41,12 @@ public:
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;
 
+    /** Allows automatic retry on HTTP failure */
+    virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
+
+    /** Returns whether retry is enabled or disabled */
+    virtual bool GetCanRetry() const final { return mCanRetry; }
+
     /**
      * Runs an API call and returns the result
      * @param input input params struct
@@ -75,6 +82,10 @@ public:
     BaseRunner(const BaseRunner&) = delete; // no copying
     BaseRunner& operator=(const BaseRunner&) = delete;
     BaseRunner& operator=(BaseRunner&&) = delete;
+
+protected:
+
+    std::atomic<bool> mCanRetry { false };
 };
 
 } // namespace Backend

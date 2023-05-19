@@ -6,7 +6,10 @@
 #include <system_error>
 
 #include "BaseRunner.hpp"
+#include "RunnerOptions.hpp"
 #include "andromeda/Debug.hpp"
+
+namespace reproc { class process; }
 
 namespace Andromeda {
 namespace Backend {
@@ -28,7 +31,7 @@ public:
      * @param apiPath path to the API index.php 
      * @param timeout the timeout for each CLI call
      */
-    explicit CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout);
+    explicit CLIRunner(const std::string& apiPath, const RunnerOptions& runnerOptions);
 
     virtual std::unique_ptr<BaseRunner> Clone() const override;
 
@@ -49,11 +52,20 @@ private:
     /** Makes sure the given path ends with andromeda-server */
     std::string FixApiPath(std::string apiPath);
 
+    /** @throws Exception if given an error code */
+    void CheckError(reproc::process& process, const std::error_code& error);
+
+    typedef std::list<std::string> ArgList;
+    /** Return a list of arguments to run a command with the given input */
+    ArgList GetArguments(const RunnerInput& input);
+
+    /** Prints the argument list if backend debug is enabled */
+    void PrintArgs(const ArgList& argList);
+
     Debug mDebug;
 
     const std::string mApiPath;
-
-    const std::chrono::seconds mTimeout;
+    const RunnerOptions mOptions;
 };
 
 } // namespace Backend

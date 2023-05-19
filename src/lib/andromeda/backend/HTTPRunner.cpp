@@ -14,8 +14,10 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options) : 
-    mDebug(__func__,this), mOptions(options), mProtoHost(protoHost), mBaseURL(baseURL)
+HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, 
+    const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions) : 
+    mDebug(__func__,this), mProtoHost(protoHost), mBaseURL(baseURL),
+    mBaseOptions(runnerOptions), mHttpOptions(httpOptions)
 {
     if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
@@ -27,7 +29,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 /*****************************************************/
 std::unique_ptr<BaseRunner> HTTPRunner::Clone() const
 {
-    return std::make_unique<HTTPRunner>(mProtoHost, mBaseURL, mOptions);
+    return std::make_unique<HTTPRunner>(mProtoHost, mBaseURL, mBaseOptions, mHttpOptions);
 }
 
 /*****************************************************/
@@ -35,31 +37,31 @@ void HTTPRunner::InitializeClient(const std::string& protoHost)
 {
     mHttpClient = std::make_unique<httplib::Client>(protoHost);
 
-    if (mOptions.followRedirects)
+    if (mHttpOptions.followRedirects)
         mHttpClient->set_follow_location(true);
 
     mHttpClient->set_keep_alive(true);
-    mHttpClient->set_read_timeout(mOptions.timeout);
-    mHttpClient->set_write_timeout(mOptions.timeout);
+    mHttpClient->set_read_timeout(mBaseOptions.timeout);
+    mHttpClient->set_write_timeout(mBaseOptions.timeout);
 
-    mHttpClient->enable_server_certificate_verification(mOptions.tlsCertVerify);
+    mHttpClient->enable_server_certificate_verification(mHttpOptions.tlsCertVerify);
 
-    if (!mOptions.username.empty())
+    if (!mHttpOptions.username.empty())
     {
         mHttpClient->set_basic_auth(
-            mOptions.username.c_str(), mOptions.password.c_str());
+            mHttpOptions.username.c_str(), mHttpOptions.password.c_str());
     }
 
-    if (!mOptions.proxyHost.empty())
+    if (!mHttpOptions.proxyHost.empty())
     {
         mHttpClient->set_proxy(
-            mOptions.proxyHost.c_str(), mOptions.proxyPort);
+            mHttpOptions.proxyHost.c_str(), mHttpOptions.proxyPort);
     }
 
-    if (!mOptions.proxyUsername.empty())
+    if (!mHttpOptions.proxyUsername.empty())
     {
         mHttpClient->set_proxy_basic_auth(
-            mOptions.proxyUsername.c_str(), mOptions.proxyPassword.c_str());
+            mHttpOptions.proxyUsername.c_str(), mHttpOptions.proxyPassword.c_str());
     }
 }
 
@@ -125,9 +127,9 @@ std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Multipar
 void HTTPRunner::DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry)
 {
     // do the request some number of times until success
-    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
+    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        canRetry = (mCanRetry && attempt <= mOptions.maxRetries);
+        canRetry = (mCanRetry && attempt <= mBaseOptions.maxRetries);
         httplib::Result result { getResult() };
         if (result != nullptr && !doRetry) return; // break
         else HandleNonResponse(result, canRetry, attempt);
@@ -138,9 +140,9 @@ void HTTPRunner::DoRequests(std::function<httplib::Result()> getResult, bool& ca
 std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson)
 {
     // do the request some number of times until success
-    for (decltype(mOptions.maxRetries) attempt { 0 }; ; attempt++)
+    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        bool canRetry = (mCanRetry && attempt <= mOptions.maxRetries);
+        bool canRetry = (mCanRetry && attempt <= mBaseOptions.maxRetries);
         httplib::Result result { getResult() };
         if (result != nullptr)
         {
@@ -168,11 +170,11 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
             if (result != nullptr) str << "HTTP " << result->status;
             else str << httplib::to_string(result.error());
 
-            str << " error, attempt " << attempt+1 << " of " << mOptions.maxRetries+1;
+            str << " error, attempt " << attempt+1 << " of " << mBaseOptions.maxRetries+1;
         });
 
         if (attempt != 0) // retry immediately after 1st failure
-            std::this_thread::sleep_for(mOptions.retryTime);
+            std::this_thread::sleep_for(mBaseOptions.retryTime);
     }
     else if (result.error() == httplib::Error::Connection)
             throw ConnectionException();
@@ -188,7 +190,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
     if (doRetry) return ""; // early return
 
     // if redirected, should remember it for next time
-    if (mOptions.followRedirects && !response.location.empty()) 
+    if (mHttpOptions.followRedirects && !response.location.empty()) 
         RegisterRedirect(response.location);
 
     switch (response.status)
@@ -252,7 +254,7 @@ std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJso
     // set up the POST body as files being done via a chunked stream
     httplib::MultipartFormDataProviderItems streamParams;
 
-    const size_t bufSize { mOptions.streamBufferSize }; // copy
+    const size_t bufSize { mBaseOptions.streamBufferSize }; // copy
     std::unique_ptr<char[]> streamBuffer { !input.fstreams.empty()
         ? std::make_unique<char[]>(bufSize) : nullptr };
 

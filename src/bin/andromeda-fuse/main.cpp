@@ -29,6 +29,8 @@ using Andromeda::Backend::CLIRunner;
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/backend/RunnerOptions.hpp"
+using Andromeda::Backend::RunnerOptions;
 #include "andromeda/backend/RunnerPool.hpp"
 using Andromeda::Backend::RunnerPool;
 
@@ -59,10 +61,11 @@ int main(int argc, char** argv)
     
     ConfigOptions configOptions;
     HTTPOptions httpOptions;
+    RunnerOptions runnerOptions;
     CacheOptions cacheOptions;
     FuseOptions fuseOptions;
 
-    Options options(configOptions, httpOptions, cacheOptions, fuseOptions);
+    Options options(configOptions, httpOptions, runnerOptions, cacheOptions, fuseOptions);
 
     try
     {
@@ -102,23 +105,25 @@ int main(int argc, char** argv)
                 HTTPRunner::ParseURL(options.GetApiPath()) };
 
             runner = std::make_unique<HTTPRunner>(
-                urlPair.first, urlPair.second, httpOptions);
+                urlPair.first, urlPair.second, runnerOptions, httpOptions);
         }; break;
         case Options::ApiType::API_PATH:
         {
             runner = std::make_unique<CLIRunner>(
-                options.GetApiPath(), httpOptions.timeout); break;
+                options.GetApiPath(), runnerOptions); break;
         }; break;
     }
 
+    // DESTRUCTOR ORDER MATTERS HERE due to dependencies!
+    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     RunnerPool runners(*runner, configOptions);
-
     std::unique_ptr<BackendImpl> backend;
     std::unique_ptr<Folder> folder;
     
     try
     {
         backend = std::make_unique<BackendImpl>(configOptions, runners);
+        backend->SetCacheManager(&cacheMgr);
 
         if (options.HasSession())
             backend->PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
@@ -141,11 +146,7 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BACKEND_INIT);
     }
 
-    try { (dynamic_cast<HTTPRunner&>(*runner)).EnableRetry(); }
-    catch (const std::bad_cast& ex) { } // no retries during init
-
-    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
-    backend->SetCacheManager(&cacheMgr);
+    runner->EnableRetry(); // no retries during init
 
     try
     {

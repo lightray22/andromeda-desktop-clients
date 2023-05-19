@@ -16,6 +16,8 @@ using Andromeda::Backend::BaseRunner;
 using Andromeda::Backend::HTTPOptions;
 #include "andromeda/backend/HTTPRunner.hpp"
 using Andromeda::Backend::HTTPRunner;
+#include "andromeda/backend/RunnerOptions.hpp"
+using Andromeda::Backend::RunnerOptions;
 
 enum class ExitCode
 {
@@ -35,8 +37,9 @@ int main(int argc, char** argv)
     
     HTTPOptions httpOptions;
     httpOptions.followRedirects = false;
+    RunnerOptions runnerOptions;
 
-    Options options(httpOptions);
+    Options options(httpOptions, runnerOptions);
     CommandLine commandLine(options);
 
     try
@@ -70,7 +73,7 @@ int main(int argc, char** argv)
     HTTPRunner::HostUrlPair urlPair {
         HTTPRunner::ParseURL(options.GetApiUrl()) };
 
-    HTTPRunner runner(urlPair.first, urlPair.second, httpOptions);
+    HTTPRunner runner(urlPair.first, urlPair.second, runnerOptions, httpOptions);
 
     try
     {

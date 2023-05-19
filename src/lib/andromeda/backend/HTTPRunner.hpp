@@ -1,7 +1,6 @@
 #ifndef LIBA2_HTTPRUNNER_H_
 #define LIBA2_HTTPRUNNER_H_
 
-#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -20,6 +19,7 @@
 
 #include "BaseRunner.hpp"
 #include "HTTPOptions.hpp"
+#include "RunnerOptions.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
@@ -59,7 +59,8 @@ public:
      * @param baseURL baseURL of the endpoint
      * @param options HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options);
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, 
+        const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions);
 
     virtual std::unique_ptr<BaseRunner> Clone() const override;
 
@@ -103,12 +104,6 @@ public:
 
     /** @param[out] isJson ref set to whether response is json (before data starts) */
     virtual void RunAction(const RunnerInput_StreamOut& input, bool& isJson);
-
-    /** Allows automatic retry on HTTP failure */
-    virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
-
-    /** Returns whether retry is enabled or disabled */
-    virtual bool GetCanRetry() const final { return mCanRetry; }
 
     virtual bool RequiresSession() const override { return true; }
 
@@ -169,14 +164,13 @@ private:
 
     Debug mDebug;
 
-    const HTTPOptions mOptions;
-
     std::string mProtoHost;
     std::string mBaseURL;
 
-    std::unique_ptr<httplib::Client> mHttpClient;
+    const RunnerOptions mBaseOptions;
+    const HTTPOptions mHttpOptions;
 
-    std::atomic<bool> mCanRetry { false };
+    std::unique_ptr<httplib::Client> mHttpClient;
 };
 
 } // namespace Backend

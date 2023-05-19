@@ -6,7 +6,7 @@
 #include "andromeda/BaseOptions.hpp"
 
 namespace Andromeda {
-    namespace Backend { struct HTTPOptions; }
+    namespace Backend { struct HTTPOptions; struct RunnerOptions; }
 }
 
 namespace AndromedaCli {
@@ -22,8 +22,13 @@ public:
     /** Retrieve the standard help text string */
     static std::string OtherHelpText();
 
-    /** @param httpOptions HTTPRunner options ref to fill */
-    explicit Options(Andromeda::Backend::HTTPOptions& httpOptions);
+    /** 
+     * @param httpOptions HTTPRunner options ref to fill 
+     * @param runnerOptions BaseRunner options ref to fill
+     */
+    explicit Options(
+        Andromeda::Backend::HTTPOptions& httpOptions,
+        Andromeda::Backend::RunnerOptions& runnerOptions);
 
     virtual bool AddFlag(const std::string& flag) override;
 
@@ -37,6 +42,7 @@ public:
 private:
 
     Andromeda::Backend::HTTPOptions& mHttpOptions;
+    Andromeda::Backend::RunnerOptions& mRunnerOptions;
 
     std::string mApiUrl;
 };

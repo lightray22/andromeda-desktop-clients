@@ -21,7 +21,7 @@ BackendContext::BackendContext(
     HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
 
     mRunner = std::make_unique<HTTPRunner>(
-        urlPair.first, urlPair.second, mHttpOptions);
+        urlPair.first, urlPair.second, mRunnerOptions, mHttpOptions);
 
     mRunners = std::make_unique<RunnerPool>(*mRunner, mConfigOptions);
 

@@ -6,6 +6,7 @@ set(SOURCE_FILES
     HTTPOptions.cpp
     HTTPRunner.cpp
     RunnerInput.cpp
+    RunnerOptions.cpp
     RunnerPool.cpp
     )
 

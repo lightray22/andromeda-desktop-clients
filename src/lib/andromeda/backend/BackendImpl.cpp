@@ -572,7 +572,8 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
     size_t read = 0; RunnerInput_StreamOut input {{"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}, 
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
-        userFunc(soffset, buf, buflen); read += buflen;
+        userFunc(soffset, buf, buflen); 
+        read += buflen;
     }}; MDBG_BACKEND(input);
 
     mRunners.GetRunner()->RunAction(FinalizeInput(input)); // Not JSON
@@ -657,7 +658,7 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
             if (maxSize && soffset >= maxSize)
             {
                 if (oneshot) throw WriteSizeException();
-                else return false; // end of chunk
+                else { sread = 0; return false; } // end of chunk
             }
 
             const size_t strSize { maxSize ? std::min(buflen,maxSize) : buflen };
