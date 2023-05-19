@@ -635,8 +635,8 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
 
     return SendFile(userFunc, "", 0, [&](const WriteFunc& writeFunc)->RunnerInput_StreamIn
     {
-        return {{"files", "upload", {{"parent", parent}, {"name", name}, 
-            {"overwrite", BOOLSTR(overwrite)}}}, {{"file", {name, writeFunc}}}};
+        return {{{"files", "upload", {{"parent", parent}, {"name", name}, 
+            {"overwrite", BOOLSTR(overwrite)}}}}, {{"file", {name, writeFunc}}}};
     }, oneshot);
 }
 
@@ -671,8 +671,8 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
             input = getUpload(writeFunc);
         else // write file
         {
-            input = {{"files", "writefile", {{"file", id}, 
-                {"offset", std::to_string(offset+byte)}}}, {{"data", {"data", writeFunc}}}};
+            input = {{{"files", "writefile", {{"file", id}, 
+                {"offset", std::to_string(offset+byte)}}}}, {{"data", {"data", writeFunc}}}};
         }
         MDBG_BACKEND(input);
 

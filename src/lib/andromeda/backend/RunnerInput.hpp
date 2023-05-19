@@ -68,7 +68,7 @@ struct RunnerInput_StreamIn : RunnerInput_FilesIn
 
     /** Map of file streams to the input param name */
     typedef std::map<std::string, FileStream> FileStreams;
-    FileStreams fstreams;
+    FileStreams fstreams = {};
 
     /** Returns a Func that reads from the input string */
     static WriteFunc FromString(const std::string& data);
