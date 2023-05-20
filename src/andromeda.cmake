@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(ANDROMEDA_VERSION "0.1-alpha")
 set(ANDROMEDA_CXX_DEFS 
     ANDROMEDA_VERSION="${ANDROMEDA_VERSION}"
+    SYSTEM_NAME="${CMAKE_SYSTEM_NAME}"
     DEBUG=$<IF:$<CONFIG:Debug>,1,0>)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -130,3 +131,15 @@ else()
         list(APPEND ANDROMEDA_LINK_OPTS -Wl,-pie -pie)
     endif()
 endif()
+
+function(andromeda_bin bin_name)
+    target_compile_options(${bin_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+    target_compile_definitions(${bin_name} PRIVATE ${ANDROMEDA_CXX_DEFS})
+    target_link_options(${bin_name} PRIVATE ${ANDROMEDA_LINK_OPTS})
+endfunction()
+
+function(andromeda_lib lib_name)
+    set_target_properties(${lib_name} PROPERTIES PREFIX "")
+    target_compile_options(${lib_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+    target_compile_definitions(${lib_name} PRIVATE ${ANDROMEDA_CXX_DEFS})
+endfunction()

@@ -7,10 +7,7 @@ include(../../andromeda.cmake)
 
 #set(SOURCE_FILES main.cpp Options.cpp)
 #add_executable(andromeda-sync ${SOURCE_FILES})
-
-#target_compile_options(andromeda-sync PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
-#target_compile_definitions(andromeda-sync PRIVATE ${ANDROMEDA_CXX_DEFS})
-#target_link_options(andromeda-sync PRIVATE ${ANDROMEDA_LINK_OPTS})
+#andromeda_bin(andromeda-sync)
 
 # include/link libandromeda-sync
 
