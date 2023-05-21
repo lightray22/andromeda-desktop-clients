@@ -52,12 +52,12 @@ void CLIRunner::CheckError(reproc::process& process, const std::error_code& erro
 /*****************************************************/
 CLIRunner::ArgList CLIRunner::GetArguments(const RunnerInput& input)
 {
-    std::list<std::string> arguments { mApiPath, "--json", input.app, input.action };
+    ArgList arguments { mApiPath, "--json", input.app, input.action };
 
     if (Utilities::endsWith(mApiPath, ".php"))
         arguments.emplace_front("php");
 
-    for (const RunnerInput::Params::value_type& param : input.params)
+    for (const RunnerInput::Params::value_type& param : input.plainParams)
     {
         arguments.push_back("--"+param.first);
         arguments.push_back(param.second);
@@ -67,39 +67,73 @@ CLIRunner::ArgList CLIRunner::GetArguments(const RunnerInput& input)
 }
 
 /*****************************************************/
+CLIRunner::EnvList CLIRunner::GetEnvironment(const RunnerInput& input)
+{
+    EnvList environment;
+    for (const RunnerInput::Params::value_type& param : input.dataParams)
+        environment.emplace("andromeda_"+param.first, param.second);
+    return environment;
+}
+
+/*****************************************************/
 void CLIRunner::PrintArgs(const CLIRunner::ArgList& argList)
 {
-    mDebug.Backend([&](std::ostream& str) {
+    mDebug.Info([&](std::ostream& str) {
         for (const std::string& arg : argList) 
             str << arg << " ";
     });
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction(const RunnerInput& input)
+void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env)
 {
-    ArgList arguments { GetArguments(input) }; 
+    reproc::options options; 
+    options.env.extra = env;
+    CheckError(process, process.start(args, options));
+}
+
+/*****************************************************/
+void CLIRunner::DrainProc(reproc::process& process, std::string& output)
+{
+    reproc::sink::string sink(output);
+    CheckError(process, reproc::drain(process, sink, 
+        reproc::sink::null, mOptions.streamBufferSize));
+}
+
+/*****************************************************/
+int CLIRunner::FinishProc(reproc::process& process)
+{
+    int status = 0; 
+    std::error_code error; 
+    std::tie(status,error) = process.wait(mOptions.timeout); 
+    CheckError(process, error);
+    return status;
+}
+
+/*****************************************************/
+std::string CLIRunner::RunAction_Read(const RunnerInput& input)
+{
+    const ArgList arguments { GetArguments(input) }; 
+    const EnvList environment { GetEnvironment(input) };
     PrintArgs(arguments);
 
     reproc::process process;
-    CheckError(process, process.start(arguments));
+    StartProc(process, arguments, environment);
 
     std::string output;
-    reproc::sink::string sink(output);
-
-    CheckError(process, reproc::drain(process, sink, reproc::sink::null, mOptions.streamBufferSize));
-
-    int status = 0; std::error_code error; 
-    std::tie(status,error) = process.wait(mOptions.timeout); 
-    CheckError(process, error);
-
+    DrainProc(process, output);
+    FinishProc(process);
     return output;
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction(const RunnerInput_FilesIn& input)
+std::string CLIRunner::RunAction_Write(const RunnerInput& input) { return RunAction_Read(input); }
+
+/*****************************************************/
+std::string CLIRunner::RunAction_Write(const RunnerInput_FilesIn& input)
 {
     ArgList arguments { GetArguments(input) };
+    const EnvList environment { GetEnvironment(input) };
 
     const std::string* inputPtr { nullptr };
     if (input.files.size() > 0)
@@ -115,7 +149,7 @@ std::string CLIRunner::RunAction(const RunnerInput_FilesIn& input)
     PrintArgs(arguments);
     
     reproc::process process;
-    CheckError(process, process.start(arguments));
+    StartProc(process, arguments, environment);
 
     std::error_code fillErr;
     if (inputPtr != nullptr)
@@ -126,13 +160,8 @@ std::string CLIRunner::RunAction(const RunnerInput_FilesIn& input)
     }
 
     std::string output;
-    reproc::sink::string sink(output);
-
-    CheckError(process, reproc::drain(process, sink, reproc::sink::null, mOptions.streamBufferSize));
-
-    int status = 0; std::error_code error; 
-    std::tie(status,error) = process.wait(mOptions.timeout); 
-    CheckError(process, error);
+    DrainProc(process, output);
+    int status { FinishProc(process) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -141,9 +170,10 @@ std::string CLIRunner::RunAction(const RunnerInput_FilesIn& input)
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction(const RunnerInput_StreamIn& input)
+std::string CLIRunner::RunAction_Write(const RunnerInput_StreamIn& input)
 {
     ArgList arguments { GetArguments(input) };
+    const EnvList environment { GetEnvironment(input) };
 
     if (input.files.size() > 0) throw Exception("Multiple Files");
 
@@ -161,7 +191,7 @@ std::string CLIRunner::RunAction(const RunnerInput_StreamIn& input)
     PrintArgs(arguments);
     
     reproc::process process;
-    CheckError(process, process.start(arguments));
+    StartProc(process, arguments, environment);
 
     std::error_code fillErr;
     if (streamerPtr != nullptr)
@@ -176,13 +206,8 @@ std::string CLIRunner::RunAction(const RunnerInput_StreamIn& input)
     }
 
     std::string output;
-    reproc::sink::string sink(output);
-
-    CheckError(process, reproc::drain(process, sink, reproc::sink::null, mOptions.streamBufferSize));
-
-    int status = 0; std::error_code error; 
-    std::tie(status,error) = process.wait(mOptions.timeout); 
-    CheckError(process, error);
+    DrainProc(process, output);
+    int status { FinishProc(process) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -191,13 +216,14 @@ std::string CLIRunner::RunAction(const RunnerInput_StreamIn& input)
 }
 
 /*****************************************************/
-void CLIRunner::RunAction(const RunnerInput_StreamOut& input)
+void CLIRunner::RunAction_Read(const RunnerInput_StreamOut& input)
 {
-    ArgList arguments { GetArguments(input) };
+    const ArgList arguments { GetArguments(input) };
+    const EnvList environment { GetEnvironment(input) };
     PrintArgs(arguments);
     
     reproc::process process;
-    CheckError(process, process.start(arguments));
+    StartProc(process, arguments, environment);
 
     size_t offset { 0 }; CheckError(process, reproc::drain(process, 
         [&](reproc::stream stream, const uint8_t* buffer, size_t size)->std::error_code
@@ -206,9 +232,7 @@ void CLIRunner::RunAction(const RunnerInput_StreamOut& input)
         offset += size; return std::error_code(); // success
     }, reproc::sink::null, mOptions.streamBufferSize));
 
-    int status = 0; std::error_code error; 
-    std::tie(status,error) = process.wait(mOptions.timeout); 
-    CheckError(process, error);
+    FinishProc(process);
 }
 
 } // namespace Backend

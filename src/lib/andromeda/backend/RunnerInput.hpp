@@ -27,7 +27,14 @@ struct RunnerInput
 
     /** app name to run */      std::string app;
     /** app action to run */    std::string action;
-    /** map of input params */  Params params = {};
+
+    /** map of non-sensitive and non-binary input params 
+     * that can go in a URL (HTTP) or on the command line (CLI) */ 
+    Params plainParams = {};
+    
+    /** map of sensitive or binary input params only to go
+     * in headers/post body (HTTP) or environment vars (CLI) */
+    Params dataParams = {};
 };
 
 /** A RunnerInput with strings for files input */

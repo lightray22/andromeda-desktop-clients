@@ -18,10 +18,13 @@ BackendContext::BackendContext(
 {
     MDBG_INFO("(url:" << url << ", username:" << username << ")");
 
-    HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
+    const HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
 
-    mRunner = std::make_unique<HTTPRunner>(
-        urlPair.first, urlPair.second, mRunnerOptions, mHttpOptions);
+    const std::string userAgent(std::string("andromeda-gui/")
+        +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
+
+    mRunner = std::make_unique<HTTPRunner>(urlPair.first, urlPair.second, 
+        userAgent, mRunnerOptions, mHttpOptions);
 
     mRunners = std::make_unique<RunnerPool>(*mRunner, mConfigOptions);
 

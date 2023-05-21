@@ -70,10 +70,14 @@ int main(int argc, char** argv)
 
     DDBG_INFO("()");
 
-    HTTPRunner::HostUrlPair urlPair {
+    const HTTPRunner::HostUrlPair urlPair {
         HTTPRunner::ParseURL(options.GetApiUrl()) };
 
-    HTTPRunner runner(urlPair.first, urlPair.second, runnerOptions, httpOptions);
+    const std::string userAgent(std::string("andromeda-cli/")
+        +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
+
+    HTTPRunner runner(urlPair.first, urlPair.second, 
+        userAgent, runnerOptions, httpOptions);
 
     try
     {

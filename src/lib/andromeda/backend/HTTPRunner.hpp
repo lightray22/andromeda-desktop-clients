@@ -57,9 +57,11 @@ public:
     /**
      * @param protoHost (protocol://)hostname
      * @param baseURL baseURL of the endpoint
-     * @param options HTTP config options
+     * @param userAgent name of the program running
+     * @param runnerOptions base runner config options
+     * @param httpOptions HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, 
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
         const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions);
 
     virtual std::unique_ptr<BaseRunner> Clone() const override;
@@ -81,29 +83,35 @@ public:
     /** Returns the base URL being used */
     virtual const std::string& GetBaseURL() const final { return mBaseURL; }
 
-    inline virtual std::string RunAction(const RunnerInput& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    inline virtual std::string RunAction_Read(const RunnerInput& input) override { 
+        bool isJson; return RunAction_Read(input, isJson); };
 
-    virtual std::string RunAction(const RunnerInput_FilesIn& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    inline virtual std::string RunAction_Write(const RunnerInput& input) override { 
+        bool isJson; return RunAction_Write(input, isJson); };
+
+    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input) override { 
+        bool isJson; return RunAction_Write(input, isJson); };
     
-    virtual std::string RunAction(const RunnerInput_StreamIn& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input) override { 
+        bool isJson; return RunAction_Write(input, isJson); };
     
-    virtual void RunAction(const RunnerInput_StreamOut& input) override { 
-        bool isJson; RunAction(input, isJson); };
+    virtual void RunAction_Read(const RunnerInput_StreamOut& input) override { 
+        bool isJson; RunAction_Read(input, isJson); };
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput& input, bool& isJson);
+    virtual std::string RunAction_Read(const RunnerInput& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput_FilesIn& input, bool& isJson);
+    virtual std::string RunAction_Write(const RunnerInput& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput_StreamIn& input, bool& isJson);
+    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input, bool& isJson);
+
+    /** @param[out] isJson ref set to whether response is json */
+    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json (before data starts) */
-    virtual void RunAction(const RunnerInput_StreamOut& input, bool& isJson);
+    virtual void RunAction_Read(const RunnerInput_StreamOut& input, bool& isJson);
 
     virtual bool RequiresSession() const override { return true; }
 
@@ -114,11 +122,18 @@ private:
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
 
-    /** Returns the action URL for the given input and adds params to headers */
-    std::string SetupRequest(const RunnerInput& input, httplib::Headers& headers);
+    /** 
+     * Gets request info for the given input, adding plainParams to the URL
+     * @param dataParams if true, add dataParams to the headers
+     * @return the URL to use for the request
+     */
+    std::string SetupRequest(const RunnerInput& input, httplib::Headers& headers, bool dataParams = true);
 
-    /** Returns the action URL for the given input and adds params to a post body */
-    std::string SetupRequest(const RunnerInput& input, httplib::MultipartFormDataItems& params);
+    /** Add dataParams from the given input to a post body */
+    void AddDataParams(const RunnerInput& input, httplib::MultipartFormDataItems& params);
+
+    /** Add filesIn params from the given input to a post body */
+    void AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& params);
 
     /**
      * Performs a series of HTTP request attempts, does not call HandleResponse
@@ -166,6 +181,7 @@ private:
 
     std::string mProtoHost;
     std::string mBaseURL;
+    std::string mUserAgent;
 
     const RunnerOptions mBaseOptions;
     const HTTPOptions mHttpOptions;

@@ -183,19 +183,17 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
         mInput_StreamIn = std::make_unique<RunnerInput_StreamIn>(
             RunnerInput_StreamIn{{{app, action, params}, { }}, streams});
     }
-    else
-    {
-        mInput = std::make_unique<RunnerInput>(
+    else mInput = std::make_unique<RunnerInput>(
             RunnerInput{app, action, params});
-    }
 }
 
 /*****************************************************/
 std::string CommandLine::RunInputAction(HTTPRunner& runner, bool& isJson)
 {
-    if (mInput)           return runner.RunAction(*mInput, isJson);
-    if (mInput_StreamIn)  return runner.RunAction(*mInput_StreamIn, isJson);
-    if (mInput_StreamOut) { runner.RunAction(*mInput_StreamOut, isJson); return ""; }
+    // no way to tell read/write via CLI so just assume write, will always POST
+    if (mInput)           return runner.RunAction_Write(*mInput, isJson);
+    if (mInput_StreamIn)  return runner.RunAction_Write(*mInput_StreamIn, isJson);
+    if (mInput_StreamOut) { runner.RunAction_Write(*mInput_StreamOut, isJson); return ""; }
 
     throw std::runtime_error("RunInputAction without ParseFullArgs");
 }

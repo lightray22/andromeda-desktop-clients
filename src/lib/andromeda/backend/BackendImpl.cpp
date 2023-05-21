@@ -64,9 +64,12 @@ void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const 
 {
     str << ++sReqCount << " " << myfname << "()"
         << " app:" << input.app << " action:" << input.action;
-        
-    for (const auto& [key,val] : input.params)
+    
+    for (const auto& [key,val] : input.plainParams)
         str << " " << key << ":" << val;
+    
+    for (const auto& [key,val] : input.dataParams)
+        str << " (" << key << ":" << val << ")";
 }
 
 /*****************************************************/
@@ -97,12 +100,12 @@ InputT& BackendImpl::FinalizeInput(InputT& input)
 {
     if (!mSessionID.empty())
     {
-        input.params["auth_sessionid"] = mSessionID;
-        input.params["auth_sessionkey"] = mSessionKey;
+        input.dataParams["auth_sessionid"] = mSessionID;
+        input.dataParams["auth_sessionkey"] = mSessionKey;
     }
     else if (!mUsername.empty())
     {
-        input.params["auth_sudouser"] = mUsername;
+        input.plainParams["auth_sudouser"] = mUsername;
     }
 
     return input;
@@ -130,7 +133,8 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
 
                  if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
-            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); // TODO better exception? - should not happen if Authenticated? maybe for bad shares
+                // TODO better exception? - should not happen if Authenticated? maybe for bad shares
+            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
             else if (code == 400 && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
             
             else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
@@ -153,9 +157,16 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
 
 /*****************************************************/
 template <class InputT>
-nlohmann::json BackendImpl::RunAction(InputT& input)
+nlohmann::json BackendImpl::RunAction_Read(InputT& input)
 {
-    return GetJSON(mRunners.GetRunner()->RunAction(FinalizeInput(input)));
+    return GetJSON(mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)));
+}
+
+/*****************************************************/
+template <class InputT>
+nlohmann::json BackendImpl::RunAction_Write(InputT& input)
+{
+    return GetJSON(mRunners.GetRunner()->RunAction_Write(FinalizeInput(input)));
 }
 
 /*****************************************************/
@@ -165,13 +176,14 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
 
     CloseSession();
 
-    RunnerInput input { "accounts", "createsession", {{ "username", username }, { "auth_password", password }}};
+    RunnerInput input { "accounts", "createsession", {{ "username", username }}, // plainParams
+        {{ "auth_password", password }}}; // dataParams
 
     if (!twofactor.empty()) 
-        input.params["auth_twofactor"] = twofactor; 
+        input.dataParams["auth_twofactor"] = twofactor; 
     MDBG_BACKEND(input);
 
-    nlohmann::json resp(RunAction(input));
+    nlohmann::json resp(RunAction_Write(input));
 
     try
     {
@@ -239,8 +251,7 @@ void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::strin
     mSessionKey = sessionKey;
 
     RunnerInput input {"accounts", "getaccount"}; MDBG_BACKEND(input);
-
-    nlohmann::json resp(RunAction(input));
+    nlohmann::json resp(RunAction_Read(input));
 
     try
     {
@@ -259,8 +270,7 @@ void BackendImpl::CloseSession()
     if (mCreatedSession)
     {
         RunnerInput input {"accounts", "deleteclient"}; MDBG_BACKEND(input);
-
-        RunAction(input);
+        RunAction_Write(input);
     }
 
     mCreatedSession = false;
@@ -299,12 +309,12 @@ nlohmann::json BackendImpl::GetConfigJ()
 
     {
         RunnerInput input {"core", "getconfig"}; MDBG_BACKEND(input);
-        configJ["core"] = RunAction(input);
+        configJ["core"] = RunAction_Read(input);
     }
 
     {
         RunnerInput input {"files", "getconfig"}; MDBG_BACKEND(input);
-        configJ["files"] = RunAction(input);
+        configJ["files"] = RunAction_Read(input);
     }
 
     return configJ;
@@ -318,7 +328,7 @@ nlohmann::json BackendImpl::GetAccountLimits()
 
     RunnerInput input {"files", "getlimits", {{"account", mAccountID}}}; MDBG_BACKEND(input);
 
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -326,7 +336,7 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    if (isMemory()) /** debug only */
+    if (isMemory()) // debug only
     {
         nlohmann::json retval;
         retval["id"] = id;
@@ -337,7 +347,7 @@ nlohmann::json BackendImpl::GetFolder(const std::string& id)
 
     RunnerInput input {"files", "getfolder", {{"folder", id}}}; MDBG_BACKEND(input);
     
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -345,7 +355,7 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 {
     MDBG_INFO("(id:" << id << ")");
 
-    if (isMemory()) /** debug only */
+    if (isMemory()) // debug only
     {
         nlohmann::json retval;
         retval["id"] = id;
@@ -356,7 +366,7 @@ nlohmann::json BackendImpl::GetFSRoot(const std::string& id)
 
     RunnerInput input {"files", "getfolder", {{"filesystem", id}}}; MDBG_BACKEND(input);
     
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -368,7 +378,7 @@ nlohmann::json BackendImpl::GetFilesystem(const std::string& id)
 
     RunnerInput input {"files", "getfilesystem", {{"filesystem", id}}}; MDBG_BACKEND(input);
 
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -380,7 +390,7 @@ nlohmann::json BackendImpl::GetFSLimits(const std::string& id)
 
     RunnerInput input {"files", "getlimits", {{"filesystem", id}}}; MDBG_BACKEND(input);
 
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -390,7 +400,7 @@ nlohmann::json BackendImpl::GetFilesystems()
 
     RunnerInput input {"files", "getfilesystems"}; MDBG_BACKEND(input);
 
-    return RunAction(input); 
+    return RunAction_Read(input); 
 }
 
 /*****************************************************/
@@ -400,7 +410,7 @@ nlohmann::json BackendImpl::GetAdopted()
 
     RunnerInput input {"files", "listadopted"}; MDBG_BACKEND(input);
 
-    return RunAction(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/
@@ -410,7 +420,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */
+    if (isMemory()) // debug only
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"size", 0}, {"filesystem", ""}};
 
@@ -419,10 +429,11 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         return retval;
     }
 
-    RunnerInput_FilesIn input {{"files", "upload", {{"parent", parent}, {"name", name}, 
-        {"overwrite", BOOLSTR(overwrite)}}}, {{"file", {name, ""}}}}; MDBG_BACKEND(input);
+    RunnerInput_FilesIn input {{"files", "upload", 
+        {{"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}, // plainParams
+        {{"file", {name, ""}}}}; MDBG_BACKEND(input); // FilesIn
         
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -432,7 +443,7 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */
+    if (isMemory()) // debug only
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, {"filesystem", ""}};
 
@@ -444,9 +455,10 @@ nlohmann::json BackendImpl::CreateFolder(const std::string& parent, const std::s
         return retval;
     }
 
-    RunnerInput input {"files", "createfolder", {{"parent", parent}, {"name", name}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "createfolder", {{"parent", parent}}, // plainParams
+        {{"name", name}}}; MDBG_BACKEND(input); // dataParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -456,11 +468,11 @@ void BackendImpl::DeleteFile(const std::string& id)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return;
+    if (isMemory()) return; // debug only
 
     RunnerInput input {"files", "deletefile", {{"file", id}}}; MDBG_BACKEND(input);
     
-    try { RunAction(input); }
+    try { RunAction_Write(input); }
     catch (const NotFoundException& e) {
         MDBG_INFO("... backend:" << e.what()); }
 }
@@ -472,11 +484,11 @@ void BackendImpl::DeleteFolder(const std::string& id)
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return;
+    if (isMemory()) return; // debug only
 
     RunnerInput input {"files", "deletefolder", {{"folder", id}}}; MDBG_BACKEND(input);
     
-    try { RunAction(input); }
+    try { RunAction_Write(input); }
     catch (const NotFoundException& e) {
         MDBG_INFO("... backend:" << e.what()); }
 }
@@ -488,11 +500,13 @@ nlohmann::json BackendImpl::RenameFile(const std::string& id, const std::string&
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
-    RunnerInput input {"files", "renamefile", {{"file", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "renamefile", 
+        {{"file", id}, {"overwrite", BOOLSTR(overwrite)}}, // plainParams
+        {{"name", name}} }; MDBG_BACKEND(input); // dataParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -502,11 +516,13 @@ nlohmann::json BackendImpl::RenameFolder(const std::string& id, const std::strin
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
-    RunnerInput input {"files", "renamefolder", {{"folder", id}, {"name", name}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "renamefolder", 
+        {{"folder", id}, {"overwrite", BOOLSTR(overwrite)}}, // plainParams
+        {{"name", name}} }; MDBG_BACKEND(input); // dataParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -516,11 +532,12 @@ nlohmann::json BackendImpl::MoveFile(const std::string& id, const std::string& p
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
-    RunnerInput input {"files", "movefile", {{"file", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "movefile", 
+        {{"file", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input); // plainParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -530,11 +547,12 @@ nlohmann::json BackendImpl::MoveFolder(const std::string& id, const std::string&
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
-    RunnerInput input {"files", "movefolder", {{"folder", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "movefolder", 
+        {{"folder", id}, {"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}; MDBG_BACKEND(input); // plainParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 /*****************************************************/
@@ -547,11 +565,12 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
-    if (isMemory()) /** debug only */ return std::string(length,'\0');
+    if (isMemory()) return std::string(length,'\0'); // debug only
 
-    RunnerInput input {"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "download", {{"file", id}}, // plainParams
+        {{"fstart", fstart}, {"flast", flast}}}; MDBG_BACKEND(input); // dataParams
 
-    std::string data { mRunners.GetRunner()->RunAction(FinalizeInput(input)) }; // not JSON
+    std::string data { mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)) }; // not JSON
     if (data.size() != length) throw ReadSizeException(length, data.size());
 
     return data;
@@ -567,16 +586,17 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
-    if (isMemory()) /** debug only */ { userFunc(0, std::string(length,'\0').data(), length); return; }
+    if (isMemory()) { userFunc(0, std::string(length,'\0').data(), length); return; } // debug only
 
-    size_t read = 0; RunnerInput_StreamOut input {{"files", "download", {{"file", id}, {"fstart", fstart}, {"flast", flast}}}, 
+    size_t read = 0; RunnerInput_StreamOut input {{"files", "download", {{"file", id}}, // plainParams
+        {{"fstart", fstart}, {"flast", flast}}}, // dataParams
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
         userFunc(soffset, buf, buflen); 
         read += buflen;
     }}; MDBG_BACKEND(input);
 
-    mRunners.GetRunner()->RunAction(FinalizeInput(input)); // Not JSON
+    mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)); // not JSON
 
     if (read != length) throw ReadSizeException(length, read);
 }
@@ -603,7 +623,7 @@ nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offs
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
     return SendFile(userFunc, id, offset, nullptr, false);
 }
@@ -625,7 +645,7 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */
+    if (isMemory()) // debug only
     {
         nlohmann::json retval {{"id", ""}, {"name", name}, 
             {"size", RunnerInput_StreamIn::StreamSize(userFunc)}, {"filesystem", ""}};
@@ -635,8 +655,9 @@ nlohmann::json BackendImpl::UploadFile(const std::string& parent, const std::str
 
     return SendFile(userFunc, "", 0, [&](const WriteFunc& writeFunc)->RunnerInput_StreamIn
     {
-        return {{{"files", "upload", {{"parent", parent}, {"name", name}, 
-            {"overwrite", BOOLSTR(overwrite)}}}}, {{"file", {name, writeFunc}}}};
+        return {{{"files", "upload", 
+            {{"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}}, // plainParams
+            {{"file", {name, writeFunc}}}}; // StreamIn
     }, oneshot);
 }
 
@@ -671,14 +692,14 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
             input = getUpload(writeFunc);
         else // write file
         {
-            input = {{{"files", "writefile", {{"file", id}, 
-                {"offset", std::to_string(offset+byte)}}}}, {{"data", {"data", writeFunc}}}};
+            input = {{{"files", "writefile", {{"file", id}}, // plainParams
+                {{"offset", std::to_string(offset+byte)}}}}, {{"data", {"data", writeFunc}}}}; // dataParams, StreamIn
         }
         MDBG_BACKEND(input);
 
         try
         {
-            retval = RunAction(input);
+            retval = RunAction_Write(input);
             retval.at("id").get_to(id);
             byte += streamSize; // next chunk
         }
@@ -706,11 +727,12 @@ nlohmann::json BackendImpl::TruncateFile(const std::string& id, const uint64_t s
 
     if (isReadOnly()) throw ReadOnlyException();
 
-    if (isMemory()) /** debug only */ return nullptr;
+    if (isMemory()) return nullptr; // debug only
 
-    RunnerInput input {"files", "ftruncate", {{"file", id}, {"size", std::to_string(size)}}}; MDBG_BACKEND(input);
+    RunnerInput input {"files", "ftruncate", {{"file", id}}, // plainParams
+        {{"size", std::to_string(size)}}}; MDBG_BACKEND(input); // dataParams
 
-    return RunAction(input);
+    return RunAction_Write(input);
 }
 
 } // namespace Backend

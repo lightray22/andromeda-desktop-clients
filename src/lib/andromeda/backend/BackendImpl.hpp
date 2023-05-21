@@ -325,7 +325,11 @@ private:
 
     /** Finalizes input, runs the action, returns JSON */
     template<class InputT>
-    nlohmann::json RunAction(InputT& input);
+    nlohmann::json RunAction_Read(InputT& input);
+
+    /** Finalizes input, runs the action, returns JSON */
+    template<class InputT>
+    nlohmann::json RunAction_Write(InputT& input);
 
     /** Function that is given a WriteFunc and returns a RunnerInput_StreamIn for file upload */
     typedef std::function<RunnerInput_StreamIn(const WriteFunc& writeFunc)> UploadInput;

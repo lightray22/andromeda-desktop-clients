@@ -14,9 +14,9 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, 
+HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
     const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions) : 
-    mDebug(__func__,this), mProtoHost(protoHost), mBaseURL(baseURL),
+    mDebug(__func__,this), mProtoHost(protoHost), mBaseURL(baseURL), mUserAgent(userAgent),
     mBaseOptions(runnerOptions), mHttpOptions(httpOptions)
 {
     if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
@@ -29,7 +29,8 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 /*****************************************************/
 std::unique_ptr<BaseRunner> HTTPRunner::Clone() const
 {
-    return std::make_unique<HTTPRunner>(mProtoHost, mBaseURL, mBaseOptions, mHttpOptions);
+    return std::make_unique<HTTPRunner>(
+        mProtoHost, mBaseURL, mUserAgent, mBaseOptions, mHttpOptions);
 }
 
 /*****************************************************/
@@ -92,35 +93,42 @@ std::string HTTPRunner::GetProtoHost() const
 }
 
 /*****************************************************/
-std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Headers& headers)
+std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Headers& headers, bool dataParams)
 {
-    // set up params as base64-encoded X-Andromeda headers
-    for (const decltype(input.params)::value_type& it : input.params)
+    headers.emplace("User-Agent", mUserAgent);
+
+    // set up the URL parameters and query string
+    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
+
+    // set up plainParams as URL variables (for server logging)
+    for (const decltype(input.plainParams)::value_type& it : input.plainParams)
+        urlParams.emplace(it); 
+
+    // set up dataParams as base64-encoded X-Andromeda headers
+    if (dataParams) for (const decltype(input.dataParams)::value_type& it : input.dataParams)
     {
         std::string key { it.first };
         std::replace(key.begin(), key.end(), '_', '-');
         headers.emplace("X-Andromeda-"+key, base64::encode(it.second));
     }
 
-    // set up the URL parameters and query string
-    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
-
     return std::string(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
         httplib::detail::params_to_query_str(urlParams));
 }
 
 /*****************************************************/
-std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::MultipartFormDataItems& postParams)
+void HTTPRunner::AddDataParams(const RunnerInput& input, httplib::MultipartFormDataItems& postParams)
 {
-    // set up params as POST body inputs
-    for (const decltype(input.params)::value_type& it : input.params)
+    // set up dataParams as POST body inputs
+    for (const decltype(input.dataParams)::value_type& it : input.dataParams)
         postParams.push_back({it.first, it.second, {}, {}});
+}
 
-    // set up the URL parameters and query string
-    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
-
-    return std::string(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
-        httplib::detail::params_to_query_str(urlParams));
+/*****************************************************/
+void HTTPRunner::AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& postParams)
+{
+    for (const decltype(input.files)::value_type& it : input.files)
+        postParams.push_back({it.first, it.second.data, it.second.name, {}});
 }
 
 /*****************************************************/
@@ -216,41 +224,58 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(const RunnerInput& input, bool& isJson)
+std::string HTTPRunner::RunAction_Read(const RunnerInput& input, bool& isJson)
 {
     MDBG_INFO("()");
 
-    httplib::Headers headers; std::string url(SetupRequest(input, headers));
+    httplib::Headers headers; 
+    std::string url(SetupRequest(input, headers));
 
     return DoRequestsFull([&](){ return mHttpClient->Get(url.c_str(), headers); }, isJson);
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(const RunnerInput_FilesIn& input, bool& isJson)
+std::string HTTPRunner::RunAction_Write(const RunnerInput& input, bool& isJson)
+{
+    MDBG_INFO("()");
+
+    httplib::Headers headers; 
+    httplib::MultipartFormDataItems postParams;
+    std::string url(SetupRequest(input, headers, false));
+
+    AddDataParams(input, postParams);
+
+    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams); }, isJson);
+}
+
+/*****************************************************/
+std::string HTTPRunner::RunAction_Write(const RunnerInput_FilesIn& input, bool& isJson)
 {
     MDBG_INFO("(FilesIn)");
 
     // set up the POST body as multipart files
+    httplib::Headers headers;
     httplib::MultipartFormDataItems postParams;
-    std::string url(SetupRequest(input, postParams));
+    std::string url(SetupRequest(input, headers, false)); 
 
-    for (const decltype(input.files)::value_type& it : input.files)
-        postParams.push_back({it.first, it.second.data, it.second.name, {}});
+    AddDataParams(input, postParams);
+    AddFileParams(input, postParams);
 
-    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), postParams); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams); }, isJson);
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJson)
+std::string HTTPRunner::RunAction_Write(const RunnerInput_StreamIn& input, bool& isJson)
 {
     MDBG_INFO("(StreamIn)");
 
+    httplib::Headers headers;
     httplib::MultipartFormDataItems postParams;
-    std::string url(SetupRequest(input, postParams));
+    std::string url(SetupRequest(input, headers, false)); 
 
-    for (const decltype(input.files)::value_type& it : input.files)
-        postParams.push_back({it.first, it.second.data, it.second.name, {}});
-
+    AddDataParams(input, postParams);
+    AddFileParams(input, postParams);
+    
     // set up the POST body as files being done via a chunked stream
     httplib::MultipartFormDataProviderItems streamParams;
 
@@ -273,16 +298,17 @@ std::string HTTPRunner::RunAction(const RunnerInput_StreamIn& input, bool& isJso
         streamParams.push_back({it.first, sfunc, it.second.name, {}});
     }
     
-    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), { }, postParams, streamParams); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams, streamParams); }, isJson);
 }
 
 /*****************************************************/
-void HTTPRunner::RunAction(const RunnerInput_StreamOut& input, bool& isJson)
+void HTTPRunner::RunAction_Read(const RunnerInput_StreamOut& input, bool& isJson)
 {
     MDBG_INFO("(StreamOut)");
 
     // httplib only supports ContentReceiver with Get() so use headers instead of MultiPart
-    httplib::Headers headers; std::string url(SetupRequest(input, headers));
+    httplib::Headers headers; 
+    std::string url(SetupRequest(input, headers));
 
     bool canRetry, doRetry; size_t offset;
 

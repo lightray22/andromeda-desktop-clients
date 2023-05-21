@@ -101,11 +101,14 @@ int main(int argc, char** argv)
     {
         case Options::ApiType::API_URL:
         {
-            HTTPRunner::HostUrlPair urlPair { 
+            const HTTPRunner::HostUrlPair urlPair { 
                 HTTPRunner::ParseURL(options.GetApiPath()) };
 
-            runner = std::make_unique<HTTPRunner>(
-                urlPair.first, urlPair.second, runnerOptions, httpOptions);
+            const std::string userAgent(std::string("andromeda-fuse/")
+                +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
+
+            runner = std::make_unique<HTTPRunner>(urlPair.first, urlPair.second, 
+                userAgent, runnerOptions, httpOptions);
         }; break;
         case Options::ApiType::API_PATH:
         {
