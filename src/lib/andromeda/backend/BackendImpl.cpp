@@ -156,17 +156,39 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
 }
 
 /*****************************************************/
-template <class InputT>
-nlohmann::json BackendImpl::RunAction_Read(InputT& input)
+std::string BackendImpl::RunAction_ReadStr(RunnerInput& input)
+{
+    return mRunners.GetRunner()->RunAction_Read(FinalizeInput(input));
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::RunAction_Read(RunnerInput& input)
 {
     return GetJSON(mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)));
 }
 
 /*****************************************************/
-template <class InputT>
-nlohmann::json BackendImpl::RunAction_Write(InputT& input)
+nlohmann::json BackendImpl::RunAction_Write(RunnerInput& input)
 {
     return GetJSON(mRunners.GetRunner()->RunAction_Write(FinalizeInput(input)));
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::RunAction_FilesIn(RunnerInput_FilesIn& input)
+{
+    return GetJSON(mRunners.GetRunner()->RunAction_FilesIn(FinalizeInput(input)));
+}
+
+/*****************************************************/
+nlohmann::json BackendImpl::RunAction_StreamIn(RunnerInput_StreamIn& input)
+{
+    return GetJSON(mRunners.GetRunner()->RunAction_StreamIn(FinalizeInput(input)));
+}
+
+/*****************************************************/
+void BackendImpl::RunAction_StreamOut(RunnerInput_StreamOut& input)
+{
+    mRunners.GetRunner()->RunAction_StreamOut(FinalizeInput(input));
 }
 
 /*****************************************************/
@@ -433,7 +455,7 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         {{"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}, // plainParams
         {{"file", {name, ""}}}}; MDBG_BACKEND(input); // FilesIn
         
-    return RunAction_Write(input);
+    return RunAction_FilesIn(input);
 }
 
 /*****************************************************/
@@ -570,9 +592,8 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
     RunnerInput input {"files", "download", {{"file", id}}, // plainParams
         {{"fstart", fstart}, {"flast", flast}}}; MDBG_BACKEND(input); // dataParams
 
-    std::string data { mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)) }; // not JSON
+    const std::string data { RunAction_ReadStr(input) };
     if (data.size() != length) throw ReadSizeException(length, data.size());
-
     return data;
 }
 
@@ -596,8 +617,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
         read += buflen;
     }}; MDBG_BACKEND(input);
 
-    mRunners.GetRunner()->RunAction_Read(FinalizeInput(input)); // not JSON
-
+    RunAction_StreamOut(input);
     if (read != length) throw ReadSizeException(length, read);
 }
 
@@ -699,7 +719,7 @@ nlohmann::json BackendImpl::SendFile(const WriteFunc& userFunc, std::string id, 
 
         try
         {
-            retval = RunAction_Write(input);
+            retval = RunAction_StreamIn(input);
             retval.at("id").get_to(id);
             byte += streamSize; // next chunk
         }

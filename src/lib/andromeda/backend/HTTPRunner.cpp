@@ -249,9 +249,9 @@ std::string HTTPRunner::RunAction_Write(const RunnerInput& input, bool& isJson)
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction_Write(const RunnerInput_FilesIn& input, bool& isJson)
+std::string HTTPRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input, bool& isJson)
 {
-    MDBG_INFO("(FilesIn)");
+    MDBG_INFO("()");
 
     // set up the POST body as multipart files
     httplib::Headers headers;
@@ -265,9 +265,9 @@ std::string HTTPRunner::RunAction_Write(const RunnerInput_FilesIn& input, bool& 
 }
 
 /*****************************************************/
-std::string HTTPRunner::RunAction_Write(const RunnerInput_StreamIn& input, bool& isJson)
+std::string HTTPRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input, bool& isJson)
 {
-    MDBG_INFO("(StreamIn)");
+    MDBG_INFO("()");
 
     httplib::Headers headers;
     httplib::MultipartFormDataItems postParams;
@@ -302,9 +302,9 @@ std::string HTTPRunner::RunAction_Write(const RunnerInput_StreamIn& input, bool&
 }
 
 /*****************************************************/
-void HTTPRunner::RunAction_Read(const RunnerInput_StreamOut& input, bool& isJson)
+void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& isJson)
 {
-    MDBG_INFO("(StreamOut)");
+    MDBG_INFO("()");
 
     // httplib only supports ContentReceiver with Get() so use headers instead of MultiPart
     httplib::Headers headers; 

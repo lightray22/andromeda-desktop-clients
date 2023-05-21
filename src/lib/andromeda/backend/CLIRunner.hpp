@@ -37,15 +37,15 @@ public:
 
     virtual std::string GetHostname() const override { return "local-cli"; }
 
-    virtual std::string RunAction_Read(const RunnerInput& input) override;
+    virtual std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
 
     virtual std::string RunAction_Write(const RunnerInput& input) override;
 
-    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input) override;
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override;
     
-    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input) override;
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override;
     
-    virtual void RunAction_Read(const RunnerInput_StreamOut& input) override;
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override;
 
     virtual bool RequiresSession() const override { return false; }
 

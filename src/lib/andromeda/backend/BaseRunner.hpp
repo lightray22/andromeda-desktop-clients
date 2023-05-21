@@ -66,7 +66,7 @@ public:
      * @param input input params struct with files
      * @return result string from API
      */
-    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input) = 0;
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) = 0;
     
     /**
      * Runs an API call and returns the result
@@ -74,14 +74,14 @@ public:
      * @param input input params struct with file streams
      * @return result string from API
      */
-    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input) = 0;
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) = 0;
     
     /**
      * Runs an API call and streams the result
      * MUST NOT call another action within the callback!
      * @param input input params struct with streamer
      */
-    virtual void RunAction_Read(const RunnerInput_StreamOut& input) = 0;
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) = 0;
 
     /** Returns true if the backend requires sessions */
     virtual bool RequiresSession() const = 0;

@@ -111,8 +111,10 @@ int CLIRunner::FinishProc(reproc::process& process)
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction_Read(const RunnerInput& input)
+std::string CLIRunner::RunAction_Write(const RunnerInput& input)
 {
+    MDBG_INFO("()");
+
     const ArgList arguments { GetArguments(input) }; 
     const EnvList environment { GetEnvironment(input) };
     PrintArgs(arguments);
@@ -127,11 +129,10 @@ std::string CLIRunner::RunAction_Read(const RunnerInput& input)
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction_Write(const RunnerInput& input) { return RunAction_Read(input); }
-
-/*****************************************************/
-std::string CLIRunner::RunAction_Write(const RunnerInput_FilesIn& input)
+std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
 {
+    MDBG_INFO("()");
+
     ArgList arguments { GetArguments(input) };
     const EnvList environment { GetEnvironment(input) };
 
@@ -170,8 +171,10 @@ std::string CLIRunner::RunAction_Write(const RunnerInput_FilesIn& input)
 }
 
 /*****************************************************/
-std::string CLIRunner::RunAction_Write(const RunnerInput_StreamIn& input)
+std::string CLIRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input)
 {
+    MDBG_INFO("()");
+
     ArgList arguments { GetArguments(input) };
     const EnvList environment { GetEnvironment(input) };
 
@@ -216,8 +219,10 @@ std::string CLIRunner::RunAction_Write(const RunnerInput_StreamIn& input)
 }
 
 /*****************************************************/
-void CLIRunner::RunAction_Read(const RunnerInput_StreamOut& input)
+void CLIRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input)
 {
+    MDBG_INFO("()");
+
     const ArgList arguments { GetArguments(input) };
     const EnvList environment { GetEnvironment(input) };
     PrintArgs(arguments);

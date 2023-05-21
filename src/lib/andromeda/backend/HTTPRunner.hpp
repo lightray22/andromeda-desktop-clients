@@ -89,14 +89,14 @@ public:
     inline virtual std::string RunAction_Write(const RunnerInput& input) override { 
         bool isJson; return RunAction_Write(input, isJson); };
 
-    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input) override { 
-        bool isJson; return RunAction_Write(input, isJson); };
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override { 
+        bool isJson; return RunAction_FilesIn(input, isJson); };
     
-    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input) override { 
-        bool isJson; return RunAction_Write(input, isJson); };
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override { 
+        bool isJson; return RunAction_StreamIn(input, isJson); };
     
-    virtual void RunAction_Read(const RunnerInput_StreamOut& input) override { 
-        bool isJson; RunAction_Read(input, isJson); };
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override { 
+        bool isJson; RunAction_StreamOut(input, isJson); };
 
     /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction_Read(const RunnerInput& input, bool& isJson);
@@ -105,13 +105,13 @@ public:
     virtual std::string RunAction_Write(const RunnerInput& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction_Write(const RunnerInput_FilesIn& input, bool& isJson);
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction_Write(const RunnerInput_StreamIn& input, bool& isJson);
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json (before data starts) */
-    virtual void RunAction_Read(const RunnerInput_StreamOut& input, bool& isJson);
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& isJson);
 
     virtual bool RequiresSession() const override { return true; }
 
