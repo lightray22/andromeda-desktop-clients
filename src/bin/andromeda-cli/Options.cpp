@@ -19,17 +19,24 @@ std::string Options::CoreHelpText()
 }
 
 /*****************************************************/
-std::string Options::OtherHelpText()
+std::string Options::MainHelpText()
+{
+    return "-a|--apiurl url";
+}
+
+/*****************************************************/
+std::string Options::DetailHelpText()
 {
     std::ostringstream output;
 
     using std::endl;
 
     output 
+        << "Other Options:   [--stream-out] [--allow-unsafe-url]" << endl
         << HTTPOptions::HelpText() << endl 
         << RunnerOptions::HelpText() << endl << endl
            
-        << OtherBaseHelpText();
+        << DetailBaseHelpText("cli");
 
     return output.str();
 }
@@ -42,6 +49,10 @@ Options::Options(HTTPOptions& httpOptions, RunnerOptions& runnerOptions) :
 bool Options::AddFlag(const std::string& flag)
 {
     if (BaseOptions::AddFlag(flag)) { }
+
+    else if (flag == "stream-out") mStreamOut = true;
+    else if (flag == "allow-unsafe-url") mUnsafeUrl = true;
+
     else if (mHttpOptions.AddFlag(flag)) { }
     else if (mRunnerOptions.AddFlag(flag)) { }
     else return false; // not used

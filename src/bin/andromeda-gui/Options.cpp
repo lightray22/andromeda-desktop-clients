@@ -23,7 +23,7 @@ std::string Options::HelpText()
            
         << CacheOptions::HelpText() << endl << endl
 
-        << OtherBaseHelpText() << endl;
+        << DetailBaseHelpText("gui") << endl;
 
     return output.str();
 }

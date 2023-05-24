@@ -32,8 +32,12 @@ std::string CommandLine::HelpText()
     output 
         << "Usage Syntax: " << endl
         << "andromeda-cli " << Options::CoreHelpText() << endl
-        << "andromeda-cli [global flags+] -a|--apiurl url app action [action params+]" << endl
-        << "... NOTE a flag without a value cannot be the last argument before app/action" << endl << endl
+        << "andromeda-cli " << Options::MainHelpText() << " -- app action [action params+]" << endl << endl
+
+        << "NOTE that -- always comes before the server action command! This is different than andromeda-server." << endl
+        << "NOTE as with the andromeda-server CLI, any action param can be given as an andromeda_key=value environment variable." << endl
+        << "NOTE all non-file and non-environment parameters will be sent as URL variables. Use stdin (opt@ or opt!) " << endl
+        << "    or environment variables for private data, as they will be sent in the POST body instead." << endl << endl
            
         << "action params: [--$param value] [--$param@ file] [--$param!] [--$param% file [name]] [--$param-]" << endl
         << "         param@ puts the content of the file in the parameter" << endl
@@ -41,53 +45,79 @@ std::string CommandLine::HelpText()
         << "         param% gives the file path as a direct file input (optionally with a new name)" << endl
         << "         param- will attach the stdin stream as a direct file input" << endl << endl
 
-        << Options::OtherHelpText() << endl;
+        << Options::DetailHelpText() << endl;
 
     return output.str();
 }
 
 /*****************************************************/
-CommandLine::CommandLine(Options& options) : mOptions(options) { }
-
-/*****************************************************/
 CommandLine::~CommandLine() { } // for unique_ptr
 
 /*****************************************************/
-std::string getNextValue(Utilities::StringList& argv, size_t& i)
+CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv) : mOptions(options)
 {
-    return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
-}
-
-/*****************************************************/
-void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
-{
-    Andromeda::Debug::SetLevel(Andromeda::Debug::Level::DETAILS);
-
     size_t shift { mOptions.ParseArgs(argc, argv, true) };
-    argc -= shift; argv += shift;
+    argc -= shift; argv += shift; mOptions.Validate();
 
     if (argc < 2) throw BaseOptions::BadUsageException("missing app/action");
 
     std::string app { argv[0] };
     std::string action { argv[1] };
 
-    std::vector<std::string> args;
-    for (size_t i = 2; i < argc; i++)
-        args.push_back(argv[i]);
+    RunnerInput::Params plainParams;
+    RunnerInput::Params dataParams;
+    RunnerInput_StreamIn::FileStreams inStreams;
+    bool outStream { mOptions.isStreamOut() };
 
-    for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment())
-    {
-        if (Utilities::startsWith(pair.first,"andromeda_"))
+    { // environment params
+        Utilities::StringList args;
+        for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment())
         {
-            const std::string key { Utilities::split(pair.first,"_").second };
-            if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
+            if (Utilities::startsWith(pair.first,"andromeda_"))
+            {
+                const std::string key { Utilities::split(pair.first,"_").second };
+                if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
+            }
         }
+        ProcessArgList(args, true, plainParams, dataParams, inStreams);
     }
 
-    RunnerInput::Params params;
-    RunnerInput_StreamIn::FileStreams streams;
-    Andromeda::Backend::ReadFunc readfunc;
+    { // command line params
+        Utilities::StringList args;
+        for (size_t i = 2; i < argc; i++)
+            args.push_back(argv[i]);
 
+        ProcessArgList(args, false, plainParams, dataParams, inStreams);
+    }
+
+    if (outStream && !inStreams.empty())
+        throw IncompatibleIOException();
+
+    if (outStream)
+    {
+        mInput_StreamOut = std::make_unique<RunnerInput_StreamOut>(
+            RunnerInput_StreamOut{{app, action, plainParams, dataParams}, { }});
+    }
+    else if (!inStreams.empty())
+    {
+        mInput_StreamIn = std::make_unique<RunnerInput_StreamIn>(
+            RunnerInput_StreamIn{{{app, action, plainParams, dataParams}, { }}, inStreams});
+    }
+    else mInput = std::make_unique<RunnerInput>(
+            RunnerInput{app, action, plainParams, dataParams});
+}
+
+/*****************************************************/
+std::string CommandLine::getNextValue(const Utilities::StringList& argv, size_t& i)
+{
+    return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
+}
+
+/*****************************************************/
+void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
+    RunnerInput::Params& plainParams, RunnerInput::Params& dataParams, 
+    RunnerInput_StreamIn::FileStreams& inStreams)
+{
     // see andromeda-server CLI::GetInput()
     for (size_t i = 0; i < args.size(); i++)
     {
@@ -121,7 +151,7 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
                 fdat.append(buf, static_cast<std::size_t>(file.gcount()));
             }
 
-            params[param] = fdat;
+            dataParams[param] = fdat;
         }
         else if (special == '!')
         {
@@ -131,7 +161,7 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             std::cout << "enter " << param << "..." << std::endl;
             std::string val; std::getline(std::cin, val);
 
-            params[param] = Utilities::trim(val);
+            dataParams[param] = Utilities::trim(val);
         }
         else if (special == '%')
         {
@@ -150,7 +180,7 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             std::string filename { getNextValue(args, i) }; 
             if (filename.empty()) filename = val;
 
-            streams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
+            inStreams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
                 RunnerInput_StreamIn::FromStream(file) });
         }
         else if (special == '-')
@@ -158,44 +188,40 @@ void CommandLine::ParseFullArgs(size_t argc, const char* const* argv)
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty - key at action arg "+std::to_string(i));
 
-            streams.emplace(param, RunnerInput_StreamIn::FileStream{ "data", 
+            std::string filename { getNextValue(args, i) }; 
+            if (filename.empty()) filename = "data";
+
+            inStreams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
                 RunnerInput_StreamIn::FromStream(std::cin) });
         }
         else // plain argument
         {
-            params[param] = getNextValue(args, i);
+            if (!isPriv && !mOptions.AllowUnsafeUrl() && 
+                (param.find("password") != std::string::npos || param.find("auth_") != std::string::npos))
+                throw PrivateDataException(param); // hardcoded sanity check for now...
+
+            std::string next { getNextValue(args, i) };
+            if (isPriv) dataParams[param] = next;
+            else plainParams[param] = next;
         }
     }
-
-    if (readfunc && !streams.empty())
-        throw IncompatibleIOException();
-
-    // TODO add StreamOut CLI option? or maybe just remove StreamOut here?
-    // would be simpler + andromeda_download will get used anyway
-
-    if (readfunc)
-    {
-        mInput_StreamOut = std::make_unique<RunnerInput_StreamOut>(
-            RunnerInput_StreamOut{{app, action, params}, readfunc});
-    }
-    else if (!streams.empty())
-    {
-        mInput_StreamIn = std::make_unique<RunnerInput_StreamIn>(
-            RunnerInput_StreamIn{{{app, action, params}, { }}, streams});
-    }
-    else mInput = std::make_unique<RunnerInput>(
-            RunnerInput{app, action, params});
 }
 
 /*****************************************************/
-std::string CommandLine::RunInputAction(HTTPRunner& runner, bool& isJson)
+std::string CommandLine::RunInputAction(HTTPRunner& runner, bool& isJson, const Andromeda::Backend::ReadFunc& streamOut)
 {
-    // no way to tell read/write via CLI so just assume write, will always POST
-    if (mInput)           return runner.RunAction_Write(*mInput, isJson);
-    if (mInput_StreamIn)  return runner.RunAction_Write(*mInput_StreamIn, isJson);
-    if (mInput_StreamOut) { runner.RunAction_Write(*mInput_StreamOut, isJson); return ""; }
-
-    throw std::runtime_error("RunInputAction without ParseFullArgs");
+    if (mInput)
+        // no way to tell read/write via CLI so just assume write
+        return runner.RunAction_Write(*mInput, isJson);
+    else if (mInput_StreamIn)
+        return runner.RunAction_StreamIn(*mInput_StreamIn, isJson);
+    else if (mInput_StreamOut)
+    { 
+        mInput_StreamOut->streamer = streamOut;
+        runner.RunAction_StreamOut(*mInput_StreamOut, isJson);
+        isJson = false; return "";
+    }
+    else throw std::runtime_error("no mInput to run"); // can't happen
 }
 
 } // namespace AndromedaCli

@@ -13,7 +13,7 @@
 
 // GetEnvironment()
 #if WIN32
-#include <stdlib.h>
+#include <processenv.h>
 #else // !WIN32
 #include <unistd.h>
 extern char** environ;
@@ -205,18 +205,19 @@ void Utilities::SilentReadConsole(std::string& retval)
 /*****************************************************/
 Utilities::StringMap Utilities::GetEnvironment()
 {
-    char** env { nullptr };
-#if WIN32
-    env = *__p__environ();
-#else // !WIN32
-    env = environ;
-#endif // WIN32
-
     StringMap retval;
 
-    while (env != nullptr && *env != nullptr)
-        retval.emplace(split(*env++, "="));
+#if WIN32
+    LPCH env { GetEnvironmentStrings() };
+    for (LPCTSTR var = env; var && var[0]; var += lstrlen(var)+1)
+        retval.emplace(split(var, "="));
+    FreeEnvironmentStrings(env);
 
+#else // !WIN32
+    for (const char* const* env { environ }; env && *env; ++env)
+        retval.emplace(split(*env, "="));
+
+#endif // WIN32
     return retval;
 }
 

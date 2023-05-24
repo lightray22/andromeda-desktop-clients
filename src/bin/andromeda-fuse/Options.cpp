@@ -30,10 +30,8 @@ std::string Options::HelpText()
 
     output 
         << "Usage Syntax: " << endl
-        << "andromeda-fuse " << CoreBaseHelpText() << endl << endl
-           
-        << "Local Mount:     -m|--mountpath path" << endl
-        << "Remote Endpoint: (-a|--apiurl url) | (-p|--apipath [path])" << endl << endl
+        << "andromeda-fuse " << CoreBaseHelpText() << endl
+        << "andromeda-fuse -m|--mountpath path (-a|--apiurl url | -p|--apipath [path])" << endl << endl
 
         << "Remote Object:   [--folder [id] | --filesystem [id]]" << endl
         << "Remote Auth:     [-u|--username str] [--password str] | [--sessionid id] [--sessionkey key] [--force-session]" << endl << endl
@@ -45,7 +43,7 @@ std::string Options::HelpText()
         << ConfigOptions::HelpText() << endl
         << CacheOptions::HelpText() << endl << endl
            
-        << OtherBaseHelpText() << endl;
+        << DetailBaseHelpText("fuse") << endl;
 
     return output.str();
 }

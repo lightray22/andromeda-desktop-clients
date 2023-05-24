@@ -16,15 +16,18 @@ class Options : public Andromeda::BaseOptions
 {
 public:
 
-    /** Retrieve the standard help text string */
+    /** Retrieve the base usage help text string */
     static std::string CoreHelpText();
 
-    /** Retrieve the standard help text string */
-    static std::string OtherHelpText();
+    /** Retrieve the main command help text string */
+    static std::string MainHelpText();
+
+    /** Retrieve the detailed options help text string */
+    static std::string DetailHelpText();
 
     /** 
-     * @param httpOptions HTTPRunner options ref to fill 
-     * @param runnerOptions BaseRunner options ref to fill
+     * @param[out] httpOptions HTTPRunner options ref to fill 
+     * @param[out] runnerOptions BaseRunner options ref to fill
      */
     explicit Options(
         Andromeda::Backend::HTTPOptions& httpOptions,
@@ -39,12 +42,20 @@ public:
     /** Returns the URL of the API endpoint */
     std::string GetApiUrl() const { return mApiUrl; }
 
+    /** Returns true if output streaming is requested */
+    bool isStreamOut() const { return mStreamOut; }
+
+    /** Returns true if unsafe URLs are allowed */
+    bool AllowUnsafeUrl() const { return mUnsafeUrl; }
+
 private:
 
     Andromeda::Backend::HTTPOptions& mHttpOptions;
     Andromeda::Backend::RunnerOptions& mRunnerOptions;
 
     std::string mApiUrl;
+    bool mStreamOut { false };
+    bool mUnsafeUrl { false };
 };
 
 } // namespace AndromedaCli

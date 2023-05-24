@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <memory>
 
 #include <nlohmann/json.hpp>
 
@@ -10,6 +11,8 @@ using AndromedaCli::Options;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
 #include "andromeda/backend/BaseRunner.hpp"
 using Andromeda::Backend::BaseRunner;
 #include "andromeda/backend/HTTPOptions.hpp"
@@ -28,9 +31,6 @@ enum class ExitCode
     BACKEND_RESP
 };
 
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
-
 int main(int argc, char** argv)
 {
     Debug debug("main",nullptr);
@@ -40,16 +40,15 @@ int main(int argc, char** argv)
     RunnerOptions runnerOptions;
 
     Options options(httpOptions, runnerOptions);
-    CommandLine commandLine(options);
+    std::unique_ptr<CommandLine> commandLine;
 
     try
     {
         options.ParseConfig("andromeda");
         options.ParseConfig("andromeda-cli");
 
-        commandLine.ParseFullArgs(static_cast<size_t>(argc), argv);
-
-        options.Validate();
+        commandLine = std::make_unique<CommandLine>(
+            options, static_cast<size_t>(argc), argv);
     }
     catch (const Options::ShowHelpException& ex)
     {
@@ -81,8 +80,11 @@ int main(int argc, char** argv)
 
     try
     {
+        auto streamOut = [&](const size_t soffset, const char* buf, const size_t buflen)->void
+            { std::cout.write(buf, static_cast<std::streamsize>(buflen)); };
+
         bool isJson = false; std::string resp { 
-            commandLine.RunInputAction(runner, isJson) };
+            commandLine->RunInputAction(runner, isJson, streamOut) };
 
         if (!isJson)
         {

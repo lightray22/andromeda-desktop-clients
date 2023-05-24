@@ -20,18 +20,23 @@ std::string BaseOptions::CoreBaseHelpText()
 }
 
 /*****************************************************/
-std::string BaseOptions::OtherBaseHelpText()
+std::string BaseOptions::DetailBaseHelpText(const std::string& name)
 {
     std::ostringstream output;
+    using std::endl;
 
-    output << "Config File:     [-c|--config-file path]" << std::endl
-           << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+]";
+    output << "Config File:     [-c|--config-file path]" << endl
+           << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+]" << endl << endl
+
+           << "Any flag or option can also be listed in andromeda.conf";
+    if (!name.empty()) output << " or andromeda-" << name << ".conf";
+    output << " with one option=value per line.";
 
     return output.str();
 }
 
 /*****************************************************/
-size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool noerr)
+size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool stopmm)
 {
     Flags flags; Options options;
 
@@ -41,17 +46,20 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool noerr)
         if (key.empty())
             throw BadUsageException(
                 "empty key at arg "+std::to_string(i));
-        if (key[0] != '-') { 
-            if (noerr) break; else throw BadUsageException(
-                "expected key at arg "+std::to_string(i)); }
+        if (key[0] != '-')
+            throw BadUsageException(
+                "expected key at arg "+std::to_string(i));
 
         key.erase(0, 1); // key++
         bool ext { (key[0] == '-') };
         if (ext) key.erase(0, 1); // --opt
 
         if (key.empty() || std::isspace(key[0]))
-            throw BadUsageException(
+        {
+            if (stopmm) { ++i; break; }
+            else throw BadUsageException(
                 "empty key at arg "+std::to_string(i));
+        }
         
         if (key.find('=') != std::string::npos) // -x=3 or --x=3
         {

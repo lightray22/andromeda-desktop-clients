@@ -25,11 +25,11 @@ public:
     static std::string HelpText();
 
     /**
-     * @param configOptions Config options ref to fill
-     * @param httpOptions HTTPRunner options ref to fill
-     * @param runnerOptions BaseRunner options ref to fill
-     * @param cacheOptions CacheManager options ref to fill
-     * @param fuseOptions FUSE options ref to fill
+     * @param[out] configOptions Config options ref to fill
+     * @param[out] httpOptions HTTPRunner options ref to fill
+     * @param[out] runnerOptions BaseRunner options ref to fill
+     * @param[out] cacheOptions CacheManager options ref to fill
+     * @param[out] fuseOptions FUSE options ref to fill
      */
     Options(Andromeda::ConfigOptions& configOptions, 
             Andromeda::Backend::HTTPOptions& httpOptions, 

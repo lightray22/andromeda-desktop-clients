@@ -68,10 +68,10 @@ public:
      * @throws BadUsageException if invalid arguments
      * @throws BadFlagException if a invalid flag is used
      * @throws BadOptionException if an invalid option is used
-     * @param noerr if true, stop processing on unexpected non-key instead of exception
-     * @return number of arguments consumed (matches argc if noerr is false)
+     * @param stopmm if true, stop processing when "--" is encountered
+     * @return number of arguments consumed (matches argc if stopmm is false)
      */
-    size_t ParseArgs(size_t argc, const char* const* argv, bool noerr = false);
+    size_t ParseArgs(size_t argc, const char* const* argv, bool stopmm = false);
 
     /** 
      * Parses arguments from a config file 
@@ -115,8 +115,11 @@ protected:
     /** Retrieve the standard help text string */
     static std::string CoreBaseHelpText();
 
-    /** Retrieve the standard help text string */
-    static std::string OtherBaseHelpText();
+    /** 
+     * Retrieve the standard help text string 
+     * @param name suffix of andromeda-*.conf the user can use (or blank)
+     */
+    static std::string DetailBaseHelpText(const std::string& name = "");
 };
 
 } // namespace Andromeda

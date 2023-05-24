@@ -91,11 +91,13 @@ Any features that rely on the higher privileges of the real CLI interface are no
 * Changing debug/metrics output
 * Doing a request dry-run
 
-The general usage is the same as the real CLI interface, but with different global options.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage)). Batching is not yet supported.
+The general usage is the same as the real CLI interface, but with different global options, and with -- before the server command.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage)). Batching is not yet supported.
+
+Note that non-file and non-environment action params will be sent as URL variables.  Use stdin (opt@ or opt!) or environment variables for private data, as they will be sent in the POST body instead.  
 
 Run `./andromeda-cli --help` to see the available options.  
 
-Example that shows the available API calls: `./andromeda-cli -a (url) core usage`
+Example that shows the available API calls: `./andromeda-cli -a (url) -- core usage`
 
 
 # FUSE Client
