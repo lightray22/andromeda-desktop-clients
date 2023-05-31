@@ -215,7 +215,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
         
         case 301: case 302: // HTTP redirect
             throw GetRedirectException(response); break;
-s
+
         case 400: throw EndpointException("400 Bad Request");
         case 403: throw EndpointException("403 Access Denied");
         case 404: throw EndpointException("404 Not Found");

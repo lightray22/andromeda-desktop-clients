@@ -203,21 +203,29 @@ void Utilities::SilentReadConsole(std::string& retval)
 }
 
 /*****************************************************/
-Utilities::StringMap Utilities::GetEnvironment()
+Utilities::StringMap Utilities::GetEnvironment(const std::string& prefix)
 {
     StringMap retval;
 
 #if WIN32
     LPCH env { GetEnvironmentStrings() };
     for (LPCTSTR var = env; var && var[0]; var += lstrlen(var)+1)
-        retval.emplace(split(var, "="));
-    FreeEnvironmentStrings(env);
-
+    {
 #else // !WIN32
     for (const char* const* env { environ }; env && *env; ++env)
-        retval.emplace(split(*env, "="));
-
+    {
+        const char* var { *env };
 #endif // WIN32
+
+        const StringPair pair { split(var, "=") };
+        if (prefix.empty() || startsWith(pair.first,prefix))
+            retval.emplace(std::move(pair));
+    }
+
+#if WIN32
+    FreeEnvironmentStrings(env);
+#endif // WIN32
+
     return retval;
 }
 

@@ -71,13 +71,10 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
 
     { // environment params
         Utilities::StringList args;
-        for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment())
+        for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment("andromeda_"))
         {
-            if (Utilities::startsWith(pair.first,"andromeda_"))
-            {
-                const std::string key { Utilities::split(pair.first,"_").second };
-                if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
-            }
+            const std::string key { Utilities::split(pair.first,"_").second };
+            if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
         }
         ProcessArgList(args, true, plainParams, dataParams, inStreams);
     }

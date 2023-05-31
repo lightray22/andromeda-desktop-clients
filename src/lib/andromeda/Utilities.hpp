@@ -83,8 +83,11 @@ public:
 
     typedef std::unordered_map<std::string,std::string> StringMap;
 
-    /** Returns a string map of the process environment variables */
-    static StringMap GetEnvironment();
+    /** 
+     * Returns a string map of the process environment variables 
+     * @param prefix if not empty, only return env vars whose keys start with this
+     */
+    static StringMap GetEnvironment(const std::string& prefix = "");
 
     /** Returns the user's home directory path if found */
     static std::string GetHomeDirectory();
