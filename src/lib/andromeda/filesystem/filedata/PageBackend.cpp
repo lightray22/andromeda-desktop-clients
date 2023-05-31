@@ -125,8 +125,9 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
         FlushCreate(thisLock); // can't use Upload() w/o first page
     }
 
-    WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& read)->bool
+    WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& written)->bool
     {
+        written = 0; // in case of early return
         const size_t pagesIdx { offset/mPageSize };
         if (pagesIdx >= pages.size()) return false;
 
@@ -136,8 +137,8 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
         if (pageOffset >= pageSize) return false;
 
         const char* copyData { page.mData.data()+pageOffset };
-        read = std::min(pageSize-pageOffset,buflen);
-        std::copy(copyData, copyData+read, buf); 
+        written = std::min(pageSize-pageOffset,buflen);
+        std::copy(copyData, copyData+written, buf); 
         return true; // initial check will catch when we're done
     }};
 

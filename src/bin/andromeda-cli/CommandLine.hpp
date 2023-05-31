@@ -6,13 +6,10 @@
 #include <string>
 
 #include "andromeda/BaseOptions.hpp"
+#include "andromeda/Utilities.hpp"
+#include "andromeda/backend/RunnerInput.hpp"
 
-namespace Andromeda { namespace Backend { 
-    class HTTPRunner; 
-    struct RunnerInput; 
-    struct RunnerInput_StreamIn;
-    struct RunnerInput_StreamOut;
-} }
+namespace Andromeda { namespace Backend { class HTTPRunner; } }
 
 namespace AndromedaCli {
 
@@ -27,30 +24,56 @@ public:
     class IncompatibleIOException : public Andromeda::BaseOptions::Exception { 
         public: IncompatibleIOException() : Andromeda::BaseOptions::Exception("Cannot stream output with file input") {} };
 
+    /** Exception indicating the given param key is probably not safe for a URL */
+    class PrivateDataException : public Andromeda::BaseOptions::Exception {
+        public: PrivateDataException(const std::string& key) : 
+            Andromeda::BaseOptions::Exception(key + " is not safe to send as a URL variable, use env or stdin instead") {} };
+
     virtual ~CommandLine();
 
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
-    explicit CommandLine(Options& options);
-
     /** 
      * Parses command line arguments from main (skips argv[0]!)
-     * and the environment into Options and a RunnerInput 
+     * and the environment vars into Options and a RunnerInput 
      * @throws BadUsageException if invalid arguments
      * @throws BadFlagException if a invalid flag is used
      * @throws BadOptionException if an invalid option is used
      */
-    void ParseFullArgs(size_t argc, const char* const* argv);
+    explicit CommandLine(Options& options, size_t argc, const char* const* argv);
 
     /** 
-     * Returns the runner input from the command line (AFTER ParseFullArgs!)
+     * Returns the runner input from the command line
      * @param[in] runner reference to the HTTP runner to use
-     * @param[out] isJson set to whether the response is JSON or not
+     * @param[out] isJson set to whether the return value is JSON or not
+     * @param[in] streamOut function to use for output streaming
      */
-    std::string RunInputAction(Andromeda::Backend::HTTPRunner& runner, bool& isJson);
+    std::string RunInputAction(Andromeda::Backend::HTTPRunner& runner, bool& isJson, 
+        const Andromeda::Backend::ReadFunc& streamOut);
 
 private:
+
+    /**
+     * Returns the next non-key value after i if it exists
+     * @param argv command line argument list
+     * @param i current index to check after
+     */
+    std::string getNextValue(const Andromeda::Utilities::StringList& argv, size_t& i);
+
+    /**
+     * Processes Andromeda action params from the command line
+     * This code is basically the same as the server's CLI.php
+     * @param args input list of command line arguments
+     * @param isPriv true if these params are private (dataParams only)
+     * @param[out] plainParams plain parameters ref to fill
+     * @param[out] dataParams data parameters ref to fill
+     * @param[out] inStreams file input streams ref to fill
+     */
+    void ProcessArgList(const Andromeda::Utilities::StringList& args, bool isPriv,
+        Andromeda::Backend::RunnerInput::Params& plainParams, 
+        Andromeda::Backend::RunnerInput::Params& dataParams,
+        Andromeda::Backend::RunnerInput_StreamIn::FileStreams& inStreams);
 
     Options& mOptions;
     std::list<std::ifstream> mOpenFiles;

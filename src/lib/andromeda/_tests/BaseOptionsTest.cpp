@@ -68,14 +68,14 @@ TEST_CASE("ParseArgs", "[BaseOptions]")
     }
 
     {
-        const char* args[] { "test", "--a", "test1", "--" };
+        const char* args[] { "test", "-a", "test1", "test2" };
         TestOptions options; 
         REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
         REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args, true), BaseOptions::BadUsageException);
     }
 
     {
-        const char* args[] { "test", "-a", "test1", "test2" };
+        const char* args[] { "test", "-a", "test1", "--", "test2" };
         TestOptions options; 
         REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
         REQUIRE(options.ParseArgs(ARRSIZE(args), args, true) == ARRSIZE(args)-1);

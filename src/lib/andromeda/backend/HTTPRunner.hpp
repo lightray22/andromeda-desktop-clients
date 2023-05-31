@@ -1,7 +1,6 @@
 #ifndef LIBA2_HTTPRUNNER_H_
 #define LIBA2_HTTPRUNNER_H_
 
-#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -20,6 +19,7 @@
 
 #include "BaseRunner.hpp"
 #include "HTTPOptions.hpp"
+#include "RunnerOptions.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
@@ -57,11 +57,14 @@ public:
     /**
      * @param protoHost (protocol://)hostname
      * @param baseURL baseURL of the endpoint
-     * @param options HTTP config options
+     * @param userAgent name of the program running
+     * @param runnerOptions base runner config options
+     * @param httpOptions HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const HTTPOptions& options);
+    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
+        const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions);
 
-    virtual std::unique_ptr<BaseRunner> Clone() override;
+    virtual std::unique_ptr<BaseRunner> Clone() const override;
 
     typedef std::pair<std::string, std::string> HostUrlPair;
 
@@ -80,35 +83,35 @@ public:
     /** Returns the base URL being used */
     virtual const std::string& GetBaseURL() const final { return mBaseURL; }
 
-    inline virtual std::string RunAction(const RunnerInput& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    inline virtual std::string RunAction_Read(const RunnerInput& input) override { 
+        bool isJson; return RunAction_Read(input, isJson); };
 
-    virtual std::string RunAction(const RunnerInput_FilesIn& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    inline virtual std::string RunAction_Write(const RunnerInput& input) override { 
+        bool isJson; return RunAction_Write(input, isJson); };
+
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override { 
+        bool isJson; return RunAction_FilesIn(input, isJson); };
     
-    virtual std::string RunAction(const RunnerInput_StreamIn& input) override { 
-        bool isJson; return RunAction(input, isJson); };
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override { 
+        bool isJson; return RunAction_StreamIn(input, isJson); };
     
-    virtual void RunAction(const RunnerInput_StreamOut& input) override { 
-        bool isJson; RunAction(input, isJson); };
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override { 
+        bool isJson; RunAction_StreamOut(input, isJson); };
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput& input, bool& isJson);
+    virtual std::string RunAction_Read(const RunnerInput& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput_FilesIn& input, bool& isJson);
+    virtual std::string RunAction_Write(const RunnerInput& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json */
-    virtual std::string RunAction(const RunnerInput_StreamIn& input, bool& isJson);
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input, bool& isJson);
+
+    /** @param[out] isJson ref set to whether response is json */
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input, bool& isJson);
 
     /** @param[out] isJson ref set to whether response is json (before data starts) */
-    virtual void RunAction(const RunnerInput_StreamOut& input, bool& isJson);
-
-    /** Allows automatic retry on HTTP failure */
-    virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
-
-    /** Returns whether retry is enabled or disabled */
-    virtual bool GetCanRetry() const final { return mCanRetry; }
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& isJson);
 
     virtual bool RequiresSession() const override { return true; }
 
@@ -119,14 +122,21 @@ private:
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
 
-    /** Returns the action URL for the given input and adds params to headers */
-    std::string SetupRequest(const RunnerInput& input, httplib::Headers& headers);
+    /** 
+     * Gets request info for the given input, adding plainParams to the URL
+     * @param dataParams if true, add dataParams to the headers
+     * @return the URL to use for the request
+     */
+    std::string SetupRequest(const RunnerInput& input, httplib::Headers& headers, bool dataParams = true);
 
-    /** Returns the action URL for the given input and adds params to a post body */
-    std::string SetupRequest(const RunnerInput& input, httplib::MultipartFormDataItems& params);
+    /** Add dataParams from the given input to a post body */
+    void AddDataParams(const RunnerInput& input, httplib::MultipartFormDataItems& params);
+
+    /** Add filesIn params from the given input to a post body */
+    void AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& params);
 
     /**
-     * Performs a series of HTTP request attempts, does not call HandleResponse
+     * Performs a series of HTTP request attempts, caller must call HandleResponse
      * @param[in] getResult Function that provides an httplib result
      * @param[out] canRetry ref set to where retry is allowed
      * @param[in] doRetry ref to bool set by manual call of HandleResponse
@@ -169,14 +179,14 @@ private:
 
     Debug mDebug;
 
-    const HTTPOptions mOptions;
-
     std::string mProtoHost;
     std::string mBaseURL;
+    std::string mUserAgent;
+
+    const RunnerOptions mBaseOptions;
+    const HTTPOptions mHttpOptions;
 
     std::unique_ptr<httplib::Client> mHttpClient;
-
-    std::atomic<bool> mCanRetry { false };
 };
 
 } // namespace Backend

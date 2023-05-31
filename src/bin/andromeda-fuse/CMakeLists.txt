@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(andromeda-fuse VERSION 1.0.0)
 
-include(../../../andromeda.cmake)
+include(../../andromeda.cmake)
 
 # build the andromeda-fuse executables
 
@@ -26,9 +26,7 @@ endif()
 
 foreach(EXECUTABLE ${EXECUTABLES})
 
-    target_compile_options(${EXECUTABLE} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
-    target_compile_definitions(${EXECUTABLE} PRIVATE ${ANDROMEDA_CXX_DEFS})
-    target_link_options(${EXECUTABLE} PRIVATE ${ANDROMEDA_LINK_OPTS})
+    andromeda_bin(${EXECUTABLE})
 
     # include/link libandromeda-fuse
 

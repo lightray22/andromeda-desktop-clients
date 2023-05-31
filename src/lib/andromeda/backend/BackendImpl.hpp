@@ -323,9 +323,18 @@ private:
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
 
+    /** Finalizes input, runs the action, returns string */
+    std::string RunAction_ReadStr(RunnerInput& input);
     /** Finalizes input, runs the action, returns JSON */
-    template<class InputT>
-    nlohmann::json RunAction(InputT& input);
+    nlohmann::json RunAction_Read(RunnerInput& input);
+    /** Finalizes input, runs the action, returns JSON */
+    nlohmann::json RunAction_Write(RunnerInput& input);
+    /** Finalizes input, runs the action, returns JSON */
+    nlohmann::json RunAction_FilesIn(RunnerInput_FilesIn& input);
+    /** Finalizes input, runs the action, returns JSON */
+    nlohmann::json RunAction_StreamIn(RunnerInput_StreamIn& input);
+    /** Finalizes input, runs the action, returns JSON */
+    void RunAction_StreamOut(RunnerInput_StreamOut& input);
 
     /** Function that is given a WriteFunc and returns a RunnerInput_StreamIn for file upload */
     typedef std::function<RunnerInput_StreamIn(const WriteFunc& writeFunc)> UploadInput;

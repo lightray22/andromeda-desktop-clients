@@ -27,7 +27,14 @@ struct RunnerInput
 
     /** app name to run */      std::string app;
     /** app action to run */    std::string action;
-    /** map of input params */  Params params = {};
+
+    /** map of non-sensitive and non-binary input params 
+     * that can go in a URL (HTTP) or on the command line (CLI) */ 
+    Params plainParams = {};
+    
+    /** map of sensitive or binary input params only to go
+     * in headers/post body (HTTP) or environment vars (CLI) */
+    Params dataParams = {};
 };
 
 /** A RunnerInput with strings for files input */
@@ -51,10 +58,10 @@ struct RunnerInput_FilesIn : RunnerInput
  * @param offset offset of the input data to send (may reset!)
  * @param buf pointer to buffer for data to be copied into
  * @param buflen max size of the buffer
- * @param read output number of bytes actually read
+ * @param written output number of bytes actually written
  * @return bool true if more data is remaining
  */
-typedef std::function<bool(const size_t offset, char* const buf, const size_t buflen, size_t& read)> WriteFunc;
+typedef std::function<bool(const size_t offset, char* const buf, const size_t buflen, size_t& written)> WriteFunc;
 
 /** A RunnerInput with streams for files input */
 struct RunnerInput_StreamIn : RunnerInput_FilesIn
@@ -68,7 +75,7 @@ struct RunnerInput_StreamIn : RunnerInput_FilesIn
 
     /** Map of file streams to the input param name */
     typedef std::map<std::string, FileStream> FileStreams;
-    FileStreams fstreams;
+    FileStreams fstreams = {};
 
     /** Returns a Func that reads from the input string */
     static WriteFunc FromString(const std::string& data);

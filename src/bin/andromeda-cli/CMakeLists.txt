@@ -1,16 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
 project(andromeda-cli VERSION 1.0.0)
 
-include(../../../andromeda.cmake)
+include(../../andromeda.cmake)
 
 # build the andromeda-cli executable
 
 set(SOURCE_FILES main.cpp Options.cpp CommandLine.cpp)
 add_executable(andromeda-cli ${SOURCE_FILES})
-
-target_compile_options(andromeda-cli PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
-target_compile_definitions(andromeda-cli PRIVATE ${ANDROMEDA_CXX_DEFS})
-target_link_options(andromeda-cli PRIVATE ${ANDROMEDA_LINK_OPTS})
+andromeda_bin(andromeda-cli)
 
 install(TARGETS andromeda-cli
     BUNDLE  DESTINATION .

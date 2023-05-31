@@ -19,12 +19,6 @@ struct HTTPOptions
     /** Adds the given option/value, returning true iff it was used */
     bool AddOption(const std::string& option, const std::string& value);
 
-    /** maximum retries before throwing */
-    unsigned long maxRetries { 3 };
-    /** The time to wait between each retry */
-    std::chrono::seconds retryTime { std::chrono::seconds(5) };
-    /** The connection read/write timeout */
-    std::chrono::seconds timeout { std::chrono::seconds(60) };
     /** Whether or not redirects are allowed */
     bool followRedirects { true };
     /** Whether or not TLS cert verification is required */
@@ -41,8 +35,6 @@ struct HTTPOptions
     std::string proxyUsername;
     /** HTTP proxy server basic-auth password */
     std::string proxyPassword;
-    /** Buffer/chunk size when reading file streams */
-    size_t streamBufferSize { 1024*1024 };
 };
 
 } // namespace Backend

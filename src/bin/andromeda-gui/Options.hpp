@@ -20,7 +20,7 @@ public:
     static std::string HelpText();
 
     /**
-     * @param cacheOptions CacheManager options ref to fill
+     * @param[out] cacheOptions CacheManager options ref to fill
      */
     explicit Options(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 

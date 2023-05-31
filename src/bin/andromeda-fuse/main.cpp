@@ -29,6 +29,8 @@ using Andromeda::Backend::CLIRunner;
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
+#include "andromeda/backend/RunnerOptions.hpp"
+using Andromeda::Backend::RunnerOptions;
 #include "andromeda/backend/RunnerPool.hpp"
 using Andromeda::Backend::RunnerPool;
 
@@ -59,10 +61,11 @@ int main(int argc, char** argv)
     
     ConfigOptions configOptions;
     HTTPOptions httpOptions;
+    RunnerOptions runnerOptions;
     CacheOptions cacheOptions;
     FuseOptions fuseOptions;
 
-    Options options(configOptions, httpOptions, cacheOptions, fuseOptions);
+    Options options(configOptions, httpOptions, runnerOptions, cacheOptions, fuseOptions);
 
     try
     {
@@ -98,42 +101,46 @@ int main(int argc, char** argv)
     {
         case Options::ApiType::API_URL:
         {
-            HTTPRunner::HostUrlPair urlPair { 
+            const HTTPRunner::HostUrlPair urlPair { 
                 HTTPRunner::ParseURL(options.GetApiPath()) };
 
-            runner = std::make_unique<HTTPRunner>(
-                urlPair.first, urlPair.second, httpOptions);
+            const std::string userAgent(std::string("andromeda-fuse/")
+                +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
+
+            runner = std::make_unique<HTTPRunner>(urlPair.first, urlPair.second, 
+                userAgent, runnerOptions, httpOptions);
         }; break;
         case Options::ApiType::API_PATH:
         {
             runner = std::make_unique<CLIRunner>(
-                options.GetApiPath(), httpOptions.timeout); break;
+                options.GetApiPath(), runnerOptions); break;
         }; break;
     }
 
-    RunnerPool runners(*runner, configOptions);
-    BackendImpl backend(configOptions, runners);
-
+    // DESTRUCTOR ORDER MATTERS HERE due to dependencies!
     CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
-    backend.SetCacheManager(&cacheMgr);
-
+    RunnerPool runners(*runner, configOptions);
+    std::unique_ptr<BackendImpl> backend;
     std::unique_ptr<Folder> folder;
     
     try
     {
+        backend = std::make_unique<BackendImpl>(configOptions, runners);
+        backend->SetCacheManager(&cacheMgr);
+
         if (options.HasSession())
-            backend.PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
+            backend->PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
         else if (options.HasUsername())
-            backend.AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
+            backend->AuthInteractive(options.GetUsername(), options.GetPassword(), options.GetForceSession());
 
         switch (options.GetMountRootType())
         {
             case Options::RootType::SUPERROOT:
-                folder = std::make_unique<SuperRoot>(backend); break;
+                folder = std::make_unique<SuperRoot>(*backend); break;
             case Options::RootType::FILESYSTEM:
-                folder = Filesystem::LoadByID(backend, options.GetMountItemID()); break;
+                folder = Filesystem::LoadByID(*backend, options.GetMountItemID()); break;
             case Options::RootType::FOLDER:
-                folder = PlainFolder::LoadByID(backend, options.GetMountItemID()); break;
+                folder = PlainFolder::LoadByID(*backend, options.GetMountItemID()); break;
         }
     }
     catch (const BaseException& ex)
@@ -142,8 +149,7 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::BACKEND_INIT);
     }
 
-    try { (dynamic_cast<HTTPRunner&>(*runner)).EnableRetry(); }
-    catch (const std::bad_cast& ex) { } // no retries during init
+    runner->EnableRetry(); // no retries during init
 
     try
     {

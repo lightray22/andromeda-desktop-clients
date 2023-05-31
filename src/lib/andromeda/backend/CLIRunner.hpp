@@ -6,7 +6,10 @@
 #include <system_error>
 
 #include "BaseRunner.hpp"
+#include "RunnerOptions.hpp"
 #include "andromeda/Debug.hpp"
+
+namespace reproc { class process; }
 
 namespace Andromeda {
 namespace Backend {
@@ -28,29 +31,56 @@ public:
      * @param apiPath path to the API index.php 
      * @param timeout the timeout for each CLI call
      */
-    explicit CLIRunner(const std::string& apiPath, const std::chrono::seconds& timeout);
+    explicit CLIRunner(const std::string& apiPath, const RunnerOptions& runnerOptions);
 
-    virtual std::unique_ptr<BaseRunner> Clone() override;
+    virtual std::unique_ptr<BaseRunner> Clone() const override;
 
-    virtual std::string GetHostname() const override { return "local"; }
+    virtual std::string GetHostname() const override { return "local-cli"; }
 
-    virtual std::string RunAction(const RunnerInput& input) override;
+    virtual std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
 
-    virtual std::string RunAction(const RunnerInput_FilesIn& input) override;
+    virtual std::string RunAction_Write(const RunnerInput& input) override;
+
+    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override;
     
-    virtual std::string RunAction(const RunnerInput_StreamIn& input) override;
+    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override;
     
-    virtual void RunAction(const RunnerInput_StreamOut& input) override;
+    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override;
 
     virtual bool RequiresSession() const override { return false; }
 
 private:
 
+    /** Makes sure the given path ends with andromeda-server */
+    std::string FixApiPath(std::string apiPath);
+
+    /** @throws Exception if given an error code */
+    void CheckError(reproc::process& process, const std::error_code& error);
+
+    typedef std::list<std::string> ArgList;
+    /** Return a list of arguments to run a command with the given input */
+    ArgList GetArguments(const RunnerInput& input);
+
+    typedef std::map<std::string, std::string> EnvList;
+    /** Return a list of environment vars to run a command with the given input */
+    EnvList GetEnvironment(const RunnerInput& input);
+
+    /** Prints the argument list if backend debug is enabled */
+    void PrintArgs(const ArgList& argList);
+
+    /** Starts the process with the given arguments and environment */
+    void StartProc(reproc::process& process, const ArgList& args, const EnvList& env);
+
+    /** Drains output from the process into the given string */
+    void DrainProc(reproc::process& process, std::string& output);
+
+    /** Waits for the given process to end and returns its exit code */
+    int FinishProc(reproc::process& process);
+
     Debug mDebug;
 
-    std::string mApiPath;
-
-    const std::chrono::seconds mTimeout;
+    const std::string mApiPath;
+    const RunnerOptions mOptions;
 };
 
 } // namespace Backend

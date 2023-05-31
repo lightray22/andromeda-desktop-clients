@@ -44,7 +44,7 @@ RunnerPool::LockedRunner RunnerPool::GetRunner()
             if (!mRunnerPool[idx]) // not initialized
             {
                 MDBG_INFO("... new runner:" << idx);
-                mRunnersOwned.emplace_back(mRunnerPool[0]->Clone());
+                mRunnersOwned.emplace_back(GetFirst().Clone());
                 mRunnerPool[idx] = mRunnersOwned.back().get();
             }
 

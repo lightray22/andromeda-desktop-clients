@@ -6,7 +6,7 @@
 #include "andromeda/BaseOptions.hpp"
 
 namespace Andromeda {
-    namespace Backend { struct HTTPOptions; }
+    namespace Backend { struct HTTPOptions; struct RunnerOptions; }
 }
 
 namespace AndromedaCli {
@@ -16,14 +16,22 @@ class Options : public Andromeda::BaseOptions
 {
 public:
 
-    /** Retrieve the standard help text string */
+    /** Retrieve the base usage help text string */
     static std::string CoreHelpText();
 
-    /** Retrieve the standard help text string */
-    static std::string OtherHelpText();
+    /** Retrieve the main command help text string */
+    static std::string MainHelpText();
 
-    /** @param httpOptions HTTPRunner options ref to fill */
-    explicit Options(Andromeda::Backend::HTTPOptions& httpOptions);
+    /** Retrieve the detailed options help text string */
+    static std::string DetailHelpText();
+
+    /** 
+     * @param[out] httpOptions HTTPRunner options ref to fill 
+     * @param[out] runnerOptions BaseRunner options ref to fill
+     */
+    explicit Options(
+        Andromeda::Backend::HTTPOptions& httpOptions,
+        Andromeda::Backend::RunnerOptions& runnerOptions);
 
     virtual bool AddFlag(const std::string& flag) override;
 
@@ -34,11 +42,20 @@ public:
     /** Returns the URL of the API endpoint */
     std::string GetApiUrl() const { return mApiUrl; }
 
+    /** Returns true if output streaming is requested */
+    bool isStreamOut() const { return mStreamOut; }
+
+    /** Returns true if unsafe URLs are allowed */
+    bool AllowUnsafeUrl() const { return mUnsafeUrl; }
+
 private:
 
     Andromeda::Backend::HTTPOptions& mHttpOptions;
+    Andromeda::Backend::RunnerOptions& mRunnerOptions;
 
     std::string mApiUrl;
+    bool mStreamOut { false };
+    bool mUnsafeUrl { false };
 };
 
 } // namespace AndromedaCli

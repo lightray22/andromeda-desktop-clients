@@ -6,6 +6,7 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
+#include "andromeda/backend/RunnerOptions.hpp"
 
 namespace Andromeda { namespace Backend { 
     class BackendImpl; class HTTPRunner; class RunnerPool; } }
@@ -33,6 +34,7 @@ private:
     Andromeda::ConfigOptions mConfigOptions;
     /** HTTP Runner configuration */
     Andromeda::Backend::HTTPOptions mHttpOptions;
+    Andromeda::Backend::RunnerOptions mRunnerOptions;
     
     std::unique_ptr<Andromeda::Backend::HTTPRunner> mRunner;
     std::unique_ptr<Andromeda::Backend::RunnerPool> mRunners;
