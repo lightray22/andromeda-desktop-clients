@@ -84,6 +84,8 @@ void CLIRunner::PrintArgs(const CLIRunner::ArgList& argList)
     });
 }
 
+// TODO implement retries for CLI (can get 503's)
+
 /*****************************************************/
 void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env)
 {

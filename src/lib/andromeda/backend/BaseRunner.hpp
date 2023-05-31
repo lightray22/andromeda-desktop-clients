@@ -41,7 +41,7 @@ public:
     /** Returns the remote hostname of the runner */
     virtual std::string GetHostname() const = 0;
 
-    /** Allows automatic retry on HTTP failure */
+    /** Allows automatic retry on request failure */
     virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
 
     /** Returns whether retry is enabled or disabled */
