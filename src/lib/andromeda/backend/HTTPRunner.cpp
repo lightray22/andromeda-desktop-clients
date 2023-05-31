@@ -131,6 +131,9 @@ void HTTPRunner::AddFileParams(const RunnerInput_FilesIn& input, httplib::Multip
         postParams.push_back({it.first, it.second.data, it.second.name, {}});
 }
 
+// We RETRY if either httplib gives no response (can't connect, etc.) or if we
+// get a response but it's a HTTP 503.  Other responses (404 etc.) don't get retried.
+
 /*****************************************************/
 void HTTPRunner::DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry)
 {
@@ -158,7 +161,7 @@ std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResul
                 HandleResponse(*result, isJson, canRetry, doRetry) };
             if (!doRetry) return retval; // break
         }
-
+        // if doRetry is set by HandleResponse, continue here
         HandleNonResponse(result, canRetry, attempt);
     }
 }
@@ -212,7 +215,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
         
         case 301: case 302: // HTTP redirect
             throw GetRedirectException(response); break;
-        
+s
         case 400: throw EndpointException("400 Bad Request");
         case 403: throw EndpointException("403 Access Denied");
         case 404: throw EndpointException("404 Not Found");
@@ -315,7 +318,7 @@ void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& i
     // Separate ResponseHandler callback as we need to check the response before streaming
     httplib::ResponseHandler respFunc { [&](const httplib::Response& response)->bool {
         HandleResponse(response, isJson, canRetry, doRetry); 
-        offset = 0; return true;
+        offset = 0; return true; // reset offset in case of retry
     }};
 
     httplib::ContentReceiver recvFunc { [&](const char* data, size_t length)->bool {

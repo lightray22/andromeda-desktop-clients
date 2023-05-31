@@ -136,7 +136,7 @@ private:
     void AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& params);
 
     /**
-     * Performs a series of HTTP request attempts, does not call HandleResponse
+     * Performs a series of HTTP request attempts, caller must call HandleResponse
      * @param[in] getResult Function that provides an httplib result
      * @param[out] canRetry ref set to where retry is allowed
      * @param[in] doRetry ref to bool set by manual call of HandleResponse
