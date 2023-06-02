@@ -93,6 +93,9 @@ void BaseOptions::ParseFile(const std::filesystem::path& path)
     {
         std::string line; std::getline(file,line);
 
+        // Windows-formatted files will have extra \r at the end of lines
+        if (line.size() && line.back() == '\r') line.pop_back();
+
         if (!line.size() || line.at(0) == '#' || line.at(0) == ' ') continue;
 
         if (line.find("=") == std::string::npos) flags.push_back(line);
