@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     try
     {
-        options.ParseConfig("andromeda");
+        options.ParseConfig("libandromeda");
         options.ParseConfig("andromeda-cli");
 
         commandLine = std::make_unique<CommandLine>(

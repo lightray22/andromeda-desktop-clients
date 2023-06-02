@@ -148,7 +148,7 @@ Given HTTP server URLs can optionally include the protocol, the port number, and
 ## Config Files
 
 Any option or flag accepted on the command line can also be listed in a config file.
-Common config in `andromeda.conf` is loaded first (but ignored for andromeda-gui), then per-binary config (e.g. `andromeda-fuse.conf`).
+Common config in `libandromeda.conf` is loaded first (but ignored for andromeda-gui), then per-binary config (e.g. `andromeda-fuse.conf`).
 The config files can be located in `/etc/andromeda`, `/usr/local/etc/andromeda`, `~/.config/andromeda`, or the current directory.
 A custom path to a config file can also be specified with the `-c` or `--config-file` option, and is loaded last.
 
@@ -191,4 +191,4 @@ Static analysis is done with clang scan-build then cppcheck (must be installed).
 
 `-DSANITIZE` allows building with sanitizers with GCC and Clang.  The default is `address,leak,undefined` (AddressSanitizer, LeakSanitizer, UndefinedBehaviorSanitizer).  Other (mutually-exclusive) options include `memory` (MemorySanitizer) (Clang only), and `thread` (ThreadSanitizer).  See [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) and [Google Sanitizers](https://github.com/google/sanitizers).  
 
-These must be disabled (use `none`) to use Valgrind.  These do not work on musl libc (Alpine Linux)!
+These must be disabled (use `none`) to use Valgrind.  LeakSanitizer does not work on AppleClang (macOS).  No sanitizers work on musl libc (Alpine Linux).
