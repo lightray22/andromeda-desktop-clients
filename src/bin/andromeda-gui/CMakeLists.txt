@@ -31,6 +31,8 @@ else()
 endif()
 andromeda_bin(andromeda-gui)
 
+target_compile_definitions(andromeda-gui PRIVATE QTVER=${QT_VERSION_MAJOR})
+
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

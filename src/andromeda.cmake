@@ -162,3 +162,10 @@ function(andromeda_lib lib_name)
     target_compile_options(${lib_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
     target_compile_definitions(${lib_name} PRIVATE ${ANDROMEDA_CXX_DEFS})
 endfunction()
+
+function (andromeda_test test_name)
+    target_link_libraries(${test_name} PRIVATE Catch2::Catch2WithMain)
+    target_compile_options(Catch2WithMain PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
+    # Run the test - if it fails and you don't want it deleted, comment this line
+    add_custom_command(TARGET ${test_name} POST_BUILD COMMAND ${test_name})
+endfunction()

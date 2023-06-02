@@ -22,8 +22,6 @@ target_include_directories(libandromeda_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 andromeda_bin(libandromeda_tests)
+andromeda_test(libandromeda_tests)
 
-target_link_libraries(libandromeda_tests PRIVATE libandromeda Catch2::Catch2WithMain)
-
-# Run the test - if it fails and you don't want it deleted, comment this line
-add_custom_command(TARGET libandromeda_tests POST_BUILD COMMAND libandromeda_tests)
+target_link_libraries(libandromeda_tests PRIVATE libandromeda)
