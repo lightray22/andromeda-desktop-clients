@@ -6,7 +6,8 @@
 #include <utility>
 #include <vector>
 
-#define ARRSIZE(x) (sizeof(x)/sizeof(decltype(*x)))
+// Clang 10 gives Wsizeof-array-div without extra() around sizeof
+#define ARRSIZE(x) (sizeof(x)/(sizeof(decltype(*x))))
 
 namespace Andromeda {
 

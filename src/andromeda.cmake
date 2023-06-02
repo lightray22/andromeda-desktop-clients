@@ -119,9 +119,11 @@ else() # NOT MSVC
 
     # security options
     set(ANDROMEDA_CXX_OPTS
-        # NOTE FORTIFY_SOURCE works better with optimization
-        -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
-        -D_GLIBCXX_ASSERTIONS
+        # NOTE FORTIFY_SOURCE requires optimization
+        -U_FORTIFY_SOURCE # some systems pre-define it
+        $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
+
+        -D_GLIBCXX_ASSERTIONS # c++stdlib assertions
         -fstack-protector-strong # stack protection
         --param=ssp-buffer-size=4 # stack protection
     )
