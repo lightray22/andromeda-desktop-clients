@@ -123,6 +123,8 @@ size_t Folder::CountItems(const SharedLockW& thisLock)
 /*****************************************************/
 void Folder::LoadItems(const SharedLockW& thisLock, bool force)
 {
+    ITDBG_INFO("()");
+
     bool expired { (steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
@@ -139,6 +141,8 @@ void Folder::LoadItems(const SharedLockW& thisLock, bool force)
         mRefreshed = steady_clock::now();
         mHaveItems = true;
     }
+
+    ITDBG_INFO("... return!");
 }
 
 /*****************************************************/
@@ -175,8 +179,9 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
                 ITDBG_INFO("... remote deleted: " << oldIt->second->GetName(itLock));
                 itLock.unlock(); // scope locks come first
 
-                DeleteLock deleteLock { oldIt->second->GetDeleteLock() };
-                deleteLock.MarkDeleted();
+                oldIt->second->GetDeleteLock();
+                // lock to clear out existing users, then unlock before erasing
+                // we have our W lock so the item cannot get re-acquired
                 oldIt = mItemMap.erase(oldIt);
             }
             else ++oldIt;
@@ -222,9 +227,11 @@ void Folder::DeleteItem(const std::string& name, const SharedLockW& thisLock)
     ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
-    DeleteLock deleteLock { it->second->GetDeleteLock() };
-    it->second->SubDelete(deleteLock);
-    deleteLock.MarkDeleted();
+    { // lock scope (must unlock before erasing)
+      // we have our W lock so the item cannot get re-acquired
+        DeleteLock deleteLock { it->second->GetDeleteLock() };
+        it->second->SubDelete(deleteLock);
+    }
     mItemMap.erase(it);
 }
 

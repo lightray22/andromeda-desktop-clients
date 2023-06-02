@@ -204,9 +204,9 @@ TEST_CASE("stringToBytes", "[Utilities]")
     REQUIRE(Utilities::stringToBytes("1K") == 1024);
     REQUIRE(Utilities::stringToBytes(" 5 K ") == 5*1024);
     REQUIRE(Utilities::stringToBytes("256M") == 256*1024*1024);
-    REQUIRE(Utilities::stringToBytes("2837483M") == (uint64_t)2837483*1024*1024);
-    REQUIRE(Utilities::stringToBytes("57G") == (uint64_t)57*1024*1024*1024);
-    REQUIRE(Utilities::stringToBytes("13T") == (uint64_t)13*1024*1024*1024*1024);
+    REQUIRE(Utilities::stringToBytes("2837483M") == 2837483ULL*1024*1024);
+    REQUIRE(Utilities::stringToBytes("57G") == 57ULL*1024*1024*1024);
+    REQUIRE(Utilities::stringToBytes("13T") == 13ULL*1024*1024*1024*1024);
 
     REQUIRE_THROWS_AS(Utilities::stringToBytes("R2D2"), std::logic_error);
 }
@@ -224,9 +224,9 @@ TEST_CASE("bytesToString", "[Utilities]")
     REQUIRE(Utilities::bytesToString(1048577) == "1048577");
     REQUIRE(Utilities::bytesToString(1536000) == "1500K");
     
-    REQUIRE(Utilities::bytesToString((uint64_t)45*1024*1024*1024) == "45G");
-    REQUIRE(Utilities::bytesToString((uint64_t)27*1024*1024*1024*1024) == "27T");
-    REQUIRE(Utilities::bytesToString((uint64_t)69*1024*1024*1024*1024*1024) == "69P");
+    REQUIRE(Utilities::bytesToString(45ULL*1024*1024*1024) == "45G");
+    REQUIRE(Utilities::bytesToString(27ULL*1024*1024*1024*1024) == "27T");
+    REQUIRE(Utilities::bytesToString(69ULL*1024*1024*1024*1024*1024) == "69P");
 }
 
 } // namespace Andromeda

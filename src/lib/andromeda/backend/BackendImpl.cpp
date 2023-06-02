@@ -451,9 +451,10 @@ nlohmann::json BackendImpl::CreateFile(const std::string& parent, const std::str
         return retval;
     }
 
+    const std::string data; // empty - declare here as FilesIn takes a *reference*
     RunnerInput_FilesIn input {{"files", "upload", 
         {{"parent", parent}, {"overwrite", BOOLSTR(overwrite)}}}, // plainParams
-        {{"file", {name, ""}}}}; MDBG_BACKEND(input); // FilesIn
+        {{"file", {name, data}}}}; MDBG_BACKEND(input); // FilesIn
         
     return RunAction_FilesIn(input);
 }

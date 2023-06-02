@@ -183,6 +183,10 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## Testing
 
-Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTING=1`, then build, and the tests will be run.  Unit tests are run as part of `tools/builddev`.
+Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTS=1`, then build, and the tests will be run.  Unit tests are run as part of `tools/builddev`.
 
 Static analysis is done with clang scan-build then cppcheck (must be installed). Static analysis can be run standalone with `tools/analyze`.
+
+## Sanitizers
+
+`-DSANITIZE` allows building with sanitizers with GCC and Clang.  The default is `address,leak,undefined` (AddressSanitizer, LeakSanitizer, UndefinedBehaviorSanitizer).  Other (mutually-exclusive) options include `memory` (MemorySanitizer) (Clang only), and `thread` (ThreadSanitizer).  See [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) and [Google Sanitizers](https://github.com/google/sanitizers).  These must be disabled (use `none`) to use Valgrind.  

@@ -60,29 +60,9 @@ public:
      */
     inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
-    /** 
-     * Class that acquires the scope mutex exclusively and maybe unlocks when destructed 
-     * If there is an error deleting (before MarkFinal), we will unlock again in the destructor
-     */
-    class DeleteLock
-    {
-    public:
-        explicit DeleteLock(Item& item): mItem(item){
-            mItem.mScopeMutex.lock();
-        }
-        ~DeleteLock(){
-            if (mDeleted) return;
-            mItem.mScopeMutex.unlock();
-        }
-        /** Marks the deletion as "done" so we don't unlock in the destructor */
-        void MarkDeleted(){ mDeleted = true; }
-    private:
-        Item& mItem;
-        bool mDeleted { false };
-    };
-
+    typedef std::unique_lock<std::shared_mutex> DeleteLock;
     /** Permanently, exclusively locks the scope lock if not acquired (use before deleting) */
-    inline DeleteLock GetDeleteLock() { return DeleteLock(*this); }
+    inline DeleteLock GetDeleteLock() { return DeleteLock(mScopeMutex); }
 
     /** Returns a read lock for this item */
     inline SharedLockR GetReadLock() const { return SharedLockR(mItemMutex); }

@@ -129,9 +129,7 @@ void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock)
 
     if (HasParent(thisLock))
         throw HasParentException();
-
     SubDelete(deleteLock);
-    deleteLock.MarkDeleted();
 }
 
 /*****************************************************/
@@ -162,7 +160,6 @@ void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, b
 
     if (HasParent(thisLock))
         throw HasParentException();
-
     SubRename(newName, thisLock, overwrite);
 }
 

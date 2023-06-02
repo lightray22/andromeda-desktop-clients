@@ -13,6 +13,8 @@ using Andromeda::Backend::BackendImpl;
 using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
+#include "andromeda/filesystem/Item.hpp"
+using Andromeda::Filesystem::Item;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -37,7 +39,7 @@ PageManager::~PageManager()
 {
     MDBG_INFO("() waiting for lock");
 
-    mScopeMutex.lock(); // exclusive, forever
+    Item::DeleteLock deleteLock(mScopeMutex); // exclusive
 
     if (mCacheMgr != nullptr)
     {

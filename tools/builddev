@@ -10,6 +10,6 @@ fi
 
 cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBUILD_TESTING=1 "$@"
+    -DBUILD_TESTS=1 "$@"
 
 cmake --build . -j$(nproc)

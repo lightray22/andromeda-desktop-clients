@@ -26,9 +26,9 @@ include(GNUInstallDirs)
 include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 
-option(BUILD_TESTING "Build unit tests" OFF)
+option(BUILD_TESTS "Build unit tests" OFF)
 
-if (BUILD_TESTING)
+if (BUILD_TESTS)
     FetchContent_Declare(Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG        v3.3.2)
@@ -72,7 +72,11 @@ if (MSVC)
     set(ANDROMEDA_LINK_OPTS 
         /NXCOMPAT /DYNAMICBASE
     )
-else()
+
+else() # NOT MSVC
+
+    ### ADD WARNINGS ###
+
     set(ANDROMEDA_CXX_WARNS -Wall -Wextra
         -pedantic -Wpedantic
         -Wno-unused-parameter # NO unused parameter
@@ -108,29 +112,44 @@ else()
             -Werror -pedantic-errors)
     endif()
 
+    ### ADD HARDENING ###
+
     # https://wiki.ubuntu.com/ToolChain/CompilerFlags
     # https://developers.redhat.com/blog/2018/03/21/compiler-and-linker-flags-gcc
 
     # security options
     set(ANDROMEDA_CXX_OPTS
-        $<IF:$<CONFIG:Debug>,,-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
-        -fstack-protector-strong --param=ssp-buffer-size=4
-        -D_GLIBCXX_ASSERTIONS -fexceptions
+        # NOTE FORTIFY_SOURCE works better with optimization
+        -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
+        -D_GLIBCXX_ASSERTIONS
+        -fstack-protector-strong # stack protection
+        --param=ssp-buffer-size=4 # stack protection
     )
     if (NOT APPLE)
         set(ANDROMEDA_LINK_OPTS
-            -Wl,-z,relro -Wl,-z,now
-            -Wl,-z,noexecstack
+            -Wl,-z,relro # relocation read-only
+            -Wl,-z,now   # bind symbols at startup
+            -Wl,-z,noexecstack # no-exec stack
         )
     endif()
 
-    option(WITHOUT_PIE "Disable position independent executable" OFF)
+    ### ADD PIC/PIE ###
 
+    option(WITHOUT_PIE "Disable position independent executable" OFF)
     if (NOT ${WITHOUT_PIE})
         list(APPEND ANDROMEDA_CXX_OPTS -fPIE)
         list(APPEND ANDROMEDA_LINK_OPTS -Wl,-pie -pie)
     endif()
-endif()
+
+    ### ADD SANITIZERS ###
+
+    set(SANITIZE "address,leak,undefined" CACHE STRING "Build with sanitizers")
+    if (NOT ${SANITIZE} STREQUAL "" AND NOT ${SANITIZE} STREQUAL "none")
+        list(APPEND ANDROMEDA_CXX_OPTS $<$<CONFIG:Debug>:-fsanitize=${SANITIZE}>)
+        list(APPEND ANDROMEDA_LINK_OPTS $<$<CONFIG:Debug>:-fsanitize=${SANITIZE}>)
+    endif()
+
+endif() # MSVC
 
 function(andromeda_bin bin_name)
     target_compile_options(${bin_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})

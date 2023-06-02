@@ -31,8 +31,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const s
 PlainFolder::PlainFolder(BackendImpl& backend, Folder* parent) : 
     Folder(backend), mDebug(__func__,this)
 {
-    MDBG_INFO("()");
-
+    MDBG_INFO("(2)");
     mParent = parent;
 }
 
@@ -40,8 +39,7 @@ PlainFolder::PlainFolder(BackendImpl& backend, Folder* parent) :
 PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
     Folder(backend, data), mDebug(__func__,this)
 {
-    MDBG_INFO("()");
-
+    MDBG_INFO("(3)");
     mParent = parent;
 
     MDBG_INFO("... ID:" << mId << " name:" << mName);
@@ -51,6 +49,8 @@ PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, Folde
 PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, bool haveItems, Folder* parent) :
     PlainFolder(backend, data, parent)
 {
+    MDBG_INFO("(4)");
+
     std::string fsid; try
     {
         if (haveItems)
