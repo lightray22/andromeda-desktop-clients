@@ -165,6 +165,7 @@ endfunction()
 
 function (andromeda_test test_name)
     target_link_libraries(${test_name} PRIVATE Catch2::Catch2WithMain)
+    target_compile_options(Catch2 PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
     target_compile_options(Catch2WithMain PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
     # Run the test - if it fails and you don't want it deleted, comment this line
     add_custom_command(TARGET ${test_name} POST_BUILD COMMAND ${test_name})
