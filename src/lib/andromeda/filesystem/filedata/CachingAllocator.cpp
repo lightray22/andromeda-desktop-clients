@@ -7,7 +7,8 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-CachingAllocator::CachingAllocator() : mDebug(__func__,this){ }
+CachingAllocator::CachingAllocator(const size_t baseline) : 
+    mDebug(__func__,this), mBaseline(baseline) { }
 
 /*****************************************************/
 CachingAllocator::~CachingAllocator()
@@ -34,6 +35,11 @@ void* CachingAllocator::alloc(size_t bytes)
     { // lock scope
         LockGuard lock(mMutex);
         ++mAllocs; // total
+        mCurAlloc += bytes;
+        mMaxAlloc = std::max(mCurAlloc, mMaxAlloc);
+
+        MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
+            << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
 
         FreeMap::iterator fmIt { mFreeMap.find(bytes) };
         if (fmIt != mFreeMap.end())
@@ -58,7 +64,8 @@ void* CachingAllocator::alloc(size_t bytes)
     }
 
     void* ptr = MemoryAllocator::alloc(bytes); // not locked!
-    MDBG_INFO("... allocate ptr:" << ptr);
+    MDBG_INFO("... allocate ptr:" << ptr 
+        << " recycles:" << mRecycles << "/" << mAllocs);
     return ptr;
 }
 
@@ -70,21 +77,18 @@ void CachingAllocator::free(void* const ptr, size_t bytes) noexcept
 
     bytes = get_usage(bytes);
 
-    { // lock scope
-        LockGuard lock(mMutex);
+    LockGuard lock(mMutex);
+    mCurAlloc -= bytes;
 
-        { // ptrList scope
-            PtrList& ptrList { mFreeMap.emplace(bytes, PtrList()).first->second };
+    PtrList& ptrList { mFreeMap.emplace(bytes, PtrList()).first->second };
 
-            ptrList.emplace_front(ptr);
-            mCurFree += bytes;
+    ptrList.emplace_front(ptr);
+    mCurFree += bytes;
 
-            MDBG_INFO("... ptrList:" << bytes << ":" << ptrList.size() 
-                << " mCurFree:" << mCurFree);
-        }
+    MDBG_INFO("... ptrList:" << bytes << ":" << ptrList.size() 
+        << " mCurFree:" << mCurFree);
 
-        while (mCurFree > mMaxFree) cleanup(lock);
-    }
+    while (mCurFree > mMaxAlloc-mBaseline) cleanup(lock);
 }
 
 /*****************************************************/
@@ -92,12 +96,12 @@ void CachingAllocator::cleanup(const LockGuard& lock)
 {
     FreeMap::iterator fmIt { mFreeMap.begin() }; // free smallest allocs first
 
-    const uint64_t bytes { fmIt->first };
+    const size_t bytes { fmIt->first };
     PtrList& ptrList { fmIt->second };
 
     void* ptr = ptrList.back();
     ptrList.pop_back();
-    mCurFree -= get_usage(bytes);
+    mCurFree -= bytes;
 
     // never have an empty list!
     if (ptrList.empty())

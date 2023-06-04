@@ -12,7 +12,7 @@ BandwidthMeasure::BandwidthMeasure(const char* debugName, const std::chrono::mil
     mTimeTarget(timeTarget), mDebug(std::string(__func__)+"_"+debugName,this) { }
 
 /*****************************************************/
-uint64_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
+size_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
 {
     using namespace std::chrono;
 
@@ -23,14 +23,14 @@ uint64_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono
         MDBG_INFO("... bandwidth:" << (static_cast<double>(bytes)/duration<double>(time).count()/(1<<20)) << " MiB/s");
 
         const double timeFrac { duration<double>(time) / duration<double>(mTimeTarget) };
-        const uint64_t targetBytesN { static_cast<uint64_t>(static_cast<double>(bytes) / timeFrac) };
+        const size_t targetBytesN { static_cast<size_t>(static_cast<double>(bytes) / timeFrac) };
         MDBG_INFO("... timeFrac:" << timeFrac << " targetBytes:" << targetBytesN);
 
         mBandwidthHistory[mBandwidthHistoryIdx] = targetBytesN;
         mBandwidthHistoryIdx = (mBandwidthHistoryIdx+1) % BANDWIDTH_WINDOW;
     }
     
-    const uint64_t targetBytes { std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<uint64_t>(0)) / BANDWIDTH_WINDOW };
+    const size_t targetBytes { std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<decltype(targetBytes)>(0)) / BANDWIDTH_WINDOW };
     MDBG_INFO("... return targetBytes:" << targetBytes); return targetBytes;
 }
 

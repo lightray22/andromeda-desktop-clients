@@ -27,7 +27,7 @@ struct CacheOptions
      * faster when multi-page readAheads can happen, and a readAhead can be larger than some fraction of this 
      * (see ConfigOptions.readMaxCacheFrac) even small values e.g. 8MB make a huge difference in performance.
      */
-    uint64_t memoryLimit { 256*1024*1024 };
+    size_t memoryLimit { 256*1024*1024 };
 
     /** 
      * The fraction of mMemoryLimit to get below the max when evicting .

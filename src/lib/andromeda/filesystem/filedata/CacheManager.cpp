@@ -19,18 +19,23 @@ namespace Filedata {
 CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) : 
     mDebug(__func__,this),
     mCacheOptions(cacheOptions),
-    mBandwidth(__func__, cacheOptions.maxDirtyTime),
-    mPageAllocator(std::make_unique<CachingAllocator>()),
-    mPageAllocatorT(std::make_unique<PageAllocator>(*mPageAllocator))
+    mBandwidth(__func__, cacheOptions.maxDirtyTime)
 { 
     MDBG_INFO("()");
+
+    const size_t memoryLimit { mCacheOptions.memoryLimit };
+    const size_t allocBaseline { memoryLimit - memoryLimit/mCacheOptions.evictSizeFrac };
+    mPageAllocator = std::make_unique<CachingAllocator>(allocBaseline);
+    mPageAllocatorT = std::make_unique<PageAllocator>(*mPageAllocator);
 
     if (startThreads) StartThreads();
 }
 
 /*****************************************************/
-uint64_t CacheManager::GetMemoryLimit() const { 
-    return mCacheOptions.memoryLimit; }
+size_t CacheManager::GetMemoryLimit() const
+{ 
+    return mCacheOptions.memoryLimit; 
+}
 
 /*****************************************************/
 CacheManager::~CacheManager()
@@ -74,8 +79,9 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
     UniqueLock lock(mMutex);
 
     const size_t oldSize { EnqueuePage(pageMgr, index, page, dirty, lock) };
+    const size_t newSize { mPageAllocator->get_usage(page.size()) };
 
-    if (page.size() > oldSize)
+    if (newSize > oldSize)
     {
         HandleMemory(pageMgr, page, canWait, lock, mgrLock);
         if (dirty) HandleDirtyMemory(pageMgr, page, canWait, lock, mgrLock);
@@ -88,11 +94,13 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
-    PageInfo pageInfo { pageMgr, index, page, page.size() };
+    const size_t newSize { mPageAllocator->get_usage(page.size()) };
+
+    PageInfo pageInfo { pageMgr, index, page, newSize };
 
     mPageQueue.emplace_back(pageInfo);
     mPageItMap[&page] = std::prev(mPageQueue.end());
-    mCurrentMemory += page.size();
+    mCurrentMemory += newSize;
 
     static const std::string fname { __func__ };
     PrintStatus(fname, lock);
@@ -101,18 +109,20 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
     {
         mDirtyQueue.emplace_back(pageInfo);
         mDirtyItMap[&page] = std::prev(mDirtyQueue.end());
-        mCurrentDirty += page.size();
+        mCurrentDirty += newSize;
         PrintDirtyStatus(fname, lock);
     }
 
-    MDBG_INFO("... pageSize:" << page.size() << " oldSize:" << oldSize);
+    MDBG_INFO("... pageSize:" << page.size() 
+        << " newSize:" << newSize << " oldSize:" << oldSize);
     return oldSize;
 }
 
 /*****************************************************/
-void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, const size_t newSize, const SharedLockW* mgrLock)
+void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, const size_t pageSize, const SharedLockW* mgrLock)
 {
-    MDBG_INFO("(page:" << &page << ", newSize:" << newSize << ")");
+    const size_t newSize = mPageAllocator->get_usage(pageSize);
+    MDBG_INFO("... pageSize:" << pageSize << " newSize:" << newSize);
 
     UniqueLock lock(mMutex);
     static const std::string fname { __func__ };
@@ -324,10 +334,6 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
     }
 }
 
-// TODO !! maybe the CacheManager should track memory using MemoryAllocator's real size? 
-// -> Windows's granularity is 64K so e.g. if you loaded 256M worth of 4K files (64,000) memory usage would be 4GB!
-// fixup newSize, page.size()
-
 /*****************************************************/
 void CacheManager::PrintStatus(const std::string& fname, const UniqueLock& lock)
 {
@@ -335,7 +341,7 @@ void CacheManager::PrintStatus(const std::string& fname, const UniqueLock& lock)
         << " pages:" << mPageItMap.size() << ", memory:" << mCurrentMemory; });
 
 #if DEBUG // this will kill performance
-    uint64_t total = 0; for (const PageInfo& pageInfo : mPageQueue) total += pageInfo.mPageSize;
+    size_t total = 0; for (const PageInfo& pageInfo : mPageQueue) total += pageInfo.mPageSize;
     if (total != mCurrentMemory){ MDBG_ERROR(": BAD MEMORY TRACKING! " << total << " != " << mCurrentMemory); assert(false); }
 #endif // DEBUG
 }
@@ -347,7 +353,7 @@ void CacheManager::PrintDirtyStatus(const std::string& fname, const UniqueLock& 
         << " dirtyPages:" << mDirtyItMap.size() << ", dirtyMemory:" << mCurrentDirty; });
 
 #if DEBUG // this will kill performance
-    uint64_t total = 0; for (const PageInfo& pageInfo : mDirtyQueue) total += pageInfo.mPageSize;
+    size_t total = 0; for (const PageInfo& pageInfo : mDirtyQueue) total += pageInfo.mPageSize;
     if (total != mCurrentDirty){ MDBG_ERROR(": BAD DIRTY TRACKING! " << total << " != " << mCurrentDirty); assert(false); }
 #endif // DEBUG
 }
@@ -417,7 +423,7 @@ void CacheManager::DoPageEvictions()
         size_t cleaned { 0 };
 
         PageList::iterator pageIt { mPageQueue.begin() };
-        const uint64_t margin { mCacheOptions.memoryLimit/mCacheOptions.evictSizeFrac };
+        const size_t margin { mCacheOptions.memoryLimit/mCacheOptions.evictSizeFrac };
         for (; mCurrentMemory + margin > mCacheOptions.memoryLimit + cleaned; ++pageIt)
         {
             PageInfo& pageInfo { *pageIt };

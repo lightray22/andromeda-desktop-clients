@@ -24,7 +24,7 @@ public:
     explicit BandwidthMeasure(const char* debugName, const std::chrono::milliseconds& timeTarget);
 
     /** Updates the bandwidth history with the given measure and returns the estimated targetBytes */
-    uint64_t UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
+    size_t UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
 
 private:
 
@@ -35,7 +35,7 @@ private:
     static constexpr size_t BANDWIDTH_WINDOW { 4 };
 
     /** Array of calculated bandwidth targetBytes to average together */
-    std::array<uint64_t, BANDWIDTH_WINDOW> mBandwidthHistory { };
+    std::array<size_t, BANDWIDTH_WINDOW> mBandwidthHistory { };
 
     /** The next index of mBandwidthHistory to write with a measurement */
     size_t mBandwidthHistoryIdx { 0 };

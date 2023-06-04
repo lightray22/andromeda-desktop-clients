@@ -53,7 +53,7 @@ public:
     void StartThreads();
 
     /** Returns the maximum cache memory size */
-    uint64_t GetMemoryLimit() const;
+    size_t GetMemoryLimit() const;
 
     typedef CachingAllocatorT<char> PageAllocator;
     /** Returns the allocator to use for all file data */
@@ -80,12 +80,12 @@ public:
      * if mgrLock is given, may synchronously evict or flush pages on this manager
      * @param pageMgr the page manager that owns the page
      * @param page reference to the page
-     * @param newSize the new size of the page
+     * @param pageSize the new size of the page
      * @param mgrLock the W lock for the page manager if available
      * @throws MemoryException if evict/flush fails to free memory
      * @throws BaseException if flush for this pageMgr fails to free memory
      */
-    void ResizePage(const PageManager& pageMgr, const Page& page, const size_t newSize, 
+    void ResizePage(const PageManager& pageMgr, const Page& page, const size_t pageSize, 
         const SharedLockW* mgrLock = nullptr);
 
     /** Inform us that a page has been erased */
@@ -216,12 +216,12 @@ private:
     const CacheOptions& mCacheOptions;
 
     /** The current total memory usage */
-    uint64_t mCurrentMemory { 0 };
+    size_t mCurrentMemory { 0 };
 
     /** The maximum in-memory dirty page usage before flushing (dynamic) */
-    uint64_t mDirtyLimit { 0 };
+    size_t mDirtyLimit { 0 };
     /** The current total dirty page memory */
-    uint64_t mCurrentDirty { 0 };
+    size_t mCurrentDirty { 0 };
 
     /** Exception encountered while evicting */
     std::exception_ptr mEvictFailure;

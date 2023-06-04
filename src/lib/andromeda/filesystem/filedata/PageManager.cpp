@@ -438,11 +438,11 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
 {
     UniqueLock llock(mFetchSizeMutex);
 
-    uint64_t targetBytes { mBandwidth.UpdateBandwidth(bytes, time) };
+    size_t targetBytes { mBandwidth.UpdateBandwidth(bytes, time) };
 
     if (mCacheMgr)
     {
-        const uint64_t cacheMax { mCacheMgr->GetMemoryLimit()/mBackend.GetOptions().readMaxCacheFrac };
+        const size_t cacheMax { mCacheMgr->GetMemoryLimit()/mBackend.GetOptions().readMaxCacheFrac };
         if (targetBytes > cacheMax) // no point in downloading just to get evicted
         {
             targetBytes = cacheMax;
@@ -450,8 +450,7 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
         }
     }
     
-    mFetchSize = std::max(static_cast<size_t>(1), // between 1 and size_t:max
-        min64st(targetBytes/mPageSize, std::numeric_limits<size_t>::max()));
+    mFetchSize = std::max(static_cast<decltype(mFetchSize)>(1), targetBytes/mPageSize);
     MDBG_INFO("... newFetchSize:" << mFetchSize);
 }
 
