@@ -4,6 +4,7 @@
 #include <limits>
 
 #include "CacheManager.hpp"
+#include "Page.hpp"
 #include "PageManager.hpp"
 #include "andromeda/BaseException.hpp"
 using Andromeda::BaseException;
@@ -119,7 +120,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
         if (!fetchSize) // bigger than backend, create empty
         {
             MDBG_INFO("... create empty page");
-            Page& newPage { mPages.emplace(index, 0).first->second };
+            Page& newPage { mPages.emplace(index, Page(0, mBackend.GetPageAllocator())).first->second };
 
             ResizePage(newPage, mPageSize, false); // zeroize
             // hold pagesLock because if inform fails, we will remove this page
@@ -181,7 +182,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
         }
 
         MDBG_INFO("... create empty page");
-        Page& newPage { mPages.emplace(index, 0).first->second };
+        Page& newPage { mPages.emplace(index, Page(0, mBackend.GetPageAllocator())).first->second };
         ResizePage(newPage, pageSize, false); // zeroize
         InformNewPageSync(index, newPage, true, thisLock);
         return newPage;
@@ -189,7 +190,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
 
     MDBG_INFO("... partial write, reading single");
     Page* newPage; mPageBackend.FetchPages(index, 1, // read a single page
-        [&](const uint64_t pageIndex, const uint64_t pageStartI, const size_t pageSizeI, Page& page)
+        [&](const uint64_t pageIndex, const uint64_t pageStartI, const size_t pageSizeI, Page&& page)
     {
         newPage = &(mPages.emplace(pageIndex, std::move(page)).first->second);
     }, thisLock);
@@ -396,7 +397,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
         std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
 
         const size_t readSize { mPageBackend.FetchPages(index, count, 
-            [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)
+            [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page&& page)
         {
             // if we are reading a page that is smaller on the backend (dirty writes), might need to extend
             const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };

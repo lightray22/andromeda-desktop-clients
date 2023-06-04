@@ -5,7 +5,6 @@
 #include <functional>
 #include <list>
 
-#include "Page.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/filesystem/File.hpp"
@@ -55,7 +54,7 @@ public:
     void SetBackendSize(uint64_t backendSize, const SharedLockW& thisLock) { mBackendSize = backendSize; }
 
     /** Callback used to process fetched pages in FetchPages() */
-    typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
+    typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page&& page)> PageHandler;
 
     /** 
      * Reads pages from the backend (must mBackendExists!)

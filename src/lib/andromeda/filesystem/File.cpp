@@ -10,6 +10,7 @@ using Andromeda::ConfigOptions;
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
+#include "andromeda/filesystem/filedata/Page.hpp" // min64st
 #include "andromeda/filesystem/filedata/PageBackend.hpp"
 using Andromeda::Filesystem::Filedata::PageBackend;
 #include "andromeda/filesystem/filedata/PageManager.hpp"

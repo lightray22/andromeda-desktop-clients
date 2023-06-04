@@ -4,6 +4,8 @@
 
 #include <vector>
 
+#include "CachingAllocator.hpp"
+
 namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
@@ -17,11 +19,16 @@ static inline size_t min64st(uint64_t s1, size_t s2)
 /** A file data page */
 struct Page
 {
-    explicit Page(size_t pageSize) : mData(pageSize) { }
-    std::vector<char> mData;
+    explicit Page(size_t pageSize, CachingAllocatorT<char>& pageAlloc) :
+        mData(pageSize, pageAlloc) { }
+
+    /** byte array of page data */
+    std::vector<char, CachingAllocatorT<char>> mData;
+
     /** true if the page has dirty (un-flushed) data */
     bool mDirty { false };
 
+    // accessors for convenience
     char* data() { return mData.data(); }
     const char* data() const { return mData.data(); }
     size_t size() const { return mData.size(); }

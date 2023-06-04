@@ -11,7 +11,6 @@
 #include <unordered_map>
 
 #include "BandwidthMeasure.hpp"
-#include "Page.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/SharedMutex.hpp"
@@ -22,6 +21,8 @@ namespace Filedata {
 
 struct Page;
 class PageManager;
+class CachingAllocator;
+template<typename T> struct CachingAllocatorT;
 struct CacheOptions;
 
 /** 
@@ -53,6 +54,10 @@ public:
 
     /** Returns the maximum cache memory size */
     uint64_t GetMemoryLimit() const;
+
+    typedef CachingAllocatorT<char> PageAllocator;
+    /** Returns the allocator to use for all file data */
+    inline PageAllocator& GetPageAllocator(){ return *mPageAllocatorT; }
     
     /** 
      * Inform us that a page was used, putting at the front of the LRU
@@ -139,10 +144,10 @@ private:
     void RemoveDirty(const Page& page, const UniqueLock& lock);
 
     /** Send some stats about memory to debug */
-    void PrintStatus(const char* const fname, const UniqueLock& lock);
+    void PrintStatus(const std::string& fname, const UniqueLock& lock);
 
     /** Send some stats about the dirty memory to debug */
-    void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
+    void PrintDirtyStatus(const std::string& fname, const UniqueLock& lock);
 
     /** Run the page evict task in a loop while mRunCleanup */
     void EvictThread();
@@ -157,6 +162,8 @@ private:
     /** Calls flush on a page and updates the bandwidth measurement */
     template<class T>
     void FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock);
+
+    Debug mDebug;
 
     /** Mutex to guard writing data structures */
     std::mutex mMutex;
@@ -221,10 +228,11 @@ private:
     /** Exception encountered while flushing */
     std::exception_ptr mFlushFailure;
 
-    Debug mDebug;
-
     /** Bandwidth measurement tool for mDirtyLimit */
     BandwidthMeasure mBandwidth;
+    /** Allocator to use for all file pages (never null) */
+    std::unique_ptr<CachingAllocator> mPageAllocator;
+    std::unique_ptr<PageAllocator> mPageAllocatorT;
     
     CacheManager(const CacheManager&) = delete; // no copying
     CacheManager& operator=(const CacheManager&) = delete;

@@ -191,4 +191,8 @@ Static analysis is done with clang scan-build then cppcheck (must be installed).
 
 `-DSANITIZE` allows building with sanitizers with GCC and Clang.  The default is `address,leak,undefined` (AddressSanitizer, LeakSanitizer, UndefinedBehaviorSanitizer).  Other (mutually-exclusive) options include `memory` (MemorySanitizer) (Clang only), and `thread` (ThreadSanitizer).  See [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) and [Google Sanitizers](https://github.com/google/sanitizers).  
 
-These must be disabled (use `none`) to use Valgrind.  LeakSanitizer does not work on AppleClang (macOS).  No sanitizers work on musl libc (Alpine Linux).
+These must be disabled (use `none`) to use Valgrind tools.  LeakSanitizer does not work on AppleClang (macOS).  No sanitizers work on musl libc (Alpine Linux).
+
+## Memory Allocation
+
+libandromeda allocates file data memory pages manually using `mmap` rather than `malloc`.  To disable this, build with `-DWITHOUT_MMAP=1`.  This reduces performance but is recommended when running valgrind memcheck.  

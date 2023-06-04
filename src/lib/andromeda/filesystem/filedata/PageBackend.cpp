@@ -4,6 +4,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
+#include "Page.hpp"
 #include "PageBackend.hpp"
 
 #include "andromeda/Semaphor.hpp"
@@ -70,7 +71,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
             const uint64_t curPageStart { curIndex*mPageSize };
             const size_t pageSize { min64st(mBackendSize-curPageStart, mPageSize) };
 
-            if (!curPage) curPage = std::make_unique<Page>(pageSize);
+            if (!curPage) curPage = std::make_unique<Page>(pageSize, mBackend.GetPageAllocator());
 
             const uint64_t rindex { rbyte / mPageSize }; // page index for this data
             const size_t pwOffset { static_cast<size_t>(rbyte - rindex*mPageSize) }; // offset within the page
@@ -83,7 +84,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 
                 if (pwOffset+pwLength == curPage->size()) // page is done
                 {
-                    pageHandler(curIndex, curPageStart, pageSize, *curPage);
+                    pageHandler(curIndex, curPageStart, pageSize, std::move(*curPage));
                     curPage.reset(); ++curIndex;
                 }
             }

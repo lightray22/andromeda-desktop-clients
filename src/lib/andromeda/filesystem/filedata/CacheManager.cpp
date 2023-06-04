@@ -4,6 +4,8 @@
 
 #include "CacheManager.hpp"
 #include "CacheOptions.hpp"
+#include "CachingAllocator.hpp"
+#include "Page.hpp"
 #include "PageManager.hpp"
 
 #include "andromeda/BaseException.hpp"
@@ -15,9 +17,11 @@ namespace Filedata {
 
 /*****************************************************/
 CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) : 
-    mCacheOptions(cacheOptions),
     mDebug(__func__,this),
-    mBandwidth(__func__, cacheOptions.maxDirtyTime)
+    mCacheOptions(cacheOptions),
+    mBandwidth(__func__, cacheOptions.maxDirtyTime),
+    mPageAllocator(std::make_unique<CachingAllocator>()),
+    mPageAllocatorT(std::make_unique<PageAllocator>(*mPageAllocator))
 { 
     MDBG_INFO("()");
 
@@ -89,14 +93,16 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
     mPageQueue.emplace_back(pageInfo);
     mPageItMap[&page] = std::prev(mPageQueue.end());
     mCurrentMemory += page.size();
-    PrintStatus(__func__, lock);
+
+    static const std::string fname { __func__ };
+    PrintStatus(fname, lock);
 
     if (dirty)
     {
         mDirtyQueue.emplace_back(pageInfo);
         mDirtyItMap[&page] = std::prev(mDirtyQueue.end());
         mCurrentDirty += page.size();
-        PrintDirtyStatus(__func__, lock);
+        PrintDirtyStatus(fname, lock);
     }
 
     MDBG_INFO("... pageSize:" << page.size() << " oldSize:" << oldSize);
@@ -109,6 +115,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
     MDBG_INFO("(page:" << &page << ", newSize:" << newSize << ")");
 
     UniqueLock lock(mMutex);
+    static const std::string fname { __func__ };
 
     { PageItMap::iterator itLookup { mPageItMap.find(&page) };
     if (itLookup != mPageItMap.end()) 
@@ -119,8 +126,8 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         mCurrentMemory += newSize-oldSize;
         itQueue->mPageSize = newSize;
 
-        PrintStatus(__func__, lock);
-
+        PrintStatus(fname, lock);
+        
         if (newSize > oldSize)
             try { HandleMemory(pageMgr, page, true, lock, mgrLock); }
         catch (const BaseException& e)
@@ -139,7 +146,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         mCurrentDirty += newSize-oldSize;
         itQueue->mPageSize = newSize;
         
-        PrintDirtyStatus(__func__, lock);
+        PrintDirtyStatus(fname, lock);
 
         if (newSize > oldSize)
             try { HandleDirtyMemory(pageMgr, page, true, lock, mgrLock); }
@@ -166,7 +173,8 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
-            PrintStatus(__func__, lock);
+            static const std::string fname { __func__ };
+            PrintStatus(fname, lock);
             PageInfo pageInfo { mPageQueue.front() }; // copy
 
             lock.unlock(); // don't hold lock during evict
@@ -208,7 +216,8 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
-            PrintDirtyStatus(__func__, lock);
+            static const std::string fname { __func__ };
+            PrintDirtyStatus(fname, lock);
             PageInfo pageInfo { mDirtyQueue.front() }; // copy
 
             lock.unlock(); // don't hold lock during flush
@@ -265,8 +274,9 @@ void CacheManager::RemovePage(const Page& page)
     UniqueLock lock(mMutex);
     RemovePage(page, lock);
 
-    PrintStatus(__func__, lock);
-    PrintDirtyStatus(__func__, lock);
+    static const std::string fname { __func__ };
+    PrintStatus(fname, lock);
+    PrintDirtyStatus(fname, lock);
 }
 
 /*****************************************************/
@@ -275,7 +285,8 @@ void CacheManager::RemoveDirty(const Page& page)
     UniqueLock lock(mMutex);
     RemoveDirty(page, lock);
 
-    PrintDirtyStatus(__func__, lock);
+    static const std::string fname { __func__ };
+    PrintDirtyStatus(fname, lock);
 }
 
 /*****************************************************/
@@ -313,8 +324,12 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
     }
 }
 
+// TODO !! maybe the CacheManager should track memory using MemoryAllocator's real size? 
+// -> Windows's granularity is 64K so e.g. if you loaded 256M worth of 4K files (64,000) memory usage would be 4GB!
+// fixup newSize, page.size()
+
 /*****************************************************/
-void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
+void CacheManager::PrintStatus(const std::string& fname, const UniqueLock& lock)
 {
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " pages:" << mPageItMap.size() << ", memory:" << mCurrentMemory; });
@@ -326,7 +341,7 @@ void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
 }
 
 /*****************************************************/
-void CacheManager::PrintDirtyStatus(const char* const fname, const UniqueLock& lock)
+void CacheManager::PrintDirtyStatus(const std::string& fname, const UniqueLock& lock)
 {
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " dirtyPages:" << mDirtyItMap.size() << ", dirtyMemory:" << mCurrentDirty; });
@@ -397,7 +412,8 @@ void CacheManager::DoPageEvictions()
     { // lock scope
         UniqueLock lock(mMutex);
 
-        PrintStatus(__func__, lock);
+        static const std::string fname { __func__ };
+        PrintStatus(fname, lock);
         size_t cleaned { 0 };
 
         PageList::iterator pageIt { mPageQueue.begin() };
@@ -423,7 +439,8 @@ void CacheManager::DoPageEvictions()
     decltype(currentEvicts)::iterator evictIt { currentEvicts.begin() };
     while (evictIt != currentEvicts.end())
     {
-        MDBG_INFO("... evicting pages:" << evictIt->second.second.size() << " pageMgr:" << evictIt->first);
+        EvictSet& evictSet { evictIt->second };
+        MDBG_INFO("... evicting pages:" << evictSet.second.size() << " pageMgr:" << evictIt->first);
         
         { // let waiters on this file continue so we can lock
             UniqueLock lock(mMutex);
@@ -438,7 +455,6 @@ void CacheManager::DoPageEvictions()
             mSkipEvictWait = nullptr;
         }
 
-        EvictSet& evictSet { evictIt->second };
         for (PageInfo& pageInfo : evictSet.second)
         {
             try { pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, mgrLock); }
@@ -477,7 +493,8 @@ void CacheManager::DoPageFlushes()
     { // lock scope
         UniqueLock lock(mMutex);
 
-        PrintDirtyStatus(__func__, lock);
+        static const std::string fname { __func__ };
+        PrintDirtyStatus(fname, lock);
         size_t cleaned { 0 };
 
         PageList::iterator pageIt { mDirtyQueue.begin() };
@@ -501,7 +518,8 @@ void CacheManager::DoPageFlushes()
 
     for (decltype(currentFlushes)::iterator flushIt { currentFlushes.begin() }; flushIt != currentFlushes.end(); )
     {
-        MDBG_INFO("... flushing pages:" << flushIt->second.second.size() << " pageMgr:" << flushIt->first);
+        FlushSet& flushSet { flushIt->second };
+        MDBG_INFO("... flushing pages:" << flushSet.second.size() << " pageMgr:" << flushIt->first);
 
         { // let waiters on this file continue so we can lock
             UniqueLock lock(mMutex);
@@ -516,7 +534,6 @@ void CacheManager::DoPageFlushes()
             mSkipFlushWait = nullptr;
         }
 
-        FlushSet& flushSet { flushIt->second };
         for (PageInfo& pageInfo : flushSet.second)
         {
             try { FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, mgrLock); }
