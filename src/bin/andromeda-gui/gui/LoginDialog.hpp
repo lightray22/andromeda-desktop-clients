@@ -25,8 +25,11 @@ public:
 
     virtual ~LoginDialog();
 
-    /** Returns and takes ownership of a unique_ptr to the created backend */
-    std::unique_ptr<BackendContext> TakeBackend();
+    /** 
+     * Runs QDialog::exec() and gives the created backend 
+     * @param[out] backend backend gets created here
+     */
+    int CreateBackend(std::unique_ptr<BackendContext>& backend);
 
 public slots:
 
@@ -34,12 +37,12 @@ public slots:
 
 private:
 
+    Andromeda::Debug mDebug;
+
     /** The backend context created by the user */
     std::unique_ptr<BackendContext> mBackendContext;
 
     std::unique_ptr<Ui::LoginDialog> mQtUi;
-
-    Andromeda::Debug mDebug;
 };
 
 } // namespace Gui

@@ -12,8 +12,8 @@ namespace Gui {
 
 /*****************************************************/
 LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
-    mQtUi(std::make_unique<Ui::LoginDialog>()),
-    mDebug(__func__,this)
+    mDebug(__func__,this),
+    mQtUi(std::make_unique<Ui::LoginDialog>())
 {
     MDBG_INFO("()");
 
@@ -54,9 +54,11 @@ void LoginDialog::accept()
 }
 
 /*****************************************************/
-std::unique_ptr<BackendContext> LoginDialog::TakeBackend()
+int LoginDialog::CreateBackend(std::unique_ptr<BackendContext>& backend)
 {
-    return std::move(mBackendContext);
+    int retval { QDialog::exec() };
+    if (retval) backend = std::move(mBackendContext);
+    return retval;
 }
 
 } // namespace Gui
