@@ -18,8 +18,9 @@ std::string CacheOptions::HelpText()
     CacheOptions optDefault;
 
     const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
+    const size_t stBits { sizeof(size_t)*8 };
 
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes64(" << Utilities::bytesToString(optDefault.memoryLimit) << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
+    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.memoryLimit) << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
 }
@@ -35,7 +36,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     }
     else if (option == "memory-limit")
     {
-        try { memoryLimit = Utilities::stringToBytes(value); }
+        try { memoryLimit = static_cast<size_t>(Utilities::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }

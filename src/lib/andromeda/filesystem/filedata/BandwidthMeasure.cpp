@@ -30,7 +30,7 @@ size_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono::
         mBandwidthHistoryIdx = (mBandwidthHistoryIdx+1) % BANDWIDTH_WINDOW;
     }
     
-    const size_t targetBytes { std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<decltype(targetBytes)>(0)) / BANDWIDTH_WINDOW };
+    const size_t targetBytes { std::accumulate(mBandwidthHistory.cbegin(), mBandwidthHistory.cend(), static_cast<size_t>(0)) / BANDWIDTH_WINDOW };
     MDBG_INFO("... return targetBytes:" << targetBytes); return targetBytes;
 }
 

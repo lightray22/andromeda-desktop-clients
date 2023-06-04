@@ -18,11 +18,12 @@ std::string RunnerOptions::HelpText()
 
     const auto defRetry(seconds(optDefault.retryTime).count());
     const auto defTimeout(seconds(optDefault.timeout).count());
+    const size_t stBits { sizeof(size_t)*8 };
 
     using std::endl;
 
     output << "Runner Advanced: [--req-timeout secs(" << defTimeout << ")] [--max-retries uint(" << optDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")] "
-           << "[--stream-buffer-size bytes32(" << Utilities::bytesToString(optDefault.streamBufferSize) << ")]";
+           << "[--stream-buffer-size bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.streamBufferSize) << ")]";
 
     return output.str();
 }

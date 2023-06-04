@@ -450,7 +450,7 @@ void PageManager::UpdateBandwidth(const size_t bytes, const std::chrono::steady_
         }
     }
     
-    mFetchSize = std::max(static_cast<decltype(mFetchSize)>(1), targetBytes/mPageSize);
+    mFetchSize = std::max(static_cast<size_t>(1), targetBytes/mPageSize);
     MDBG_INFO("... newFetchSize:" << mFetchSize);
 }
 
