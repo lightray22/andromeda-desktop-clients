@@ -27,7 +27,7 @@ class CachingAllocator : public MemoryAllocator
 public:
 
     /** @param baseline the amount of memory used when evict stops, used to calculate the free pool max size */
-    explicit CachingAllocator(const uint64_t baseline);
+    explicit CachingAllocator(const size_t baseline);
 
     virtual ~CachingAllocator();
 
