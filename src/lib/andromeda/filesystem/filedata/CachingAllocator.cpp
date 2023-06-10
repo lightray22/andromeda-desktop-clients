@@ -13,14 +13,15 @@ CachingAllocator::CachingAllocator(const size_t baseline) :
 /*****************************************************/
 CachingAllocator::~CachingAllocator()
 {
-    for (FreeMap::value_type& pair : mFreeMap)
+    for (const FreeListMap::value_type& pair : mFreeLists)
         for (void* ptr : pair.second)
             MemoryAllocator::free(ptr, pair.first);
 }
 
-// PtrList: when freed, a page goes onto the front of the list
-// it can either get re-used in alloc (from the front - LIFO)
-// or removed and deallocated in free (from the back - FIFO)
+// FreeList: when freed, a page goes onto the front of the list for that alloc size
+// the FreeList allows quick re-alloc by looking up the alloc size then taking the first entry (LIFO)
+// FreeQueue: when freed, a page goes onto the front of the free queue
+// the FreeQueue allows quick cleanup by popping a free off the end of the list (FIFO)
 
 /*****************************************************/
 void* CachingAllocator::alloc(size_t bytes)
@@ -41,23 +42,24 @@ void* CachingAllocator::alloc(size_t bytes)
         MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
             << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
 
-        FreeMap::iterator fmIt { mFreeMap.find(bytes) };
-        if (fmIt != mFreeMap.end())
+        FreeListMap::iterator fmIt { mFreeLists.find(bytes) };
+        if (fmIt != mFreeLists.end())
         {
-            PtrList& ptrList { fmIt->second };
+            FreeList& freeList { fmIt->second };
 
-            void* ptr = ptrList.front();
-            ptrList.pop_front();
+            void* ptr = freeList.front();
+            freeList.pop_front();
+            mFreeQueue.erase(ptr);
             mCurFree -= bytes;
             ++mRecycles;
 
             // never have an empty list!
-            if (ptrList.empty())
-                mFreeMap.erase(fmIt);
+            if (freeList.empty())
+                mFreeLists.erase(fmIt);
 
             MDBG_INFO("... recycle ptr:" << ptr 
                 << " recycles:" << mRecycles << "/" << mAllocs);
-            MDBG_INFO("... ptrList:" << bytes << ":" << ptrList.size() 
+            MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
                 << " mCurFree:" << mCurFree);
             return ptr;
         }
@@ -78,15 +80,17 @@ void CachingAllocator::free(void* const ptr, size_t bytes) noexcept
     bytes = get_usage(bytes);
 
     LockGuard lock(mMutex);
+
+    FreeListMap::iterator freeListMapIt { mFreeLists.emplace(bytes, FreeList()).first }; // O(logn)
+    FreeList& freeList { freeListMapIt->second };
+    freeList.emplace_front(ptr); // O(1)
+    mFreeQueue.enqueue_front(ptr, std::make_pair(freeListMapIt, freeList.begin())); // O(1)
+
+    mCurFree += bytes;
     mCurAlloc -= bytes;
 
-    PtrList& ptrList { mFreeMap.emplace(bytes, PtrList()).first->second };
-
-    ptrList.emplace_front(ptr);
-    mCurFree += bytes;
-
-    MDBG_INFO("... ptrList:" << bytes << ":" << ptrList.size() 
-        << " mCurFree:" << mCurFree);
+    MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
+        << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
 
     while (mCurFree > mMaxAlloc-mBaseline) cleanup(lock);
 }
@@ -94,25 +98,26 @@ void CachingAllocator::free(void* const ptr, size_t bytes) noexcept
 /*****************************************************/
 void CachingAllocator::cleanup(const LockGuard& lock)
 {
-    FreeMap::iterator fmIt { mFreeMap.begin() }; // free smallest allocs first
+    // free the oldest free
+    FreeQueue::value_type fpair { mFreeQueue.pop_back() }; // O(1)
 
-    const size_t bytes { fmIt->first };
-    PtrList& ptrList { fmIt->second };
+    void* ptr = fpair.first;
+    FreeListMap::iterator& freeListMapIt { fpair.second.first };
+    FreeList& freeList { freeListMapIt->second };
+    const size_t bytes { freeListMapIt->first };
 
-    void* ptr = ptrList.back();
-    ptrList.pop_back();
+    freeList.erase(fpair.second.second); // O(1)
+    if (freeList.empty())
+        mFreeLists.erase(freeListMapIt); // O(1)
+
     mCurFree -= bytes;
-
-    // never have an empty list!
-    if (ptrList.empty())
-        mFreeMap.erase(fmIt);
 
     // free under lock to guarantee max memory
     MDBG_INFO("... free ptr:" << ptr);
     MemoryAllocator::free(ptr, bytes);
 
-    MDBG_INFO("... ptrList:" << bytes << ":" << ptrList.size() 
-        << " mCurFree:" << mCurFree);
+    MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
+        << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
 }
 
 } // namespace Filedata

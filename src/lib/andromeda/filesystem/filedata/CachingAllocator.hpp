@@ -5,9 +5,12 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <utility>
 
 #include "MemoryAllocator.hpp"
 #include "andromeda/Debug.hpp"
+
+#include "andromeda/OrderedMap.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -78,10 +81,17 @@ private:
     uint64_t mAllocs { 0 };
 
     /** List of freed allocations that can be re-used */
-    typedef std::list<void*> PtrList;
-    /** Map of freed pointer lists, indexed by allocation size */
-    typedef std::map<size_t, PtrList> FreeMap;
-    FreeMap mFreeMap;
+    typedef std::list<void*> FreeList;
+    /** Map of freed pointer lists, indexed by allocation size for quick re-use */
+    typedef std::map<size_t, FreeList> FreeListMap;
+    // a std::map is used rather than unordered_map because it tends to be faster
+    // in real time for a small # of keys - 128k page size, 4k granularity = max 32 keys
+    FreeListMap mFreeLists;
+
+    /** Ordered map keeping track of freed allocations for LRU ordering */
+    typedef Andromeda::OrderedMap<void*, 
+        std::pair<FreeListMap::iterator, FreeList::iterator>> FreeQueue;
+    FreeQueue mFreeQueue;
 };
 
 /** C++ Allocator-compliant template wrapper for CachingAllocator */

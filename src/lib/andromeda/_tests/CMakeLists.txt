@@ -5,6 +5,7 @@ add_executable(libandromeda_tests)
 
 set(SOURCE_FILES 
     BaseOptionsTest.cpp
+    OrderedMap.cpp
     UtilitiesTest.cpp
     )
 
