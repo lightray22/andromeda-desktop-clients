@@ -26,7 +26,7 @@ public:
 
     /** Exception indicating the given param key is probably not safe for a URL */
     class PrivateDataException : public Andromeda::BaseOptions::Exception {
-        public: PrivateDataException(const std::string& key) : 
+        public: explicit PrivateDataException(const std::string& key) : 
             Andromeda::BaseOptions::Exception(key + " is not safe to send as a URL variable, use env or stdin instead") {} };
 
     virtual ~CommandLine();

@@ -79,7 +79,6 @@ void MainWindow::AddAccount()
     if (loginDialog.CreateBackend(backendCtx))
     {
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
-
         AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
         mQtUi->tabAccounts->setCurrentIndex(

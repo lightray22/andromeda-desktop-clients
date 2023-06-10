@@ -57,7 +57,11 @@ void LoginDialog::accept()
 int LoginDialog::CreateBackend(std::unique_ptr<BackendContext>& backend)
 {
     int retval { QDialog::exec() };
-    if (retval) backend = std::move(mBackendContext);
+    if (retval)
+    {
+        backend = std::move(mBackendContext);
+        mBackendContext.reset();
+    }
     return retval;
 }
 
