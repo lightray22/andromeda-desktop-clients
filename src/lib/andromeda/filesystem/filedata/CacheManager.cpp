@@ -98,8 +98,8 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
 
     PageInfo pageInfo { pageMgr, index, page, newSize };
 
-    mPageQueue.emplace_back(pageInfo);
-    mPageItMap[&page] = std::prev(mPageQueue.end());
+    mPageQueue.emplace_front(pageInfo);
+    mPageItMap[&page] = mPageQueue.begin();
     mCurrentMemory += newSize;
 
     static const std::string fname { __func__ };
@@ -107,8 +107,8 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
 
     if (dirty)
     {
-        mDirtyQueue.emplace_back(pageInfo);
-        mDirtyItMap[&page] = std::prev(mDirtyQueue.end());
+        mDirtyQueue.emplace_front(pageInfo);
+        mDirtyItMap[&page] = mDirtyQueue.begin();
         mCurrentDirty += newSize;
         PrintDirtyStatus(fname, lock);
     }
@@ -178,14 +178,14 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
         while (canWait && mCurrentMemory > mCacheOptions.memoryLimit && 
-            &mPageQueue.front().mPageMgr == &pageMgr &&
-            &mPageQueue.front().mPageRef != &page)
+            &mPageQueue.back().mPageMgr == &pageMgr &&
+            &mPageQueue.back().mPageRef != &page)
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
             static const std::string fname { __func__ };
             PrintStatus(fname, lock);
-            PageInfo pageInfo { mPageQueue.front() }; // copy
+            PageInfo pageInfo { mPageQueue.back() }; // copy
 
             lock.unlock(); // don't hold lock during evict
             pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, *mgrLock);
@@ -221,14 +221,14 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipFlushWait)
         while (canWait && mCurrentDirty > mDirtyLimit && 
-            &mDirtyQueue.front().mPageMgr == &pageMgr &&
-            &mDirtyQueue.front().mPageRef != &page)
+            &mDirtyQueue.back().mPageMgr == &pageMgr &&
+            &mDirtyQueue.back().mPageRef != &page)
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
             static const std::string fname { __func__ };
             PrintDirtyStatus(fname, lock);
-            PageInfo pageInfo { mDirtyQueue.front() }; // copy
+            PageInfo pageInfo { mDirtyQueue.back() }; // copy
 
             lock.unlock(); // don't hold lock during flush
             FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, *mgrLock);
@@ -422,7 +422,7 @@ void CacheManager::DoPageEvictions()
         PrintStatus(fname, lock);
         size_t cleaned { 0 };
 
-        PageList::iterator pageIt { mPageQueue.begin() };
+        PageList::reverse_iterator pageIt { mPageQueue.rbegin() };
         const size_t margin { mCacheOptions.memoryLimit/mCacheOptions.evictSizeFrac };
         for (; mCurrentMemory + margin > mCacheOptions.memoryLimit + cleaned; ++pageIt)
         {
@@ -442,8 +442,7 @@ void CacheManager::DoPageEvictions()
         }
     }
 
-    decltype(currentEvicts)::iterator evictIt { currentEvicts.begin() };
-    while (evictIt != currentEvicts.end())
+    for (decltype(currentEvicts)::iterator evictIt { currentEvicts.begin() }; evictIt != currentEvicts.end(); )
     {
         EvictSet& evictSet { evictIt->second };
         MDBG_INFO("... evicting pages:" << evictSet.second.size() << " pageMgr:" << evictIt->first);
@@ -469,8 +468,8 @@ void CacheManager::DoPageEvictions()
                 UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
                 
-                // move the failed page to the end so we try a different (maybe non-dirty) one next
-                if (RemovePage(pageInfo.mPageRef, lock))
+                // move the failed page to the end so we try a different (maybe non-dirty) one next to prevent memory runaway
+                if (RemovePage(pageInfo.mPageRef, lock)) // only if it's still enqueued (lock was re-acquired)
                     EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
                         pageInfo.mPageRef, pageInfo.mPageRef.mDirty, lock);
 
@@ -503,7 +502,7 @@ void CacheManager::DoPageFlushes()
         PrintDirtyStatus(fname, lock);
         size_t cleaned { 0 };
 
-        PageList::iterator pageIt { mDirtyQueue.begin() };
+        PageList::reverse_iterator pageIt { mDirtyQueue.rbegin() };
         for (; mCurrentDirty > mDirtyLimit + cleaned; ++pageIt)
         {
             PageInfo& pageInfo { *pageIt };
