@@ -88,7 +88,7 @@ void* CachingAllocator::alloc(size_t pages)
 }
 
 /*****************************************************/
-void CachingAllocator::free(void* const ptr, size_t pages) noexcept
+void CachingAllocator::free(void* const ptr, size_t pages)
 {
     MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
     if (ptr == nullptr) return;
@@ -97,13 +97,14 @@ void CachingAllocator::free(void* const ptr, size_t pages) noexcept
     const size_t freeListSize { add_entry(ptr, pages, lock) };
 #if DEBUG
     std::memset(ptr, 0xAA, pages*mPageSize); // poison
+    assert(pages*mPageSize <= mCurAlloc);
 #endif // DEBUG
 
     mCurFree += pages*mPageSize;
     mCurAlloc -= pages*mPageSize;
 
     MDBG_INFO("... freeList:" << pages << ":" << freeListSize
-        << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
+        << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree << " mCurAlloc:" << mCurAlloc);
 
     while (mCurFree > mMaxAlloc-mBaseline) clean_entry(lock);
 }

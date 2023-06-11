@@ -28,6 +28,7 @@ namespace Filesystem {
 namespace Filedata {
 
 class CacheManager;
+class Page;
 
 /** 
  * File page data manager - splits the file into a series of fixed size pages

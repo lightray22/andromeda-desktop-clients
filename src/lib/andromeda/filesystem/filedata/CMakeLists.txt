@@ -5,6 +5,7 @@ set(SOURCE_FILES
     CacheOptions.cpp
     CachingAllocator.cpp
     MemoryAllocator.cpp
+    Page.cpp
     PageBackend.cpp
     PageManager.cpp
     )

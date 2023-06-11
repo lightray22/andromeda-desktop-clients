@@ -26,7 +26,6 @@ CacheManager::CacheManager(const CacheOptions& cacheOptions, bool startThreads) 
     const size_t memoryLimit { mCacheOptions.memoryLimit };
     const size_t allocBaseline { memoryLimit - memoryLimit/mCacheOptions.evictSizeFrac };
     mPageAllocator = std::make_unique<CachingAllocator>(allocBaseline);
-    mPageAllocatorT = std::make_unique<PageAllocator>(*mPageAllocator);
 
     if (startThreads) StartThreads();
 }
@@ -79,9 +78,8 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
     UniqueLock lock(mMutex);
 
     const size_t oldSize { EnqueuePage(pageMgr, index, page, dirty, lock) };
-    const size_t newSize { mPageAllocator->getNumBytes(page.size()) };
 
-    if (newSize > oldSize)
+    if (page.capacity() > oldSize)
     {
         HandleMemory(pageMgr, page, canWait, lock, mgrLock);
         if (dirty) HandleDirtyMemory(pageMgr, page, canWait, lock, mgrLock);
@@ -94,7 +92,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
-    const size_t newSize { mPageAllocator->getNumBytes(page.size()) };
+    const size_t newSize { page.capacity() }; // real memory usage
 
     PageInfo pageInfo { pageMgr, index, page, newSize };
 
@@ -119,10 +117,10 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
 }
 
 /*****************************************************/
-void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, const size_t pageSize, const SharedLockW* mgrLock)
+void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, const SharedLockW* mgrLock)
 {
-    const size_t newSize = mPageAllocator->getNumBytes(pageSize);
-    MDBG_INFO("... pageSize:" << pageSize << " newSize:" << newSize);
+    const size_t newSize = page.capacity(); // real memory usage
+    MDBG_INFO("... pageSize:" << page.size() << " newSize:" << newSize);
 
     UniqueLock lock(mMutex);
     static const std::string fname { __func__ };
@@ -139,12 +137,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         PrintStatus(fname, lock);
         
         if (newSize > oldSize)
-            try { HandleMemory(pageMgr, page, true, lock, mgrLock); }
-        catch (const BaseException& e)
-        {
-            mCurrentMemory -= newSize-oldSize;
-            itQueue->mPageSize = oldSize;
-        }
+            HandleMemory(pageMgr, page, true, lock, mgrLock);
     } }
 
     { PageItMap::iterator itLookup { mDirtyItMap.find(&page) };
@@ -159,12 +152,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         PrintDirtyStatus(fname, lock);
 
         if (newSize > oldSize)
-            try { HandleDirtyMemory(pageMgr, page, true, lock, mgrLock); }
-        catch (const BaseException& e)
-        {
-            mCurrentDirty -= newSize-oldSize;
-            itQueue->mPageSize = oldSize;
-        }
+            HandleDirtyMemory(pageMgr, page, true, lock, mgrLock);
     } }
 }
 
@@ -471,7 +459,7 @@ void CacheManager::DoPageEvictions()
                 // move the failed page to the end so we try a different (maybe non-dirty) one next to prevent memory runaway
                 if (RemovePage(pageInfo.mPageRef, lock)) // only if it's still enqueued (lock was re-acquired)
                     EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
-                        pageInfo.mPageRef, pageInfo.mPageRef.mDirty, lock);
+                        pageInfo.mPageRef, pageInfo.mPageRef.isDirty(), lock);
 
                 mEvictFailure = std::current_exception();
                 mEvictWaitCV.notify_all();

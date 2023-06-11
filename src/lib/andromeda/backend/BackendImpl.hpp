@@ -16,8 +16,7 @@
 
 namespace Andromeda {
 
-namespace Filesystem { namespace Filedata { class CacheManager; class CachingAllocator;
-    template<typename T> struct CachingAllocatorT; } }
+namespace Filesystem { namespace Filedata { class CacheManager; class CachingAllocator; } }
 
 namespace Backend {
 class RunnerPool;
@@ -116,9 +115,8 @@ public:
     /** Sets the cache manager to use (or nullptr) */
     inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
-    typedef Filesystem::Filedata::CachingAllocatorT<char> PageAllocator;
     /** Returns the CachingAllocator to use for file data */
-    PageAllocator& GetPageAllocator();
+    Filesystem::Filedata::CachingAllocator& GetPageAllocator();
 
     /** Returns true if doing memory only */
     bool isMemory() const;
@@ -372,7 +370,6 @@ private:
 
     /** Allocator to use for all file pages (null if no cacheMgr) */
     std::unique_ptr<Filesystem::Filedata::CachingAllocator> mPageAllocator;
-    std::unique_ptr<PageAllocator> mPageAllocatorT;
     
     Debug mDebug;
     Config mConfig;

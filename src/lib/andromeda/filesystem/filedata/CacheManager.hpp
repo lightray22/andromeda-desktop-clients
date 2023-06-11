@@ -19,10 +19,9 @@ namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
 
-struct Page;
+class Page;
 class PageManager;
 class CachingAllocator;
-template<typename T> struct CachingAllocatorT;
 struct CacheOptions;
 
 /** 
@@ -55,9 +54,8 @@ public:
     /** Returns the maximum cache memory size */
     size_t GetMemoryLimit() const;
 
-    typedef CachingAllocatorT<char> PageAllocator;
     /** Returns the allocator to use for all file data */
-    inline PageAllocator& GetPageAllocator(){ return *mPageAllocatorT; }
+    inline CachingAllocator& GetPageAllocator(){ return *mPageAllocator; }
     
     /** 
      * Inform us that a page was used, putting at the front of the LRU
@@ -78,15 +76,14 @@ public:
     /**
      * Inform us that a page has changed size
      * if mgrLock is given, may synchronously evict or flush pages on this manager
+     * IF this fails, the caller must call RemovePage() or ResizePage(oldSize)
      * @param pageMgr the page manager that owns the page
-     * @param page reference to the page
-     * @param pageSize the new size of the page
+     * @param page reference to the page with its new size set
      * @param mgrLock the W lock for the page manager if available
      * @throws MemoryException if evict/flush fails to free memory
      * @throws BaseException if flush for this pageMgr fails to free memory
      */
-    void ResizePage(const PageManager& pageMgr, const Page& page, const size_t pageSize, 
-        const SharedLockW* mgrLock = nullptr);
+    void ResizePage(const PageManager& pageMgr, const Page& page, const SharedLockW* mgrLock = nullptr);
 
     /** Inform us that a page has been erased */
     void RemovePage(const Page& page);
@@ -232,7 +229,6 @@ private:
     BandwidthMeasure mBandwidth;
     /** Allocator to use for all file pages (never null) */
     std::unique_ptr<CachingAllocator> mPageAllocator;
-    std::unique_ptr<PageAllocator> mPageAllocatorT;
     
     CacheManager(const CacheManager&) = delete; // no copying
     CacheManager& operator=(const CacheManager&) = delete;

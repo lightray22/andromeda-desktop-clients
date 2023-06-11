@@ -81,9 +81,9 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     AllocMap::iterator it { mAllocMap.lower_bound(ptr) };
     assert(it != mAllocMap.end());
 
+    MDBG_INFO("... entry ptr:" << it->first << " pages:" << it->second);
     uint8_t* const ptrEntry { reinterpret_cast<uint8_t*>(it->first) };
     const size_t pagesEntry { it->second };
-    MDBG_INFO("... entry ptr:" << reinterpret_cast<void*>(ptrEntry) << " pages:" << pagesEntry);
 
     uint8_t* const ptrFree { reinterpret_cast<uint8_t*>(ptr) };
     const size_t pagesFree { pages };
@@ -100,7 +100,7 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     {
         const size_t pagesBefore { static_cast<size_t>(ptrFree-ptrEntry)/mPageSize };
         MDBG_INFO("... ptr:" << reinterpret_cast<void*>(ptrEntry) << " pagesBefore:" << pagesBefore);
-        mAllocMap.emplace(it->first, pagesBefore);
+        mAllocMap.emplace(ptrEntry, pagesBefore);
     }
 
     uint8_t* const afterStart { ptrFree+pagesFree*mPageSize };

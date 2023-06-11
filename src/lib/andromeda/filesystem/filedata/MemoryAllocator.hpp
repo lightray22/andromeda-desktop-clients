@@ -30,14 +30,14 @@ public:
 #endif // DEBUG
 
     /** Allocate the given number of pages and return a pointer */
-    void* alloc(size_t pages);
+    virtual void* alloc(size_t pages);
 
     /**
      * Frees a range of pages allocated by alloc() - partial frees are allowed
      * @param ptr the pointer to free (must be aligned to a page boundary)
      * @param pages the number of pages to free
      */
-    void free(void* const ptr, size_t pages);
+    virtual void free(void* const ptr, size_t pages);
 
     /** Returns the number of bytes in each page */
     inline size_t getPageSize() const { return mPageSize; }

@@ -16,6 +16,13 @@ namespace Filesystem {
 
 namespace Filedata {
 
+class Page;
+
+/** return the size_t min of a (uint64_t and size_t) */
+static inline size_t min64st(uint64_t s1, size_t s2) {
+    return static_cast<size_t>(std::min(s1, static_cast<uint64_t>(s2)));
+}
+
 /** 
  * Handles reading/writing pages from/to the backend
  * THREAD SAFE (FORCES EXTERNAL LOCKS) (use parent File's lock)

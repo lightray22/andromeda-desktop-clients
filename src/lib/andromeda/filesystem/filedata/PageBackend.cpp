@@ -134,10 +134,10 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
 
         const Page& page { *pages[pagesIdx] };
         const size_t pageOffset { offset - pagesIdx*mPageSize };
-        const size_t pageSize { page.mData.size() };
+        const size_t pageSize { page.size() };
         if (pageOffset >= pageSize) return false;
 
-        const char* copyData { page.mData.data()+pageOffset };
+        const char* copyData { page.data()+pageOffset };
         written = std::min(pageSize-pageOffset,buflen);
         std::copy(copyData, copyData+written, buf); 
         return true; // initial check will catch when we're done

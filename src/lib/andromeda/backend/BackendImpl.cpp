@@ -47,16 +47,14 @@ BackendImpl::~BackendImpl()
 }
 
 /*****************************************************/
-BackendImpl::PageAllocator& BackendImpl::GetPageAllocator()
+CachingAllocator& BackendImpl::GetPageAllocator()
 {
     if (mCacheMgr) 
         return mCacheMgr->GetPageAllocator();
 
     if (!mPageAllocator)
         mPageAllocator = std::make_unique<CachingAllocator>(0);
-    if (!mPageAllocatorT)
-        mPageAllocatorT = std::make_unique<PageAllocator>(*mPageAllocator);
-    return *mPageAllocatorT;
+    return *mPageAllocator;
 }
 
 /*****************************************************/

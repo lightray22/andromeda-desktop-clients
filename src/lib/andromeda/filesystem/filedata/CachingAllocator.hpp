@@ -38,7 +38,7 @@ public:
      * Allocate the given number of pages and return a pointer
      * Returns a recycled (previously freed) pointer if possible
      */
-    void* alloc(size_t pages);
+    virtual void* alloc(size_t pages) override;
 
     /**
      * Frees a range of pages allocated by alloc() - partial frees are allowed
@@ -46,7 +46,7 @@ public:
      * @param ptr the pointer to free (must be aligned to a page boundary)
      * @param pages the number of pages to free
      */
-    void free(void* const ptr, size_t pages) noexcept;
+    virtual void free(void* const ptr, size_t pages) override;
 
 private:
 
