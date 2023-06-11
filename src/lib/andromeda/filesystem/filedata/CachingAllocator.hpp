@@ -52,8 +52,14 @@ private:
 
     typedef std::lock_guard<std::mutex> LockGuard;
 
+    /** 
+     * Adds an entry to the appropriate freeList and FreeQueue
+     * @return the resulting size of the free list aded to
+     */
+    size_t add_entry(void* const ptr, size_t pages, const LockGuard& lock) noexcept;
+
     /** Removes and returns to the OS the smallest freed allocation */
-    void cleanup(const LockGuard& lock);
+    void clean_entry(const LockGuard& lock);
 
     CachingAllocator(const CachingAllocator& a) = delete;
     CachingAllocator& operator=(const CachingAllocator&) = delete;

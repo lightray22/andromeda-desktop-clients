@@ -77,10 +77,40 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
 #if DEBUG
 { // lock scope
     const LockGuard lock(mMutex);
-    AllocMap::iterator it { mAllocMap.find(ptr) };
+    // lower_bound with map<greater> means first ptr <= our ptr
+    AllocMap::iterator it { mAllocMap.lower_bound(ptr) };
     assert(it != mAllocMap.end());
-    assert(it->second == pages);
-    mAllocMap.erase(it);
+
+    uint8_t* const ptrEntry { reinterpret_cast<uint8_t*>(it->first) };
+    const size_t pagesEntry { it->second };
+    MDBG_INFO("... entry ptr:" << reinterpret_cast<void*>(ptrEntry) << " pages:" << pagesEntry);
+
+    uint8_t* const ptrFree { reinterpret_cast<uint8_t*>(ptr) };
+    const size_t pagesFree { pages };
+    assert(ptrEntry <= ptrFree);
+
+    // the given pointer must be page-boundary aligned
+    assert(static_cast<size_t>(ptrFree-ptrEntry) % mPageSize == 0);
+    // the requested free range should be covered
+    assert(ptrEntry + pagesEntry*mPageSize >= ptrFree + pagesFree*mPageSize);
+
+    mAllocMap.erase(it); // delete old entry
+
+    if (ptrEntry < ptrFree)
+    {
+        const size_t pagesBefore { static_cast<size_t>(ptrFree-ptrEntry)/mPageSize };
+        MDBG_INFO("... ptr:" << reinterpret_cast<void*>(ptrEntry) << " pagesBefore:" << pagesBefore);
+        mAllocMap.emplace(it->first, pagesBefore);
+    }
+
+    uint8_t* const afterStart { ptrFree+pagesFree*mPageSize };
+    uint8_t* const afterEnd { ptrEntry+pagesEntry*mPageSize };
+    if (afterEnd > afterStart)
+    {
+        const size_t pagesAfter { static_cast<size_t>(afterEnd-afterStart)/mPageSize };
+        MDBG_INFO("... ptr:" << reinterpret_cast<void*>(afterStart) << " pagesAfter:" << pagesAfter);
+        mAllocMap.emplace(afterStart, pagesAfter);
+    }
 }
 #endif // DEBUG
 
@@ -97,20 +127,21 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
 /*****************************************************/
 void MemoryAllocator::stats(const std::string& fname, const size_t pages, bool alloc) 
 {
-    mDebug.Info([&](std::ostream& str)
+    if (mDebug.GetLevel() >= Debug::Level::INFO)
     {
-        const LockGuard lock(mMutex);
-        const size_t bytes { pages*mPageSize };
+        const LockGuard lock(mMutex); // our lock must be before printing
+        mDebug.Info([&](std::ostream& str)
+        {
+            if (alloc) { ++mAllocs; mTotalPages += pages; mTotalBytes += pages*mPageSize; }
+                  else { ++mFrees; mTotalPages -= pages; mTotalBytes -= pages*mPageSize; }
 
-        if (alloc) { ++mAllocs; mTotalPages += pages; mTotalBytes += bytes; }
-        else { ++mFrees; mTotalPages -= pages; mTotalBytes -= bytes; }
-
-        str << fname << "... mTotalPages:" << mTotalPages << " mTotalBytes:" << mTotalBytes
-    #if DEBUG
-        << " mAllocMap:" << mAllocMap.size()
-    #endif // DEBUG
-        << " mAllocs:" << mAllocs << " mFrees:" << mFrees; 
-    });
+            str << fname << "... mTotalPages:" << mTotalPages << " mTotalBytes:" << mTotalBytes
+        #if DEBUG
+            << " mAllocMap:" << mAllocMap.size()
+        #endif // DEBUG
+            << " mAllocs:" << mAllocs << " mFrees:" << mFrees; 
+        });
+    }
 }
 
 } // namespace Filedata

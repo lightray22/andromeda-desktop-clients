@@ -1,4 +1,7 @@
 
+#include <cassert>
+#include <cstring>
+
 #include "CachingAllocator.hpp"
 #include "andromeda/Debug.hpp"
 
@@ -38,30 +41,47 @@ void* CachingAllocator::alloc(size_t pages)
         MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
             << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
 
-        FreeListMap::iterator fmIt { mFreeLists.find(pages) };
+        FreeListMap::iterator fmIt { mFreeLists.lower_bound(pages) };
         if (fmIt != mFreeLists.end())
         {
             FreeList& freeList { fmIt->second };
+            void* const ptr = freeList.front();
+#if DEBUG
+            assert(fmIt->first >= pages); // lower_bound
+            std::memset(ptr, 0x55, pages*mPageSize); // poison
+#endif // DEBUG
 
-            void* ptr = freeList.front();
             freeList.pop_front();
             mFreeQueue.erase(ptr);
             mCurFree -= pages*mPageSize;
             ++mRecycles;
 
-            // never have an empty list!
-            if (freeList.empty())
-                mFreeLists.erase(fmIt);
-
-            MDBG_INFO("... recycle ptr:" << ptr 
+            MDBG_INFO("... recycle ptr:" << ptr << " pages:" << fmIt->first
                 << " recycles:" << mRecycles << "/" << mAllocs);
             MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
                 << " mCurFree:" << mCurFree);
+            
+            if (fmIt->first != pages) // only used part of the alloc
+            {
+                void* const newPtr { reinterpret_cast<uint8_t*>(ptr) + pages*mPageSize };
+                const size_t newPages { fmIt->first - pages };
+                const size_t newListSize { add_entry(newPtr, newPages, lock) };
+
+                MDBG_INFO("... partial alloc: newPtr:" << newPtr << " newPages:" << newPages
+                    << " freeList:" << newPages << ":" << newListSize);
+            }
+
+            // never have an empty list!
+            if (freeList.empty())
+                mFreeLists.erase(fmIt);
             return ptr;
         }
     }
 
     void* ptr = MemoryAllocator::alloc(pages); // not locked!
+#if DEBUG
+    std::memset(ptr, 0x55, pages*mPageSize); // poison
+#endif // DEBUG
     MDBG_INFO("... allocate ptr:" << ptr 
         << " recycles:" << mRecycles << "/" << mAllocs);
     return ptr;
@@ -74,23 +94,32 @@ void CachingAllocator::free(void* const ptr, size_t pages) noexcept
     if (ptr == nullptr) return;
 
     LockGuard lock(mMutex);
-
-    FreeListMap::iterator freeListMapIt { mFreeLists.emplace(pages, FreeList()).first }; // O(logn)
-    FreeList& freeList { freeListMapIt->second };
-    freeList.emplace_front(ptr); // O(1)
-    mFreeQueue.enqueue_front(ptr, std::make_pair(freeListMapIt, freeList.begin())); // O(1)
+    const size_t freeListSize { add_entry(ptr, pages, lock) };
+#if DEBUG
+    std::memset(ptr, 0xAA, pages*mPageSize); // poison
+#endif // DEBUG
 
     mCurFree += pages*mPageSize;
     mCurAlloc -= pages*mPageSize;
 
-    MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
+    MDBG_INFO("... freeList:" << pages << ":" << freeListSize
         << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
 
-    while (mCurFree > mMaxAlloc-mBaseline) cleanup(lock);
+    while (mCurFree > mMaxAlloc-mBaseline) clean_entry(lock);
 }
 
 /*****************************************************/
-void CachingAllocator::cleanup(const LockGuard& lock)
+size_t CachingAllocator::add_entry(void* const ptr, size_t pages, const LockGuard& lock) noexcept
+{
+    FreeListMap::iterator freeListMapIt { mFreeLists.emplace(pages, FreeList()).first }; // O(logn)
+    FreeList& freeList { freeListMapIt->second };
+    freeList.emplace_front(ptr); // O(1)
+    mFreeQueue.enqueue_front(ptr, std::make_pair(freeListMapIt, freeList.begin())); // O(1)
+    return freeList.size();
+}
+
+/*****************************************************/
+void CachingAllocator::clean_entry(const LockGuard& lock)
 {
     // free the oldest free
     FreeQueue::value_type fpair { mFreeQueue.pop_back() }; // O(1)
@@ -101,9 +130,6 @@ void CachingAllocator::cleanup(const LockGuard& lock)
     const size_t pages { freeListMapIt->first };
 
     freeList.erase(fpair.second.second); // O(1)
-    if (freeList.empty())
-        mFreeLists.erase(freeListMapIt); // O(1)
-
     mCurFree -= pages*mPageSize;
 
     // free under lock to guarantee max memory
@@ -112,6 +138,10 @@ void CachingAllocator::cleanup(const LockGuard& lock)
 
     MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
         << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
+
+    // never have an empty list!
+    if (freeList.empty())
+        mFreeLists.erase(freeListMapIt); // O(1)
 }
 
 } // namespace Filedata
