@@ -10,8 +10,3 @@ set(SOURCE_FILES
     )
 
 target_sources(libandromeda PRIVATE ${SOURCE_FILES})
-
-option(WITHOUT_MMAP "Don't use manual mmap for page allocations" OFF)
-if (${WITHOUT_MMAP})
-    target_compile_definitions(libandromeda PRIVATE WITHOUT_MMAP)
-endif()

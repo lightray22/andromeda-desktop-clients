@@ -2,7 +2,7 @@
 #ifndef LIBA2_MEMORYALLOCATOR_H_
 #define LIBA2_MEMORYALLOCATOR_H_
 
-#include <unordered_map>
+#include <map>
 #include <mutex>
 #include <string>
 
@@ -13,8 +13,7 @@ namespace Filesystem {
 namespace Filedata {
 
 /**
- * A raw, non-caching memory allocator that allocates pages directly from the OS, bypassing the C library
- * NOTE memory is allocated only at page size granularity.  Use get_usage() to determine the actual memory size of an allocation.
+ * A raw, non-caching memory allocator that allocates pages directly from the OS, bypassing the C library.
  * In DEBUG builds, verifies all calls to free() for validity.
  * THREAD SAFE (INTERNAL LOCKS)
  */
@@ -26,36 +25,54 @@ public:
 
 #if DEBUG
     virtual ~MemoryAllocator();
+#else // !DEBUG
+    virtual ~MemoryAllocator(){ };
 #endif // DEBUG
 
-    /** Allocate the given number of bytes and return a pointer */
-    void* alloc(size_t bytes);
+    /** Allocate the given number of pages and return a pointer */
+    void* alloc(size_t pages);
 
     /**
-     * Free a memory allocation returned by alloc().
-     * @param bytes the number of bytes allocated (must match)
+     * Frees a range of pages allocated by alloc() - partial frees are allowed
+     * @param ptr the pointer to free (must be aligned to a page boundary)
+     * @param pages the number of pages to free
      */
-    void free(void* const ptr, size_t bytes);
+    void free(void* const ptr, size_t pages);
 
-    /** 
-     * Calculates the actual memory used by an allocation
-     * Allocation sizes are always rounded by page granularity
-     */
-    size_t get_usage(const size_t bytes);
+    /** Returns the number of bytes in each page */
+    inline size_t getPageSize() const { return mPageSize; }
+
+    /** Calculates the number of pages needed to hold the given number of bytes (page granularity) */
+    inline size_t getNumPages(const size_t bytes) const { 
+        return bytes ? (bytes-1)/mPageSize+1 : 0; }
+
+    /** Returns the actual number of bytes used for an allocation (page granularity) */
+    inline size_t getNumBytes(const size_t bytes) const {
+        return getNumPages(bytes)*getPageSize(); }
+
+protected:
+
+    /** The minimum size of OS memory mappings */
+    const size_t mPageSize;
 
 private:
 
+    /** Ask the OS for the page granularity */
+    size_t calcPageSize() const;
+
     /** Updates and prints allocator statistics (debug) */
-    void stats(const std::string& fname, const size_t bytes, bool alloc);
+    void stats(const std::string& fname, const size_t pages, bool alloc);
 
 #if DEBUG
-    typedef std::unordered_map<void*, size_t> AllocMap;
+    typedef std::map<void*, size_t, std::greater<void*>> AllocMap;
     /** Map of all allocations for verifying frees */
     AllocMap mAllocMap;
 #endif // DEBUG
-
+    
+    /** total number of pages allocated (debug) */
+    size_t mTotalPages { 0 };
     /** total number of bytes allocated (debug) */
-    size_t mTotal { 0 };
+    size_t mTotalBytes { 0 };
     /** total number of allocs (debug) */
     uint64_t mAllocs { 0 };
     /** total number of frees (debug) */

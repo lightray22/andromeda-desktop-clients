@@ -38,7 +38,7 @@ public:
         return static_cast<Impl*>(this)->get_key(e);
     }
     /** Returns the map value from the given value_type */
-    inline Value get_value(const value_type e) noexcept{
+    inline Value get_value(const value_type& e) noexcept{
         return static_cast<Impl*>(this)->get_value(e);
     }
 
@@ -81,7 +81,7 @@ public:
     {
         for (const value_type& entry : list)
         {
-            mQueue.emplace_back(entry);
+            mQueue.emplace_back(entry); // order matters
             mLookup[get_key(entry)] = std::prev(mQueue.end());
         }
     }
@@ -195,7 +195,7 @@ protected:
     ValueLookup mLookup;
 };
 
-/** A std::map that also acts as an ordered queue (keeps insertion order) */
+/** A std::unordered_map that also acts as an ordered queue (keeps insertion order) */
 template<typename Key, typename Value>
 class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>
 {

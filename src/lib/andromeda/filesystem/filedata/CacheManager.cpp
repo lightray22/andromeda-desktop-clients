@@ -79,7 +79,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
     UniqueLock lock(mMutex);
 
     const size_t oldSize { EnqueuePage(pageMgr, index, page, dirty, lock) };
-    const size_t newSize { mPageAllocator->get_usage(page.size()) };
+    const size_t newSize { mPageAllocator->getNumBytes(page.size()) };
 
     if (newSize > oldSize)
     {
@@ -94,7 +94,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock)
 {
     const size_t oldSize { RemovePage(page, lock) };
-    const size_t newSize { mPageAllocator->get_usage(page.size()) };
+    const size_t newSize { mPageAllocator->getNumBytes(page.size()) };
 
     PageInfo pageInfo { pageMgr, index, page, newSize };
 
@@ -121,7 +121,7 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
 /*****************************************************/
 void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, const size_t pageSize, const SharedLockW* mgrLock)
 {
-    const size_t newSize = mPageAllocator->get_usage(pageSize);
+    const size_t newSize = mPageAllocator->getNumBytes(pageSize);
     MDBG_INFO("... pageSize:" << pageSize << " newSize:" << newSize);
 
     UniqueLock lock(mMutex);

@@ -35,17 +35,18 @@ public:
     virtual ~CachingAllocator();
 
     /** 
-     * Allocate the given number of bytes and return a pointer
+     * Allocate the given number of pages and return a pointer
      * Returns a recycled (previously freed) pointer if possible
      */
-    void* alloc(size_t bytes);
+    void* alloc(size_t pages);
 
     /**
-     * Free a memory allocation returned by alloc().
+     * Frees a range of pages allocated by alloc() - partial frees are allowed
      * Also adds the allocation to the free list and does cleanup.
-     * @param bytes the number of bytes allocated (must match)
+     * @param ptr the pointer to free (must be aligned to a page boundary)
+     * @param pages the number of pages to free
      */
-    void free(void* const ptr, size_t bytes) noexcept;
+    void free(void* const ptr, size_t pages) noexcept;
 
 private:
 
@@ -107,12 +108,14 @@ template <typename T> struct CachingAllocatorT
 
     inline T* allocate(const size_t n)
     {
-        return reinterpret_cast<T* const>(mAlloc.alloc(n*sizeof(T)));
+        const size_t pages { mAlloc.getNumPages(n*sizeof(T)) };
+        return reinterpret_cast<T* const>(mAlloc.alloc(pages));
     }
 
     inline void deallocate(T* const p, const size_t b) noexcept
     {
-        mAlloc.free(reinterpret_cast<void* const>(p), b);
+        const size_t pages { mAlloc.getNumPages(b) };
+        mAlloc.free(reinterpret_cast<void* const>(p), pages);
     }
 };
 

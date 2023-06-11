@@ -24,25 +24,21 @@ CachingAllocator::~CachingAllocator()
 // the FreeQueue allows quick cleanup by popping a free off the end of the list (FIFO)
 
 /*****************************************************/
-void* CachingAllocator::alloc(size_t bytes)
+void* CachingAllocator::alloc(size_t pages)
 {
-    MDBG_INFO("(bytes:" << bytes << ")");
-    if (!bytes) return nullptr;
-
-    // our allocations will end up being rounded to page granularity anyway,
-    // might as well be able to re-use allocations of the same actual size
-    bytes = get_usage(bytes);
+    MDBG_INFO("(pages:" << pages << " bytes:" << pages*mPageSize << ")");
+    if (!pages) return nullptr;
 
     { // lock scope
         LockGuard lock(mMutex);
         ++mAllocs; // total
-        mCurAlloc += bytes;
+        mCurAlloc += pages*mPageSize;
         mMaxAlloc = std::max(mCurAlloc, mMaxAlloc);
 
         MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
             << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
 
-        FreeListMap::iterator fmIt { mFreeLists.find(bytes) };
+        FreeListMap::iterator fmIt { mFreeLists.find(pages) };
         if (fmIt != mFreeLists.end())
         {
             FreeList& freeList { fmIt->second };
@@ -50,7 +46,7 @@ void* CachingAllocator::alloc(size_t bytes)
             void* ptr = freeList.front();
             freeList.pop_front();
             mFreeQueue.erase(ptr);
-            mCurFree -= bytes;
+            mCurFree -= pages*mPageSize;
             ++mRecycles;
 
             // never have an empty list!
@@ -59,37 +55,35 @@ void* CachingAllocator::alloc(size_t bytes)
 
             MDBG_INFO("... recycle ptr:" << ptr 
                 << " recycles:" << mRecycles << "/" << mAllocs);
-            MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
+            MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
                 << " mCurFree:" << mCurFree);
             return ptr;
         }
     }
 
-    void* ptr = MemoryAllocator::alloc(bytes); // not locked!
+    void* ptr = MemoryAllocator::alloc(pages); // not locked!
     MDBG_INFO("... allocate ptr:" << ptr 
         << " recycles:" << mRecycles << "/" << mAllocs);
     return ptr;
 }
 
 /*****************************************************/
-void CachingAllocator::free(void* const ptr, size_t bytes) noexcept
+void CachingAllocator::free(void* const ptr, size_t pages) noexcept
 {
-    MDBG_INFO("(ptr:" << ptr << " bytes:" << bytes << ")");
+    MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
     if (ptr == nullptr) return;
-
-    bytes = get_usage(bytes);
 
     LockGuard lock(mMutex);
 
-    FreeListMap::iterator freeListMapIt { mFreeLists.emplace(bytes, FreeList()).first }; // O(logn)
+    FreeListMap::iterator freeListMapIt { mFreeLists.emplace(pages, FreeList()).first }; // O(logn)
     FreeList& freeList { freeListMapIt->second };
     freeList.emplace_front(ptr); // O(1)
     mFreeQueue.enqueue_front(ptr, std::make_pair(freeListMapIt, freeList.begin())); // O(1)
 
-    mCurFree += bytes;
-    mCurAlloc -= bytes;
+    mCurFree += pages*mPageSize;
+    mCurAlloc -= pages*mPageSize;
 
-    MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
+    MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
         << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
 
     while (mCurFree > mMaxAlloc-mBaseline) cleanup(lock);
@@ -104,19 +98,19 @@ void CachingAllocator::cleanup(const LockGuard& lock)
     void* ptr = fpair.first;
     FreeListMap::iterator& freeListMapIt { fpair.second.first };
     FreeList& freeList { freeListMapIt->second };
-    const size_t bytes { freeListMapIt->first };
+    const size_t pages { freeListMapIt->first };
 
     freeList.erase(fpair.second.second); // O(1)
     if (freeList.empty())
         mFreeLists.erase(freeListMapIt); // O(1)
 
-    mCurFree -= bytes;
+    mCurFree -= pages*mPageSize;
 
     // free under lock to guarantee max memory
     MDBG_INFO("... free ptr:" << ptr);
-    MemoryAllocator::free(ptr, bytes);
+    MemoryAllocator::free(ptr, pages);
 
-    MDBG_INFO("... freeList:" << bytes << ":" << freeList.size() 
+    MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
         << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree);
 }
 
