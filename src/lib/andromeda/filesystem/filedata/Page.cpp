@@ -48,7 +48,7 @@ void Page::resize(size_t bytes)
     if (pages != mPages)
     {
         char* const data { reinterpret_cast<char*>(mAlloc.alloc(pages)) };
-        if (mData)
+        if (mData != nullptr)
         {
             std::memcpy(data, mData, std::min(bytes,mBytes));
             mAlloc.free(mData, mPages);

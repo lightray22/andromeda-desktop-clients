@@ -91,7 +91,7 @@ void* CachingAllocator::alloc(size_t pages)
 void CachingAllocator::free(void* const ptr, size_t pages)
 {
     MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
-    if (ptr == nullptr) return;
+    if (ptr == nullptr || !pages) return;
 
     LockGuard lock(mMutex);
     const size_t freeListSize { add_entry(ptr, pages, lock) };
