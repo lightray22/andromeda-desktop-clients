@@ -58,7 +58,7 @@ void* CachingAllocator::alloc(size_t pages)
 
             MDBG_INFO("... recycle ptr:" << ptr << " pages:" << fmIt->first
                 << " recycles:" << mRecycles << "/" << mAllocs);
-            MDBG_INFO("... freeList:" << pages << ":" << freeList.size() 
+            MDBG_INFO("... from freeList:" << pages << ":" << freeList.size() 
                 << " mCurFree:" << mCurFree);
             
             if (fmIt->first != pages) // only used part of the alloc
@@ -67,8 +67,8 @@ void* CachingAllocator::alloc(size_t pages)
                 const size_t newPages { fmIt->first - pages };
                 const size_t newListSize { add_entry(newPtr, newPages, lock) };
 
-                MDBG_INFO("... partial alloc: newPtr:" << newPtr << " newPages:" << newPages
-                    << " freeList:" << newPages << ":" << newListSize);
+                MDBG_INFO("... partial alloc: newPtr:" << newPtr
+                    << " new freeList:" << newPages << ":" << newListSize);
             }
 
             // never have an empty list!
@@ -103,7 +103,7 @@ void CachingAllocator::free(void* const ptr, size_t pages)
     mCurFree += pages*mPageSize;
     mCurAlloc -= pages*mPageSize;
 
-    MDBG_INFO("... freeList:" << pages << ":" << freeListSize
+    MDBG_INFO("... to freeList:" << pages << ":" << freeListSize
         << " freeQueue:" << mFreeQueue.size() << " mCurFree:" << mCurFree << " mCurAlloc:" << mCurAlloc);
 
     while (mCurFree > mMaxAlloc-mBaseline) clean_entry(lock);

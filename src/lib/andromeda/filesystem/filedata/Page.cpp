@@ -14,11 +14,11 @@ Page::Page(size_t pageSize, CachingAllocator& memAlloc) : mAlloc(memAlloc)
 {
     mBytes = pageSize;
     mPages = mAlloc.getNumPages(mBytes);
-    mData = reinterpret_cast<char*>(mAlloc.alloc(mPages));
+    mData = mPages ? reinterpret_cast<char*>(mAlloc.alloc(mPages)) : nullptr;
 }
 
 /*****************************************************/
-Page::Page(Page&& page) : mAlloc(page.mAlloc)
+Page::Page(Page&& page) : mAlloc(page.mAlloc) // move constructor
 {
     mBytes = page.mBytes;
     mPages = page.mPages;
@@ -32,7 +32,8 @@ Page::Page(Page&& page) : mAlloc(page.mAlloc)
 /*****************************************************/
 Page::~Page()
 {
-    if (mData) mAlloc.free(mData, mPages);
+    if (mData != nullptr)
+        mAlloc.free(mData, mPages);
 }
 
 /*****************************************************/
@@ -45,7 +46,7 @@ size_t Page::capacity() const
 void Page::resize(size_t bytes)
 {
     const size_t pages { mAlloc.getNumPages(bytes) };
-    if (pages != mPages)
+    if (pages != mPages) // re-allocate
     {
         char* const data { reinterpret_cast<char*>(mAlloc.alloc(pages)) };
         if (mData != nullptr)

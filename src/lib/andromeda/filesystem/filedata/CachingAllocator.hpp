@@ -91,8 +91,6 @@ private:
     typedef std::list<void*> FreeList;
     /** Map of freed pointer lists, indexed by allocation size for quick re-use */
     typedef std::map<size_t, FreeList> FreeListMap;
-    // a std::map is used rather than unordered_map because it tends to be faster
-    // in real time for a small # of keys - 128k page size, 4k granularity = max 32 keys
     FreeListMap mFreeLists;
 
     /** Ordered map keeping track of freed allocations for LRU ordering */

@@ -266,7 +266,7 @@ size_t PageManager::GetPageSize(const uint64_t index, const uint64_t fileSize) c
     // to prevent lots of re-allocations while writing sequentially, we will
     // pre-allocate full pages for all pages other than the first.  Keeping the first
     // page smaller allows caching many small files w/o wasting too much memory
-    return index ? mPageSize : fileSize;
+    return index ? mPageSize : min64st(fileSize, mPageSize);
 }
 
 /*****************************************************/
