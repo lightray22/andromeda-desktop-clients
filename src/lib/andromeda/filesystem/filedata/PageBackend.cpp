@@ -84,7 +84,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 
                 if (pwOffset+pwLength == curPage->size()) // page is done
                 {
-                    pageHandler(curIndex, curPageStart, pageSize, std::move(*curPage));
+                    pageHandler(curIndex, std::move(*curPage));
                     curPage.reset(); ++curIndex;
                 }
             }

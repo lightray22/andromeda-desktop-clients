@@ -72,7 +72,7 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const uint64_t newFileSize = std::max(mFileSize, pageStart+offset+length);
 
-    const size_t pageSize { min64st(newFileSize-pageStart, mPageSize) };
+    const size_t pageSize { GetPageSize(index, newFileSize) };
     const bool partial { offset > 0 || length < pageSize };
 
     MDBG_INFO("... pageSize:" << pageSize << " newFileSize:" << newFileSize);
@@ -110,7 +110,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
     if (!isFetchPending(index, pagesLock))
     {
         const size_t fetchSize { GetFetchSize(index, thisLock, pagesLock) };
-        if (!fetchSize) // bigger than backend, create empty
+        if (!fetchSize) // must be between backend end and dirty write, create empty
         {
             MDBG_INFO("... create empty page");
             Page& newPage { mPages.emplace(std::piecewise_construct, std::forward_as_tuple(index), 
@@ -185,7 +185,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
 
     MDBG_INFO("... partial write, reading single");
     Page* newPage; mPageBackend.FetchPages(index, 1, // read a single page
-        [&](const uint64_t pageIndex, const uint64_t pageStartI, const size_t pageSizeI, Page&& page)
+        [&](const uint64_t pageIndex, Page&& page)
     {
         newPage = &(mPages.emplace(pageIndex, std::move(page)).first->second);
     }, thisLock);
@@ -258,6 +258,15 @@ void PageManager::ResizePage(Page& page, const size_t pageSize, bool cacheMgr, c
         mCacheMgr->ResizePage(*this, page, thisLock);
         throw; // rethrow
     }
+}
+
+/*****************************************************/
+size_t PageManager::GetPageSize(const uint64_t index, const uint64_t fileSize) const
+{
+    // to prevent lots of re-allocations while writing sequentially, we will
+    // pre-allocate full pages for all pages other than the first.  Keeping the first
+    // page smaller allows caching many small files w/o wasting too much memory
+    return index ? mPageSize : fileSize;
 }
 
 /*****************************************************/
@@ -396,11 +405,11 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
         std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
 
         const size_t readSize { mPageBackend.FetchPages(index, count, 
-            [&](const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page&& page)
+            [&](const uint64_t pageIndex, Page&& page)
         {
             // if we are reading a page that is smaller on the backend (dirty writes), might need to extend
-            const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };
-            if (pageSize < realSize) ResizePage(page, realSize, false);
+            const size_t realSize { GetPageSize(pageIndex, mFileSize) };
+            if (page.size() < realSize) ResizePage(page, realSize, false);
 
             UniqueLock pagesLock(mPagesMutex);
             // hold pagesLock because if inform fails, we will remove this page
@@ -683,7 +692,7 @@ void PageManager::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
         }
         else if (it->first == (newSize-1)/mPageSize) // resize new last page
         {
-            const size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
+            const size_t pageSize { GetPageSize(it->first, newSize) };
             MDBG_INFO("... resize new last page:" << it->first << " size:" << pageSize);
             ResizePage(it->second, pageSize, true, &thisLock); ++it;
         }
