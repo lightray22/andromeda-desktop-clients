@@ -32,6 +32,7 @@ public:
 
     using ValueLookup = std::unordered_map<Key, iterator>;
     using lookup_iterator = typename ValueLookup::iterator;
+    using const_lookup_iterator = typename ValueLookup::const_iterator;
 
     /** Returns the map key from the given value_type */
     inline Key get_key(const value_type& e) noexcept{
@@ -58,6 +59,11 @@ public:
     inline const_reverse_iterator crbegin() const noexcept { return mQueue.crbegin(); }
     /** Returns a const reverse iterator pointing to the before-the-start element in the list */
     inline const_reverse_iterator crend() const noexcept { return mQueue.crend(); }
+
+    /** Returns an end iterator for the lookup table (use with lookup) */
+    inline lookup_iterator lend() noexcept { return mLookup.end(); }
+    /** Returns a const end iterator for the lookup table (use with lookup) */
+    inline const_lookup_iterator lcend() noexcept { return mLookup.cend(); };
 
     /** Returns a reference to the first element in the list (MUST NOT BE EMPTY) (O(1)) */
     inline value_type& front() noexcept { return mQueue.front(); }
@@ -98,6 +104,12 @@ public:
         return true;
     }
 
+    /** Returns true if the key exists in the map */
+    bool exists(const Key& key) const noexcept
+    {
+        return mLookup.find(key) != mLookup.end();
+    }
+
     /**
      * Returns an iterator to the element with the given key, or end() if not found
      * Complexity: O(1) average, O(N) worst
@@ -110,14 +122,43 @@ public:
     }
 
     /**
+     * Returns an iterator to the element with the given key, or end() if not found
+     * Complexity: O(1) average, O(N) worst
+     */
+    const_iterator find(const Key& key) const noexcept
+    {
+        lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
+        if (itLookup == mLookup.end()) return mQueue.end();
+        else return itLookup->second;
+    }
+
+    /**
+     * Returns an iterator to the element with the given key, or end() if not found
+     * Complexity: O(1) average, O(N) worst
+     */
+    lookup_iterator lookup(const Key& key) noexcept
+    {
+        return mLookup.find(key); // O(1)-O(n)
+    }
+
+    /**
+     * Returns an iterator to the element with the given key, or end() if not found
+     * Complexity: O(1) average, O(N) worst
+     */
+    const_lookup_iterator lookup(const Key& key) const noexcept
+    {
+        return mLookup.find(key); // O(1)-O(n)
+    }
+
+    /**
      * Erases the element pointed to by the given iterator
      * @return iterator pointing to the next element in the container
      * Complexity: O(1) average, O(N) worst
      */
-    iterator erase(const iterator& it) noexcept
+    lookup_iterator erase(const lookup_iterator& it) noexcept
     {
-        mLookup.erase(get_key(*it)); // O(1)-O(n)
-        return mQueue.erase(it); // O(1)
+        mQueue.erase(it->second); // O(1)-O(n)
+        return mLookup.erase(it); // O(1)
     }
 
     /**
@@ -179,15 +220,17 @@ public:
     }
 
     /**
-     * Emplaces a new element on the front of the list, removing any element with the same key
+     * Emplaces a new element on the front of the list (KEY MUST NOT EXIST)
      * Complexity: O(1) average, O(N) worst
      */
     template<class... Args>
-    void enqueue_front(const Key& key, Args&&... args) noexcept
+    void enqueue_front(Args&&... args) noexcept
     {
-        erase(key); // erase existing // O(1)-O(n)
-        mQueue.emplace_front(key, std::forward<Args>(args)...); // O(1)
-        mLookup[key] = mQueue.begin();
+    #if DEBUG // key must not exist
+        assert(!erase(get_key(value_type(std::forward<Args>(args)...))));
+    #endif // DEBUG
+        mQueue.emplace_front(std::forward<Args>(args)...); // O(1)
+        mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
     }
 
 protected:
@@ -201,8 +244,8 @@ class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Va
 {
 public:
     using value_type = std::pair<const Key, Value>;
-    inline Key get_key(const value_type& e){ return e.first; }
-    inline Value get_value(const value_type& e){ return e.second; }
+    inline Key get_key(const value_type& e) noexcept{ return e.first; }
+    inline Value get_value(const value_type& e) noexcept{ return e.second; }
     using OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>::OrderedMapAnyEntry;
 };
 

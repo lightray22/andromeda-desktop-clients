@@ -55,12 +55,15 @@ TEST_CASE("TestFindErase", "[OrderedMap]")
     testM.enqueue_front(7, "myval2"); testQ.enqueue_front(7);
     testM.enqueue_front(9, "myval3"); testQ.enqueue_front(9);
 
+    REQUIRE(testM.exists(5) == true); REQUIRE(testQ.exists(5) == true);
+    REQUIRE(testM.exists(15) == false); REQUIRE(testQ.exists(15) == false);
+
     REQUIRE(*testM.find(5) == TestMV{5,"myval"}); REQUIRE(*testQ.find(5) == 5);
     REQUIRE(*testM.find(7) == TestMV{7,"myval2"}); REQUIRE(*testQ.find(7) == 7);
     REQUIRE(*testM.find(9) == TestMV{9,"myval3"}); REQUIRE(*testQ.find(9) == 9);
     REQUIRE(testM.find(11) == testM.end()); REQUIRE(testQ.find(11) == testQ.end());
 
-    testM.erase(testM.find(7)); testQ.erase(testQ.find(7));
+    testM.erase(testM.lookup(7)); testQ.erase(testQ.lookup(7));
     REQUIRE(testM == TestM{{9,"myval3"},{5,"myval"}}); REQUIRE(testQ == TestQ{9,5});
 
     REQUIRE(testM.erase(9) == true); REQUIRE(testQ.erase(9) == true);
@@ -69,7 +72,7 @@ TEST_CASE("TestFindErase", "[OrderedMap]")
     // iterators should stay valid after erases
     REQUIRE(*itM == TestMV{5,"myval"}); REQUIRE(*itQ == 5);
 
-    REQUIRE(testM.erase(testM.begin()) == testM.end()); REQUIRE(testQ.erase(testQ.begin()) == testQ.end());
+    REQUIRE(testM.erase(testM.lookup(5)) == testM.lend()); REQUIRE(testQ.erase(testQ.lookup(5)) == testQ.lend());
     REQUIRE(testM.size() == 0); REQUIRE(testQ.size() == 0);
     REQUIRE(testM == TestM{}); REQUIRE(testQ == TestQ{}); // test empty ==
 }

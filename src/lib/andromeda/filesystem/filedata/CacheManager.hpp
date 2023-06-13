@@ -13,6 +13,7 @@
 #include "BandwidthMeasure.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/OrderedMap.hpp"
 #include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
@@ -171,21 +172,14 @@ private:
         PageManager& mPageMgr;
         /** Index of the page in the pageMgr */
         const uint64_t mPageIndex;
-        /** Reference to the page object */
-        const Page& mPageRef;
         /** Size of the page when it was added */
         size_t mPageSize;
     } PageInfo;
 
-    /** LIFO queue of pages ordered OLD->NEW */
-    typedef std::list<PageInfo> PageList;
-    PageList mPageQueue;
-    PageList mDirtyQueue;
-
-    /** HashMap allowing efficient lookup of pages within the queue */
-    typedef std::unordered_map<const Page*, PageList::iterator> PageItMap; 
-    PageItMap mPageItMap; 
-    PageItMap mDirtyItMap;
+    /** LIFO queue of pages for an LRU cache */
+    typedef OrderedMap<const Page*, PageInfo> PageQueue;
+    PageQueue mPageQueue;
+    PageQueue mDirtyQueue;
 
     /** Set to false to stop the cleanup threads */
     std::atomic<bool> mRunCleanup { true };
