@@ -2,6 +2,7 @@
 #define LIBA2_BACKENDIMPL_H_
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <string>

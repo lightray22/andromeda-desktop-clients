@@ -2,6 +2,7 @@
 #ifndef LIBA2_MEMORYALLOCATOR_H_
 #define LIBA2_MEMORYALLOCATOR_H_
 
+#include <cstdint>
 #include <map>
 #include <mutex>
 #include <string>

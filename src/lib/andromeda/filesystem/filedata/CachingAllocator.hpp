@@ -2,6 +2,7 @@
 #ifndef LIBA2_CACHINGALLOCATOR_H_
 #define LIBA2_CACHINGALLOCATOR_H_
 
+#include <cstdint>
 #include <list>
 #include <map>
 #include <mutex>

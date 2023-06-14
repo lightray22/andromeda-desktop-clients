@@ -2,6 +2,7 @@
 #ifndef LIBA2_PAGEBACKEND_H_
 #define LIBA2_PAGEBACKEND_H_
 
+#include <cstdint>
 #include <functional>
 #include <list>
 
