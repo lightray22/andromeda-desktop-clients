@@ -43,23 +43,23 @@ size_t Page::capacity() const
 }
 
 /*****************************************************/
-void Page::resize(size_t bytes)
+void Page::resize(size_t newBytes)
 {
-    const size_t pages { mAlloc.getNumPages(bytes) };
-    if (pages != mPages) // re-allocate
+    const size_t newPages { mAlloc.getNumPages(newBytes) };
+    if (newPages != mPages) // re-allocate
     {
-        char* const data { reinterpret_cast<char*>(mAlloc.alloc(pages)) };
+        char* const newData { reinterpret_cast<char*>(mAlloc.alloc(newPages)) };
         if (mData != nullptr)
         {
-            std::memcpy(data, mData, std::min(bytes,mBytes));
+            std::memcpy(newData, mData, std::min(newBytes,mBytes));
             mAlloc.free(mData, mPages);
         }
 
-        mBytes = bytes;
-        mPages = pages;
-        mData = data;
+        mBytes = newBytes;
+        mPages = newPages;
+        mData = newData;
     }
-    else mBytes = bytes;
+    else mBytes = newBytes;
 }
 
 } // namespace Filedata
