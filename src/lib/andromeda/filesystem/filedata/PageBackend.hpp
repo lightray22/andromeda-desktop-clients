@@ -2,10 +2,10 @@
 #ifndef LIBA2_PAGEBACKEND_H_
 #define LIBA2_PAGEBACKEND_H_
 
+#include <cstdint>
 #include <functional>
 #include <list>
 
-#include "Page.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/filesystem/File.hpp"
@@ -16,6 +16,13 @@ namespace Backend { class BackendImpl; }
 namespace Filesystem {
 
 namespace Filedata {
+
+class Page;
+
+/** return the size_t min of a (uint64_t and size_t) */
+static inline size_t min64st(uint64_t s1, size_t s2) {
+    return static_cast<size_t>(std::min(s1, static_cast<uint64_t>(s2)));
+}
 
 /** 
  * Handles reading/writing pages from/to the backend
@@ -55,7 +62,7 @@ public:
     void SetBackendSize(uint64_t backendSize, const SharedLockW& thisLock) { mBackendSize = backendSize; }
 
     /** Callback used to process fetched pages in FetchPages() */
-    typedef std::function<void(const uint64_t pageIndex, const uint64_t pageStart, const size_t pageSize, Page& page)> PageHandler;
+    typedef std::function<void(const uint64_t pageIndex, Page&& page)> PageHandler;
 
     /** 
      * Reads pages from the backend (must mBackendExists!)

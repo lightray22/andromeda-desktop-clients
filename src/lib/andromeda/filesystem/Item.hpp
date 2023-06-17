@@ -141,8 +141,8 @@ public:
 
     /** 
      * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
-     * The rename will be done by unlocking self then calling parent->RenameItem()
-     * @param thisLock temporary lock for self which will be unlocked
+     * The rename will be done by unlocking self then calling parent->RenameItem() then re-locking
+     * @param thisLock temporary lock for self which will be temporarily unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
     virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false);
@@ -152,9 +152,9 @@ public:
 
     /** 
      * Move this item to the given parent folder, optionally overwrite existing - MUST have a existing parent!
-     * The move will be done by unlocking self then calling parent->MoveItem()
+     * The move will be done by unlocking self then calling parent->MoveItem() then re-locking
      * This will also temporarily get a W lock on the newParent (deadlock-safe)
-     * @param thisLock temporary lock for self which will be unlocked
+     * @param thisLock temporary lock for self which will be temporarily unlocked
      * @throw Folder::NotFoundException if the item is concurrently changed after unlock
      */
     virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false);

@@ -177,6 +177,8 @@ void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwr
     SharedLockW parentLock { parent.GetWriteLock() };
     parent.RenameItem(mName, newName, parentLock, overwrite);
     mName = newName;
+
+    thisLock.lock(); // re-lock
 }
 
 /*****************************************************/
@@ -193,6 +195,8 @@ void Item::Move(Folder& newParent, SharedLockW& thisLock, bool overwrite)
     SharedLockW::LockPair parentLocks { parent.GetWriteLockPair(newParent) };
     parent.MoveItem(mName, newParent, parentLocks, overwrite);
     mParent = &newParent;
+
+    thisLock.lock(); // re-lock
 }
 
 } // namespace Filesystem

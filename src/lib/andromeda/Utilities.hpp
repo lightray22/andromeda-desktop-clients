@@ -1,6 +1,7 @@
 #ifndef LIBA2_UTILITIES_H_
 #define LIBA2_UTILITIES_H_
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <utility>

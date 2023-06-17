@@ -75,11 +75,10 @@ void MainWindow::AddAccount()
     MDBG_INFO("()");
 
     LoginDialog loginDialog(*this);
-    if (loginDialog.exec())
+    std::unique_ptr<BackendContext> backendCtx;
+    if (loginDialog.CreateBackend(backendCtx))
     {
-        std::unique_ptr<BackendContext> backendCtx { loginDialog.TakeBackend() };
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
-
         AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
         mQtUi->tabAccounts->setCurrentIndex(

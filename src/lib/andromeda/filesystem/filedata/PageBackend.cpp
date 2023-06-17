@@ -4,6 +4,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
+#include "Page.hpp"
 #include "PageBackend.hpp"
 
 #include "andromeda/Semaphor.hpp"
@@ -70,7 +71,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
             const uint64_t curPageStart { curIndex*mPageSize };
             const size_t pageSize { min64st(mBackendSize-curPageStart, mPageSize) };
 
-            if (!curPage) curPage = std::make_unique<Page>(pageSize);
+            if (!curPage) curPage = std::make_unique<Page>(pageSize, mBackend.GetPageAllocator());
 
             const uint64_t rindex { rbyte / mPageSize }; // page index for this data
             const size_t pwOffset { static_cast<size_t>(rbyte - rindex*mPageSize) }; // offset within the page
@@ -83,7 +84,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 
                 if (pwOffset+pwLength == curPage->size()) // page is done
                 {
-                    pageHandler(curIndex, curPageStart, pageSize, *curPage);
+                    pageHandler(curIndex, std::move(*curPage));
                     curPage.reset(); ++curIndex;
                 }
             }
@@ -133,10 +134,10 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
 
         const Page& page { *pages[pagesIdx] };
         const size_t pageOffset { offset - pagesIdx*mPageSize };
-        const size_t pageSize { page.mData.size() };
+        const size_t pageSize { page.size() };
         if (pageOffset >= pageSize) return false;
 
-        const char* copyData { page.mData.data()+pageOffset };
+        const char* copyData { page.data()+pageOffset };
         written = std::min(pageSize-pageOffset,buflen);
         std::copy(copyData, copyData+written, buf); 
         return true; // initial check will catch when we're done

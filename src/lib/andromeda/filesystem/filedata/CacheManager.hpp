@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <exception>
 #include <list>
 #include <mutex>
@@ -11,17 +12,18 @@
 #include <unordered_map>
 
 #include "BandwidthMeasure.hpp"
-#include "Page.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/OrderedMap.hpp"
 #include "andromeda/SharedMutex.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
 
-struct Page;
+class Page;
 class PageManager;
+class CachingAllocator;
 struct CacheOptions;
 
 /** 
@@ -52,7 +54,10 @@ public:
     void StartThreads();
 
     /** Returns the maximum cache memory size */
-    uint64_t GetMemoryLimit() const;
+    size_t GetMemoryLimit() const;
+
+    /** Returns the allocator to use for all file data */
+    inline CachingAllocator& GetPageAllocator(){ return *mPageAllocator; }
     
     /** 
      * Inform us that a page was used, putting at the front of the LRU
@@ -73,15 +78,14 @@ public:
     /**
      * Inform us that a page has changed size
      * if mgrLock is given, may synchronously evict or flush pages on this manager
+     * IF this fails, the caller must call RemovePage() or ResizePage(oldSize)
      * @param pageMgr the page manager that owns the page
-     * @param page reference to the page
-     * @param newSize the new size of the page
+     * @param page reference to the page with its new size set
      * @param mgrLock the W lock for the page manager if available
      * @throws MemoryException if evict/flush fails to free memory
      * @throws BaseException if flush for this pageMgr fails to free memory
      */
-    void ResizePage(const PageManager& pageMgr, const Page& page, const size_t newSize, 
-        const SharedLockW* mgrLock = nullptr);
+    void ResizePage(const PageManager& pageMgr, const Page& page, const SharedLockW* mgrLock = nullptr);
 
     /** Inform us that a page has been erased */
     void RemovePage(const Page& page);
@@ -139,10 +143,10 @@ private:
     void RemoveDirty(const Page& page, const UniqueLock& lock);
 
     /** Send some stats about memory to debug */
-    void PrintStatus(const char* const fname, const UniqueLock& lock);
+    void PrintStatus(const std::string& fname, const UniqueLock& lock);
 
     /** Send some stats about the dirty memory to debug */
-    void PrintDirtyStatus(const char* const fname, const UniqueLock& lock);
+    void PrintDirtyStatus(const std::string& fname, const UniqueLock& lock);
 
     /** Run the page evict task in a loop while mRunCleanup */
     void EvictThread();
@@ -158,6 +162,8 @@ private:
     template<class T>
     void FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock);
 
+    Debug mDebug;
+
     /** Mutex to guard writing data structures */
     std::mutex mMutex;
 
@@ -167,21 +173,14 @@ private:
         PageManager& mPageMgr;
         /** Index of the page in the pageMgr */
         const uint64_t mPageIndex;
-        /** Reference to the page object */
-        const Page& mPageRef;
         /** Size of the page when it was added */
         size_t mPageSize;
     } PageInfo;
 
-    /** LIFO queue of pages ordered OLD->NEW */
-    typedef std::list<PageInfo> PageList;
-    PageList mPageQueue;
-    PageList mDirtyQueue;
-
-    /** HashMap allowing efficient lookup of pages within the queue */
-    typedef std::unordered_map<const Page*, PageList::iterator> PageItMap; 
-    PageItMap mPageItMap; 
-    PageItMap mDirtyItMap;
+    /** LIFO queue of pages for an LRU cache */
+    typedef OrderedMap<const Page*, PageInfo> PageQueue;
+    PageQueue mPageQueue;
+    PageQueue mDirtyQueue;
 
     /** Set to false to stop the cleanup threads */
     std::atomic<bool> mRunCleanup { true };
@@ -209,22 +208,22 @@ private:
     const CacheOptions& mCacheOptions;
 
     /** The current total memory usage */
-    uint64_t mCurrentMemory { 0 };
+    size_t mCurrentMemory { 0 };
 
     /** The maximum in-memory dirty page usage before flushing (dynamic) */
-    uint64_t mDirtyLimit { 0 };
+    size_t mDirtyLimit { 0 };
     /** The current total dirty page memory */
-    uint64_t mCurrentDirty { 0 };
+    size_t mCurrentDirty { 0 };
 
     /** Exception encountered while evicting */
     std::exception_ptr mEvictFailure;
     /** Exception encountered while flushing */
     std::exception_ptr mFlushFailure;
 
-    Debug mDebug;
-
     /** Bandwidth measurement tool for mDirtyLimit */
     BandwidthMeasure mBandwidth;
+    /** Allocator to use for all file pages (never null) */
+    std::unique_ptr<CachingAllocator> mPageAllocator;
     
     CacheManager(const CacheManager&) = delete; // no copying
     CacheManager& operator=(const CacheManager&) = delete;

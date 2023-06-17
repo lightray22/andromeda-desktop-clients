@@ -14,6 +14,10 @@
 #include "andromeda/ConfigOptions.hpp"
 using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
+#include "andromeda/filesystem/filedata/CachingAllocator.hpp"
+using Andromeda::Filesystem::Filedata::CachingAllocator;
 
 namespace Andromeda {
 namespace Backend {
@@ -40,6 +44,17 @@ BackendImpl::~BackendImpl()
     { 
         MDBG_ERROR("... " << ex.what());
     }
+}
+
+/*****************************************************/
+CachingAllocator& BackendImpl::GetPageAllocator()
+{
+    if (mCacheMgr) 
+        return mCacheMgr->GetPageAllocator();
+
+    if (!mPageAllocator)
+        mPageAllocator = std::make_unique<CachingAllocator>(0);
+    return *mPageAllocator;
 }
 
 /*****************************************************/

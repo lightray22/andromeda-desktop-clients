@@ -2,6 +2,7 @@
 #ifndef LIBA2_FILE_H_
 #define LIBA2_FILE_H_
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>

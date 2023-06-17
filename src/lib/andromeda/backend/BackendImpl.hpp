@@ -2,6 +2,7 @@
 #define LIBA2_BACKENDIMPL_H_
 
 #include <atomic>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <string>
@@ -16,7 +17,7 @@
 
 namespace Andromeda {
 
-namespace Filesystem { namespace Filedata { class CacheManager; } }
+namespace Filesystem { namespace Filedata { class CacheManager; class CachingAllocator; } }
 
 namespace Backend {
 class RunnerPool;
@@ -97,7 +98,7 @@ public:
 
     /**
      * @param options configuration options
-     * @param runners the RunnerPool to use 
+     * @param runners the RunnerPool to use for requests
      */
     BackendImpl(const Andromeda::ConfigOptions& options, RunnerPool& runners);
 
@@ -109,11 +110,14 @@ public:
     /** Returns the backend options in use */
     inline const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
 
-    /** Returns the cache manager if set or nullptr */
+    /** Returns the cache manager to use for file data */
     inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
 
     /** Sets the cache manager to use (or nullptr) */
     inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
+
+    /** Returns the CachingAllocator to use for file data */
+    Filesystem::Filedata::CachingAllocator& GetPageAllocator();
 
     /** Returns true if doing memory only */
     bool isMemory() const;
@@ -365,6 +369,9 @@ private:
 
     Filesystem::Filedata::CacheManager* mCacheMgr { nullptr };
 
+    /** Allocator to use for all file pages (null if no cacheMgr) */
+    std::unique_ptr<Filesystem::Filedata::CachingAllocator> mPageAllocator;
+    
     Debug mDebug;
     Config mConfig;
 };

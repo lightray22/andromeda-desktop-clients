@@ -17,10 +17,11 @@ std::string ConfigOptions::HelpText()
 
     const auto defRefresh(optDefault.refreshTime.count());
     const auto defReadAhead(optDefault.readAheadTime.count());
+    const size_t stBits { sizeof(size_t)*8 };
 
     using std::endl; output 
         << "Advanced:        [-q|--quiet] [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << optDefault.runnerPoolSize << ")]" << endl
-        << "Data Advanced:   [--pagesize bytes32(" << Utilities::bytesToString(optDefault.pageSize) << ")] [--read-ahead ms(" << defReadAhead << ")]"
+        << "Data Advanced:   [--pagesize bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.pageSize) << ")] [--read-ahead ms(" << defReadAhead << ")]"
             << " [--read-max-cache-frac uint(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
 
     return output.str();

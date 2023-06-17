@@ -45,8 +45,9 @@ struct ConfigOptions
      * The default file data page size 
      * The minimum of a file's size and its pageSize is the smallest unit of data that can be read from or 
      * written to the backend.  Higher page sizes may increase maximum sequential bandwidth and increase CPU 
-     * and memory efficiency, but will increase latency for small transfers made bigger by the pageSize.
-     * 128K is a good default for most use cases.  Small sizes (e.g. <16K) will eat CPU and RAM.
+     * and memory efficiency, but might increase latency for small transfers made bigger by the pageSize.
+     * This should be >= and a multiple of the OS's page size (4K Linux, 64K Windows) or memory will be wasted.
+     * 128K is a good minimum for most use cases.  Maybe 1M for fast sequential cases with a large cache.
      */
     size_t pageSize { 128*1024 }; // 128K
 

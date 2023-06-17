@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <exception>
 #include <list>
 #include <map>
@@ -13,7 +14,6 @@
 
 #include "BandwidthMeasure.hpp"
 #include "PageBackend.hpp"
-#include "Page.hpp"
 
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
@@ -29,6 +29,7 @@ namespace Filesystem {
 namespace Filedata {
 
 class CacheManager;
+class Page;
 
 /** 
  * File page data manager - splits the file into a series of fixed size pages
@@ -140,6 +141,12 @@ private:
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
      */
     void ResizePage(Page& page, const size_t pageSize, bool cacheMgr, const SharedLockW* thisLock = nullptr);
+
+    /**
+     * Returns the size of the page that should be used at the given index.
+     * May be larger than the actual required size, to minimize re-allocations
+     */
+    size_t GetPageSize(const uint64_t index, const uint64_t fileSize) const;
 
     /** Returns true if the page at the given index is pending download */
     bool isFetchPending(const uint64_t index, const UniqueLock& pagesLock);
