@@ -114,13 +114,13 @@ template <typename T> struct CachingAllocatorT
     inline T* allocate(const size_t n)
     {
         const size_t pages { mAlloc.getNumPages(n*sizeof(T)) };
-        return reinterpret_cast<T* const>(mAlloc.alloc(pages));
+        return static_cast<T* const>(mAlloc.alloc(pages));
     }
 
     inline void deallocate(T* const p, const size_t b) noexcept
     {
         const size_t pages { mAlloc.getNumPages(b) };
-        mAlloc.free(reinterpret_cast<void* const>(p), pages);
+        mAlloc.free(static_cast<void* const>(p), pages);
     }
 };
 

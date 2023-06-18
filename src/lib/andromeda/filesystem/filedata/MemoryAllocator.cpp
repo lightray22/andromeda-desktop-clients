@@ -82,10 +82,10 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     assert(it != mAllocMap.end());
 
     MDBG_INFO("... entry ptr:" << it->first << " pages:" << it->second);
-    uint8_t* const ptrEntry { reinterpret_cast<uint8_t*>(it->first) };
+    uint8_t* const ptrEntry { static_cast<uint8_t*>(it->first) };
     const size_t pagesEntry { it->second };
 
-    uint8_t* const ptrFree { reinterpret_cast<uint8_t*>(ptr) };
+    uint8_t* const ptrFree { static_cast<uint8_t*>(ptr) };
     const size_t pagesFree { pages };
     assert(ptrEntry <= ptrFree);
 
@@ -99,7 +99,7 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     if (ptrEntry < ptrFree)
     {
         const size_t pagesBefore { static_cast<size_t>(ptrFree-ptrEntry)/mPageSize };
-        MDBG_INFO("... ptr:" << reinterpret_cast<void*>(ptrEntry) << " pagesBefore:" << pagesBefore);
+        MDBG_INFO("... ptr:" << static_cast<void*>(ptrEntry) << " pagesBefore:" << pagesBefore);
         mAllocMap.emplace(ptrEntry, pagesBefore);
     }
 
@@ -108,7 +108,7 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     if (afterEnd > afterStart)
     {
         const size_t pagesAfter { static_cast<size_t>(afterEnd-afterStart)/mPageSize };
-        MDBG_INFO("... ptr:" << reinterpret_cast<void*>(afterStart) << " pagesAfter:" << pagesAfter);
+        MDBG_INFO("... ptr:" << static_cast<void*>(afterStart) << " pagesAfter:" << pagesAfter);
         mAllocMap.emplace(afterStart, pagesAfter);
     }
 }

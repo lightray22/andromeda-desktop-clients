@@ -14,7 +14,7 @@ Page::Page(size_t pageSize, CachingAllocator& memAlloc) : mAlloc(memAlloc)
 {
     mBytes = pageSize;
     mPages = mAlloc.getNumPages(mBytes);
-    mData = mPages ? reinterpret_cast<char*>(mAlloc.alloc(mPages)) : nullptr;
+    mData = mPages ? static_cast<char*>(mAlloc.alloc(mPages)) : nullptr;
 }
 
 /*****************************************************/
@@ -48,7 +48,7 @@ void Page::resize(size_t newBytes)
     const size_t newPages { mAlloc.getNumPages(newBytes) };
     if (newPages != mPages) // re-allocate
     {
-        char* const newData { reinterpret_cast<char*>(mAlloc.alloc(newPages)) };
+        char* const newData { static_cast<char*>(mAlloc.alloc(newPages)) };
         if (mData != nullptr)
         {
             std::memcpy(newData, mData, std::min(newBytes,mBytes));

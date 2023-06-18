@@ -63,7 +63,7 @@ void* CachingAllocator::alloc(size_t pages)
             
             if (fmIt->first != pages) // only used part of the alloc
             {
-                void* const newPtr { reinterpret_cast<uint8_t*>(ptr) + pages*mPageSize };
+                void* const newPtr { static_cast<uint8_t*>(ptr) + pages*mPageSize };
                 const size_t newPages { fmIt->first - pages };
                 const size_t newListSize { add_entry(newPtr, newPages, lock) };
 
