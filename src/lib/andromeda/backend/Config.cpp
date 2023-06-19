@@ -26,7 +26,7 @@ Config::Config(BackendImpl& backend) :
         const nlohmann::json& apps1 { config.at("core").at("apps") };
         std::vector<const char*> apps2 { "core", "accounts", "files" };
 
-        for (const std::string app : apps2)
+        for (const std::string app : apps2) // NOT string&
             if (apps1.find(app) == apps1.end())
                 throw AppMissingException(app);
 

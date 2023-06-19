@@ -4,6 +4,8 @@
 #include "Item.hpp"
 #include "Folder.hpp"
 #include "FSConfig.hpp"
+#include "andromeda/Utilities.hpp"
+using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 
@@ -27,6 +29,7 @@ Item::Item(BackendImpl& backend, const nlohmann::json& data) :
     {
         data.at("id").get_to(mId);
         data.at("name").get_to(mName);
+        ValidateName(mName);
 
         if (data.contains("dates"))
         {
@@ -54,8 +57,9 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
         data.at("name").get_to(newName);
         if (newName != mName)
         {
+            ITDBG_INFO("... newName:" << newName);
+            ValidateName(newName); // FIRST
             mName = newName;
-            ITDBG_INFO("... newName:" << mName);
         }
         
         decltype(mCreated) newCreated; 
@@ -123,6 +127,13 @@ bool Item::isReadOnlyFS() const
 }
 
 /*****************************************************/
+void Item::ValidateName(const std::string& name) const
+{
+    if (name == "." || name == ".." || name.find("/") != std::string::npos)
+        throw InvalidNameException();
+}
+
+/*****************************************************/
 void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
@@ -167,6 +178,7 @@ void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, b
 void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
+    ValidateName(newName);
 
     // The rename must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be renamed elsewhere - will cause NotFoundException

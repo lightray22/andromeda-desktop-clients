@@ -47,6 +47,10 @@ public:
     class ReadOnlyFSException : public Exception { public:
         ReadOnlyFSException() : Exception("Read Only Backend") {}; };
 
+    /** Exception indicating the item's name is invalid */
+    class InvalidNameException : public Exception { public:
+        InvalidNameException() : Exception("Invalid Item Name") {}; };
+
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_INFO(strfunc) MDBG_INFO("(" << mName << ")" << strfunc)
 
@@ -180,6 +184,12 @@ protected:
 
     /** Returns the Andromeda object ID */
     virtual const std::string& GetID() { return mId; }
+
+    /**
+     * Validates the item's name (no / and not . or ..)
+     * @throws InvalidNameException if the name is invalid
+     */
+    virtual void ValidateName(const std::string& name) const;
 
     /** Item type-specific delete */
     virtual void SubDelete(const DeleteLock& deleteLock) = 0;

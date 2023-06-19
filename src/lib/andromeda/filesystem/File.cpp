@@ -54,7 +54,9 @@ File::File(BackendImpl& backend, Folder& parent, const std::string& name, const 
 
     mFsConfig = &fsConfig;
     mParent = &parent;
+
     mName = name;
+    ValidateName(mName);
 
     mCreated = static_cast<decltype(mCreated)>(std::time(nullptr)); // now
 
