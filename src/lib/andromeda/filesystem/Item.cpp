@@ -127,7 +127,7 @@ bool Item::isReadOnlyFS() const
 }
 
 /*****************************************************/
-void Item::ValidateName(const std::string& name) const
+void Item::ValidateName(const std::string& name)
 {
     if (name == "." || name == ".." || name.find("/") != std::string::npos)
         throw InvalidNameException();

@@ -153,16 +153,49 @@ else() # NOT MSVC
 
 endif() # MSVC
 
-function(andromeda_bin bin_name)
-    target_compile_options(${bin_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
-    target_compile_definitions(${bin_name} PRIVATE ${ANDROMEDA_CXX_DEFS})
-    target_link_options(${bin_name} PRIVATE ${ANDROMEDA_LINK_OPTS})
+function (andromeda_analyze)
+    if (BUILD_TESTS)
+        # clang-tidy rules are set in .clang-tidy
+        set(CMAKE_C_CLANG_TIDY "clang-tidy;--quiet" PARENT_SCOPE)
+        set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--quiet" PARENT_SCOPE)
+
+        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet"
+            "--enable=style,performance,portability,information"
+            "--error-exitcode=1" # fail on warning
+            "--suppress=*:*_deps/*"
+            "--suppress=*:*_autogen/*" # qt
+            "--suppress=unmatchedSuppression"
+            "--suppress=missingInclude"
+            "--suppress=missingIncludeSystem"
+            "--suppress=useStlAlgorithm"
+            "--suppress=comparisonOfFuncReturningBoolError"
+            PARENT_SCOPE)
+    endif()
 endfunction()
 
-function(andromeda_lib lib_name)
+function(andromeda_compile_opts myname)
+    target_compile_options(${myname} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
+    target_compile_definitions(${myname} PRIVATE ${ANDROMEDA_CXX_DEFS})
+endfunction()
+
+function(andromeda_link_opts myname)
+    target_link_options(${myname} PRIVATE ${ANDROMEDA_LINK_OPTS})
+endfunction()
+
+function(andromeda_lib lib_name sources)
+    andromeda_analyze()
+    add_library(${lib_name} STATIC)
+    target_sources(${lib_name} PRIVATE ${sources})
     set_target_properties(${lib_name} PROPERTIES PREFIX "")
-    target_compile_options(${lib_name} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
-    target_compile_definitions(${lib_name} PRIVATE ${ANDROMEDA_CXX_DEFS})
+    andromeda_compile_opts(${lib_name})
+endfunction()
+
+function(andromeda_bin bin_name sources)
+    andromeda_analyze()
+    add_executable(${bin_name})
+    target_sources(${bin_name} PRIVATE ${sources})
+    andromeda_compile_opts(${bin_name})
+    andromeda_link_opts(${bin_name})
 endfunction()
 
 function (andromeda_test test_name)

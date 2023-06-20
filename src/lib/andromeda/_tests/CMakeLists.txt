@@ -1,8 +1,6 @@
 
 include(../../../andromeda.cmake)
 
-add_executable(libandromeda_tests)
-
 set(SOURCE_FILES 
     BaseOptionsTest.cpp
     OrderedMap.cpp
@@ -18,11 +16,10 @@ if (MUTEX_TESTS)
     )
 endif()
 
-target_sources(libandromeda_tests PRIVATE ${SOURCE_FILES})
+andromeda_bin(libandromeda_tests "${SOURCE_FILES}")
+andromeda_test(libandromeda_tests)
+
 target_include_directories(libandromeda_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-andromeda_bin(libandromeda_tests)
-andromeda_test(libandromeda_tests)
 
 target_link_libraries(libandromeda_tests PRIVATE libandromeda)

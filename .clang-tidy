@@ -1,0 +1,26 @@
+---
+Checks:
+'
+bugprone-*,
+cert-*,
+clang-analyzer-*,
+concurrency-*,
+cppcoreguidelines-*,
+google-*,
+hicpp-*,
+misc-*,
+modernize-*,
+performance-*,
+portability-*,
+readability-*,
+
+-*-braces-around-statements,
+-*-cognitive-complexity,
+-*-easily-swappable-parameters,
+-*-else-after-return,
+-misc-no-recursion,
+-*-pointer-arithmetic,
+-*-use-trailing-return-type,
+'
+WarningsAsErrors: '*'
+...

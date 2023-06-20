@@ -6,7 +6,7 @@ include(../../andromeda.cmake)
 # build the andromeda-fuse executables
 
 set(SOURCE_FILES main.cpp Options.cpp)
-add_executable(andromeda-fuse ${SOURCE_FILES})
+andromeda_bin(andromeda-fuse "${SOURCE_FILES}")
 set(EXECUTABLES andromeda-fuse)
 
 target_compile_definitions(libandromeda-fuse PRIVATE _FILE_OFFSET_BITS=64)
@@ -17,7 +17,7 @@ install(TARGETS andromeda-fuse
 )
 
 if (NOT WIN32)
-    add_executable(mount.andromeda mount.cpp)
+    andromeda_bin(mount.andromeda mount.cpp)
     list(APPEND EXECUTABLES mount.andromeda)
     
     install(TARGETS mount.andromeda
@@ -27,8 +27,6 @@ if (NOT WIN32)
 endif()
 
 foreach(EXECUTABLE ${EXECUTABLES})
-
-    andromeda_bin(${EXECUTABLE})
 
     # include/link libandromeda-fuse
 

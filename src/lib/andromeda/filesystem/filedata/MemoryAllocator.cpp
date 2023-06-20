@@ -104,7 +104,7 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     }
 
     uint8_t* const afterStart { ptrFree+pagesFree*mPageSize };
-    uint8_t* const afterEnd { ptrEntry+pagesEntry*mPageSize };
+    const uint8_t* const afterEnd { ptrEntry+pagesEntry*mPageSize };
     if (afterEnd > afterStart)
     {
         const size_t pagesAfter { static_cast<size_t>(afterEnd-afterStart)/mPageSize };

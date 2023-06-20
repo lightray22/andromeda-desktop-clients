@@ -189,7 +189,7 @@ protected:
      * Validates the item's name (no / and not . or ..)
      * @throws InvalidNameException if the name is invalid
      */
-    virtual void ValidateName(const std::string& name) const;
+    static void ValidateName(const std::string& name);
 
     /** Item type-specific delete */
     virtual void SubDelete(const DeleteLock& deleteLock) = 0;

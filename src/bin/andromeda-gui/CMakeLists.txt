@@ -24,12 +24,14 @@ set(SOURCE_FILES
     MountContext.cpp
     )
 
+andromeda_analyze()
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(andromeda-gui ${SOURCE_FILES})
 else()
     add_executable(andromeda-gui ${SOURCE_FILES})
 endif()
-andromeda_bin(andromeda-gui)
+andromeda_compile_opts(andromeda-gui)
+andromeda_link_opts(andromeda-gui)
 
 target_compile_definitions(andromeda-gui PRIVATE QTVER=${QT_VERSION_MAJOR})
 

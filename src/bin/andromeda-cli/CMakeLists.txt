@@ -6,8 +6,7 @@ include(../../andromeda.cmake)
 # build the andromeda-cli executable
 
 set(SOURCE_FILES main.cpp Options.cpp CommandLine.cpp)
-add_executable(andromeda-cli ${SOURCE_FILES})
-andromeda_bin(andromeda-cli)
+andromeda_bin(andromeda-cli "${SOURCE_FILES}")
 
 install(TARGETS andromeda-cli
     BUNDLE  DESTINATION .

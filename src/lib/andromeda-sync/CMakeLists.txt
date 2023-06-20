@@ -5,14 +5,15 @@ include(../../andromeda.cmake)
 
 # build the andromeda-sync library
 
-#add_library(libandromeda-sync STATIC)
-#andromeda_lib(libandromeda-sync)
-
 #set(SOURCE_FILES FuseAdapter.cpp)
+#andromeda_lib(libandromeda-sync "${SOURCE_FILES}")
 
-#target_sources(libandromeda-sync PRIVATE ${SOURCE_FILES})
 #target_include_directories(libandromeda-sync
 #    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+#install(TARGETS libandromeda-sync
+#    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#)
 
 # include/link libandromeda
 
