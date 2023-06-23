@@ -167,7 +167,7 @@ TEST_CASE("replaceAll", "[Utilities]")
 /*****************************************************/
 TEST_CASE("quoteString", "[Utilities]")
 {
-    REQUIRE(Utilities::quoteString("").empty());
+    REQUIRE(Utilities::quoteString("") == "\"\"");
     REQUIRE(Utilities::quoteString("this is a \"test\"") == "\"this is a \\\"test\\\"\"");
 }
 

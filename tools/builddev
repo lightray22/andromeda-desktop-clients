@@ -9,6 +9,6 @@ if [ "$1" == "rel" ]; then
 fi
 
 cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DBUILD_TESTS=1 "$@"
+    -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1 "$@"
 
 cmake --build . -j$(nproc)

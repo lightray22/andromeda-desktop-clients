@@ -39,7 +39,7 @@ FetchContent_MakeAvailable(reproc)
 target_compile_options(reproc PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
 target_compile_options(reproc++ PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
 
-target_link_libraries(libandromeda PRIVATE reproc++)
+target_link_libraries(libandromeda PUBLIC reproc++)
 
 # include nlohmann (header-only)
 

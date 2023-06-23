@@ -20,8 +20,8 @@ static steady_clock::time_point sStart { steady_clock::now() };
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
 
-static constexpr std::ostream& sOutstr { std::cerr };
-//static constexpr std::ofstream sOutstr("/tmp/debug.log", std::ofstream::out);
+#define sOutstr std::cerr
+//static std::ofstream sOutstr("/tmp/debug.log", std::ofstream::out);
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)

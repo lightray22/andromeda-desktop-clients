@@ -26,9 +26,11 @@ include(GNUInstallDirs)
 include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 
-option(BUILD_TESTS "Build unit tests" OFF)
+option(TESTS_CATCH2    "Build catch2 unit tests"        OFF)
+option(TESTS_CLANGTIDY "Use clang-tidy static analysis" OFF)
+option(TESTS_CPPCHECK  "Use cppcheck static analysis"   OFF)
 
-if (BUILD_TESTS)
+if (TESTS_CATCH2)
     FetchContent_Declare(Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG        v3.3.2)
@@ -92,7 +94,9 @@ else() # NOT MSVC
         -Wsign-conversion
         -Wshadow
     )
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
+    # if running clang-tidy, can't use GCC-specific options
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT ${TESTS_CLANGTIDY})
         list(APPEND ANDROMEDA_CXX_WARNS 
             -Wduplicated-branches
             -Wduplicated-cond
@@ -154,15 +158,19 @@ else() # NOT MSVC
 endif() # MSVC
 
 function (andromeda_analyze)
-    if (BUILD_TESTS)
+    if (${TESTS_CLANGTIDY})
         # clang-tidy rules are set in .clang-tidy
         set(CLANG_TIDY_FLAGS "clang-tidy;--quiet")
+        if (NOT ${ALLOW_WARNINGS})
+            list(APPEND CLANG_TIDY_FLAGS "--warnings-as-errors='*'")
+        endif()
         set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
         set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
+    endif()
 
+    if (${TESTS_CPPCHECK})
         set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet"
             "--enable=style,performance,portability,information"
-            "--error-exitcode=1" # fail on warning
             "--suppress=*:*_deps/*"
             "--suppress=*:*_autogen/*" # qt
             "--suppress=unmatchedSuppression"
@@ -174,6 +182,9 @@ function (andromeda_analyze)
             "--suppress=noConstructor" # false positives
             "--suppress=uninitMemberVarPrivate" # false positives
             PARENT_SCOPE)
+        if (NOT ${ALLOW_WARNINGS})
+            list(APPEND CMAKE_CXX_CPPCHECK "--error-exitcode=1")
+        endif()
     endif()
 endfunction()
 

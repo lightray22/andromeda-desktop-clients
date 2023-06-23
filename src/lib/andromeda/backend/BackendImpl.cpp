@@ -142,23 +142,25 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
                 str << fname << "... message:" << *message; });
 
-            const int ERROR { 400 };
-            const int DENIED { 403 };
-            const int NOT_FOUND { 404 };
+            enum {
+                HTTP_ERROR = 400,
+                HTTP_DENIED = 403,
+                HTTP_NOT_FOUND = 404
+            };
 
-            if      (code == ERROR && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
-            else if (code == ERROR && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
+            if      (code == HTTP_ERROR && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
+            else if (code == HTTP_ERROR && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
                 // TODO better exception? - should not happen if Authenticated? maybe for bad shares
-            else if (code == ERROR && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
-            else if (code == ERROR && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
+            else if (code == HTTP_ERROR && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
+            else if (code == HTTP_ERROR && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
             
-            else if (code == DENIED && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
-            else if (code == DENIED && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
-            else if (code == DENIED && message == "READ_ONLY_DATABASE")    throw ReadOnlyFSException("Database");
-            else if (code == DENIED && message == "READ_ONLY_FILESYSTEM")  throw ReadOnlyFSException("Filesystem");
+            else if (code == HTTP_DENIED && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
+            else if (code == HTTP_DENIED && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
+            else if (code == HTTP_DENIED && message == "READ_ONLY_DATABASE")    throw ReadOnlyFSException("Database");
+            else if (code == HTTP_DENIED && message == "READ_ONLY_FILESYSTEM")  throw ReadOnlyFSException("Filesystem");
 
-            else if (code == DENIED) throw DeniedException(message); 
-            else if (code == NOT_FOUND) throw NotFoundException(message);
+            else if (code == HTTP_DENIED) throw DeniedException(message); 
+            else if (code == HTTP_NOT_FOUND) throw NotFoundException(message);
             else throw APIException(code, message);
         }
     }
