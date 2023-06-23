@@ -138,9 +138,16 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             if (!std::filesystem::exists(val) || std::filesystem::is_directory(val))
                 throw BaseOptions::Exception("Inaccessible file: "+val);
 
-            std::ifstream file(val, std::ios::binary);
-            std::string fdat((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-            dataParams[param] = std::move(fdat);
+            std::ifstream file(val, std::ios::binary); // read file to string
+            static constexpr size_t bufSize { 4096 };
+            std::string fdat; std::array<char, bufSize> buf{};
+            while (!file.fail())
+            {
+                file.read(buf.data(), static_cast<std::streamsize>(buf.size()));
+                fdat.append(buf.data(), static_cast<std::size_t>(file.gcount()));
+            }
+
+            dataParams[param] = fdat;
         }
         else if (special == '!')
         {
