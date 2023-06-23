@@ -25,7 +25,7 @@ class Folder : public Item
 {
 public:
 
-    virtual ~Folder(){ };
+    ~Folder() override = default;
 
     /** Base Exception for all folder issues */
     class Exception : public Item::Exception { public:
@@ -53,11 +53,11 @@ public:
     class ModifyException : public Exception { public:
         ModifyException() : Exception("Immutable Item") {}; };
 
-    typedef Andromeda::ScopeLocked<Folder> ScopeLocked;
+    using ScopeLocked = Andromeda::ScopeLocked<Folder>;
     /** Tries to lock mScopeMutex, returns a ref that is maybe locked */
     inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
-    virtual Type GetType() const override final { return Type::FOLDER; }
+    Type GetType() const final { return Type::FOLDER; }
 
     /** 
      * Load the item with the given relative path, returning it with a pre-checked ScopeLock 
@@ -72,7 +72,7 @@ public:
     virtual Folder::ScopeLocked GetFolderByPath(const std::string& path) final;
 
     /** Map of sub-item name to ScopeLocked Item objects */
-    typedef std::map<std::string, Item::ScopeLocked> LockedItemMap;
+    using LockedItemMap = std::map<std::string, Item::ScopeLocked>;
 
     /** 
      * Load and return the map of scope-locked child items 
@@ -90,7 +90,7 @@ public:
     /** Create a new subfolder with the given name */
     virtual void CreateFolder(const std::string& name, const SharedLockW& thisLock) final;
 
-    virtual void FlushCache(const Andromeda::SharedLockW& thisLock, bool nothrow = false) override;
+    void FlushCache(const Andromeda::SharedLockW& thisLock, bool nothrow = false) override;
 
 protected:
 
@@ -98,7 +98,7 @@ protected:
      * Construct a new abstract folder
      * @param backend reference to backend
      */
-    Folder(Backend::BackendImpl& backend);
+    explicit Folder(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
     Folder(Backend::BackendImpl& backend, const nlohmann::json& data);
@@ -119,22 +119,22 @@ protected:
     virtual void MoveItem(const std::string& name, Folder& newParent, 
         const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    using UniqueLock = std::unique_lock<std::mutex>;
 
     /** Makes sure mItemMap is populated and refreshed */
     virtual void LoadItems(const SharedLockW& thisLock, bool force = false);
 
     /** Map consisting of an item name -> write lock for the item */
-    typedef std::map<std::string, SharedLockW> ItemLockMap;
+    using ItemLockMap = std::map<std::string, SharedLockW>;
 
     /** Populates the item list with items from the backend */
     virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) = 0;
 
     /** Function that returns a new Item given its JSON data */
-    typedef std::function<std::unique_ptr<Item>(const nlohmann::json&)> NewItemFunc;
+    using NewItemFunc = std::function<std::unique_ptr<Item> (const nlohmann::json&)>;
 
     /** Map consisting of an item name -> a pair of its JSON data and construct function */
-    typedef std::map<std::string, std::pair<const nlohmann::json&, NewItemFunc>> NewItemMap;
+    using NewItemMap = std::map<std::string, std::pair<const nlohmann::json&, NewItemFunc>>;
 
     /** 
      * Synchronizes in-memory content using the given new item map
@@ -151,7 +151,7 @@ protected:
     virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) = 0;
 
     /** Map of sub-item name to Item objects */
-    typedef std::map<std::string, std::unique_ptr<Item>> ItemMap;
+    using ItemMap = std::map<std::string, std::unique_ptr<Item>>;
 
     /** map of subitems */
     ItemMap mItemMap;
@@ -164,7 +164,7 @@ protected:
 
 private:
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
 } // namespace Filesystem

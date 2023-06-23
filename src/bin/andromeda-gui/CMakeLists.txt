@@ -24,11 +24,15 @@ set(SOURCE_FILES
     MountContext.cpp
     )
 
-andromeda_analyze()
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
+    # cmake < 3.27 wants to analyze Qt generated files
+    andromeda_analyze()
+endif()
+
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(andromeda-gui ${SOURCE_FILES})
+    qt_add_executable(andromeda-gui "${SOURCE_FILES}")
 else()
-    add_executable(andromeda-gui ${SOURCE_FILES})
+    add_executable(andromeda-gui "${SOURCE_FILES}")
 endif()
 andromeda_compile_opts(andromeda-gui)
 andromeda_link_opts(andromeda-gui)
@@ -38,14 +42,14 @@ target_compile_definitions(andromeda-gui PRIVATE QTVER=${QT_VERSION_MAJOR})
 target_include_directories(andromeda-gui
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-set_target_properties(andromeda-gui PROPERTIES
-    WIN32_EXECUTABLE TRUE
-    MACOSX_BUNDLE TRUE
-)
-
 install(TARGETS andromeda-gui
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+set_target_properties(andromeda-gui PROPERTIES
+    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE TRUE
 )
 
 if (WIN32 OR APPLE)

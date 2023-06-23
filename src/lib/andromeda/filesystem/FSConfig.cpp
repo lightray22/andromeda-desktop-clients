@@ -10,13 +10,13 @@ using Andromeda::Backend::BackendImpl;
 namespace Andromeda {
 namespace Filesystem {
 
-typedef std::unordered_map<std::string, FSConfig> CacheMap; 
+using CacheMap = std::unordered_map<std::string, FSConfig>; 
 static CacheMap sCache; static std::mutex sCacheMutex;
 
 /*****************************************************/
 const FSConfig& FSConfig::LoadByID(BackendImpl& backend, const std::string& id)
 {
-    std::lock_guard<decltype(sCacheMutex)> llock(sCacheMutex);
+    const std::lock_guard<decltype(sCacheMutex)> llock(sCacheMutex);
 
     CacheMap::iterator it { sCache.find(id) };
 

@@ -48,10 +48,10 @@ void* MemoryAllocator::alloc(size_t pages)
     if (!pages) return nullptr;
 
 #if WIN32
-    LPVOID ptr = VirtualAlloc(NULL, pages*mPageSize, 
+    LPVOID ptr = VirtualAlloc(nullptr, pages*mPageSize, 
         MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #else // !WIN32
-    void* ptr = mmap(NULL, pages*mPageSize, 
+    void* ptr = mmap(nullptr, pages*mPageSize, 
         PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif // WIN32
     MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
@@ -133,7 +133,7 @@ void MemoryAllocator::stats(const std::string& fname, const size_t pages, bool a
         mDebug.Info([&](std::ostream& str)
         {
             if (alloc) { ++mAllocs; mTotalPages += pages; mTotalBytes += pages*mPageSize; }
-                  else { ++mFrees; mTotalPages -= pages; mTotalBytes -= pages*mPageSize; }
+            else       { ++mFrees; mTotalPages -= pages; mTotalBytes -= pages*mPageSize; }
 
             str << fname << "... mTotalPages:" << mTotalPages << " mTotalBytes:" << mTotalBytes
         #if DEBUG

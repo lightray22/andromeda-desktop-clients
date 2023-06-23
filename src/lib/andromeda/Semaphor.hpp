@@ -21,7 +21,7 @@ public:
 
     inline bool try_lock() noexcept // TODO unit test
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
 
         const size_t waitIndex { ++mCurWait };
         if (!mAvailable || waitIndex + mAvailable != mCurSignal) 
@@ -45,7 +45,7 @@ public:
 
     inline void unlock() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
 
         ++mCurSignal;
         ++mAvailable;
@@ -55,14 +55,14 @@ public:
     /** Returns the current # of locks */
     size_t get_avail() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
         return mAvailable;
     }
 
     /** Returns the max semaphor count */
     size_t get_max() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
         return mMaxCount;
     }
 
@@ -81,7 +81,7 @@ private:
     std::condition_variable mCV;
 };
 
-typedef std::unique_lock<Semaphor> SemaphorLock;
+using SemaphorLock = std::unique_lock<Semaphor>;
 
 } // namespace Andromeda
 

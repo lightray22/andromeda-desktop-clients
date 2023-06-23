@@ -13,11 +13,11 @@ class Shared : public PlainFolder
 {
 public:
     
-    virtual ~Shared(){};
+    ~Shared() override = default;
 };
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda
 
 #endif // LIBA2_SHARED_H_

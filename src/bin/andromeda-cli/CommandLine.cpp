@@ -1,4 +1,5 @@
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -51,12 +52,9 @@ std::string CommandLine::HelpText()
 }
 
 /*****************************************************/
-CommandLine::~CommandLine() { } // for unique_ptr
-
-/*****************************************************/
 CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv) : mOptions(options)
 {
-    size_t shift { mOptions.ParseArgs(argc, argv, true) };
+    const size_t shift { mOptions.ParseArgs(argc, argv, true) };
     argc -= shift; argv += shift; mOptions.Validate();
 
     if (argc < 2) throw BaseOptions::BadUsageException("missing app/action");
@@ -67,7 +65,7 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
     RunnerInput::Params plainParams;
     RunnerInput::Params dataParams;
     RunnerInput_StreamIn::FileStreams inStreams;
-    bool outStream { mOptions.isStreamOut() };
+    const bool outStream { mOptions.isStreamOut() };
 
     { // environment params
         Utilities::StringList args;
@@ -133,7 +131,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty @ key at action arg "+std::to_string(i));
 
-            std::string val { getNextValue(args, i) };
+            const std::string val { getNextValue(args, i) };
             if (val.empty()) throw BaseOptions::BadUsageException(
                 "expected @ value at action arg "+std::to_string(i));
 
@@ -141,14 +139,8 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 throw BaseOptions::Exception("Inaccessible file: "+val);
 
             std::ifstream file(val, std::ios::binary);
-            std::string fdat; char buf[4096];
-            while (!file.fail())
-            {
-                file.read(buf, static_cast<std::streamsize>(sizeof(buf)));
-                fdat.append(buf, static_cast<std::size_t>(file.gcount()));
-            }
-
-            dataParams[param] = fdat;
+            std::string fdat((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+            dataParams[param] = std::move(fdat);
         }
         else if (special == '!')
         {
@@ -165,7 +157,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty % key at action arg "+std::to_string(i));
                 
-            std::string val { getNextValue(args, i) };
+            const std::string val { getNextValue(args, i) };
             if (val.empty()) throw BaseOptions::BadUsageException(
                 "expected % value at action arg "+std::to_string(i));
 
@@ -197,7 +189,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 (param.find("password") != std::string::npos || param.find("auth_") != std::string::npos))
                 throw PrivateDataException(param); // hardcoded sanity check for now...
 
-            std::string next { getNextValue(args, i) };
+            const std::string next { getNextValue(args, i) };
             if (isPriv) dataParams[param] = next;
             else plainParams[param] = next;
         }

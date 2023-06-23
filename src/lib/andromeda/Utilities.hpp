@@ -7,8 +7,10 @@
 #include <utility>
 #include <vector>
 
-// Clang 10 gives Wsizeof-array-div without extra() around sizeof
-#define ARRSIZE(x) (sizeof(x)/(sizeof(decltype(*x))))
+#define BOOLSTR(x) ((x) ? "true" : "false")
+
+#define DELETE_COPY(cl) cl(const cl&) = delete; cl& operator=(const cl&) = delete;
+#define DELETE_MOVE(cl) cl(cl&&) = delete; cl& operator=(cl&&) = delete;
 
 namespace Andromeda {
 
@@ -19,7 +21,7 @@ public:
 
     Utilities() = delete; // static only
 
-    typedef std::vector<std::string> StringList;
+    using StringList = std::vector<std::string>;
 
     /**
      * Split a string into an array
@@ -31,10 +33,10 @@ public:
      */
     static StringList explode(
         std::string str, const std::string& delim, 
-        const size_t skip = 0, const bool reverse = false,
-        const size_t max = static_cast<size_t>(-1));
+        size_t skip = 0, bool reverse = false,
+        size_t max = static_cast<size_t>(-1));
 
-    typedef std::pair<std::string,std::string> StringPair;
+    using StringPair = std::pair<std::string, std::string>;
 
     /** 
      * Special case of explode with max=1,skip=0 and returns a pair 
@@ -45,7 +47,7 @@ public:
      */
     static StringPair split(
         const std::string& str, const std::string& delim, 
-        const size_t skip = 0, const bool reverse = false);
+        size_t skip = 0, bool reverse = false);
 
     /** Splits a path into its dirname and basename */
     static StringPair splitPath(const std::string& str); // TODO unit test
@@ -59,8 +61,11 @@ public:
     /** Returns the string with leading/trailing whitespace stripped */
     static std::string trim(const std::string& str);
 
-    /** Returns the string str with all occurences of from replaced by to */
-    static std::string replaceAll(const std::string& str, const std::string& from, const std::string& to);
+    /** Returns the string str with all occurences of from replaced by repl */
+    static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
+
+    /** Surrounds the string with double quotes and escapes all quotes within it */
+    static std::string quoteString(const std::string& str);
 
     /** Returns false if the trimmed string is a false-like value */
     static bool stringToBool(const std::string& stri);
@@ -83,7 +88,7 @@ public:
      */
     static void SilentReadConsole(std::string& retval);
 
-    typedef std::unordered_map<std::string,std::string> StringMap;
+    using StringMap = std::unordered_map<std::string, std::string>;
 
     /** 
      * Returns a string map of the process environment variables 

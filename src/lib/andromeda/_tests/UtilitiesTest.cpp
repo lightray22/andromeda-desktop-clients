@@ -5,25 +5,15 @@
 namespace Andromeda {
 
 /*****************************************************/
-TEST_CASE("arrsize", "[Utilities]")
-{
-    int test2[] { 5, 6, 7 };
-    REQUIRE(ARRSIZE(test2) == 3);
-
-    const char* test3[] { "test", "1", "567", "abc" };
-    REQUIRE(ARRSIZE(test3) == 4);
-}
-
-/*****************************************************/
 TEST_CASE("explode", "[Utilities]")
 {
     typedef std::vector<std::string> Strings; Strings result;
     
     result = Utilities::explode("","");
-    REQUIRE(result == Strings{});
+    REQUIRE(result.empty());
 
     result = Utilities::explode("","test");
-    REQUIRE(result == Strings{});
+    REQUIRE(result.empty());
 
     result = Utilities::explode("test","");
     REQUIRE(result == Strings{"test"});
@@ -65,31 +55,31 @@ TEST_CASE("split", "[Utilities]")
     typedef std::pair<std::string,std::string> StrPair; StrPair result;
 
     result = Utilities::split("", "");
-    REQUIRE(result.first == ""); REQUIRE(result.second == "");
+    REQUIRE(result.first.empty()); REQUIRE(result.second.empty());
 
     result = Utilities::split("", "", 0, true);
-    REQUIRE(result.first == ""); REQUIRE(result.second == "");
+    REQUIRE(result.first.empty()); REQUIRE(result.second.empty());
     
     result = Utilities::split("test", "");
-    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == "test"); REQUIRE(result.second.empty());
     
     result = Utilities::split("test", "", 0, true);
-    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
+    REQUIRE(result.first.empty()); REQUIRE(result.second == "test");
     
     result = Utilities::split("test", "/");
-    REQUIRE(result.first == "test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == "test"); REQUIRE(result.second.empty());
     
     result = Utilities::split("test", "/", 0, true);
-    REQUIRE(result.first == ""); REQUIRE(result.second == "test");
+    REQUIRE(result.first.empty()); REQUIRE(result.second == "test");
     
     result = Utilities::split("/test/", "/");
-    REQUIRE(result.first == ""); REQUIRE(result.second == "test/");
+    REQUIRE(result.first.empty()); REQUIRE(result.second == "test/");
     
     result = Utilities::split("/test/", "/", 1);
-    REQUIRE(result.first == "/test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == "/test"); REQUIRE(result.second.empty());
     
     result = Utilities::split("/test/", "/", 0, true);
-    REQUIRE(result.first == "/test"); REQUIRE(result.second == "");
+    REQUIRE(result.first == "/test"); REQUIRE(result.second.empty());
     
     result = Utilities::split("test1=test2=test3", "=");
     REQUIRE(result.first == "test1"); REQUIRE(result.second == "test2=test3");
@@ -101,7 +91,7 @@ TEST_CASE("split", "[Utilities]")
     REQUIRE(result.first == "folder1/folder2"); REQUIRE(result.second == "file");
 
     result = Utilities::split("http://mytest", "/", 2);
-    REQUIRE(result.first == "http://mytest"); REQUIRE(result.second == "");
+    REQUIRE(result.first == "http://mytest"); REQUIRE(result.second.empty());
 
     result = Utilities::split("http://mytest/test2", "/", 2);
     REQUIRE(result.first == "http://mytest"); REQUIRE(result.second == "test2");
@@ -113,41 +103,41 @@ TEST_CASE("split", "[Utilities]")
 /*****************************************************/
 TEST_CASE("startsWith", "[Utilities]")
 {
-    REQUIRE(Utilities::startsWith("","") == true);
-    REQUIRE(Utilities::startsWith("a","") == true);
-    REQUIRE(Utilities::startsWith("","a") == false);
+    REQUIRE(Utilities::startsWith("",""));
+    REQUIRE(Utilities::startsWith("a",""));
+    REQUIRE(!Utilities::startsWith("","a"));
 
-    REQUIRE(Utilities::startsWith("a","a") == true);
-    REQUIRE(Utilities::startsWith("a","b") == false);
+    REQUIRE(Utilities::startsWith("a","a"));
+    REQUIRE(!Utilities::startsWith("a","b"));
 
-    REQUIRE(Utilities::startsWith("test123","test") == true);
-    REQUIRE(Utilities::startsWith("test123","test123") == true);
-    REQUIRE(Utilities::startsWith("test123","test1234") == false);
-    REQUIRE(Utilities::startsWith("test123"," test") == false);
-    REQUIRE(Utilities::startsWith("test123","123") == false);
+    REQUIRE(Utilities::startsWith("test123","test"));
+    REQUIRE(Utilities::startsWith("test123","test123"));
+    REQUIRE(!Utilities::startsWith("test123","test1234"));
+    REQUIRE(!Utilities::startsWith("test123"," test"));
+    REQUIRE(!Utilities::startsWith("test123","123"));
 }
 
 /*****************************************************/
 TEST_CASE("endsWith", "[Utilities]")
 {
-    REQUIRE(Utilities::endsWith("","") == true);
-    REQUIRE(Utilities::endsWith("a","") == true);
-    REQUIRE(Utilities::endsWith("","a") == false);
+    REQUIRE(Utilities::endsWith("",""));
+    REQUIRE(Utilities::endsWith("a",""));
+    REQUIRE(!Utilities::endsWith("","a"));
 
-    REQUIRE(Utilities::endsWith("a","a") == true);
-    REQUIRE(Utilities::endsWith("a","b") == false);
+    REQUIRE(Utilities::endsWith("a","a"));
+    REQUIRE(!Utilities::endsWith("a","b"));
 
-    REQUIRE(Utilities::endsWith("test123","123") == true);
-    REQUIRE(Utilities::endsWith("test123","test123") == true);
-    REQUIRE(Utilities::endsWith("test123","test1234") == false);
-    REQUIRE(Utilities::endsWith("test123","123 ") == false);
-    REQUIRE(Utilities::endsWith("test123","test") == false);
+    REQUIRE(Utilities::endsWith("test123","123"));
+    REQUIRE(Utilities::endsWith("test123","test123"));
+    REQUIRE(!Utilities::endsWith("test123","test1234"));
+    REQUIRE(!Utilities::endsWith("test123","123 "));
+    REQUIRE(!Utilities::endsWith("test123","test"));
 }
 
 /*****************************************************/
 TEST_CASE("trim", "[Utilities]") 
 {
-    REQUIRE(Utilities::trim("") == "");
+    REQUIRE(Utilities::trim("").empty());
     REQUIRE(Utilities::trim("test") == "test");
     REQUIRE(Utilities::trim(" test") == "test");
     REQUIRE(Utilities::trim("test1  ") == "test1");
@@ -158,12 +148,12 @@ TEST_CASE("trim", "[Utilities]")
 /*****************************************************/
 TEST_CASE("replaceAll", "[Utilities]")
 {
-    REQUIRE(Utilities::replaceAll("","","") == "");
-    REQUIRE(Utilities::replaceAll("","a","") == "");
-    REQUIRE(Utilities::replaceAll("","a","b") == "");
+    REQUIRE(Utilities::replaceAll("","","").empty());
+    REQUIRE(Utilities::replaceAll("","a","").empty());
+    REQUIRE(Utilities::replaceAll("","a","b").empty());
 
     REQUIRE(Utilities::replaceAll("a","","") == "a");
-    REQUIRE(Utilities::replaceAll("a","a","") == "");
+    REQUIRE(Utilities::replaceAll("a","a","").empty());
     REQUIRE(Utilities::replaceAll("a","a","b") == "b");
     REQUIRE(Utilities::replaceAll("a","b","a") == "a");
 
@@ -175,20 +165,27 @@ TEST_CASE("replaceAll", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("quoteString", "[Utilities]")
+{
+    REQUIRE(Utilities::quoteString("").empty());
+    REQUIRE(Utilities::quoteString("this is a \"test\"") == "\"this is a \\\"test\\\"\"");
+}
+
+/*****************************************************/
 TEST_CASE("stringToBool", "[Utilities]") 
 {
-    REQUIRE(Utilities::stringToBool("") == false);
-    REQUIRE(Utilities::stringToBool("0") == false);
-    REQUIRE(Utilities::stringToBool("false") == false);
-    REQUIRE(Utilities::stringToBool("off") == false);
-    REQUIRE(Utilities::stringToBool("no") == false);
+    REQUIRE(!Utilities::stringToBool(""));
+    REQUIRE(!Utilities::stringToBool("0"));
+    REQUIRE(!Utilities::stringToBool("false"));
+    REQUIRE(!Utilities::stringToBool("off"));
+    REQUIRE(!Utilities::stringToBool("no"));
 
-    REQUIRE(Utilities::stringToBool("1") == true);
-    REQUIRE(Utilities::stringToBool("true") == true);
-    REQUIRE(Utilities::stringToBool("on") == true);
-    REQUIRE(Utilities::stringToBool("yes") == true);
+    REQUIRE(Utilities::stringToBool("1"));
+    REQUIRE(Utilities::stringToBool("true"));
+    REQUIRE(Utilities::stringToBool("on"));
+    REQUIRE(Utilities::stringToBool("yes"));
 
-    REQUIRE(Utilities::stringToBool("test") == true);
+    REQUIRE(Utilities::stringToBool("test"));
 }
 
 /*****************************************************/
@@ -202,8 +199,8 @@ TEST_CASE("stringToBytes", "[Utilities]")
     REQUIRE(Utilities::stringToBytes(" 4567 ") == 4567);
 
     REQUIRE(Utilities::stringToBytes("1K") == 1024);
-    REQUIRE(Utilities::stringToBytes(" 5 K ") == 5*1024);
-    REQUIRE(Utilities::stringToBytes("256M") == 256*1024*1024);
+    REQUIRE(Utilities::stringToBytes(" 5 K ") == 5UL*1024);
+    REQUIRE(Utilities::stringToBytes("256M") == 256UL*1024*1024);
     REQUIRE(Utilities::stringToBytes("2837483M") == 2837483ULL*1024*1024);
     REQUIRE(Utilities::stringToBytes("57G") == 57ULL*1024*1024*1024);
     REQUIRE(Utilities::stringToBytes("13T") == 13ULL*1024*1024*1024*1024);

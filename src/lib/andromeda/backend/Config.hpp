@@ -48,19 +48,19 @@ public:
     void LoadAccountLimits(BackendImpl& backend);
 
     /** Returns true if the backend is read-only */
-    bool isReadOnly() const { return mReadOnly; }
+    [[nodiscard]] bool isReadOnly() const { return mReadOnly; }
 
     /** Returns true if random write is allowed */
-    bool canRandWrite() const { return mRandWrite; }
+    [[nodiscard]] bool canRandWrite() const { return mRandWrite; }
 
     /** Returns the max # of bytes allowed in an upload or 0 for no limit */
-    size_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
+    [[nodiscard]] size_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
 
     /** Sets the max upload bytes in case we discover it is lower than thought */
     void SetUploadMaxBytes(const size_t newMax) { mUploadMaxBytes = newMax; };
 
 private:
-    Debug mDebug;
+    mutable Debug mDebug;
     BackendImpl& mBackend;
 
     std::atomic<bool> mReadOnly { false };

@@ -33,21 +33,21 @@ public:
      */
     explicit CLIRunner(const std::string& apiPath, const RunnerOptions& runnerOptions);
 
-    virtual std::unique_ptr<BaseRunner> Clone() const override;
+    [[nodiscard]] std::unique_ptr<BaseRunner> Clone() const override;
 
-    virtual std::string GetHostname() const override { return "local-cli"; }
+    [[nodiscard]] std::string GetHostname() const override { return "local-cli"; }
 
-    virtual std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
+    std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
 
-    virtual std::string RunAction_Write(const RunnerInput& input) override;
+    std::string RunAction_Write(const RunnerInput& input) override;
 
-    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override;
+    std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override;
     
-    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override;
+    std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override;
     
-    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override;
+    void RunAction_StreamOut(const RunnerInput_StreamOut& input) override;
 
-    virtual bool RequiresSession() const override { return false; }
+    [[nodiscard]] bool RequiresSession() const override { return false; }
 
 private:
 
@@ -55,13 +55,13 @@ private:
     std::string FixApiPath(std::string apiPath);
 
     /** @throws Exception if given an error code */
-    void CheckError(reproc::process& process, const std::error_code& error);
+    static void CheckError(reproc::process& process, const std::error_code& error);
 
-    typedef std::list<std::string> ArgList;
+    using ArgList = std::list<std::string>;
     /** Return a list of arguments to run a command with the given input */
     ArgList GetArguments(const RunnerInput& input);
 
-    typedef std::map<std::string, std::string> EnvList;
+    using EnvList = std::map<std::string, std::string>;
     /** Return a list of environment vars to run a command with the given input */
     EnvList GetEnvironment(const RunnerInput& input);
 
@@ -69,15 +69,15 @@ private:
     void PrintArgs(const ArgList& argList);
 
     /** Starts the process with the given arguments and environment */
-    void StartProc(reproc::process& process, const ArgList& args, const EnvList& env);
+    void StartProc(reproc::process& process, const ArgList& args, const EnvList& env) const;
 
     /** Drains output from the process into the given string */
-    void DrainProc(reproc::process& process, std::string& output);
+    void DrainProc(reproc::process& process, std::string& output) const;
 
     /** Waits for the given process to end and returns its exit code */
-    int FinishProc(reproc::process& process);
+    int FinishProc(reproc::process& process) const;
 
-    Debug mDebug;
+    mutable Debug mDebug;
 
     const std::string mApiPath;
     const RunnerOptions mOptions;

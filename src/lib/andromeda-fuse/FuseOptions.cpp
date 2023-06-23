@@ -7,10 +7,6 @@
 
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
-#include "andromeda/Debug.hpp"
-using Andromeda::Debug;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
 
 namespace AndromedaFuse {
 
@@ -18,13 +14,13 @@ namespace AndromedaFuse {
 std::string FuseOptions::HelpText()
 {
     std::ostringstream output;
-    FuseOptions optDefault;
+    const FuseOptions optDefault;
 
     using std::endl;
 
     output << "FUSE Advanced:    [--no-chmod] [--no-chown] [--no-fuse-threading]"
     #if !LIBFUSE2
-        << " [--fuse-max-idle-threads uint(" << optDefault.maxIdleThreads << ")]"
+        << " [--fuse-max-idle-threads uint32(" << optDefault.maxIdleThreads << ")]"
     #endif // !LIBFUSE2
         << " [-o fuseoption]+"; 
     
@@ -80,21 +76,21 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     else if (option == "file-mode")
     {
         if (value.size() != 3) throw BaseOptions::BadValueException(option);
-        try { fileMode = decltype(fileMode)(stoul(value,nullptr,8)); }
+        try { fileMode = static_cast<decltype(fileMode)>(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
     else if (option == "dir-mode")
     {
         if (value.size() != 3) throw BaseOptions::BadValueException(option);
-        try { dirMode = decltype(dirMode)(stoul(value,nullptr,8)); }
+        try { dirMode = static_cast<decltype(dirMode)>(stoul(value,nullptr,8)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
 #if !LIBFUSE2
     else if (option == "fuse-max-idle-threads")
     {
-        try { maxIdleThreads = decltype(maxIdleThreads)(stoul(value)); }
+        try { maxIdleThreads = static_cast<decltype(maxIdleThreads)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
@@ -104,4 +100,4 @@ bool FuseOptions::AddOption(const std::string& option, const std::string& value)
     return true; 
 }
 
-} // namespace Andromeda
+} // namespace AndromedaFuse

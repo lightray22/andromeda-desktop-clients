@@ -69,8 +69,11 @@ public:
     /** Stop and unmount FUSE */
     virtual ~FuseAdapter();
 
+    DELETE_COPY(FuseAdapter)
+    DELETE_MOVE(FuseAdapter)
+
     /** Function to run after forking (e.g. start threads) */
-    typedef std::function<void()> ForkFunc;
+    using ForkFunc = std::function<void ()>;
 
     /** 
      * Mounts and starts the FUSE loop, blocks if there is an existing thread
@@ -80,10 +83,10 @@ public:
     void StartFuse(RunMode runMode, const ForkFunc& forkFunc = {});
 
     /** Returns the mounted filesystem path */
-    inline const std::string& GetMountPath() const { return mMountPath; }
+    [[nodiscard]] inline const std::string& GetMountPath() const { return mMountPath; }
 
     /** Returns the FUSE options */
-    inline const FuseOptions& GetOptions() const { return mOptions; }
+    [[nodiscard]] inline const FuseOptions& GetOptions() const { return mOptions; }
 
     /** Returns the root folder with a scope lock */
     inline Andromeda::Filesystem::Folder::ScopeLocked& GetRootFolder() { return mRootFolder; }
@@ -105,6 +108,8 @@ private:
 
     /** Signals initialization complete */
     void SignalInit();
+
+    mutable Andromeda::Debug mDebug;
     
     std::string mMountPath;
     FuseOptions mOptions;
@@ -125,10 +130,6 @@ private:
     std::mutex mInitMutex;
     std::condition_variable mInitCV;
     std::exception_ptr mInitError;
-
-    FuseAdapter(const FuseAdapter&) = delete; // no copying
-    FuseAdapter& operator=(const FuseAdapter&) = delete;
-    FuseAdapter& operator=(FuseAdapter&&) = delete;
 };
 
 } // namespace AndromedaFuse

@@ -22,7 +22,7 @@ class Filesystem : public PlainFolder
 {
 public:
 
-    virtual ~Filesystem(){};
+    ~Filesystem() override = default;
 
     /**
      * Load a filesystem from the backend with the given ID
@@ -39,32 +39,32 @@ public:
      */
     Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& thisLock) override { }
+    void Refresh(const nlohmann::json& data, const Andromeda::SharedLockW& thisLock) override { } // TODO probably need to do something here...?
 
 protected:
 
-    virtual const std::string& GetID() override;
+    const std::string& GetID() override;
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    using UniqueLock = std::unique_lock<std::mutex>;
     /** Sets the folder ID from the given backend data */
     virtual void LoadID(const nlohmann::json& data, const UniqueLock& idLock);
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
+    void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
-    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
+    void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
+    void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 
     std::string mFsid;
     std::mutex mIdMutex; // ID is lazy-loaded
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda
 
 #endif // LIBA2_FILESYSTEM_H_

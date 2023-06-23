@@ -29,24 +29,24 @@ public:
      * @param[out] httpOptions HTTPRunner options ref to fill 
      * @param[out] runnerOptions BaseRunner options ref to fill
      */
-    explicit Options(
+    Options(
         Andromeda::Backend::HTTPOptions& httpOptions,
         Andromeda::Backend::RunnerOptions& runnerOptions);
 
-    virtual bool AddFlag(const std::string& flag) override;
+    bool AddFlag(const std::string& flag) override;
 
-    virtual bool AddOption(const std::string& option, const std::string& value) override;
+    bool AddOption(const std::string& option, const std::string& value) override;
 
-    virtual void Validate() override;
+    void Validate() override;
 
     /** Returns the URL of the API endpoint */
-    std::string GetApiUrl() const { return mApiUrl; }
+    [[nodiscard]] std::string GetApiUrl() const { return mApiUrl; }
 
     /** Returns true if output streaming is requested */
-    bool isStreamOut() const { return mStreamOut; }
+    [[nodiscard]] bool isStreamOut() const { return mStreamOut; }
 
     /** Returns true if unsafe URLs are allowed */
-    bool AllowUnsafeUrl() const { return mUnsafeUrl; }
+    [[nodiscard]] bool AllowUnsafeUrl() const { return mUnsafeUrl; }
 
 private:
 

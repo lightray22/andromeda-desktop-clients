@@ -5,8 +5,6 @@
 #include "andromeda/BaseOptions.hpp"
 #include "andromeda/Utilities.hpp"
 
-using namespace std::chrono;
-
 namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
@@ -15,12 +13,14 @@ namespace Filedata {
 std::string CacheOptions::HelpText()
 {
     std::ostringstream output;
-    CacheOptions optDefault;
+    const CacheOptions optDefault;
 
     const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
     const size_t stBits { sizeof(size_t)*8 };
 
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")] [--memory-limit bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.memoryLimit) << ")] [--evict-frac uint(" << optDefault.evictSizeFrac << ")]";
+    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")]"
+        << " [--memory-limit bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.memoryLimit) << ")]"
+        << " [--evict-frac uint32(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
 }
@@ -30,7 +30,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
 {
     if (option == "max-dirty")
     {
-        try { maxDirtyTime = decltype(maxDirtyTime)(stoul(value)); }
+        try { maxDirtyTime = static_cast<decltype(maxDirtyTime)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
@@ -42,7 +42,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     }
     else if (option == "evict-frac")
     {
-        try { evictSizeFrac = stoul(value); }
+        try { evictSizeFrac = static_cast<decltype(evictSizeFrac)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 
@@ -54,5 +54,5 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
 }
 
 } // namespace Filedata
-} // namespace Filesystme
+} // namespace Filesystem
 } // namespace Andromeda

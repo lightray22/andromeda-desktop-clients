@@ -1,4 +1,5 @@
 
+#include <array>
 #include <filesystem>
 #include <fstream>
 
@@ -12,22 +13,22 @@ namespace Andromeda {
 class TestOptions : public BaseOptions
 {
 public:
-    virtual bool AddFlag(const std::string& flag) override
+    bool AddFlag(const std::string& flag) override
     {
         flags.push_back(flag); return true;
     }
 
-    virtual bool AddOption(const std::string& option, const std::string& value) override
+    bool AddOption(const std::string& option, const std::string& value) override
     {
         options.emplace(option, value); return true;
     }
 
-    virtual void TryAddUrlFlag(const std::string& flag) override
+    void TryAddUrlFlag(const std::string& flag) override
     {
         flags.push_back(flag);
     }
 
-    virtual void TryAddUrlOption(const std::string& option, const std::string& value) override
+    void TryAddUrlOption(const std::string& option, const std::string& value) override
     {
         options.emplace(option, value);
     }
@@ -40,46 +41,46 @@ public:
 TEST_CASE("ParseArgs", "[BaseOptions]")
 {
     {
-        const char* args[] { "test" };
-        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
-        REQUIRE(options.flags == BaseOptions::Flags{});
-        REQUIRE(options.options == BaseOptions::Options{});
+        const std::array<const char*,1> args { "test" };
+        TestOptions options; options.ParseArgs(args.size(), args.data());
+        REQUIRE(options.flags == BaseOptions::Flags{}); // NOLINT(readability-container-size-empty)
+        REQUIRE(options.options == BaseOptions::Options{}); // NOLINT(readability-container-size-empty)
     }
 
     {
-        const char* args[] { "test", "-d" };
-        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
+        const std::array<const char*,2> args { "test", "-d" };
+        TestOptions options; options.ParseArgs(args.size(), args.data());
         REQUIRE(options.flags == BaseOptions::Flags{"d"});
-        REQUIRE(options.options == BaseOptions::Options{});
+        REQUIRE(options.options.empty());
     }
 
     {
-        const char* args[] { "test", "-a", "-b1", "-c", "2", "-x=5", "--y=6", "--test", "--test2", "val", "--test3", "" };
-        TestOptions options; options.ParseArgs(ARRSIZE(args), args);
+        const std::array<const char*,12> args { "test", "-a", "-b1", "-c", "2", "-x=5", "--y=6", "--test", "--test2", "val", "--test3", "" };
+        TestOptions options; options.ParseArgs(args.size(), args.data());
         REQUIRE(options.flags == BaseOptions::Flags{"a","test"});
         REQUIRE(options.options == BaseOptions::Options{{"b","1"},{"c","2"},{"x","5"},{"y","6"},{"test2","val"},{"test3",""}});
     }
 
     {
-        const char* args[] { "test", "-a", "test1", "" };
+        const std::array<const char*,4> args { "test", "-a", "test1", "" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
-        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args, true), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(args.size(), args.data()), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(args.size(), args.data(), true), BaseOptions::BadUsageException);
     }
 
     {
-        const char* args[] { "test", "-a", "test1", "test2" };
+        const std::array<const char*,4> args { "test", "-a", "test1", "test2" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
-        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args, true), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(args.size(), args.data()), BaseOptions::BadUsageException);
+        REQUIRE_THROWS_AS(options.ParseArgs(args.size(), args.data(), true), BaseOptions::BadUsageException);
     }
 
     {
-        const char* args[] { "test", "-a", "test1", "--", "test2" };
+        const std::array<const char*,5> args { "test", "-a", "test1", "--", "test2" };
         TestOptions options; 
-        REQUIRE_THROWS_AS(options.ParseArgs(ARRSIZE(args), args), BaseOptions::BadUsageException);
-        REQUIRE(options.ParseArgs(ARRSIZE(args), args, true) == ARRSIZE(args)-1);
-        REQUIRE(options.flags == BaseOptions::Flags{});
+        REQUIRE_THROWS_AS(options.ParseArgs(args.size(), args.data()), BaseOptions::BadUsageException);
+        REQUIRE(options.ParseArgs(args.size(), args.data(), true) == args.size()-1);
+        REQUIRE(options.flags.empty());
         REQUIRE(options.options == BaseOptions::Options{{"a","test1"}});
     }
 }
@@ -87,7 +88,7 @@ TEST_CASE("ParseArgs", "[BaseOptions]")
 /*****************************************************/
 void DoParseFile(TestOptions& options, const std::string& fileData)
 {
-    std::string tmppath { std::filesystem::temp_directory_path().string()+"/a2_testParseFile" };
+    const std::string tmppath { std::filesystem::temp_directory_path().string()+"/a2_testParseFile" };
     std::ofstream tmpfile; tmpfile.open(tmppath); tmpfile << fileData; tmpfile.close();
     options.ParseFile(tmppath); std::filesystem::remove(tmppath);
 }
@@ -96,14 +97,14 @@ TEST_CASE("ParseFile", "[BaseOptions]")
 {
     {
         TestOptions options; DoParseFile(options, "");
-        REQUIRE(options.flags == BaseOptions::Flags{});
-        REQUIRE(options.options == BaseOptions::Options{});
+        REQUIRE(options.flags.empty());
+        REQUIRE(options.options.empty());
     }
 
     {
         TestOptions options; DoParseFile(options, "d");
         REQUIRE(options.flags == BaseOptions::Flags{"d"});
-        REQUIRE(options.options == BaseOptions::Options{});
+        REQUIRE(options.options.empty());
     }
 
     {
@@ -118,14 +119,14 @@ TEST_CASE("ParseUrl", "[BaseOptions]")
 {
     {
         TestOptions options; options.ParseUrl("");
-        REQUIRE(options.flags == BaseOptions::Flags{});
-        REQUIRE(options.options == BaseOptions::Options{});
+        REQUIRE(options.flags.empty());
+        REQUIRE(options.options.empty());
     }
 
     {
         TestOptions options; options.ParseUrl("myhost/path?test");
         REQUIRE(options.flags == BaseOptions::Flags{"test"});
-        REQUIRE(options.options == BaseOptions::Options{});
+        REQUIRE(options.options.empty());
     }
 
     {

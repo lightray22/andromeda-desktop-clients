@@ -19,29 +19,29 @@ public:
      */
     Filesystems(Backend::BackendImpl& backend, Folder& parent);
     
-    virtual ~Filesystems(){};
+    ~Filesystems() override = default;
 
 protected:
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
+    void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
-    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
+    void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
+    void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override { throw ModifyException(); }
 
-    virtual void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
+    void SubDelete(const DeleteLock& deleteLock) override { throw ModifyException(); }
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
+    void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
+    void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite = false) override { throw ModifyException(); }
 
 private:
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda
 
 #endif // LIBA2_FILESYSTEMS_H_

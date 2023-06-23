@@ -8,6 +8,7 @@
 #include <string>
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -27,8 +28,10 @@ public:
 #if DEBUG
     virtual ~MemoryAllocator();
 #else // !DEBUG
-    virtual ~MemoryAllocator(){ };
+    virtual ~MemoryAllocator() = default;
 #endif // DEBUG
+    DELETE_COPY(MemoryAllocator)
+    DELETE_MOVE(MemoryAllocator)
 
     /** Allocate the given number of pages and return a pointer */
     virtual void* alloc(size_t pages);
@@ -38,17 +41,17 @@ public:
      * @param ptr the pointer to free (must be aligned to a page boundary)
      * @param pages the number of pages to free
      */
-    virtual void free(void* const ptr, size_t pages);
+    virtual void free(void* ptr, size_t pages);
 
     /** Returns the number of bytes in each page */
-    inline size_t getPageSize() const { return mPageSize; }
+    [[nodiscard]] inline size_t getPageSize() const { return mPageSize; }
 
     /** Calculates the number of pages needed to hold the given number of bytes (page granularity) */
-    inline size_t getNumPages(const size_t bytes) const { 
+    [[nodiscard]] inline size_t getNumPages(const size_t bytes) const { 
         return bytes ? (bytes-1)/mPageSize+1 : 0; }
 
     /** Returns the actual number of bytes used for an allocation (page granularity) */
-    inline size_t getNumBytes(const size_t bytes) const {
+    [[nodiscard]] inline size_t getNumBytes(const size_t bytes) const {
         return getNumPages(bytes)*getPageSize(); }
 
 protected:
@@ -59,13 +62,13 @@ protected:
 private:
 
     /** Ask the OS for the page granularity */
-    size_t calcPageSize() const;
+    [[nodiscard]] size_t calcPageSize() const;
 
     /** Updates and prints allocator statistics (debug) */
-    void stats(const std::string& fname, const size_t pages, bool alloc);
+    void stats(const std::string& fname, size_t pages, bool alloc);
 
 #if DEBUG
-    typedef std::map<void*, size_t, std::greater<void*>> AllocMap;
+    using AllocMap = std::map<void*, size_t, std::greater<>>;
     /** Map of all allocations for verifying frees */
     AllocMap mAllocMap;
 #endif // DEBUG
@@ -81,8 +84,8 @@ private:
     /** stat-counter mutex */
     std::mutex mMutex;
 
-    typedef std::lock_guard<decltype(mMutex)> LockGuard;
-    Debug mDebug;
+    using LockGuard = std::lock_guard<decltype(mMutex)>;
+    mutable Debug mDebug;
 };
 
 } // namespace Filedata

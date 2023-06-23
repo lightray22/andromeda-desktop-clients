@@ -19,7 +19,7 @@ namespace Filesystem {
 class FSConfig
 {
 public:
-    virtual ~FSConfig(){};
+    virtual ~FSConfig() = default;
 
     /**
      * Load from the backend with the given ID
@@ -36,16 +36,16 @@ public:
     FSConfig(const nlohmann::json& data, const nlohmann::json& lims);
 
     /** Returns the filesystem chunk size or 0 for none */
-    size_t GetChunkSize() const { return mChunksize; }
+    [[nodiscard]] size_t GetChunkSize() const { return mChunksize; }
 
     /** Returns true if the filesystem is read-only */
-    bool isReadOnly() const { return mReadOnly; }
+    [[nodiscard]] bool isReadOnly() const { return mReadOnly; }
 
     /** The modify mode supported by the filesystem */
     enum class WriteMode { UPLOAD, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */
-    WriteMode GetWriteMode() const { return mWriteMode; }
+    [[nodiscard]] WriteMode GetWriteMode() const { return mWriteMode; }
 
 private:
 
@@ -56,7 +56,7 @@ private:
     /** WriteMode supported by the filesystem */
     WriteMode mWriteMode { WriteMode::RANDOM };
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
 } // namespace Filesystem

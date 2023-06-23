@@ -3,13 +3,9 @@
 
 #include "Folder.hpp"
 #include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-
-using namespace std::chrono;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -37,7 +33,7 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
 
     if (path.empty()) // return self
     {
-        Item::ScopeLocked self { Item::TryLockScope() };
+        const Item::ScopeLocked self { Item::TryLockScope() };
         if (!self) { ITDBG_INFO("... self deleted(1)"); 
             throw NotFoundException(); }
         return Item::TryLockScope();
@@ -57,7 +53,7 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
         parent->LoadItems(parentLock); // populate items
         const ItemMap& items { parent->mItemMap };
 
-        ItemMap::const_iterator it { items.find(*pIt) };
+        const ItemMap::const_iterator it { items.find(*pIt) };
         if (it == items.end()) {
             ITDBG_INFO("... not in map: " << *pIt); 
             throw NotFoundException(); }
@@ -125,7 +121,7 @@ void Folder::LoadItems(const SharedLockW& thisLock, bool force)
 {
     ITDBG_INFO("()");
 
-    bool expired { (steady_clock::now() - mRefreshed)
+    const bool expired { (std::chrono::steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
     if (force || !mHaveItems || (expired && !mBackend.isMemory()))
@@ -138,7 +134,7 @@ void Folder::LoadItems(const SharedLockW& thisLock, bool force)
         // item scope lock not needed since mItemMap is locked
 
         SubLoadItems(lockMap, thisLock); // populate mItemMap
-        mRefreshed = steady_clock::now();
+        mRefreshed = std::chrono::steady_clock::now();
         mHaveItems = true;
     }
 
@@ -155,11 +151,11 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
         const std::string& name(newIt.first);
         const nlohmann::json& data(newIt.second.first);
 
-        ItemMap::const_iterator existIt(mItemMap.find(name));
+        const ItemMap::const_iterator existIt(mItemMap.find(name));
 
         if (existIt == mItemMap.end()) // insert new item
         {
-            NewItemFunc newFunc(newIt.second.second);
+            const NewItemFunc newFunc(newIt.second.second);
             mItemMap[name] = newFunc(data);
         }
         else existIt->second->Refresh(data, 
@@ -224,12 +220,12 @@ void Folder::DeleteItem(const std::string& name, const SharedLockW& thisLock)
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(thisLock); // populate items
-    ItemMap::const_iterator it { mItemMap.find(name) };
+    const ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
 
     { // lock scope (must unlock before erasing)
       // we have our W lock so the item cannot get re-acquired
-        DeleteLock deleteLock { it->second->GetDeleteLock() };
+        const DeleteLock deleteLock { it->second->GetDeleteLock() };
         it->second->SubDelete(deleteLock);
     }
     mItemMap.erase(it);
@@ -243,15 +239,15 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(thisLock); // populate items
-    ItemMap::const_iterator it { mItemMap.find(oldName) };
+    const ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
     // item scope lock not needed since mItemMap is locked
 
-    ItemMap::const_iterator dup { mItemMap.find(newName) };
+    const ItemMap::const_iterator dup { mItemMap.find(newName) };
     if ((!overwrite && dup != mItemMap.end()) || newName.empty())
         throw DuplicateItemException();
 
-    SharedLockW subLock { it->second->GetWriteLock() };
+    const SharedLockW subLock { it->second->GetWriteLock() };
     it->second->SubRename(newName, subLock, overwrite);
 
     if (dup != mItemMap.end()) 
@@ -269,7 +265,7 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
     LoadItems(itemLocks.first); // populate items
-    ItemMap::const_iterator it { mItemMap.find(name) };
+    const ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
     // item scope lock not needed since mItemMap is locked
 
@@ -277,11 +273,11 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
     if (newParent.isReadOnlyFS()) throw ReadOnlyFSException();
     if (newParent.GetID().empty()) throw ModifyException();
 
-    ItemMap::const_iterator dup { newParent.mItemMap.find(name) };
+    const ItemMap::const_iterator dup { newParent.mItemMap.find(name) };
     if (!overwrite && dup != newParent.mItemMap.end())
         throw DuplicateItemException();
 
-    SharedLockW subLock { it->second->GetWriteLock() };
+    const SharedLockW subLock { it->second->GetWriteLock() };
     it->second->SubMove(newParent.GetID(), subLock, overwrite);
 
     if (dup != newParent.mItemMap.end()) 
@@ -297,7 +293,7 @@ void Folder::FlushCache(const SharedLockW& thisLock, bool nothrow)
     
     for (ItemMap::value_type& it : mItemMap)
     {
-        SharedLockW subLock { it.second->GetWriteLock() };
+        const SharedLockW subLock { it.second->GetWriteLock() };
         it.second->FlushCache(subLock, nothrow);
     }
 }

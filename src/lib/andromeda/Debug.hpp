@@ -36,11 +36,11 @@ public:
      * @param prefix to use for all prints
      * @param addr address to print with details
      */
-    explicit Debug(const std::string& prefix, void* addr) : 
+    explicit Debug(const std::string& prefix, void* addr) noexcept : 
         mAddr(addr), mPrefix(prefix) { }
 
     /** Function to send debug text to a given output stream */
-    typedef std::function<void(std::ostream& str)> StreamFunc;
+    using StreamFunc = std::function<void (std::ostream&)>;
 
     /** Prints func to cerr if the level is >= ERRORS */
     inline void Error(const StreamFunc& strfunc)

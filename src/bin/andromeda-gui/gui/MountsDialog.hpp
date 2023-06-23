@@ -14,7 +14,12 @@ class MountsDialog : public QDialog
 
 public:
     explicit MountsDialog(QWidget *parent = nullptr);
-    ~MountsDialog();
+    
+    ~MountsDialog() override;
+    MountsDialog(const MountsDialog&) = delete; // no copy
+    MountsDialog& operator=(const MountsDialog&) = delete;
+    MountsDialog(MountsDialog&&) = delete; // no move
+    MountsDialog& operator=(MountsDialog&&) = delete;
 
 private:
     Ui::MountsDialog *ui;

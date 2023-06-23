@@ -4,7 +4,6 @@
 #include "Options.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-using Andromeda::BaseOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
 using Andromeda::Backend::HTTPOptions;
 #include "andromeda/backend/RunnerOptions.hpp"

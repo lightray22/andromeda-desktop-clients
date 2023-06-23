@@ -1,5 +1,5 @@
 
-#include <errno.h>
+#include <cerrno>
 #if WIN32
 #define EHOSTDOWN EIO
 #endif // WIN32
@@ -8,7 +8,6 @@
 #include <functional>
 
 #include "FuseAdapter.hpp"
-using AndromedaFuse::FuseAdapter;
 #include "FuseOperations.hpp"
 
 #include "andromeda/BaseException.hpp"
@@ -33,7 +32,7 @@ using Andromeda::Filesystem::Folder;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
 
-static Debug sDebug("FuseOperations",nullptr);
+static Debug sDebug("FuseOperations",nullptr); // NOLINT(cert-err58-cpp)
 
 namespace AndromedaFuse {
 
@@ -62,7 +61,7 @@ static inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-static int CatchAsErrno(const std::string& fname, std::function<int()> func, const char* path)
+static int CatchAsErrno(const std::string& fname, const std::function<int()>& func, const char* path)
 {
     try { return func(); }
 
@@ -160,7 +159,7 @@ void* FuseOperations::init(struct fuse_conn_info* conn, struct fuse_config* cfg)
     SDBG_INFO("... conn->want: " << std::bitset<32>(conn->want));
 
 #if !LIBFUSE2
-    conn->want &= static_cast<decltype(conn->want)>(~FUSE_CAP_HANDLE_KILLPRIV); // don't support setuid and setgid flags
+    conn->want &= ~static_cast<decltype(conn->want)>(FUSE_CAP_HANDLE_KILLPRIV); // don't support setuid and setgid flags
 #endif // !LIBFUSE2
 
     FuseAdapter& adapter { GetFuseAdapter() };
@@ -255,9 +254,9 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
     stbuf->st_blocks = !stbuf->st_size ? 0 :
         (stbuf->st_size-1)/512+1; // # of 512B blocks
 
-    Item::Date created { item->GetCreated(itemLock) };
-    Item::Date modified { item->GetModified(itemLock) };
-    Item::Date accessed { item->GetAccessed(itemLock) };
+    const Item::Date created { item->GetCreated(itemLock) };
+    const Item::Date modified { item->GetModified(itemLock) };
+    const Item::Date accessed { item->GetAccessed(itemLock) };
 
 #if WIN32
     date_to_timespec(created, stbuf->st_birthtim);
@@ -293,14 +292,14 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 
         // TODO need to handle O_APPEND?
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file->isReadOnlyFS())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && file->isReadOnlyFS()) // NOLINT(hicpp-signed-bitwise)
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... read-only FS!"; });
             return -EROFS;
         }
 
-        if (fi->flags & O_TRUNC)
+        if (fi->flags & O_TRUNC) // NOLINT(hicpp-signed-bitwise)
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... truncating!"; });
@@ -321,7 +320,7 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
     {
         const Folder::ScopeLocked folder { GetFolderByPath(path) };
 
-        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnlyFS())
+        if ((fi->flags & O_WRONLY || fi->flags & O_RDWR) && folder->isReadOnlyFS()) // NOLINT(hicpp-signed-bitwise)
         {
             sDebug.Info([&](std::ostream& str){ 
                 str << fname << "... read-only FS!"; });
@@ -376,13 +375,14 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #if LIBFUSE2
             int retval { filler(buf, item->GetName(itemLock).c_str(), NULL, 0) };
 #else
-            int retval; if (flags & FUSE_READDIR_PLUS)
+            int retval = -1; 
+            if (flags & FUSE_READDIR_PLUS)
             {
-                struct stat stbuf; item_stat(item, itemLock, &stbuf);
+                struct stat stbuf{}; item_stat(item, itemLock, &stbuf);
 
                 retval = filler(buf, item->GetName(itemLock).c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
-            else retval = filler(buf, item->GetName(itemLock).c_str(), NULL, 0, static_cast<fuse_fill_dir_flags>(0));
+            else retval = filler(buf, item->GetName(itemLock).c_str(), nullptr, 0, static_cast<fuse_fill_dir_flags>(0));
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed: " << retval; }); return -EIO; }
@@ -393,7 +393,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 #if LIBFUSE2
             int retval { filler(buf, name, NULL, 0) };
 #else
-            int retval { filler(buf, name, NULL, 0, static_cast<fuse_fill_dir_flags>(0)) };
+            int retval { filler(buf, name, nullptr, 0, static_cast<fuse_fill_dir_flags>(0)) };
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed: " << retval; }); return -EIO; }
@@ -450,9 +450,9 @@ int FuseOperations::unlink(const char* path)
         SharedLockW fileLock { file->GetWriteLock() };
 
         // need an Item lock to pass to delete, cast from File
-        Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(file)) };
+        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(file)) };
 
-        file->Delete(scopeLock, fileLock); return FUSE_SUCCESS;
+        item->Delete(item, fileLock); return FUSE_SUCCESS;
     }, path);
 }
 
@@ -469,9 +469,9 @@ int FuseOperations::rmdir(const char* path)
         if (folder->CountItems(folderLock)) return -ENOTEMPTY;
 
         // need an Item lock to pass to delete, cast from Folder
-        Item::ScopeLocked scopeLock { Item::ScopeLocked::FromChild(std::move(folder)) };
+        Item::ScopeLocked item { Item::ScopeLocked::FromChild(std::move(folder)) };
 
-        folder->Delete(scopeLock, folderLock); return FUSE_SUCCESS;
+        item->Delete(item, folderLock); return FUSE_SUCCESS;
     }, path);
 }
 
@@ -482,11 +482,11 @@ int FuseOperations::rename(const char* oldpath, const char* newpath)
 int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif // LIBFUSE2
 {
-    Utilities::StringPair pair0(Utilities::splitPath(oldpath));
+    const Utilities::StringPair pair0(Utilities::splitPath(oldpath));
     const std::string& oldPath { pair0.first };  
     const std::string& oldName { pair0.second };
 
-    Utilities::StringPair pair1(Utilities::splitPath(newpath));
+    const Utilities::StringPair pair1(Utilities::splitPath(newpath));
     const std::string& newPath { pair1.first };  
     const std::string& newName { pair1.second };
 
@@ -501,8 +501,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
         if (oldPath != newPath && oldName != newName)
         {
             //Folder::ScopeLocked parent { GetFolderByPath(newPath) };
-
-            SDBG_ERROR("NOT SUPPORTED YET!");
+            SDBG_ERROR("NOT SUPPORTED YET!"); // NOLINT(bugprone-lambda-function-name)
             return -EIO; // TODO implement me
         }
         else if (oldPath != newPath)

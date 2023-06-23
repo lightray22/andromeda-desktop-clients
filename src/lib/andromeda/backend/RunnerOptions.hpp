@@ -2,6 +2,7 @@
 #define LIBA2_RUNNEROPTIONS_H_
 
 #include <chrono>
+#include <cstdint>
 #include <string>
 
 namespace Andromeda {
@@ -19,14 +20,16 @@ struct RunnerOptions
     /** Adds the given option/value, returning true iff it was used */
     bool AddOption(const std::string& option, const std::string& value);
 
+    using seconds = std::chrono::seconds;
+
     /** maximum retries before throwing */
-    unsigned long maxRetries { 3 };
+    uint32_t maxRetries { 3 };
     /** The time to wait between each retry */
-    std::chrono::seconds retryTime { std::chrono::seconds(5) };
+    seconds retryTime { 5 };
     /** The connection read/write timeout */
-    std::chrono::seconds timeout { std::chrono::seconds(60) };
+    seconds timeout { 60 };
     /** Buffer/chunk size when reading file streams */
-    size_t streamBufferSize { 1024*1024 }; // 1M
+    size_t streamBufferSize { 1048576 }; // 1M
 };
 
 } // namespace Backend

@@ -7,6 +7,7 @@
 #include <string>
 
 #include "andromeda/BaseException.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -33,19 +34,21 @@ public:
             BaseException("Endpoint Error: "+message) {}; };
 
     BaseRunner() = default;
-    virtual ~BaseRunner(){ }; // for unique_ptr
+    virtual ~BaseRunner() = default;
+    DELETE_COPY(BaseRunner)
+    DELETE_MOVE(BaseRunner)
 
     /** Copies to a new runner with a new backend channel, but the same config */
-    virtual std::unique_ptr<BaseRunner> Clone() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<BaseRunner> Clone() const = 0;
 
     /** Returns the remote hostname of the runner */
-    virtual std::string GetHostname() const = 0;
+    [[nodiscard]] virtual std::string GetHostname() const = 0;
 
     /** Allows automatic retry on request failure */
-    virtual void EnableRetry(bool enable = true) final { mCanRetry = enable; }
+    inline void EnableRetry(bool enable = true) { mCanRetry = enable; }
 
     /** Returns whether retry is enabled or disabled */
-    virtual bool GetCanRetry() const final { return mCanRetry; }
+    [[nodiscard]] inline bool GetCanRetry() const { return mCanRetry; }
 
     /**
      * Runs an API call and returns the result
@@ -84,13 +87,9 @@ public:
     virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) = 0;
 
     /** Returns true if the backend requires sessions */
-    virtual bool RequiresSession() const = 0;
+    [[nodiscard]] virtual bool RequiresSession() const = 0;
     
-    BaseRunner(const BaseRunner&) = delete; // no copying
-    BaseRunner& operator=(const BaseRunner&) = delete;
-    BaseRunner& operator=(BaseRunner&&) = delete;
-
-protected:
+private:
 
     std::atomic<bool> mCanRetry { false };
 };

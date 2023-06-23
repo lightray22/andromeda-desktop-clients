@@ -156,8 +156,9 @@ endif() # MSVC
 function (andromeda_analyze)
     if (BUILD_TESTS)
         # clang-tidy rules are set in .clang-tidy
-        set(CMAKE_C_CLANG_TIDY "clang-tidy;--quiet" PARENT_SCOPE)
-        set(CMAKE_CXX_CLANG_TIDY "clang-tidy;--quiet" PARENT_SCOPE)
+        set(CLANG_TIDY_FLAGS "clang-tidy;--quiet")
+        set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
+        set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
 
         set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet"
             "--enable=style,performance,portability,information"
@@ -167,8 +168,11 @@ function (andromeda_analyze)
             "--suppress=unmatchedSuppression"
             "--suppress=missingInclude"
             "--suppress=missingIncludeSystem"
-            "--suppress=useStlAlgorithm"
-            "--suppress=comparisonOfFuncReturningBoolError"
+            "--suppress=useStlAlgorithm" # annoying
+            "--suppress=comparisonOfFuncReturningBoolError" # catch2
+            "--suppress=constParameter" # false positives
+            "--suppress=noConstructor" # false positives
+            "--suppress=uninitMemberVarPrivate" # false positives
             PARENT_SCOPE)
     endif()
 endfunction()

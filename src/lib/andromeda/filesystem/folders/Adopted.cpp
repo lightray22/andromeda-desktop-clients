@@ -4,7 +4,6 @@
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/Folder.hpp"
-using Andromeda::Filesystem::Folder;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -27,6 +26,6 @@ void Adopted::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock)
     LoadItemsFrom(mBackend.GetAdopted(), itemsLocks, thisLock);
 }
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda

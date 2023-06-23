@@ -17,7 +17,7 @@ class BaseOptions
 {
 public:
 
-    virtual ~BaseOptions(){ };
+    virtual ~BaseOptions() = default;
 
     /** Base class for all Options errors */
     class Exception : public BaseException {
@@ -60,8 +60,8 @@ public:
         public: explicit MissingOptionException(const std::string& option) :
             Exception("Missing Option: "+option) {} };
 
-    typedef std::list<std::string> Flags;
-    typedef std::multimap<std::string, std::string> Options;
+    using Flags = std::list<std::string>;
+    using Options = std::multimap<std::string, std::string>;
 
     /** 
      * Parses command line arguments from main (skips argv[0]!) 

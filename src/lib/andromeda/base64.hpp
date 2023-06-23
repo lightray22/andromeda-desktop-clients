@@ -11,14 +11,15 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 #ifndef LIBA2_BASE64_H_
 #define LIBA2_BASE64_H_
 
+#include <array>
+#include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <stdexcept>
-#include <cstdint>
 
 namespace base64
 {
-	inline static const char kEncodeLookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	inline static const char kEncodeLookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // NOLINT(*-avoid-c-arrays)
 	inline static const char kPadCharacter = '=';
 
 	using byte = std::uint8_t;
@@ -33,36 +34,36 @@ namespace base64
 
 		for(std::size_t i = 0; i < input.size() / 3; ++i)
 		{
-
-			temp  = static_cast<uint32_t>(*it++) << 16;
-			temp += static_cast<uint32_t>(*it++) << 8;
+			temp  = static_cast<uint32_t>(*it++) << 16UL;
+			temp += static_cast<uint32_t>(*it++) << 8UL;
 			temp += static_cast<uint32_t>(*it++);
-			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000) >> 18]);
-			encoded.append(1, kEncodeLookup[(temp & 0x0003F000) >> 12]);
-			encoded.append(1, kEncodeLookup[(temp & 0x00000FC0) >> 6 ]);
-			encoded.append(1, kEncodeLookup[(temp & 0x0000003F)      ]);
+			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000UL) >> 18UL]);
+			encoded.append(1, kEncodeLookup[(temp & 0x0003F000UL) >> 12UL]);
+			encoded.append(1, kEncodeLookup[(temp & 0x00000FC0UL) >> 6UL ]);
+			encoded.append(1, kEncodeLookup[(temp & 0x0000003FUL)      ]);
 		}
 
 		switch(input.size() % 3)
 		{
+		case 0: break; // do nothing
 		case 1:
-			temp = static_cast<uint32_t>(*it++) << 16;
-			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000) >> 18]);
-			encoded.append(1, kEncodeLookup[(temp & 0x0003F000) >> 12]);
+			temp = static_cast<uint32_t>(*it++) << 16UL;
+			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000UL) >> 18UL]);
+			encoded.append(1, kEncodeLookup[(temp & 0x0003F000UL) >> 12UL]);
 			encoded.append(2, kPadCharacter);
 			break;
 		case 2:
-			temp  = static_cast<uint32_t>(*it++) << 16;
-			temp += static_cast<uint32_t>(*it++) << 8;
-			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000) >> 18]);
-			encoded.append(1, kEncodeLookup[(temp & 0x0003F000) >> 12]);
-			encoded.append(1, kEncodeLookup[(temp & 0x00000FC0) >> 6 ]);
+			temp  = static_cast<uint32_t>(*it++) << 16UL;
+			temp += static_cast<uint32_t>(*it++) << 8UL;
+			encoded.append(1, kEncodeLookup[(temp & 0x00FC0000UL) >> 18UL]);
+			encoded.append(1, kEncodeLookup[(temp & 0x0003F000UL) >> 12UL]);
+			encoded.append(1, kEncodeLookup[(temp & 0x00000FC0UL) >> 6UL ]);
 			encoded.append(1, kPadCharacter);
 			break;
 		}
 
 		return encoded;
 	}
-}
+} // namespace base64
 
 #endif // LIBA2_BASE64_H_

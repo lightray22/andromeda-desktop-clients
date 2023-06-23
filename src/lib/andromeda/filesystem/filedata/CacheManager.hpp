@@ -16,6 +16,7 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -49,6 +50,8 @@ public:
     explicit CacheManager(const CacheOptions& cacheOptions, bool startThreads = true);
 
     virtual ~CacheManager();
+    DELETE_COPY(CacheManager)
+    DELETE_MOVE(CacheManager)
 
     /** Runs the cleanup threads */
     void StartThreads();
@@ -72,7 +75,7 @@ public:
      * @throws MemoryException if canWait and evict/flush fails to free memory
      * @throws BaseException if canWait and flush for this pageMgr fails to free memory
      */
-    void InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty,
+    void InformPage(PageManager& pageMgr, uint64_t index, const Page& page, bool dirty,
         bool canWait = true, const SharedLockW* mgrLock = nullptr);
 
     /**
@@ -95,7 +98,7 @@ public:
     
 private:
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    using UniqueLock = std::unique_lock<std::mutex>;
 
     /** Returns true if we should wait for a page eviction */
     inline bool ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock);
@@ -131,7 +134,7 @@ private:
      * @param dirty if true, consider dirty memory also
      * @return size_t the size of the old page or 0 if it didn't exist
      */
-    size_t EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock);
+    size_t EnqueuePage(PageManager& pageMgr, uint64_t index, const Page& page, bool dirty, const UniqueLock& lock);
 
     /** 
      * Inform us that a page has been erased (already have the lock) 
@@ -160,14 +163,14 @@ private:
 
     /** Calls flush on a page and updates the bandwidth measurement */
     template<class T>
-    void FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock);
+    void FlushPage(PageManager& pageMgr, uint64_t index, const T& mgrLock);
 
-    Debug mDebug;
+    mutable Debug mDebug;
 
     /** Mutex to guard writing data structures */
     std::mutex mMutex;
 
-    typedef struct
+    using PageInfo = struct
     {
         /** Reference to the page manager owner of the page */
         PageManager& mPageMgr;
@@ -175,10 +178,10 @@ private:
         const uint64_t mPageIndex;
         /** Size of the page when it was added */
         size_t mPageSize;
-    } PageInfo;
+    };
 
     /** LIFO queue of pages for an LRU cache */
-    typedef OrderedMap<const Page*, PageInfo> PageQueue;
+    using PageQueue = OrderedMap<const Page*, PageInfo>;
     PageQueue mPageQueue;
     PageQueue mDirtyQueue;
 
@@ -224,10 +227,6 @@ private:
     BandwidthMeasure mBandwidth;
     /** Allocator to use for all file pages (never null) */
     std::unique_ptr<CachingAllocator> mPageAllocator;
-    
-    CacheManager(const CacheManager&) = delete; // no copying
-    CacheManager& operator=(const CacheManager&) = delete;
-    CacheManager& operator=(CacheManager&&) = delete;
 };
 
 } // namespace Filedata

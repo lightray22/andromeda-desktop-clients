@@ -4,6 +4,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <vector>
 
 // TODO should not include this here - use PRIVATE cmake link
 // probably need just an interface here then a separate HTTPRunnerImpl
@@ -64,39 +65,39 @@ public:
     HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
         const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions);
 
-    virtual std::unique_ptr<BaseRunner> Clone() const override;
+    [[nodiscard]] std::unique_ptr<BaseRunner> Clone() const override;
 
-    typedef std::pair<std::string, std::string> HostUrlPair;
+    using HostUrlPair = std::pair<std::string, std::string>;
 
     /**
      * Parse a URL for the constructor
      * @return std::pair<std::string> protoHost, baseURL pair
      */
-    static HostUrlPair ParseURL(std::string fullURL);
+    static HostUrlPair ParseURL(const std::string& fullURL);
 
     /** Returns the HTTP hostname (without proto://) */
-    virtual std::string GetHostname() const override;
+    [[nodiscard]] std::string GetHostname() const override;
 
     /** Returns the proto://hostname string */
-    virtual std::string GetProtoHost() const final;
+    [[nodiscard]] virtual std::string GetProtoHost() const final;
 
     /** Returns the base URL being used */
-    virtual const std::string& GetBaseURL() const final { return mBaseURL; }
+    [[nodiscard]] virtual const std::string& GetBaseURL() const final { return mBaseURL; }
 
-    inline virtual std::string RunAction_Read(const RunnerInput& input) override { 
-        bool isJson; return RunAction_Read(input, isJson); };
+    inline std::string RunAction_Read(const RunnerInput& input) override { 
+        bool isJson = false; return RunAction_Read(input, isJson); };
 
-    inline virtual std::string RunAction_Write(const RunnerInput& input) override { 
-        bool isJson; return RunAction_Write(input, isJson); };
+    inline std::string RunAction_Write(const RunnerInput& input) override { 
+        bool isJson = false; return RunAction_Write(input, isJson); };
 
-    virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override { 
-        bool isJson; return RunAction_FilesIn(input, isJson); };
+    std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) override { 
+        bool isJson = false; return RunAction_FilesIn(input, isJson); };
     
-    virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override { 
-        bool isJson; return RunAction_StreamIn(input, isJson); };
+    std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) override { 
+        bool isJson = false; return RunAction_StreamIn(input, isJson); };
     
-    virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) override { 
-        bool isJson; RunAction_StreamOut(input, isJson); };
+    void RunAction_StreamOut(const RunnerInput_StreamOut& input) override { 
+        bool isJson = false; RunAction_StreamOut(input, isJson); };
 
     /** @param[out] isJson ref set to whether response is json */
     virtual std::string RunAction_Read(const RunnerInput& input, bool& isJson);
@@ -113,7 +114,7 @@ public:
     /** @param[out] isJson ref set to whether response is json (before data starts) */
     virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& isJson);
 
-    virtual bool RequiresSession() const override { return true; }
+    [[nodiscard]] bool RequiresSession() const override { return true; }
 
 private:
 
@@ -136,12 +137,12 @@ private:
     void AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& params);
 
     /**
-     * Performs a series of HTTP request attempts, caller must call HandleResponse
+     * Performs a series of HTTP request attempts, caller must call HandleResponse in getResult
      * @param[in] getResult Function that provides an httplib result
      * @param[out] canRetry ref set to where retry is allowed
      * @param[in] doRetry ref to bool set by manual call of HandleResponse
      */
-    void DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry);
+    void DoRequests(const std::function<httplib::Result()>& getResult, bool& canRetry, const bool& doRetry);
 
     /**
      * Performs a series of HTTP request attempts, calling HandleResponse
@@ -149,7 +150,7 @@ private:
      * @param[out] isJson ref set to whether response is json
      * @return std::string the body of the response
      */
-    std::string DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson);
+    std::string DoRequestsFull(const std::function<httplib::Result()>& getResult, bool& isJson);
 
     /**
      * Handles an httplib non-response
@@ -158,7 +159,7 @@ private:
      * @param attempt current attempt # (for debug print)
      * @throws LibraryException if not retry
      */
-    void HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt);
+    void HandleNonResponse(httplib::Result& result, bool retry, size_t attempt);
 
     /**
      * Handles an httplib response
@@ -177,7 +178,7 @@ private:
     /** Returns a redirect exception with the response */
     RedirectException GetRedirectException(const httplib::Response& response);
 
-    Debug mDebug;
+    mutable Debug mDebug;
 
     std::string mProtoHost;
     std::string mBaseURL;
@@ -185,6 +186,9 @@ private:
 
     const RunnerOptions mBaseOptions;
     const HTTPOptions mHttpOptions;
+
+    /** Intermediate Buffer to receive from the user stream func then supply to httplib */
+    std::vector<char> mStreamBuffer;
 
     std::unique_ptr<httplib::Client> mHttpClient;
 };

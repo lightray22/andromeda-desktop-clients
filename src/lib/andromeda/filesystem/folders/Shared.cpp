@@ -4,6 +4,6 @@ namespace Andromeda {
 namespace Filesystem {
 namespace Folders {
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda

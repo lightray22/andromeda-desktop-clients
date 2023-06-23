@@ -2,7 +2,6 @@
 #include "BaseRunner.hpp"
 #include "RunnerPool.hpp"
 #include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 
 namespace Andromeda {
 namespace Backend {
@@ -57,7 +56,7 @@ RunnerPool::LockedRunner RunnerPool::GetRunner()
 /*****************************************************/
 void RunnerPool::SignalWaiters()
 {
-    UniqueLock llock(mMutex);
+    const UniqueLock llock(mMutex);
     MDBG_INFO("()");
     mCV.notify_one();
 }

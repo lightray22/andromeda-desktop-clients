@@ -4,10 +4,7 @@
 #include "Options.hpp"
 
 #include "andromeda-fuse/FuseOptions.hpp"
-using AndromedaFuse::FuseOptions;
 
-#include "andromeda/BaseOptions.hpp"
-using Andromeda::BaseOptions;
 #include "andromeda/ConfigOptions.hpp"
 using Andromeda::ConfigOptions;
 #include "andromeda/backend/HTTPOptions.hpp"
@@ -16,8 +13,6 @@ using Andromeda::Backend::HTTPOptions;
 using Andromeda::Backend::RunnerOptions;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
-
-using namespace std::chrono;
 
 namespace AndromedaFuse {
 

@@ -13,11 +13,11 @@ class Share : public Item
 {
 public:
 
-    virtual ~Share(){};
+    ~Share() override = default;
 };
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda
 
 #endif // LIBA2_SHARE_H_

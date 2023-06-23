@@ -27,7 +27,7 @@ void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisL
 {
     MDBG_INFO("()");
 
-    nlohmann::json data(mBackend.GetFilesystems());
+    const nlohmann::json data(mBackend.GetFilesystems());
 
     Folder::NewItemMap newItems;
 
@@ -49,6 +49,6 @@ void Filesystems::SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisL
     SyncContents(newItems, itemsLocks, thisLock);
 }
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda

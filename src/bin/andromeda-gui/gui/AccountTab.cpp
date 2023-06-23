@@ -52,7 +52,7 @@ void AccountTab::Mount(bool autoMount)
     FuseOptions fuseOptions;
 
     BackendImpl& backend { mBackendContext->GetBackend() };
-    std::string mountPath { backend.GetName(false) };
+    const std::string mountPath { backend.GetName(false) };
 
     try
     {

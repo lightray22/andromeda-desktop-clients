@@ -29,8 +29,6 @@ public:
         public: explicit PrivateDataException(const std::string& key) : 
             Andromeda::BaseOptions::Exception(key + " is not safe to send as a URL variable, use env or stdin instead") {} };
 
-    virtual ~CommandLine();
-
     /** Retrieve the standard help text string */
     static std::string HelpText();
 

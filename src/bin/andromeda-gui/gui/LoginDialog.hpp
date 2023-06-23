@@ -23,7 +23,11 @@ public:
 
     explicit LoginDialog(QWidget& parent);
 
-    virtual ~LoginDialog();
+    ~LoginDialog() override;
+    LoginDialog(const LoginDialog&) = delete; // no copy
+    LoginDialog& operator=(const LoginDialog&) = delete;
+    LoginDialog(LoginDialog&&) = delete; // no move
+    LoginDialog& operator=(LoginDialog&&) = delete;
 
     /** 
      * Runs QDialog::exec() and gives the created backend 
@@ -37,7 +41,7 @@ public slots:
 
 private:
 
-    Andromeda::Debug mDebug;
+    mutable Andromeda::Debug mDebug;
 
     /** The backend context created by the user */
     std::unique_ptr<BackendContext> mBackendContext;

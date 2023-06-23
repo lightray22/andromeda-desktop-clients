@@ -14,6 +14,7 @@
 #include "andromeda/BaseException.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 
@@ -103,15 +104,17 @@ public:
     BackendImpl(const Andromeda::ConfigOptions& options, RunnerPool& runners);
 
     virtual ~BackendImpl();
+    DELETE_COPY(BackendImpl)
+    DELETE_MOVE(BackendImpl)
 
     /** Gets the server config object */
     inline const Config& GetConfig() { return mConfig; }
 
     /** Returns the backend options in use */
-    inline const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
+    [[nodiscard]] inline const Andromeda::ConfigOptions& GetOptions() const { return mOptions; }
 
     /** Returns the cache manager to use for file data */
-    inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
+    [[nodiscard]] inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
 
     /** Sets the cache manager to use (or nullptr) */
     inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
@@ -120,16 +123,16 @@ public:
     Filesystem::Filedata::CachingAllocator& GetPageAllocator();
 
     /** Returns true if doing memory only */
-    bool isMemory() const;
+    [[nodiscard]] bool isMemory() const;
 
     /** Returns true if the backend is read-only */
-    bool isReadOnly() const;
+    [[nodiscard]] bool isReadOnly() const;
 
     /** 
      * Return the hostname_username ID string 
      * @param human if true make it human-pretty
      */
-    std::string GetName(bool human) const;
+    [[nodiscard]] std::string GetName(bool human) const;
 
     /** Registers a pre-existing session ID/key for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
@@ -255,7 +258,7 @@ public:
      * @param offset offset to read from
      * @param length number of bytes to read
      */
-    std::string ReadFile(const std::string& id, const uint64_t offset, const size_t length);
+    std::string ReadFile(const std::string& id, uint64_t offset, size_t length);
 
     /**
      * Streams data from a file
@@ -264,7 +267,7 @@ public:
      * @param length number of bytes to read
      * @param userFunc data handler function
      */
-    void ReadFile(const std::string& id, const uint64_t offset, const size_t length, const ReadFunc& userFunc);
+    void ReadFile(const std::string& id, uint64_t offset, size_t length, const ReadFunc& userFunc);
 
     /**
      * Writes data to a file
@@ -272,7 +275,7 @@ public:
      * @param offset offset to write to
      * @param data file data to write
      */
-    nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const std::string& data);
+    nlohmann::json WriteFile(const std::string& id, uint64_t offset, const std::string& data);
     
     /**
      * Writes data to a file (streaming)
@@ -280,7 +283,7 @@ public:
      * @param offset offset to write to
      * @param userFunc function to stream data
      */
-    nlohmann::json WriteFile(const std::string& id, const uint64_t offset, const WriteFunc& userFunc);
+    nlohmann::json WriteFile(const std::string& id, uint64_t offset, const WriteFunc& userFunc);
     
     /**
      * Creates a new file with data
@@ -309,7 +312,7 @@ public:
      * @param id file ID
      * @param size new file size
      */
-    nlohmann::json TruncateFile(const std::string& id, const uint64_t size);
+    nlohmann::json TruncateFile(const std::string& id, uint64_t size);
 
 private:
     
@@ -318,11 +321,11 @@ private:
     InputT& FinalizeInput(InputT& input);
 
     /** Prints a RunnerInput to the given stream */
-    void PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_FilesIn to the given stream */
-    void PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
     /** Prints a RunnerInput_StreamIn to the given stream */
-    void PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);
@@ -341,7 +344,7 @@ private:
     void RunAction_StreamOut(RunnerInput_StreamOut& input);
 
     /** Function that is given a WriteFunc and returns a RunnerInput_StreamIn for file upload */
-    typedef std::function<RunnerInput_StreamIn(const WriteFunc& writeFunc)> UploadInput;
+    using UploadInput = std::function<RunnerInput_StreamIn (const WriteFunc&)>;
 
     /**
      * Commonized file upload/write stream with max upload size checking/retries
@@ -351,7 +354,7 @@ private:
      * @param getUpload function to get an input for the initial upload if NOT already created (ignore id,offset)
      * @param oneshot if true, can't split into multiple writes
      */
-    nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, const uint64_t offset, const UploadInput& getUpload, bool oneshot);
+    nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, uint64_t offset, const UploadInput& getUpload, bool oneshot);
 
     /** True if we created the session in use */
     bool mCreatedSession { false };
@@ -372,7 +375,7 @@ private:
     /** Allocator to use for all file pages (null if no cacheMgr) */
     std::unique_ptr<Filesystem::Filedata::CachingAllocator> mPageAllocator;
     
-    Debug mDebug;
+    mutable Debug mDebug;
     Config mConfig;
 };
 

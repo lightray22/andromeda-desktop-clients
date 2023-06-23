@@ -1,5 +1,6 @@
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
 #include <mutex>
@@ -16,7 +17,6 @@
 #include <processenv.h>
 #else // !WIN32
 #include <unistd.h>
-extern char** environ;
 #endif // WIN32
 
 #include "Utilities.hpp"
@@ -33,28 +33,31 @@ Utilities::StringList Utilities::explode(
     if (str.empty()) return retval;
     if (delim.empty()) return { str };
 
-    std::string segment; size_t skipped { 0 };
-
     if (reverse) std::reverse(str.begin(), str.end());
 
-    while ( retval.size() + 1 < max )
-    {
-        const size_t segEnd { str.find(delim) };
-        if (segEnd == std::string::npos) break;
+    { // variable scope
+        std::string el;
+        size_t skipped { 0 };
 
-        segment += str.substr(0, segEnd);
+        while ( retval.size() + 1 < max )
+        {
+            const size_t segEnd { str.find(delim) };
+            if (segEnd == std::string::npos) break;
 
-        if (skipped >= skip)
-        { 
-            retval.push_back(segment); 
-            segment.clear(); 
+            el += str.substr(0, segEnd);
+
+            if (skipped >= skip)
+            {
+                retval.push_back(el);
+                el.clear();
+            }
+            else { ++skipped; el += delim; }
+
+            str.erase(0, segEnd + delim.length());
         }
-        else { ++skipped; segment += delim; }
 
-        str.erase(0, segEnd + delim.length());
+        retval.push_back(el+str);
     }
-
-    retval.push_back(segment+str);
 
     if (reverse)
     {
@@ -117,22 +120,30 @@ std::string Utilities::trim(const std::string& str)
 }
 
 /*****************************************************/
-std::string Utilities::replaceAll(const std::string& str, const std::string& from, const std::string& to)
+std::string Utilities::replaceAll(const std::string& str, const std::string& from, const std::string& repl)
 {
-    if (!str.size() || !from.size()) return str; // invalid
+    if (str.empty() || from.empty()) return str; // invalid
     std::string retval(str); // copy
 
-    for (size_t pos = 0; (pos = retval.find(from, pos)) != std::string::npos; pos += to.size())
-        retval.replace(pos, from.size(), to);
+    for (size_t pos = 0; (pos = retval.find(from, pos)) != std::string::npos; pos += repl.size())
+        retval.replace(pos, from.size(), repl);
     return retval;
+}
+
+/*****************************************************/
+std::string Utilities::quoteString(const std::string& str)
+{
+    return "\"" + replaceAll(str,"\"","\\\"") + "\"";
 }
 
 /*****************************************************/
 bool Utilities::stringToBool(const std::string& stri)
 {
     const std::string str { trim(stri) };
-    return (str != "" && str != "0" && str != "false" && str != "off" && str != "no");
+    return (!str.empty() && str != "0" && str != "false" && str != "off" && str != "no");
 }
+
+constexpr size_t bytesMul { 1024 };
 
 /*****************************************************/
 uint64_t Utilities::stringToBytes(const std::string& stri)
@@ -153,14 +164,19 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
 
     switch (unit)
     {
-        case 'T': num *= 1024;
+        case 'P': num *= bytesMul;
         [[fallthrough]];
-        case 'G': num *= 1024;
+        case 'T': num *= bytesMul;
         [[fallthrough]];
-        case 'M': num *= 1024;
+        case 'G': num *= bytesMul;
         [[fallthrough]];
-        case 'K': num *= 1024;
+        case 'M': num *= bytesMul;
+        [[fallthrough]];
+        case 'K': num *= bytesMul;
+        [[fallthrough]];
+        default: break; // invalid
     }
+
     return num;
 }
 
@@ -168,9 +184,9 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
 std::string Utilities::bytesToString(uint64_t bytes)
 {
     size_t unit { 0 };
-    const char* units[] { "", "K", "M", "G", "T", "P" };
-    while (bytes >= 1024 && !(bytes % 1024) && unit < ARRSIZE(units)) {
-        ++unit; bytes /= 1024;
+    static const std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
+    while (bytes >= bytesMul && !(bytes % bytesMul) && unit < units.size()-1) {
+        ++unit; bytes /= bytesMul;
     }
     return std::to_string(bytes)+units[unit];
 }
@@ -183,10 +199,10 @@ void Utilities::SilentReadConsole(std::string& retval)
         DWORD mode { 0 }; GetConsoleMode(hStdin, &mode);
         SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
     #else // !WIN32
-        struct termios oflags, nflags;
+        struct termios oflags { };
         tcgetattr(fileno(stdin), &oflags);
 
-        nflags = oflags;
+        struct termios nflags { oflags };
         nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
         tcsetattr(fileno(stdin), TCSANOW, &nflags);
     #endif // WIN32
@@ -217,7 +233,7 @@ Utilities::StringMap Utilities::GetEnvironment(const std::string& prefix)
         const char* var { *env };
 #endif // WIN32
 
-        const StringPair pair { split(var, "=") };
+        StringPair pair { split(var, "=") }; // non-const for move
         if (prefix.empty() || startsWith(pair.first,prefix))
             retval.emplace(std::move(pair));
     }
@@ -239,7 +255,7 @@ std::string Utilities::GetHomeDirectory()
 
     for (const char* env : { "HOME", "HOMEDIR", "HOMEPATH" })
     {
-        const char* path { std::getenv(env) };
+        const char* path { std::getenv(env) }; // NOLINT(concurrency-mt-unsafe)
         if (path != nullptr) return path;
     }
 
@@ -256,14 +272,14 @@ std::mutex sStrerrorMutex;
 /*****************************************************/
 std::string Utilities::GetErrorString(int err)
 {
-    std::lock_guard<std::mutex> llock(sStrerrorMutex);
+    const std::lock_guard<std::mutex> llock(sStrerrorMutex);
 
     #if WIN32
         #pragma warning(push)
         #pragma warning(disable:4996) // we lock strerror
     #endif // WIN32
 
-    return std::string(std::strerror(err));
+    return std::string(std::strerror(err)); // NOLINT(concurrency-mt-unsafe)
 
     #if WIN32
         #pragma warning(pop)

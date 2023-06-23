@@ -18,7 +18,7 @@ namespace AndromedaGui {
 namespace Gui {
 
 /*****************************************************/
-MainWindow::MainWindow(CacheOptions& cacheOptions) : QMainWindow(),
+MainWindow::MainWindow(CacheOptions& cacheOptions) : 
     mQtUi(std::make_unique<Ui::MainWindow>()),
     mCacheManager(cacheOptions),
     mDebug(__func__,this)
@@ -103,7 +103,7 @@ void MainWindow::RemoveAccount()
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr)
     {
-        int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
+        const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
         mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
     }
 

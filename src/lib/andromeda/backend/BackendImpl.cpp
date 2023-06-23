@@ -12,17 +12,13 @@
 #include "RunnerInput.hpp"
 #include "RunnerPool.hpp"
 #include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/Utilities.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
-using Andromeda::Filesystem::Filedata::CacheManager;
 #include "andromeda/filesystem/filedata/CachingAllocator.hpp"
 using Andromeda::Filesystem::Filedata::CachingAllocator;
 
 namespace Andromeda {
 namespace Backend {
-
-#define BOOLSTR(x) (x ? "true" : "false")
 
 std::atomic<uint64_t> BackendImpl::sReqCount { 0 };
 
@@ -142,23 +138,27 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             const auto [message, details] { Utilities::split(
                 val.at("message").get<std::string>(),":") };
 
-            const std::string fname(__func__);
+            const std::string fname(__func__); // cannot be static
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
                 str << fname << "... message:" << *message; });
 
-                 if (code == 400 && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
-            else if (code == 400 && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
-                // TODO better exception? - should not happen if Authenticated? maybe for bad shares
-            else if (code == 400 && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
-            else if (code == 400 && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
-            
-            else if (code == 403 && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
-            else if (code == 403 && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
-            else if (code == 403 && message == "READ_ONLY_DATABASE")   throw ReadOnlyFSException("Database");
-            else if (code == 403 && message == "READ_ONLY_FILESYSTEM") throw ReadOnlyFSException("Filesystem");
+            const int ERROR { 400 };
+            const int DENIED { 403 };
+            const int NOT_FOUND { 404 };
 
-            else if (code == 403) throw DeniedException(message); 
-            else if (code == 404) throw NotFoundException(message);
+            if      (code == ERROR && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
+            else if (code == ERROR && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
+                // TODO better exception? - should not happen if Authenticated? maybe for bad shares
+            else if (code == ERROR && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
+            else if (code == ERROR && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
+            
+            else if (code == DENIED && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
+            else if (code == DENIED && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
+            else if (code == DENIED && message == "READ_ONLY_DATABASE")    throw ReadOnlyFSException("Database");
+            else if (code == DENIED && message == "READ_ONLY_FILESYSTEM")  throw ReadOnlyFSException("Filesystem");
+
+            else if (code == DENIED) throw DeniedException(message); 
+            else if (code == NOT_FOUND) throw NotFoundException(message);
             else throw APIException(code, message);
         }
     }
@@ -608,7 +608,7 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
     RunnerInput input {"files", "download", {{"file", id}}, // plainParams
         {{"fstart", fstart}, {"flast", flast}}}; MDBG_BACKEND(input); // dataParams
 
-    const std::string data { RunAction_ReadStr(input) };
+    std::string data { RunAction_ReadStr(input) }; // non-const for move
     if (data.size() != length) throw ReadSizeException(length, data.size());
     return data;
 }
@@ -638,7 +638,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 }
 
 // if we get a 413 this small the server must be bugged
-constexpr size_t UPLOAD_MINSIZE { 4*1024 };
+constexpr size_t UPLOAD_MINSIZE { 4096 };
 // multiply the failed by this to get the next attempt size
 constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
 

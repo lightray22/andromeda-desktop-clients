@@ -32,7 +32,6 @@ std::string Options::HelpText()
 Options::Options(CacheOptions& cacheOptions) :
     mCacheOptions(cacheOptions) { }
 
-
 /*****************************************************/
 bool Options::AddFlag(const std::string& flag)
 {

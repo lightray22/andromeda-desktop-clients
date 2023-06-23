@@ -2,10 +2,10 @@
 #include <nlohmann/json.hpp>
 
 #include "Item.hpp"
+
 #include "Folder.hpp"
 #include "FSConfig.hpp"
 #include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 
@@ -62,7 +62,7 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
             mName = newName;
         }
         
-        decltype(mCreated) newCreated; 
+        decltype(mCreated) newCreated = 0; 
         data.at("dates").at("created").get_to(newCreated);
         if (newCreated != mCreated)
         {
@@ -73,7 +73,7 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
         const nlohmann::json& modifiedJ(data.at("dates").at("modified"));
         if (!modifiedJ.is_null())
         {
-            decltype(mModified) newModified; 
+            decltype(mModified) newModified = 0; 
             modifiedJ.get_to(newModified);
             if (newModified != mModified)
             {
@@ -85,7 +85,7 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
         const nlohmann::json& accessedJ(data.at("dates").at("accessed"));
         if (!accessedJ.is_null())
         {
-            decltype(mAccessed) newAccessed; 
+            decltype(mAccessed) newAccessed = 0; 
             accessedJ.get_to(newAccessed);
             if (newAccessed != mAccessed)
             {
@@ -129,7 +129,7 @@ bool Item::isReadOnlyFS() const
 /*****************************************************/
 void Item::ValidateName(const std::string& name)
 {
-    if (name == "." || name == ".." || name.find("/") != std::string::npos)
+    if (name == "." || name == ".." || name.find('/') != std::string::npos)
         throw InvalidNameException();
 }
 
@@ -160,7 +160,7 @@ void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& thisLock)
     thisLock.unlock();
     scopeLock.unlock();
 
-    SharedLockW parentLock { parent->GetWriteLock() };
+    const SharedLockW parentLock { parent->GetWriteLock() };
     parent->DeleteItem(mName, parentLock);
 }
 
@@ -186,7 +186,7 @@ void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwr
     thisLock.unlock();
 
     // need a lock on the parent, not a lock on us
-    SharedLockW parentLock { parent.GetWriteLock() };
+    const SharedLockW parentLock { parent.GetWriteLock() };
     parent.RenameItem(mName, newName, parentLock, overwrite);
     mName = newName;
 
@@ -204,7 +204,7 @@ void Item::Move(Folder& newParent, SharedLockW& thisLock, bool overwrite)
     thisLock.unlock();
 
     // need a lock on the parent, not a lock on us
-    SharedLockW::LockPair parentLocks { parent.GetWriteLockPair(newParent) };
+    const SharedLockW::LockPair parentLocks { parent.GetWriteLockPair(newParent) };
     parent.MoveItem(mName, newParent, parentLocks, overwrite);
     mParent = &newParent;
 
