@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [ -e build ]; then mkdir build; fi; cd build
+BUILD_TYPE=Release
 
-cmake .. -DCMAKE_BUILD_TYPE=Release "$@"
+if ! [ -e build-$BUILD_TYPE ]; then mkdir build-$BUILD_TYPE; fi; 
+rm build || true; ln -s build-$BUILD_TYPE build
+
+cd build-$BUILD_TYPE
+
+cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE "$@"
 
 cmake --build . -j$(nproc)
 
