@@ -639,10 +639,12 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
     if (read != length) throw ReadSizeException(length, read);
 }
 
+namespace { // anonymous
 // if we get a 413 this small the server must be bugged
-static constexpr size_t UPLOAD_MINSIZE { 4096 };
+constexpr size_t UPLOAD_MINSIZE { 4096 };
 // multiply the failed by this to get the next attempt size
-static constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
+constexpr size_t ADJUST_ATTEMPT(size_t maxSize){ return maxSize/2; }
+} // namespace
 
 /*****************************************************/
 nlohmann::json BackendImpl::WriteFile(const std::string& id, const uint64_t offset, const std::string& data)

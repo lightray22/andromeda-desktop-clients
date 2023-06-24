@@ -81,7 +81,7 @@ Utilities::StringPair Utilities::split(
 
     while (list.size() < 2)
     {
-        if (!reverse) list.push_back("");
+        if (!reverse) list.emplace_back("");
         else list.insert(list.begin(),"");
     }
 

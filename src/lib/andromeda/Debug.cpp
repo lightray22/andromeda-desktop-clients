@@ -12,10 +12,12 @@ using std::chrono::duration;
 
 namespace Andromeda {
 
+namespace { // anonymous
 /** Global output lock */
-static std::mutex sMutex;
+std::mutex sMutex;
 /** timestamp when the program started */
-static steady_clock::time_point sStart { steady_clock::now() };
+steady_clock::time_point sStart { steady_clock::now() };
+} // namespace
 
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;

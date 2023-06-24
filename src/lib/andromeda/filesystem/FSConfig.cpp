@@ -10,8 +10,10 @@ using Andromeda::Backend::BackendImpl;
 namespace Andromeda {
 namespace Filesystem {
 
+namespace { // anonymous
 using CacheMap = std::unordered_map<std::string, FSConfig>; 
-static CacheMap sCache; static std::mutex sCacheMutex;
+std::mutex sCacheMutex; CacheMap sCache;
+} // namespace
 
 /*****************************************************/
 const FSConfig& FSConfig::LoadByID(BackendImpl& backend, const std::string& id)
