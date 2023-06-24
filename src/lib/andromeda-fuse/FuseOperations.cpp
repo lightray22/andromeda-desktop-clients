@@ -32,36 +32,38 @@ using Andromeda::Filesystem::Folder;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
 
-static Debug sDebug("FuseOperations",nullptr); // NOLINT(cert-err58-cpp)
-
 namespace AndromedaFuse {
 
+namespace { // anonymous
+
+Debug sDebug("FuseOperations",nullptr); // NOLINT(cert-err58-cpp)
+
 /*****************************************************/
-static inline FuseAdapter& GetFuseAdapter()
+inline FuseAdapter& GetFuseAdapter()
 {
     return *static_cast<FuseAdapter*>(fuse_get_context()->private_data);
 }
 
 /*****************************************************/
-static inline Item::ScopeLocked GetItemByPath(const std::string& path)
+inline Item::ScopeLocked GetItemByPath(const std::string& path)
 {
     return GetFuseAdapter().GetRootFolder()->GetItemByPath(path);
 }
 
 /*****************************************************/
-static inline File::ScopeLocked GetFileByPath(const std::string& path)
+inline File::ScopeLocked GetFileByPath(const std::string& path)
 {
     return GetFuseAdapter().GetRootFolder()->GetFileByPath(path);
 }
 
 /*****************************************************/
-static inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
+inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
 {
     return GetFuseAdapter().GetRootFolder()->GetFolderByPath(path);
 }
 
 /*****************************************************/
-static int CatchAsErrno(const std::string& fname, const std::function<int()>& func, const char* path)
+int CatchAsErrno(const std::string& fname, const std::function<int()>& func, const char* path)
 {
     try { return func(); }
 
@@ -140,6 +142,8 @@ static int CatchAsErrno(const std::string& fname, const std::function<int()>& fu
         SDBG_ERROR_EXC(e); return -EIO;
     }
 }
+
+} // anonymous namespace
 
 /*****************************************************/
 #if LIBFUSE2
@@ -226,7 +230,7 @@ constexpr void date_to_timespec(const Item::Date time, timespec& spec)
 }
 
 /*****************************************************/
-static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock, struct stat* stbuf)
+namespace { void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock, struct stat* stbuf)
 {    
     const Item::Type itemType { item->GetType() };
     if (itemType == Item::Type::FILE)
@@ -277,7 +281,7 @@ static void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock
     if (modified == 0) stbuf->st_mtim = stbuf->st_ctim;
     if (accessed == 0) stbuf->st_atim = stbuf->st_ctim;
 #endif // APPLE
-}
+} } // anonymous namespace
 
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)

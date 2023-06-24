@@ -80,7 +80,7 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
     { // command line params
         Utilities::StringList args;
         for (size_t i = 2; i < argc; i++)
-            args.push_back(argv[i]);
+            args.emplace_back(argv[i]);
 
         ProcessArgList(args, false, plainParams, dataParams, inStreams);
     }
