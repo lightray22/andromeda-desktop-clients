@@ -2,6 +2,7 @@
 include(../../../andromeda.cmake)
 
 set(SOURCE_FILES 
+    base64Test.cpp
     BaseOptionsTest.cpp
     OrderedMap.cpp
     UtilitiesTest.cpp
