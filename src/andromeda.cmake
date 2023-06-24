@@ -163,6 +163,7 @@ endif() # MSVC
 function (andromeda_analyze)
     if (${TESTS_CLANGTIDY})
         # clang-tidy rules are set in .clang-tidy
+        # clang versions [10,16] should have no errors
         set(CLANG_TIDY_FLAGS "clang-tidy;--quiet")
         if (NOT ${ALLOW_WARNINGS})
             list(APPEND CLANG_TIDY_FLAGS "--warnings-as-errors=*")
