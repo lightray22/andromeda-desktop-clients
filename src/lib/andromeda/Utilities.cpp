@@ -143,7 +143,7 @@ bool Utilities::stringToBool(const std::string& stri)
     return (!str.empty() && str != "0" && str != "false" && str != "off" && str != "no");
 }
 
-constexpr size_t bytesMul { 1024 };
+static constexpr size_t bytesMul { 1024 };
 
 /*****************************************************/
 uint64_t Utilities::stringToBytes(const std::string& stri)
