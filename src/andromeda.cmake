@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_C_EXTENSIONS False)
+set(CMAKE_CXX_EXTENSIONS False)
+
 set(ANDROMEDA_VERSION "0.1-alpha")
 set(ANDROMEDA_CXX_DEFS 
     ANDROMEDA_VERSION="${ANDROMEDA_VERSION}"
@@ -162,7 +165,7 @@ function (andromeda_analyze)
         # clang-tidy rules are set in .clang-tidy
         set(CLANG_TIDY_FLAGS "clang-tidy;--quiet")
         if (NOT ${ALLOW_WARNINGS})
-            list(APPEND CLANG_TIDY_FLAGS "--warnings-as-errors='*'")
+            list(APPEND CLANG_TIDY_FLAGS "--warnings-as-errors=*")
         endif()
         set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
         set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)

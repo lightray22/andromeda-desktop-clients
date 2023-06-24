@@ -17,6 +17,9 @@
 #include <processenv.h>
 #else // !WIN32
 #include <unistd.h>
+#ifndef _GNU_SOURCE
+extern char** environ;
+#endif
 #endif // WIN32
 
 #include "Utilities.hpp"
