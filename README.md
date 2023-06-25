@@ -73,7 +73,7 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
   - Ubuntu 22.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev`
   - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev`
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base`
-- macOS amd64: `brew install make cmake openssl qt`
+- macOS amd64: `brew install make cmake openssl macfuse qt`
 
 The following platforms are supported minus the Qt GUI (it may work, just not tested):
 
