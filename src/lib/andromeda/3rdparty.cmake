@@ -6,6 +6,7 @@ if (APPLE)
 endif()
 
 set(HTTPLIB_COMPILE True)
+set(HTTPLIB_INSTALL False)
 set(HTTPLIB_REQUIRE_OPENSSL True)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE False)
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE False)
@@ -16,7 +17,7 @@ set(DEPS_BASEURL "https://github.com" CACHE STRING "Base URL for git dependencie
 
 FetchContent_Declare(cpp-httplib
     GIT_REPOSITORY  ${DEPS_BASEURL}/yhirose/cpp-httplib.git
-    GIT_TAG         f977558 # v0.12.3
+    GIT_TAG         d3076f5 # v0.12.6
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(cpp-httplib)
 
