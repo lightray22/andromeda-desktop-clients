@@ -24,14 +24,14 @@ class SharedMutex
 public:
     inline bool try_lock() noexcept
     {
-        SemaphorLock qLock(mResQueue,std::try_to_lock);
+        const SemaphorLock qLock(mResQueue,std::try_to_lock);
         if (!qLock) return false;
         return mResource.try_lock();
     }
 
     inline void lock() noexcept
     {
-        SemaphorLock qlock(mResQueue);
+        const SemaphorLock qlock(mResQueue);
         mResource.lock();
     }
 
@@ -42,26 +42,26 @@ public:
 
     inline void lock_shared() noexcept
     {
-        SemaphorLock qlock(mResQueue);
-        std::lock_guard<std::mutex> llock(mMutex);
+        const SemaphorLock qlock(mResQueue);
+        const std::lock_guard<std::mutex> llock(mMutex);
         if (++mReaders == 1) mResource.lock();
     }
 
     inline void unlock_shared() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
         if (--mReaders == 0) mResource.unlock();
     }
 
     inline void lock_shared_priority() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
         if (++mReaders == 1) mResource.lock();
     }
 
     inline void unlock_shared_priority() noexcept
     {
-        std::lock_guard<std::mutex> llock(mMutex);
+        const std::lock_guard<std::mutex> llock(mMutex);
         if (--mReaders == 0) mResource.unlock();
     }
 
@@ -79,26 +79,14 @@ private:
 };
 
 /** Scope-managed shared lock of any type */
-class SharedLock
-{ 
-protected:
-    explicit inline SharedLock(SharedMutex& mutex, bool locked = false) :
-        mMutex(mutex), mLocked(locked){ }
-    
-    SharedMutex& mMutex;
-    bool mLocked;
-
-    SharedLock(const SharedLock&) = delete; // no copying
-    SharedLock& operator=(const SharedLock&) = delete;
-    SharedLock& operator=(SharedLock&&) = delete;
-};
+class SharedLock { };
 
 /** Scope-managed shared read lock */
 class SharedLockR : public SharedLock
 {
 public:
     explicit inline SharedLockR(SharedMutex& mutex) : 
-        SharedLock(mutex){ lock(); }
+        mMutex(mutex) { lock(); }
     inline ~SharedLockR(){ unlock(); }
 
     inline void lock()
@@ -115,9 +103,16 @@ public:
         mLocked = false; 
     }
 
-    explicit inline SharedLockR(SharedLockR&& lock) : // move
-        SharedLock(lock.mMutex, lock.mLocked){ 
-            lock.mLocked = false; }
+    inline SharedLockR(SharedLockR&& lock) noexcept : // move
+        mMutex(lock.mMutex), mLocked(lock.mLocked){ lock.mLocked = false; }
+    
+    inline SharedLockR(const SharedLockR&) = delete; // no copy
+    inline SharedLockR& operator=(const SharedLockR&) = delete;
+    inline SharedLockR& operator=(SharedLockR&&) = delete;
+    
+private:
+    SharedMutex& mMutex;
+    bool mLocked { false };
 };
 
 /** Scope-managed shared read-priority lock */
@@ -125,7 +120,7 @@ class SharedLockRP : public SharedLock
 {
 public:
     explicit inline SharedLockRP(SharedMutex& mutex) : 
-        SharedLock(mutex){ lock(); }
+        mMutex(mutex) { lock(); }
     inline ~SharedLockRP(){ unlock(); }
 
     inline void lock()
@@ -142,9 +137,16 @@ public:
         mLocked = false;
     }
     
-    explicit inline SharedLockRP(SharedLockRP&& lock) : // move
-         SharedLock(lock.mMutex, lock.mLocked){ 
-            lock.mLocked = false; }
+    inline SharedLockRP(SharedLockRP&& lock) noexcept : // move
+        mMutex(lock.mMutex), mLocked(lock.mLocked){ lock.mLocked = false; }
+
+    inline SharedLockRP(const SharedLockRP&) = delete; // no copy
+    inline SharedLockRP& operator=(const SharedLockRP&) = delete;
+    inline SharedLockRP& operator=(SharedLockRP&&) = delete;
+    
+private:
+    SharedMutex& mMutex;
+    bool mLocked { false };
 };
 
 /** Scope-managed shared write lock */
@@ -152,7 +154,7 @@ class SharedLockW : public SharedLock
 {
 public:
     explicit inline SharedLockW(SharedMutex& mutex) : 
-        SharedLock(mutex){ lock(); }
+        mMutex(mutex) { lock(); }
     inline ~SharedLockW(){ unlock(); }
 
     inline void lock()
@@ -169,12 +171,15 @@ public:
         mLocked = false;
     }
 
-    explicit inline SharedLockW(SharedLockW&& lock) : // move
-         SharedLock(lock.mMutex, lock.mLocked){ 
-            lock.mLocked = false; }
+    inline SharedLockW(SharedLockW&& lock) noexcept : // move
+        mMutex(lock.mMutex), mLocked(lock.mLocked){ lock.mLocked = false; }
 
+    inline SharedLockW(const SharedLockW&) = delete; // no copy
+    inline SharedLockW& operator=(const SharedLockW&) = delete;
+    inline SharedLockW& operator=(SharedLockW&&) = delete;
+    
     /** Get a SharedLockW for each of two locks, deadlock-safe */
-    typedef std::pair<SharedLockW, SharedLockW> LockPair;
+    using LockPair = std::pair<SharedLockW, SharedLockW>;
     static LockPair get_pair(SharedMutex& mutex1, SharedMutex& mutex2)
     {
         std::lock(mutex1, mutex2); // no deadlock
@@ -184,8 +189,12 @@ public:
     }
 
 protected:
-    explicit inline SharedLockW(SharedMutex& mutex, bool locked) : 
-        SharedLock(mutex, locked){ }
+    explicit inline SharedLockW(SharedMutex& mutex, bool locked) : // for get_pair
+        mMutex(mutex), mLocked(locked) { }
+
+private:
+    SharedMutex& mMutex;
+    bool mLocked { false };
 };
 
 } // namespace Andromeda

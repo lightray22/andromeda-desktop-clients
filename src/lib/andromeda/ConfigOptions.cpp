@@ -5,24 +5,22 @@
 #include "BaseOptions.hpp"
 #include "Utilities.hpp"
 
-using namespace std::chrono;
-
 namespace Andromeda {
 
 /*****************************************************/
 std::string ConfigOptions::HelpText()
 {
     std::ostringstream output;
-    ConfigOptions optDefault;
+    const ConfigOptions optDefault;
 
     const auto defRefresh(optDefault.refreshTime.count());
     const auto defReadAhead(optDefault.readAheadTime.count());
     const size_t stBits { sizeof(size_t)*8 };
 
     using std::endl; output 
-        << "Advanced:        [-q|--quiet] [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint(" << optDefault.runnerPoolSize << ")]" << endl
+        << "Advanced:        [-q|--quiet] [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint"<<stBits<<"(" << optDefault.runnerPoolSize << ")]" << endl
         << "Data Advanced:   [--pagesize bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.pageSize) << ")] [--read-ahead ms(" << defReadAhead << ")]"
-            << " [--read-max-cache-frac uint(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
+            << " [--read-max-cache-frac uint32(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
 
     return output.str();
 }
@@ -44,20 +42,20 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
 {
     if (option == "cachemode")
     {
-             if (value == "none")   cacheType = ConfigOptions::CacheType::NONE;
+        if      (value == "none")   cacheType = ConfigOptions::CacheType::NONE;
         else if (value == "memory") cacheType = ConfigOptions::CacheType::MEMORY;
         else if (value == "normal") cacheType = ConfigOptions::CacheType::NORMAL;
         else throw BaseOptions::BadValueException(option);
     }
     else if (option == "dir-refresh")
     {
-        try { refreshTime = decltype(refreshTime)(stoul(value)); }
+        try { refreshTime = static_cast<decltype(refreshTime)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
     else if (option == "backend-runners")
     {
-        try { runnerPoolSize = decltype(runnerPoolSize)(stoul(value)); }
+        try { runnerPoolSize = static_cast<decltype(runnerPoolSize)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 
@@ -65,7 +63,7 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "pagesize")
     {
-        try { pageSize = static_cast<size_t>(Utilities::stringToBytes(value)); }
+        try { pageSize = static_cast<decltype(pageSize)>(Utilities::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 
@@ -73,13 +71,13 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "read-ahead")
     {
-        try { readAheadTime = decltype(readAheadTime)(stoul(value)); }
+        try { readAheadTime = static_cast<decltype(readAheadTime)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }
     else if (option == "read-max-cache-frac")
     {
-        try { readMaxCacheFrac = stoul(value); }
+        try { readMaxCacheFrac = static_cast<decltype(readMaxCacheFrac)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 
@@ -87,7 +85,7 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "read-ahead-buffer")
     {
-        try { readAheadBuffer = stoul(value); }
+        try { readAheadBuffer = static_cast<decltype(readAheadBuffer)>(stoul(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }

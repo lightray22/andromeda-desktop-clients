@@ -22,12 +22,6 @@ void PrintHelp()
         << "example fstab: http://myserv /mnt andromeda ro,--no-chmod,-u=myuser 0 0" << endl;
 }
 
-/** Return the string quoted and with existing quotes escaped */
-std::string quoted(const std::string& str)
-{
-    return "\"" + Utilities::replaceAll(str,"\"","\\\"") + "\"";
-}
-
 int main(int argc, char** argv)
 {
     if (argc < 3) { 
@@ -36,24 +30,24 @@ int main(int argc, char** argv)
     std::string cmd("andromeda-fuse -q"); // quiet
     
     if (!strcmp(argv[1],"none"))
-        { cmd += " -a "; cmd += quoted(argv[1]); } // url
-    cmd += " -m "; cmd += quoted(argv[2]); // path
+        { cmd += " -a "; cmd += Utilities::quoteString(argv[1]); } // url
+    cmd += " -m "; cmd += Utilities::quoteString(argv[2]); // path
 
     if (argc > 3) // -o is optional
     {
-        if (argc != 5 || strcmp(argv[3],"-o")) { 
+        if (argc != 5 || strcmp(argv[3],"-o") != 0) {
             PrintHelp(); return 1; }
 
         for (const std::string& arg : Utilities::explode(argv[4],","))
         {
-            if (!arg.size()) continue; // invalid
+            if (arg.empty()) continue; // invalid
 
             if (arg[0] == '-') 
-                cmd += " "+quoted(arg); // andromeda option
-            else cmd += " -o "+quoted(arg); // libfuse option
+                cmd += " "+Utilities::quoteString(arg); // andromeda option
+            else cmd += " -o "+Utilities::quoteString(arg); // libfuse option
         }
     }
 
-    //std::cout << cmd << std::endl;
-    return std::system(cmd.c_str());
+    //std::cout << cmd << std::endl; // debug
+    return std::system(cmd.c_str()); // NOLINT(cert-env33-c) // NOLINT(concurrency-mt-unsafe)
 }

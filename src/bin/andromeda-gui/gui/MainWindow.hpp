@@ -28,7 +28,11 @@ public:
 
     explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
-    virtual ~MainWindow();
+    ~MainWindow() override;
+    MainWindow(const MainWindow&) = delete; // no copy
+    MainWindow& operator=(const MainWindow&) = delete;
+    MainWindow(MainWindow&&) = delete; // no move
+    MainWindow& operator=(MainWindow&&) = delete;
 
     void closeEvent(QCloseEvent* event) override;
 
@@ -64,7 +68,7 @@ private:
     /** Global cache manager to apply to all mounts */
     Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
 
-    Andromeda::Debug mDebug;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace Gui

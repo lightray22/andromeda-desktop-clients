@@ -5,12 +5,9 @@ include(../../andromeda.cmake)
 
 # build the andromeda-fuse library
 
-add_library(libandromeda-fuse STATIC)
-andromeda_lib(libandromeda-fuse)
-
 set(SOURCE_FILES FuseAdapter.cpp FuseOperations.cpp FuseOptions.cpp)
+andromeda_lib(libandromeda-fuse "${SOURCE_FILES}")
 
-target_sources(libandromeda-fuse PRIVATE ${SOURCE_FILES})
 target_include_directories(libandromeda-fuse
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

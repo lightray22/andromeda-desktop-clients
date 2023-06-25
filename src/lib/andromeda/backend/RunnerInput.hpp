@@ -23,7 +23,7 @@ struct RunnerInput
         explicit StreamFailException() : BaseException("Stream Failure") {}; };
 
     /** A map of input parameter key to string value */
-    typedef std::map<std::string, std::string> Params;
+    using Params = std::map<std::string, std::string>;
 
     /** app name to run */      std::string app;
     /** app action to run */    std::string action;
@@ -48,7 +48,7 @@ struct RunnerInput_FilesIn : RunnerInput
     };
 
     /** A map of input parameter key to input file data */
-    typedef std::map<std::string, FileData> FileDatas;
+    using FileDatas = std::map<std::string, FileData>;
     /** map of input files */ FileDatas files = {};
 };
 
@@ -61,7 +61,7 @@ struct RunnerInput_FilesIn : RunnerInput
  * @param written output number of bytes actually written
  * @return bool true if more data is remaining
  */
-typedef std::function<bool(const size_t offset, char* const buf, const size_t buflen, size_t& written)> WriteFunc;
+using WriteFunc = std::function<bool (const size_t, char *const, const size_t, size_t&)>;
 
 /** A RunnerInput with streams for files input */
 struct RunnerInput_StreamIn : RunnerInput_FilesIn
@@ -74,7 +74,7 @@ struct RunnerInput_StreamIn : RunnerInput_FilesIn
     };
 
     /** Map of file streams to the input param name */
-    typedef std::map<std::string, FileStream> FileStreams;
+    using FileStreams = std::map<std::string, FileStream>;
     FileStreams fstreams = {};
 
     /** Returns a Func that reads from the input string */
@@ -92,7 +92,7 @@ struct RunnerInput_StreamIn : RunnerInput_FilesIn
  * @param buf pointer to buffer containing data
  * @param buflen length of the data buffer
  */
-typedef std::function<void(const size_t offset, const char* buf, const size_t buflen)> ReadFunc;
+using ReadFunc = std::function<void (const size_t, const char*, const size_t)>;
 
 /** A RunnerInput with a function to stream output */
 struct RunnerInput_StreamOut : RunnerInput

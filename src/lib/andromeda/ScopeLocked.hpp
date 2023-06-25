@@ -17,7 +17,7 @@ class ScopeLocked
 {
 public:
     /** Construct an empty object, not locked, don't reference */
-    inline ScopeLocked(){ } // empty
+    inline ScopeLocked() = default; // empty
 
     /** Construct a lock from an object and a mutex to try to lock */
     inline ScopeLocked(Object& obj, std::shared_mutex& mutex) :
@@ -36,7 +36,7 @@ public:
     inline const Object* operator->()const{ return mObject; }
 
     /** Returns true if the lock acquire was successful */
-    inline operator bool() const { return static_cast<bool>(mLock); }
+    inline explicit operator bool() const { return static_cast<bool>(mLock); }
 
     /** Unlocks the currently held lock */
     inline void unlock(){ mLock.unlock(); }

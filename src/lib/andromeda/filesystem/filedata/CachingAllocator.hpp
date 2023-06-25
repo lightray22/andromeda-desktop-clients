@@ -10,8 +10,8 @@
 
 #include "MemoryAllocator.hpp"
 #include "andromeda/Debug.hpp"
-
 #include "andromeda/OrderedMap.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -31,15 +31,17 @@ class CachingAllocator : public MemoryAllocator
 public:
 
     /** @param baseline the amount of memory used when evict stops, used to calculate the free pool max size */
-    explicit CachingAllocator(const size_t baseline);
+    explicit CachingAllocator(size_t baseline);
 
-    virtual ~CachingAllocator();
+    ~CachingAllocator() override;
+    DELETE_COPY(CachingAllocator)
+    DELETE_MOVE(CachingAllocator)
 
     /** 
      * Allocate the given number of pages and return a pointer
      * Returns a recycled (previously freed) pointer if possible
      */
-    virtual void* alloc(size_t pages) override;
+    void* alloc(size_t pages) override;
 
     /**
      * Frees a range of pages allocated by alloc() - partial frees are allowed
@@ -47,25 +49,22 @@ public:
      * @param ptr the pointer to free (must be aligned to a page boundary)
      * @param pages the number of pages to free
      */
-    virtual void free(void* const ptr, size_t pages) override;
+    void free(void* ptr, size_t pages) override;
 
 private:
 
-    typedef std::lock_guard<std::mutex> LockGuard;
+    using LockGuard = std::lock_guard<std::mutex>;
 
     /** 
      * Adds an entry to the appropriate freeList and FreeQueue
      * @return the resulting size of the free list aded to
      */
-    size_t add_entry(void* const ptr, size_t pages, const LockGuard& lock) noexcept;
+    size_t add_entry(void* ptr, size_t pages, const LockGuard& lock) noexcept;
 
     /** Removes and returns to the OS the smallest freed allocation */
     void clean_entry(const LockGuard& lock);
 
-    CachingAllocator(const CachingAllocator& a) = delete;
-    CachingAllocator& operator=(const CachingAllocator&) = delete;
-
-    Debug mDebug;
+    mutable Debug mDebug;
     std::mutex mMutex;
 
     // the maximum size of the free pool is (mMaxAlloc-mBaseline)
@@ -89,14 +88,14 @@ private:
     uint64_t mAllocs { 0 };
 
     /** List of freed allocations that can be re-used */
-    typedef std::list<void*> FreeList;
+    using FreeList = std::list<void*>;
     /** Map of freed pointer lists, indexed by allocation size for quick re-use */
-    typedef std::map<size_t, FreeList> FreeListMap;
+    using FreeListMap = std::map<size_t, FreeList>;
     FreeListMap mFreeLists;
 
     /** Ordered map keeping track of freed allocations for LRU ordering */
-    typedef Andromeda::OrderedMap<void*, 
-        std::pair<FreeListMap::iterator, FreeList::iterator>> FreeQueue;
+    using FreeQueue = Andromeda::OrderedMap<void*, 
+        std::pair<FreeListMap::iterator, FreeList::iterator>>;
     FreeQueue mFreeQueue;
 };
 

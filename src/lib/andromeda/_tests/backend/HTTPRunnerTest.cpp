@@ -10,7 +10,7 @@ class HTTPRunnerFriend
 public:
     HTTPRunnerFriend(HTTPRunner& runner) : mRunner(runner) { }
 
-    virtual ~HTTPRunnerFriend() { }
+    virtual ~HTTPRunnerFriend() = default;
 
     virtual void HandleRedirect(const std::string& location) { mRunner.HandleRedirect(location); }
 
@@ -102,7 +102,7 @@ TEST_CASE("EnableRetry", "[HTTPRunner]")
     HTTPRunner runner("", "", options);
 
     REQUIRE(runner.GetCanRetry() == false); // default
-    runner.EnableRetry(); REQUIRE(runner.GetCanRetry() == true);
+    runner.EnableRetry(); REQUIRE(runner.GetCanRetry());
     runner.EnableRetry(false); REQUIRE(runner.GetCanRetry() == false);
 }
 

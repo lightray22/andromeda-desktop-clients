@@ -4,8 +4,6 @@
 #include "HTTPOptions.hpp"
 #include "andromeda/BaseOptions.hpp"
 
-using namespace std::chrono;
-
 namespace Andromeda {
 namespace Backend {
 

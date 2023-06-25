@@ -9,13 +9,10 @@
 
 #include "andromeda/Semaphor.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
-using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/RunnerInput.hpp"
 using Andromeda::Backend::WriteFunc;
 #include "andromeda/filesystem/File.hpp"
-using Andromeda::Filesystem::File;
 #include "andromeda/filesystem/Folder.hpp"
-using Andromeda::Filesystem::Folder;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -62,6 +59,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
 
+    static const std::string fname(__func__); // for lambda
     mBackend.ReadFile(mFileID, pageStart, readSize, 
         [&](const size_t roffset, const char* rbuf, const size_t rlength)->void
     {
@@ -88,7 +86,8 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
                     curPage.reset(); ++curIndex;
                 }
             }
-            else { MDBG_INFO("... old read, ignoring"); }
+            else mDebug.Info([&](std::ostream& str){ 
+                str << fname << "... old read, ignoring"; });
 
             rbuf += pwLength; rbyte += pwLength;
         }
@@ -104,7 +103,7 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
 {
     MDBG_INFO("(index:" << index << " pages:" << pages.size() << ")");
 
-    if (!pages.size()) { MDBG_ERROR("() ERROR empty list!"); assert(false); return 0; }
+    if (pages.empty()) { MDBG_ERROR("() ERROR empty list!"); assert(false); return 0; }
 
     size_t totalSize { 0 };
     for (const Page* pagePtr : pages)
@@ -126,7 +125,7 @@ size_t PageBackend::FlushPageList(const uint64_t index, const PageBackend::PageP
         FlushCreate(thisLock); // can't use Upload() w/o first page
     }
 
-    WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& written)->bool
+    const WriteFunc writeFunc { [&](const size_t offset, char* const buf, const size_t buflen, size_t& written)->bool
     {
         written = 0; // in case of early return
         const size_t pagesIdx { offset/mPageSize };

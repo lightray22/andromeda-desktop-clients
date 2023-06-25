@@ -17,7 +17,7 @@
     #include <fuse3/fuse_lowlevel.h>
 #endif // WIN32, LIBFUSE2
 
-#define FUSE_SUCCESS 0
+enum { FUSE_SUCCESS = 0 };
 
 #if WIN32
     #define mode_t fuse_mode_t

@@ -16,8 +16,11 @@ namespace Backend {
 /*****************************************************/
 HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
     const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions) : 
-    mDebug(__func__,this), mProtoHost(protoHost), mBaseURL(baseURL), mUserAgent(userAgent),
-    mBaseOptions(runnerOptions), mHttpOptions(httpOptions)
+    mDebug(__func__,this), 
+    mProtoHost(protoHost), mBaseURL(baseURL), mUserAgent(userAgent),
+    mBaseOptions(runnerOptions), mHttpOptions(httpOptions),
+    // allocate the stream buffer once so we don't alloc/free memory repeatedly
+    mStreamBuffer(mBaseOptions.streamBufferSize) // not thread safe between requests!
 {
     if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
@@ -50,38 +53,37 @@ void HTTPRunner::InitializeClient(const std::string& protoHost)
     if (!mHttpOptions.username.empty())
     {
         mHttpClient->set_basic_auth(
-            mHttpOptions.username.c_str(), mHttpOptions.password.c_str());
+            mHttpOptions.username, mHttpOptions.password);
     }
 
     if (!mHttpOptions.proxyHost.empty())
     {
         mHttpClient->set_proxy(
-            mHttpOptions.proxyHost.c_str(), mHttpOptions.proxyPort);
+            mHttpOptions.proxyHost, mHttpOptions.proxyPort);
     }
 
     if (!mHttpOptions.proxyUsername.empty())
     {
         mHttpClient->set_proxy_basic_auth(
-            mHttpOptions.proxyUsername.c_str(), mHttpOptions.proxyPassword.c_str());
+            mHttpOptions.proxyUsername, mHttpOptions.proxyPassword);
     }
 }
 
 /*****************************************************/
-HTTPRunner::HostUrlPair HTTPRunner::ParseURL(std::string fullURL)
+HTTPRunner::HostUrlPair HTTPRunner::ParseURL(const std::string& fullURL)
 {
-    bool hasProto = fullURL.find("://") != std::string::npos;
+    const bool hasProto = fullURL.find("://") != std::string::npos;
     Utilities::StringPair pair { Utilities::split(fullURL, "/", hasProto ? 2 : 0) };
 
     if (!Utilities::startsWith(pair.second,"/")) 
         pair.second.insert(0, "/");
-
     return pair;
 }
 
 /*****************************************************/
 std::string HTTPRunner::GetHostname() const
 {
-    Utilities::StringPair pair { Utilities::split(mProtoHost, "://") };
+    const Utilities::StringPair pair { Utilities::split(mProtoHost, "://") };
     return pair.second.empty() ? pair.first : pair.second; 
 }
 
@@ -112,8 +114,8 @@ std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Headers&
         headers.emplace("X-Andromeda-"+key, base64::encode(it.second));
     }
 
-    return std::string(mBaseURL + (mBaseURL.find("?") != std::string::npos ? "&" : "?") + 
-        httplib::detail::params_to_query_str(urlParams));
+    return mBaseURL + (mBaseURL.find('?') != std::string::npos ? "&" : "?") + 
+        httplib::detail::params_to_query_str(urlParams);
 }
 
 /*****************************************************/
@@ -135,25 +137,25 @@ void HTTPRunner::AddFileParams(const RunnerInput_FilesIn& input, httplib::Multip
 // get a response but it's a HTTP 503.  Other responses (404 etc.) don't get retried.
 
 /*****************************************************/
-void HTTPRunner::DoRequests(std::function<httplib::Result()> getResult, bool& canRetry, const bool& doRetry)
+void HTTPRunner::DoRequests(const std::function<httplib::Result()>& getResult, bool& canRetry, const bool& doRetry)
 {
     // do the request some number of times until success
     for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        canRetry = (mCanRetry && attempt <= mBaseOptions.maxRetries);
-        httplib::Result result { getResult() };
+        canRetry = (GetCanRetry() && attempt <= mBaseOptions.maxRetries);
+        httplib::Result result { getResult() }; // sets doRetry
         if (result != nullptr && !doRetry) return; // break
         else HandleNonResponse(result, canRetry, attempt);
     }
 }
 
 /*****************************************************/
-std::string HTTPRunner::DoRequestsFull(std::function<httplib::Result()> getResult, bool& isJson)
+std::string HTTPRunner::DoRequestsFull(const std::function<httplib::Result()>& getResult, bool& isJson)
 {
     // do the request some number of times until success
     for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
     {
-        bool canRetry = (mCanRetry && attempt <= mBaseOptions.maxRetries);
+        const bool canRetry = (GetCanRetry() && attempt <= mBaseOptions.maxRetries);
         httplib::Result result { getResult() };
         if (result != nullptr)
         {
@@ -197,7 +199,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
 {
     MDBG_INFO("() HTTP:" << response.status);
 
-    doRetry = (canRetry && (response.status == 500 ||response.status == 503)); // TODO remove me (don't retry on 500)
+    doRetry = (canRetry && (response.status == 500 || response.status == 503)); // TODO remove me (don't retry on 500)
     if (doRetry) return ""; // early return
 
     // if redirected, should remember it for next time
@@ -210,7 +212,7 @@ std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& 
         {
             isJson = (response.has_header("Content-type") && 
                 response.get_header_value("Content-type") == "application/json");
-            return std::move(response.body);
+            return response.body; // copy from const
         }
         
         case 301: case 302: // HTTP redirect
@@ -234,7 +236,7 @@ std::string HTTPRunner::RunAction_Read(const RunnerInput& input, bool& isJson)
     httplib::Headers headers; 
     std::string url(SetupRequest(input, headers));
 
-    return DoRequestsFull([&](){ return mHttpClient->Get(url.c_str(), headers); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Get(url, headers); }, isJson);
 }
 
 /*****************************************************/
@@ -248,7 +250,7 @@ std::string HTTPRunner::RunAction_Write(const RunnerInput& input, bool& isJson)
 
     AddDataParams(input, postParams);
 
-    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Post(url, headers, postParams); }, isJson);
 }
 
 /*****************************************************/
@@ -264,7 +266,7 @@ std::string HTTPRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input, bool
     AddDataParams(input, postParams);
     AddFileParams(input, postParams);
 
-    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Post(url, headers, postParams); }, isJson);
 }
 
 /*****************************************************/
@@ -282,18 +284,14 @@ std::string HTTPRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input, bo
     // set up the POST body as files being done via a chunked stream
     httplib::MultipartFormDataProviderItems streamParams;
 
-    const size_t bufSize { mBaseOptions.streamBufferSize }; // copy
-    std::unique_ptr<char[]> streamBuffer { !input.fstreams.empty()
-        ? std::make_unique<char[]>(bufSize) : nullptr };
-
     for (const decltype(input.fstreams)::value_type& it : input.fstreams)
     {
         // callback that reads from the provided file stream into our buffer then httplib's buffer
-        httplib::ContentProviderWithoutLength sfunc { [&](size_t offset, httplib::DataSink& sink)->bool
+        const httplib::ContentProviderWithoutLength sfunc { [&](size_t offset, httplib::DataSink& sink)->bool
         {
             size_t read { 0 };
-            bool hasMore { it.second.streamer(offset, streamBuffer.get(), bufSize, read) };
-            sink.os.write(streamBuffer.get(), static_cast<std::streamsize>(read));
+            const bool hasMore { it.second.streamer(offset, mStreamBuffer.data(), mStreamBuffer.size(), read) };
+            sink.os.write(mStreamBuffer.data(), static_cast<std::streamsize>(read));
             if (!hasMore) sink.done(); 
             return true;
         }};
@@ -301,7 +299,7 @@ std::string HTTPRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input, bo
         streamParams.push_back({it.first, sfunc, it.second.name, {}});
     }
     
-    return DoRequestsFull([&](){ return mHttpClient->Post(url.c_str(), headers, postParams, streamParams); }, isJson);
+    return DoRequestsFull([&](){ return mHttpClient->Post(url, headers, postParams, streamParams); }, isJson);
 }
 
 /*****************************************************/
@@ -313,7 +311,9 @@ void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& i
     httplib::Headers headers; 
     std::string url(SetupRequest(input, headers));
 
-    bool canRetry, doRetry; size_t offset;
+    // these bools are set by the handlers but we'll give defaults anyway
+    bool canRetry = true, doRetry = false;
+    size_t offset = 0;
 
     // Separate ResponseHandler callback as we need to check the response before streaming
     httplib::ResponseHandler respFunc { [&](const httplib::Response& response)->bool {
@@ -330,7 +330,7 @@ void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& i
     // httplib then calls our ResponseHandler, which checks the response and canRetry, then sets doRetry if needed.  
     // httplib then returns to DoRequests which checks the doRetry and starts over if set.
 
-    DoRequests([&](){ return mHttpClient->Get(url.c_str(), headers, respFunc, recvFunc); }, canRetry, doRetry);
+    DoRequests([&](){ return mHttpClient->Get(url, headers, respFunc, recvFunc); }, canRetry, doRetry);
 }
 
 /*****************************************************/
@@ -365,7 +365,7 @@ HTTPRunner::RedirectException HTTPRunner::GetRedirectException(const httplib::Re
     {
         std::string location { response.get_header_value("Location") };
         
-        const size_t paramsPos { location.find("?") };
+        const size_t paramsPos { location.find('?') };
         if (paramsPos != std::string::npos) // remove URL params
             location.erase(paramsPos);
 

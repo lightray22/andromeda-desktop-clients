@@ -19,9 +19,7 @@ public:
     /** Retrieve the standard help text string */
     static std::string HelpText();
 
-    /**
-     * @param[out] cacheOptions CacheManager options ref to fill
-     */
+    /** @param[out] cacheOptions CacheManager options ref to fill */
     explicit Options(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     virtual bool AddFlag(const std::string& flag) override;

@@ -7,6 +7,7 @@
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
+#include "andromeda/Utilities.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
 namespace Andromeda { 
@@ -53,6 +54,8 @@ public:
         AndromedaFuse::FuseOptions& options);
 
     virtual ~MountContext();
+    DELETE_COPY(MountContext)
+    DELETE_MOVE(MountContext)
 
     /** Returns the FUSE mount path */
     const std::string& GetMountPath() const;
@@ -65,11 +68,7 @@ private:
     std::unique_ptr<Andromeda::Filesystem::Folder> mRootFolder;
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;
 
-    Andromeda::Debug mDebug;
-
-    MountContext(const MountContext&) = delete; // no copying
-    MountContext& operator=(const MountContext&) = delete;
-    MountContext& operator=(MountContext&&) = delete;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace AndromedaGui

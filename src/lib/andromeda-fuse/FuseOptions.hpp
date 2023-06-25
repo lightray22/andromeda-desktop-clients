@@ -1,6 +1,7 @@
 #ifndef LIBA2FUSE_FUSEOPTIONS_H_
 #define LIBA2FUSE_FUSEOPTIONS_H_
 
+#include <cstdint>
 #include <list>
 #include <string>
 
@@ -43,10 +44,10 @@ struct FuseOptions
     
 #if !LIBFUSE2
     /** Maximum number of FUSE idle threads */
-    unsigned int maxIdleThreads { 10 }; // FUSE's default
+    uint32_t maxIdleThreads { 10 }; // FUSE's default
 #endif // !LIBFUSE2
 };
 
-} // namespace Andromeda
+} // namespace AndromedaFuse
 
 #endif // LIBA2FUSE_FUSEOPTIONS_H_

@@ -26,7 +26,9 @@ There are several binaries and libraries in the full suite.
 
 # Building
 
-Run `tools/buildrel` for a release build.  Run `tools/builddev` for a development build including unit tests.  Or the manual steps:
+Run `tools/buildrel` for a release build.  To install, run `tools/buildrel inst`.  Run `tools/builddev` for a development build including unit tests and static analysis.  Use `tools/builddev rel` to build a release build with debugger info.
+
+The manual cmake steps:
 
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
@@ -183,9 +185,11 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## Testing
 
-Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DBUILD_TESTS=1`, then build, and the tests will be run.  Unit tests are run as part of `tools/builddev`.
+Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
 
-Static analysis is done with clang scan-build then cppcheck (must be installed). Static analysis can be run standalone with `tools/analyze`.
+Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.
+
+Unit tests and static analysis are both enabled in the `tools/builddev` script.
 
 ## Sanitizers
 

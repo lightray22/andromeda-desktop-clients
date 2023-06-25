@@ -10,6 +10,7 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 
@@ -57,14 +58,14 @@ public:
     /** Macro to print the file name at the beginning of debug */
     #define ITDBG_ERROR(strfunc) MDBG_ERROR("(" << mName << ")" << strfunc)
 
-    typedef Andromeda::ScopeLocked<Item> ScopeLocked;
+    using ScopeLocked = Andromeda::ScopeLocked<Item>;
     /** 
      * Tries to lock mScopeMutex, returns a ref that is maybe locked 
      * The purpose of scope locking is to make sure the item isn't removed while being used
      */
     inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
-    typedef std::unique_lock<std::shared_mutex> DeleteLock;
+    using DeleteLock = std::unique_lock<std::shared_mutex>;
     /** Permanently, exclusively locks the scope lock if not acquired (use before deleting) */
     inline DeleteLock GetDeleteLock() { return DeleteLock(mScopeMutex); }
 
@@ -81,10 +82,12 @@ public:
     inline SharedLockW::LockPair GetWriteLockPair(Item& item) { 
         return SharedLockW::get_pair(mItemMutex, item.mItemMutex); }
 
-    virtual ~Item(){ }
+    virtual ~Item() = default;
+    DELETE_COPY(Item)
+    DELETE_MOVE(Item)
 
     /** API date format */
-    typedef double Date;
+    using Date = double;
 
     /** Concrete item types */
     enum class Type { FILE, FOLDER };
@@ -175,7 +178,7 @@ protected:
      * Construct a new item
      * @param backend reference to backend
      */
-    Item(Backend::BackendImpl& backend);
+    explicit Item(Backend::BackendImpl& backend);
 
     /** Initialize from the given JSON data */
     Item(Backend::BackendImpl& backend, const nlohmann::json& data);
@@ -189,7 +192,7 @@ protected:
      * Validates the item's name (no / and not . or ..)
      * @throws InvalidNameException if the name is invalid
      */
-    virtual void ValidateName(const std::string& name) const;
+    static void ValidateName(const std::string& name);
 
     /** Item type-specific delete */
     virtual void SubDelete(const DeleteLock& deleteLock) = 0;
@@ -231,11 +234,7 @@ protected:
 
 private:
 
-    Debug mDebug;
-
-    Item(const Item&) = delete; // no copying
-    Item& operator=(const Item&) = delete;
-    Item& operator=(Item&&) = delete;
+    mutable Debug mDebug;
 };
 
 } // namespace Filesystem

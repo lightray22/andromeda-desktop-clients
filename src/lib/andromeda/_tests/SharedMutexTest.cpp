@@ -13,7 +13,7 @@
 
 namespace Andromeda {
 
-typedef std::list<std::string> Results;
+using Results = std::list<std::string>;
 
 enum class LockType { WRITE, READ, READP };
 
@@ -34,7 +34,7 @@ static void RunLock(SharedMutex& mut, Results& res,
     }
 
     { // lock scope
-        std::lock_guard<std::mutex> resLock(resMutex);
+        const std::lock_guard<std::mutex> resLock(resMutex);
         res.push_back(name+"_lock"); 
     }
 }
@@ -43,7 +43,7 @@ static void RunUnlock(SharedMutex& mut, Results& res,
     std::mutex& resMutex, const std::string& name, LockType type)
 {
     { // lock scope
-        std::lock_guard<std::mutex> resLock(resMutex);
+        const std::lock_guard<std::mutex> resLock(resMutex);
         res.push_back(name+"_unlock"); 
     }
 
@@ -56,7 +56,8 @@ static void RunUnlock(SharedMutex& mut, Results& res,
 }
 
 static void RunTimed(SharedMutex& mut, Results& res, std::mutex& resMutex, 
-    const std::string name, const size_t mstime, LockType type)
+    const char* const name, const size_t mstime, LockType type)
+    // name is not a string ref because it would go out of scope (thread)
 {
     RunLock(mut, res, resMutex, name, type);
     wait(mstime);

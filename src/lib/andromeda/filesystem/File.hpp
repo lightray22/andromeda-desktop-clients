@@ -13,8 +13,8 @@
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/Utilities.hpp"
 #include "andromeda/backend/RunnerInput.hpp"
-using Andromeda::Backend::WriteFunc;
 
 namespace Andromeda {
 
@@ -41,15 +41,17 @@ public:
     class WriteTypeException : public Exception { public:
         WriteTypeException() : Exception("Write Type Unsupported") {}; };
 
-    typedef Andromeda::ScopeLocked<File> ScopeLocked;
+    using ScopeLocked = Andromeda::ScopeLocked<File>;
     /** Tries to lock mScopeMutex, returns a ref that is maybe locked */
     ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
-    virtual ~File();
+    ~File() override;
+    DELETE_COPY(File)
+    DELETE_MOVE(File)
 
-    virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock) override;
+    void Refresh(const nlohmann::json& data, const SharedLockW& thisLock) override;
 
-    virtual Type GetType() const override { return Type::FILE; }
+    Type GetType() const override { return Type::FILE; }
 
     /** Returns the total file size */
     virtual uint64_t GetSize(const SharedLock& thisLock) const final;
@@ -69,9 +71,9 @@ public:
     File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
     /** Function to create the file on the backend and return its JSON */
-    typedef std::function<nlohmann::json(const std::string& name)> CreateFunc;
+    using CreateFunc = std::function<nlohmann::json (const std::string&)>;
     /** Function to upload the file on the backend and return its JSON */
-    typedef std::function<nlohmann::json(const std::string& name, const WriteFunc& writeFunc, bool oneshot)> UploadFunc;
+    using UploadFunc = std::function<nlohmann::json (const std::string&, const Andromeda::Backend::WriteFunc&, bool)>;
 
     /**
      * @brief Construct a new file in memory only to be created on the backend when flushed
@@ -96,7 +98,7 @@ public:
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual size_t ReadBytesMax(char* buffer, const uint64_t offset, const size_t maxLength, const SharedLock& thisLock) final;
+    virtual size_t ReadBytesMax(char* buffer, uint64_t offset, size_t maxLength, const SharedLock& thisLock) final;
 
     /**
      * Read data from the file
@@ -105,7 +107,7 @@ public:
      * @param length exact number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
      */
-    virtual void ReadBytes(char* buffer, const uint64_t offset, const size_t length, const SharedLock& thisLock) final;
+    virtual void ReadBytes(char* buffer, uint64_t offset, size_t length, const SharedLock& thisLock) final;
 
     /**
      * Writes data to a file
@@ -118,15 +120,15 @@ public:
     /** Set the file size to the given value */
     virtual void Truncate(uint64_t newSize, const SharedLockW& thisLock) final;
 
-    virtual void FlushCache(const SharedLockW& thisLock, bool nothrow = false) override;
+    void FlushCache(const SharedLockW& thisLock, bool nothrow = false) override;
 
 protected:
 
-    virtual void SubDelete(const DeleteLock& deleteLock) override;
+    void SubDelete(const DeleteLock& deleteLock) override;
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
+    void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
+    void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
 
@@ -140,10 +142,10 @@ private:
      * @param length number of bytes in the buffer
      * @return size_t number of bytes consumed from buffer
      */
-    size_t FixPageAlignment(const char* buffer, const uint64_t offset, const size_t length, const SharedLockW& thisLock);
+    size_t FixPageAlignment(const char* buffer, uint64_t offset, size_t length, const SharedLockW& thisLock);
 
     /** Calls WriteBytes() with zeroes until the file size equals offset */
-    void FillWriteHole(const uint64_t offset, const SharedLockW& thisLock);
+    void FillWriteHole(uint64_t offset, const SharedLockW& thisLock);
 
     std::unique_ptr<Filedata::PageManager> mPageManager;
     std::unique_ptr<Filedata::PageBackend> mPageBackend;

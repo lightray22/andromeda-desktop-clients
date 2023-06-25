@@ -11,8 +11,6 @@ using AndromedaCli::Options;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
 #include "andromeda/backend/BaseRunner.hpp"
 using Andromeda::Backend::BaseRunner;
 #include "andromeda/backend/HTTPOptions.hpp"

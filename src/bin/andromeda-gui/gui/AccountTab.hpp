@@ -28,7 +28,11 @@ public:
      */
     explicit AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext);
     
-    virtual ~AccountTab();
+    ~AccountTab() override;
+    AccountTab(const AccountTab&) = delete; // no copy
+    AccountTab& operator=(const AccountTab&) = delete;
+    AccountTab(AccountTab&&) = delete; // no move
+    AccountTab& operator=(AccountTab&&) = delete;
 
     /** Returns the string to be used for this tab's title */
     std::string GetTabName() const;
@@ -56,7 +60,7 @@ private:
 
     std::unique_ptr<Ui::AccountTab> mQtUi;
 
-    Andromeda::Debug mDebug;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace Gui

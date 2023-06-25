@@ -6,7 +6,6 @@
 #include "Folder.hpp"
 #include "FSConfig.hpp"
 #include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
@@ -26,7 +25,7 @@ File::File(BackendImpl& backend, const nlohmann::json& data, Folder& parent) :
 
     mParent = &parent;
 
-    uint64_t fileSize;
+    uint64_t fileSize = 0;
     std::string fsid; 
     try
     {
@@ -82,7 +81,7 @@ size_t File::CalcPageSize() const
 }
 
 /*****************************************************/
-File::~File() { } // for unique_ptr
+File::~File() = default; // for unique_ptr
 
 /*****************************************************/
 uint64_t File::GetSize(const SharedLock& thisLock) const 
@@ -111,7 +110,7 @@ void File::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
     {
         if (mId.empty()) data.at("id").get_to(mId);
 
-        uint64_t newSize;
+        uint64_t newSize = 0;
         data.at("size").get_to(newSize);
         // TODO use server mtime once supported here to check for changing
         // will also need a mBackendTime in case of dirty writes
@@ -267,7 +266,7 @@ void File::WriteBytes(const char* buffer, uint64_t offset, size_t length, const 
                 throw WriteTypeException();
 
             // the PageManager can only upload at page boundaries
-            size_t fromBuffer { FixPageAlignment(buffer, offset, length, thisLock) };
+            const size_t fromBuffer { FixPageAlignment(buffer, offset, length, thisLock) };
             buffer += fromBuffer; offset += fromBuffer; length -= fromBuffer;
         }
     }
@@ -324,7 +323,7 @@ void File::FillWriteHole(const uint64_t offset, const SharedLockW& thisLock)
     const uint64_t fileSize { mPageManager->GetFileSize(thisLock) };
     if (offset > fileSize) // need to fill in holes to guarantee sequential upload
     {
-        std::vector<char> holeBuf(1024*1024, 0); // chunked fill to avoid consuming too much memory
+        std::vector<char> holeBuf(GetPageSize(), 0); // chunked fill to avoid consuming too much memory
         for (uint64_t holeOffset = fileSize; holeOffset < offset; holeOffset += holeBuf.size())
         {
             const size_t holeSize { Filedata::min64st(offset-holeOffset, holeBuf.size()) };

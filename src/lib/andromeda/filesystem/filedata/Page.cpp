@@ -10,20 +10,19 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-Page::Page(size_t pageSize, CachingAllocator& memAlloc) : mAlloc(memAlloc)
-{
-    mBytes = pageSize;
-    mPages = mAlloc.getNumPages(mBytes);
-    mData = mPages ? static_cast<char*>(mAlloc.alloc(mPages)) : nullptr;
-}
+Page::Page(size_t pageSize, CachingAllocator& memAlloc) : 
+    mAlloc(memAlloc), 
+    mBytes(pageSize), 
+    mPages(mAlloc.getNumPages(mBytes)), 
+    mData(mPages ? static_cast<char*>(mAlloc.alloc(mPages)) : nullptr){ }
 
 /*****************************************************/
-Page::Page(Page&& page) : mAlloc(page.mAlloc) // move constructor
+Page::Page(Page&& page) noexcept : // move constructor
+    mAlloc(page.mAlloc), 
+    mBytes(page.mBytes), 
+    mPages(page.mPages), 
+    mData(page.mData)
 {
-    mBytes = page.mBytes;
-    mPages = page.mPages;
-    mData = page.mData;
-
     page.mBytes = 0;
     page.mPages = 0;
     page.mData = nullptr;
@@ -39,7 +38,7 @@ Page::~Page()
 /*****************************************************/
 size_t Page::capacity() const
 { 
-    return mAlloc.getNumBytes(mBytes); 
+    return mPages*mAlloc.getPageSize(); 
 }
 
 /*****************************************************/

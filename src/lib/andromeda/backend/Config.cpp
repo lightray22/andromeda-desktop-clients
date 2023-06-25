@@ -23,12 +23,12 @@ Config::Config(BackendImpl& backend) :
         if (API_VERSION != api) 
             throw APIVersionException(api);
 
-        const nlohmann::json& apps1 { config.at("core").at("apps") };
-        std::vector<const char*> apps2 { "core", "accounts", "files" };
+        const nlohmann::json& appsHave { config.at("core").at("apps") };
+        static const std::vector<const char*> appsReq { "core", "accounts", "files" };
 
-        for (const std::string app : apps2) // NOT string&
-            if (apps1.find(app) == apps1.end())
-                throw AppMissingException(app);
+        for (const std::string appReq : appsReq) // NOT string&
+            if (appsHave.find(appReq) == appsHave.end())
+                throw AppMissingException(appReq);
 
         // can't get_to() with std::atomic
         mReadOnly = config.at("core").at("features").at("read_only").get<bool>();

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/Utilities.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/backend/HTTPOptions.hpp"
 #include "andromeda/backend/RunnerOptions.hpp"
@@ -24,6 +25,8 @@ public:
         const std::string& password, const std::string& twofactor);
 
     virtual ~BackendContext();
+    DELETE_COPY(BackendContext)
+    DELETE_MOVE(BackendContext)
 
     /** Returns the Andromeda::Backend instance */
     Andromeda::Backend::BackendImpl& GetBackend() { return *mBackend; }
@@ -40,11 +43,7 @@ private:
     std::unique_ptr<Andromeda::Backend::RunnerPool> mRunners;
     std::unique_ptr<Andromeda::Backend::BackendImpl> mBackend;
 
-    Andromeda::Debug mDebug;
-
-    BackendContext(const BackendContext&) = delete; // no copying
-    BackendContext& operator=(const BackendContext&) = delete;
-    BackendContext& operator=(BackendContext&&) = delete;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace AndromedaGui

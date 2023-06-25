@@ -40,25 +40,25 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool stopmm)
 {
     Flags flags; Options options;
 
-    size_t i { 1 }; for (; i < argc; i++)
+    size_t argIdx { 1 }; for (; argIdx < argc; argIdx++)
     {
-        std::string key { argv[i] };
+        std::string key { argv[argIdx] };
         if (key.empty())
             throw BadUsageException(
-                "empty key at arg "+std::to_string(i));
+                "empty key at arg "+std::to_string(argIdx));
         if (key[0] != '-')
             throw BadUsageException(
-                "expected key at arg "+std::to_string(i));
+                "expected key at arg "+std::to_string(argIdx));
 
         key.erase(0, 1); // key++
-        bool ext { (key[0] == '-') };
+        const bool ext { (key[0] == '-') };
         if (ext) key.erase(0, 1); // --opt
 
         if (key.empty() || std::isspace(key[0]))
         {
-            if (stopmm) { ++i; break; }
+            if (stopmm) { ++argIdx; break; }
             else throw BadUsageException(
-                "empty key at arg "+std::to_string(i));
+                "empty key at arg "+std::to_string(argIdx));
         }
         
         if (key.find('=') != std::string::npos) // -x=3 or --x=3
@@ -68,8 +68,8 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool stopmm)
         }
         else if (!ext && key.size() > 1)
             options.emplace(key.substr(0, 1), key.substr(1)); // -x3
-        else if (argc > i+1 && argv[i+1][0] != '-')
-            options.emplace(key, argv[++i]); // -x 3, --x 3
+        else if (argc > argIdx+1 && argv[argIdx+1][0] != '-')
+            options.emplace(key, argv[++argIdx]); // -x 3, --x 3
         else flags.push_back(key); // -x, --x
     }
 
@@ -79,7 +79,7 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool stopmm)
     for (const decltype(options)::value_type& pair : options)
         if (!AddOption(pair.first, pair.second)) throw BadOptionException(pair.first);
 
-    return i;
+    return argIdx;
 }
 
 /*****************************************************/
@@ -94,11 +94,11 @@ void BaseOptions::ParseFile(const std::filesystem::path& path)
         std::string line; std::getline(file,line);
 
         // Windows-formatted files will have extra \r at the end of lines
-        if (line.size() && line.back() == '\r') line.pop_back();
+        if (!line.empty() && line.back() == '\r') line.pop_back();
 
-        if (!line.size() || line.at(0) == '#' || line.at(0) == ' ') continue;
+        if (line.empty() || line.at(0) == '#' || line.at(0) == ' ') continue;
 
-        if (line.find("=") == std::string::npos) flags.push_back(line);
+        if (line.find('=') == std::string::npos) flags.push_back(line);
         else options.emplace(Utilities::split(line, "="));
     }
 
@@ -110,17 +110,17 @@ void BaseOptions::ParseFile(const std::filesystem::path& path)
 }
 
 /*****************************************************/
-void BaseOptions::ParseConfig(const std::string& name)
+void BaseOptions::ParseConfig(const std::string& prefix)
 {
     std::list<std::string> paths { 
         "/etc/andromeda", "/usr/local/etc/andromeda" };
 
-    std::string home { Utilities::GetHomeDirectory() };
+    const std::string home { Utilities::GetHomeDirectory() };
     if (!home.empty()) paths.push_back(home+"/.config/andromeda");
 
-    paths.push_back("."); for (std::string path : paths)
+    paths.emplace_back("."); for (std::string path : paths)
     {
-        path += "/"+name+".conf";
+        path += "/"+prefix+".conf";
         if (std::filesystem::is_regular_file(path))
             ParseFile(path);
     }
@@ -131,7 +131,7 @@ void BaseOptions::ParseUrl(const std::string& url)
 {
     Flags flags; Options options;
 
-    const size_t sep(url.find("?"));
+    const size_t sep(url.find('?'));
 
     if (sep != std::string::npos)
     {
@@ -139,7 +139,7 @@ void BaseOptions::ParseUrl(const std::string& url)
 
         for (const std::string& param : Utilities::explode(substr,"&"))
         {
-            if (param.find("=") == std::string::npos) flags.push_back(param);
+            if (param.find('=') == std::string::npos) flags.push_back(param);
             else options.emplace(Utilities::split(param, "="));
         }
     }

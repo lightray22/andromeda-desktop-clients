@@ -6,8 +6,7 @@ include(../../andromeda.cmake)
 # build the andromeda-sync executable
 
 #set(SOURCE_FILES main.cpp Options.cpp)
-#add_executable(andromeda-sync ${SOURCE_FILES})
-#andromeda_bin(andromeda-sync)
+#andromeda_bin(andromeda-sync "${SOURCE_FILES}")
 
 # include/link libandromeda-sync
 

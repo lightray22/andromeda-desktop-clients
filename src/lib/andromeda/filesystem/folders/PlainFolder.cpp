@@ -3,13 +3,11 @@
 
 #include "PlainFolder.hpp"
 #include "andromeda/ConfigOptions.hpp"
-using Andromeda::ConfigOptions;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/RunnerInput.hpp"
 using Andromeda::Backend::WriteFunc;
 #include "andromeda/filesystem/FSConfig.hpp"
-using Andromeda::Filesystem::FSConfig;
 #include "andromeda/filesystem/File.hpp"
 using Andromeda::Filesystem::File;
 
@@ -22,7 +20,7 @@ std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const s
 {
     backend.RequireAuthentication();
 
-    nlohmann::json data(backend.GetFolder(id));
+    const nlohmann::json data(backend.GetFolder(id));
 
     return std::make_unique<PlainFolder>(backend, data, true, nullptr);
 }
@@ -117,7 +115,7 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& this
 
     if (mBackend.GetOptions().cacheType == ConfigOptions::CacheType::NONE)
     {
-        nlohmann::json data(mBackend.CreateFile(GetID(), name));
+        const nlohmann::json data(mBackend.CreateFile(GetID(), name));
         file = std::make_unique<File>(mBackend, data, *this);
     }
     else file = std::make_unique<File>(mBackend, *this, name, *mFsConfig, // create later
@@ -126,7 +124,7 @@ void PlainFolder::SubCreateFile(const std::string& name, const SharedLockW& this
         [&](const std::string& fname, const WriteFunc& ffunc, bool oneshot){ 
             return mBackend.UploadFile(GetID(), fname, ffunc, oneshot); });
 
-    SharedLockR subLock { file->GetReadLock() };
+    const SharedLockR subLock { file->GetReadLock() };
     mItemMap[file->GetName(subLock)] = std::move(file);
 }
 
@@ -137,11 +135,11 @@ void PlainFolder::SubCreateFolder(const std::string& name, const SharedLockW& th
 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
-    nlohmann::json data(mBackend.CreateFolder(GetID(), name));
+    const nlohmann::json data(mBackend.CreateFolder(GetID(), name));
 
     std::unique_ptr<PlainFolder> folder(std::make_unique<PlainFolder>(mBackend, data, false, this));
 
-    SharedLockR subLock { folder->GetReadLock() };
+    const SharedLockR subLock { folder->GetReadLock() };
     mItemMap[folder->GetName(subLock)] = std::move(folder);
 }
 
@@ -175,6 +173,6 @@ void PlainFolder::SubMove(const std::string& parentID, const SharedLockW& thisLo
     mBackend.MoveFolder(GetID(), parentID, overwrite);
 }
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda

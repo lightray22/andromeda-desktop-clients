@@ -5,17 +5,14 @@ include(../../andromeda.cmake)
 
 # build the Andromeda library
 
-add_library(libandromeda STATIC)
-andromeda_lib(libandromeda)
-
 set(SOURCE_FILES 
     BaseOptions.cpp
     ConfigOptions.cpp
     Debug.cpp
     Utilities.cpp
     )
+andromeda_lib(libandromeda "${SOURCE_FILES}")
 
-target_sources(libandromeda PRIVATE ${SOURCE_FILES})
 target_include_directories(libandromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 

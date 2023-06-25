@@ -35,11 +35,11 @@ public:
     using const_lookup_iterator = typename ValueLookup::const_iterator;
 
     /** Returns the map key from the given value_type */
-    inline Key get_key(const value_type& e) noexcept{
+    inline Key get_key(const value_type& e) noexcept {
         return static_cast<Impl*>(this)->get_key(e);
     }
     /** Returns the map value from the given value_type */
-    inline Value get_value(const value_type& e) noexcept{
+    inline Value get_value(const value_type& e) noexcept {
         return static_cast<Impl*>(this)->get_value(e);
     }
 
@@ -70,9 +70,9 @@ public:
     /** Returns a reference to the last element in the list (MUST NOT BE EMPTY) (O(1)) */
     inline value_type& back() noexcept { return mQueue.back(); }
     /** Returns the number of elements in the list (O(1)) */
-    inline size_t size() const noexcept { return mQueue.size(); }
+    [[nodiscard]] inline size_t size() const noexcept { return mQueue.size(); }
     /** Returns true iff the list is empty (O(1)) */
-    inline bool empty() const noexcept { return mQueue.empty(); }
+    [[nodiscard]] inline bool empty() const noexcept { return mQueue.empty(); }
 
     /** Empties the list and hash map (O(1)) */
     inline void clear() noexcept
@@ -83,7 +83,7 @@ public:
 
     explicit OrderedMapAnyEntry() = default;
 
-    explicit OrderedMapAnyEntry(const std::initializer_list<value_type>& list) noexcept
+    OrderedMapAnyEntry(const std::initializer_list<value_type>& list) noexcept
     {
         for (const value_type& entry : list)
         {
@@ -116,7 +116,7 @@ public:
      */
     iterator find(const Key& key) noexcept
     {
-        lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
+        const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return mQueue.end();
         else return itLookup->second;
     }
@@ -127,7 +127,7 @@ public:
      */
     const_iterator find(const Key& key) const noexcept
     {
-        lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
+        const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return mQueue.end();
         else return itLookup->second;
     }
@@ -168,7 +168,7 @@ public:
      */
     bool erase(const Key& key) noexcept
     {
-        lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
+        const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return false;
 
         mQueue.erase(itLookup->second); // O(1)
@@ -184,7 +184,7 @@ public:
      */
     bool pop(const Key& key, Value& val) noexcept
     {
-        lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
+        const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return false;
 
         val = std::move(get_value(*itLookup->second));
@@ -199,11 +199,11 @@ public:
      */
     value_type pop_front() noexcept
     {
-        iterator itQueue { mQueue.begin() };
+        const iterator itQueue { mQueue.begin() };
         mLookup.erase(get_key(*itQueue)); // O(1)-O(n)
-        value_type v { std::move(*itQueue) };
+        value_type v { std::move(*itQueue) }; // NOLINT(misc-const-correctness)
         mQueue.erase(itQueue); // O(1)
-        return v;
+        return v; // non-const for move
     }
     
     /**
@@ -212,11 +212,11 @@ public:
      */
     value_type pop_back() noexcept
     {
-        iterator itQueue { std::prev(mQueue.end()) };
+        const iterator itQueue { std::prev(mQueue.end()) };
         mLookup.erase(get_key(*itQueue)); // O(1)-O(n)
-        value_type v { std::move(*itQueue) };
+        value_type v { std::move(*itQueue) }; // NOLINT(misc-const-correctness)
         mQueue.erase(itQueue); // O(1)
-        return v;
+        return v; // non-const for move
     }
 
     /**
@@ -233,7 +233,7 @@ public:
         mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
     }
 
-protected:
+private:
     ValueQueue mQueue;
     ValueLookup mLookup;
 };
@@ -244,8 +244,8 @@ class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Va
 {
 public:
     using value_type = std::pair<const Key, Value>;
-    inline Key get_key(const value_type& e) noexcept{ return e.first; }
-    inline Value get_value(const value_type& e) noexcept{ return e.second; }
+    inline Key get_key(const value_type& e) noexcept { return e.first; }
+    inline Value get_value(const value_type& e) noexcept { return e.second; }
     using OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>::OrderedMapAnyEntry;
 };
 
@@ -258,8 +258,8 @@ class HashedQueue : public OrderedMapAnyEntry<Value, Value, Value, HashedQueue<V
 {
 public:
     using value_type = Value;
-    inline Value get_key(const value_type& e) noexcept{ return e; }
-    inline Value get_value(const value_type& e) noexcept{ return e; }
+    inline Value get_key(const value_type& e) noexcept { return e; }
+    inline Value get_value(const value_type& e) noexcept { return e; }
     using OrderedMapAnyEntry<Value, Value, Value, HashedQueue<Value>>::OrderedMapAnyEntry;
 };
 

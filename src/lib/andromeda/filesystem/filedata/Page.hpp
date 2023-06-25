@@ -2,6 +2,8 @@
 #ifndef LIBA2_PAGE_H_
 #define LIBA2_PAGE_H_
 
+#include "andromeda/Utilities.hpp"
+
 namespace Andromeda {
 namespace Filesystem {
 namespace Filedata {
@@ -16,29 +18,26 @@ public:
     /** Construct a page with the given size in bytes and allocator */
     explicit Page(size_t pageSize, CachingAllocator& memAlloc);
 
-    Page(Page&&);
     virtual ~Page();
+    Page(Page&& page) noexcept;
+    Page& operator=(Page&&) = delete;
+    DELETE_COPY(Page)
 
     /** Return a pointer to the data buffer */
     inline char* data() { return mData; }
-    inline const char* data() const { return mData; }
+    [[nodiscard]] inline const char* data() const { return mData; }
     /** Return the size of this page in bytes */
-    inline size_t size() const { return mBytes; }
+    [[nodiscard]] inline size_t size() const { return mBytes; }
     /** Returns the memory usage of this page in bytes */
-    size_t capacity() const;
+    [[nodiscard]] size_t capacity() const;
 
     /** Return true if the page is dirty (un-flushed data) */
-    inline bool isDirty() const { return mDirty; }
+    [[nodiscard]] inline bool isDirty() const { return mDirty; }
     /** Set whether or not this page is dirty */
     inline void setDirty(bool dirty = true){ mDirty = dirty; }
 
     /** Resizes to the given # of bytes, possibly re-allocating */
     void resize(size_t bytes);
-
-    // do not allow copying
-    Page(const Page&) = delete;
-    Page& operator=(const Page&) = delete;
-    Page& operator=(Page&&) = delete;
 
 private:
 

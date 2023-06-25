@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [ -e build ]; then mkdir build; fi; cd build
-
 BUILD_TYPE=Debug
 if [ "$1" == "rel" ]; then
    BUILD_TYPE=RelWithDebInfo; shift
 fi
 
+if ! [ -e build-$BUILD_TYPE ]; then mkdir build-$BUILD_TYPE; fi; 
+rm build || true; ln -s build-$BUILD_TYPE build
+
+cd build-$BUILD_TYPE
+
 cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBUILD_TESTS=1 "$@"
+    -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1 "$@"
 
 cmake --build . -j$(nproc)

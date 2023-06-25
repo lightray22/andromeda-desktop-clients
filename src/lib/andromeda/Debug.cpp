@@ -7,19 +7,22 @@
 #include <mutex>
 #include <thread>
 
-using namespace std::chrono;
+using std::chrono::steady_clock;
+using std::chrono::duration;
 
 namespace Andromeda {
 
+namespace { // anonymous
 /** Global output lock */
-static std::mutex sMutex;
+std::mutex sMutex;
 /** timestamp when the program started */
-static steady_clock::time_point sStart { steady_clock::now() };
+steady_clock::time_point sStart { steady_clock::now() };
+} // namespace
 
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
 
-static std::ostream& sOutstr { std::cerr };
+#define sOutstr std::cerr
 //static std::ofstream sOutstr("/tmp/debug.log", std::ofstream::out);
 
 /*****************************************************/
@@ -40,7 +43,7 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
     {
         sOutstr << "tid:" << std::this_thread::get_id() << " ";
 
-        duration<double> time { steady_clock::now() - sStart };
+        const duration<double> time { steady_clock::now() - sStart };
         sOutstr << "time:" << time.count() << " ";
 
         if (mAddr == nullptr) { sOutstr << "static "; }
@@ -56,7 +59,7 @@ Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
     // copy variables into std::function (scope)
     return [ptr,bytes,width](std::ostream& str)
     {
-        std::ios_base::fmtflags sflags { str.flags() };
+        const std::ios_base::fmtflags sflags { str.flags() };
 
         str << "printing " << bytes << " bytes at " 
             << std::hex << ptr << std::endl;

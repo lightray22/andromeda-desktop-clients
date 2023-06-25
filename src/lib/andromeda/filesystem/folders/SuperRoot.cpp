@@ -29,16 +29,16 @@ void SuperRoot::LoadItems(const SharedLockW& thisLock, bool force)
     MDBG_INFO("()");
 
     { std::unique_ptr<Adopted> adopted(std::make_unique<Adopted>(mBackend, *this));
-    SharedLockR subLock { adopted->GetReadLock() };
+    const SharedLockR subLock { adopted->GetReadLock() };
     mItemMap[adopted->GetName(subLock)] = std::move(adopted); }
 
     { std::unique_ptr<Filesystems> filesystems(std::make_unique<Filesystems>(mBackend, *this));
-    SharedLockR subLock { filesystems->GetReadLock() };
+    const SharedLockR subLock { filesystems->GetReadLock() };
     mItemMap[filesystems->GetName(subLock)] = std::move(filesystems); }
 
     mHaveItems = true;
 }
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda

@@ -2,6 +2,7 @@
 #define LIBA2_CONFIGOPTIONS_H_
 
 #include <chrono>
+#include <cstdint>
 #include <string>
 
 namespace Andromeda {
@@ -49,7 +50,7 @@ struct ConfigOptions
      * This should be >= and a multiple of the OS's page size (4K Linux, 64K Windows) or memory will be wasted.
      * 128K is a good minimum for most use cases.  Maybe 1M for fast sequential cases with a large cache.
      */
-    size_t pageSize { 128*1024 }; // 128K
+    size_t pageSize { 131072 }; // 128K
 
     /** 
      * The target transfer time for each read-ahead page fetch 
@@ -62,7 +63,7 @@ struct ConfigOptions
      * E.g. if the cache max is 256MB and frac is 4, no read can be > 64MB regardless of time
      * Smaller values could increase total throughput but will lower cache effectiveness
      */
-    size_t readMaxCacheFrac { 4 };
+    uint32_t readMaxCacheFrac { 4 };
 
     /** 
      * The number of pages past the current to always pre-populate

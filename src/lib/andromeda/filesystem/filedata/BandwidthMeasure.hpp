@@ -20,16 +20,18 @@ class BandwidthMeasure
 {
 public:
 
+    using milliseconds = std::chrono::milliseconds;
+
     /** @param timeTarget reference to the target time */
-    explicit BandwidthMeasure(const char* debugName, const std::chrono::milliseconds& timeTarget);
+    explicit BandwidthMeasure(const char* debugName, const milliseconds& timeTarget);
 
     /** Updates the bandwidth history with the given measure and returns the estimated targetBytes */
-    size_t UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time);
+    size_t UpdateBandwidth(size_t bytes, const std::chrono::steady_clock::duration& time);
 
 private:
 
     /** The desired time target for the transfer */
-    const std::chrono::milliseconds& mTimeTarget;
+    const milliseconds& mTimeTarget;
     
     /** The number of bandwidth history entries to store */
     static constexpr size_t BANDWIDTH_WINDOW { 4 };
@@ -40,7 +42,7 @@ private:
     /** The next index of mBandwidthHistory to write with a measurement */
     size_t mBandwidthHistoryIdx { 0 };
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
 } // namespace Filedata

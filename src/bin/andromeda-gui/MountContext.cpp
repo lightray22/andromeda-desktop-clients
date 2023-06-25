@@ -27,8 +27,8 @@ MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mount
 
     if (mHomeRelative)
     {
-        QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
-            if (locations.empty()) throw UnknownHomeException();
+        const QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
+        if (locations.empty()) throw UnknownHomeException();
 
         mountPath = locations.at(0).toStdString()+"/"+mountPath;
         MDBG_INFO("... mountPath:" << mountPath);

@@ -20,7 +20,7 @@ class PlainFolder : public Folder
 {
 public:
 
-    virtual ~PlainFolder(){};
+    ~PlainFolder() override = default;
 
     /**
      * Load from the backend with the given ID
@@ -55,28 +55,28 @@ protected:
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
-    virtual void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
+    void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
     /** Populates the item list with items using the given files/folders JSON */
     void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
-    virtual void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;
+    void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;
 
-    virtual void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override;
+    void SubCreateFolder(const std::string& name, const SharedLockW& thisLock) override;
 
-    virtual void SubDelete(const DeleteLock& deleteLock) override;
+    void SubDelete(const DeleteLock& deleteLock) override;
 
-    virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
+    void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) override;
 
-    virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
+    void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) override;
 
 private:
 
-    Debug mDebug;
+    mutable Debug mDebug;
 };
 
-} // namespace Andromeda
-} // namespace Filesystem
 } // namespace Folders
+} // namespace Filesystem
+} // namespace Andromeda
 
 #endif // LIBA2_PLAINFOLDER_H_

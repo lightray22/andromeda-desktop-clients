@@ -87,7 +87,7 @@ void CLIRunner::PrintArgs(const CLIRunner::ArgList& argList)
 // TODO implement retries for CLI (can get 503's)
 
 /*****************************************************/
-void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env)
+void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env) const
 {
     reproc::options options; 
     options.env.extra = env;
@@ -95,7 +95,7 @@ void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const E
 }
 
 /*****************************************************/
-void CLIRunner::DrainProc(reproc::process& process, std::string& output)
+void CLIRunner::DrainProc(reproc::process& process, std::string& output) const
 {
     reproc::sink::string sink(output);
     CheckError(process, reproc::drain(process, sink, 
@@ -103,7 +103,7 @@ void CLIRunner::DrainProc(reproc::process& process, std::string& output)
 }
 
 /*****************************************************/
-int CLIRunner::FinishProc(reproc::process& process)
+int CLIRunner::FinishProc(reproc::process& process) const
 {
     int status = 0; 
     std::error_code error; 
@@ -139,7 +139,7 @@ std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
     const EnvList environment { GetEnvironment(input) };
 
     const std::string* inputPtr { nullptr };
-    if (input.files.size() > 0)
+    if (!input.files.empty())
     {
         if (input.files.size() > 1) throw Exception("Multiple Files");
         const decltype(input.files)::value_type& infile(*(input.files.begin()));
@@ -164,7 +164,7 @@ std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
 
     std::string output;
     DrainProc(process, output);
-    int status { FinishProc(process) };
+    const int status { FinishProc(process) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -180,10 +180,10 @@ std::string CLIRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input)
     ArgList arguments { GetArguments(input) };
     const EnvList environment { GetEnvironment(input) };
 
-    if (input.files.size() > 0) throw Exception("Multiple Files");
+    if (!input.files.empty()) throw Exception("Multiple Files");
 
     const WriteFunc* streamerPtr { nullptr };
-    if (input.fstreams.size() > 0)
+    if (!input.fstreams.empty())
     {
         if (input.fstreams.size() > 1) throw Exception("Multiple Files");
         const decltype(input.fstreams)::value_type& instream(*(input.fstreams.begin()));
@@ -212,7 +212,7 @@ std::string CLIRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input)
 
     std::string output;
     DrainProc(process, output);
-    int status { FinishProc(process) };
+    const int status { FinishProc(process) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -235,6 +235,7 @@ void CLIRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input)
     size_t offset { 0 }; CheckError(process, reproc::drain(process, 
         [&](reproc::stream stream, const uint8_t* buffer, size_t size)->std::error_code
     {
+        // TODO see server issue with output modes... should we check if the stream here is out of err or both??
         input.streamer(offset, reinterpret_cast<const char*>(buffer), size);
         offset += size; return std::error_code(); // success
     }, reproc::sink::null, mOptions.streamBufferSize));

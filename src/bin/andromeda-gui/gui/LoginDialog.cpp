@@ -38,8 +38,8 @@ void LoginDialog::accept()
 
     try
     {
-        std::string password { mQtUi->lineEditPassword->text().toStdString() };
-        std::string twofactor { mQtUi->lineEditTwoFactor->text().toStdString() };
+        const std::string password { mQtUi->lineEditPassword->text().toStdString() };
+        const std::string twofactor { mQtUi->lineEditTwoFactor->text().toStdString() };
         
         mBackendContext = std::make_unique<BackendContext>(apiurl, username, password, twofactor);
     }
@@ -56,7 +56,7 @@ void LoginDialog::accept()
 /*****************************************************/
 int LoginDialog::CreateBackend(std::unique_ptr<BackendContext>& backend)
 {
-    int retval { QDialog::exec() };
+    const int retval { QDialog::exec() };
     if (retval)
     {
         backend = std::move(mBackendContext);

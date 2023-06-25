@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "andromeda/Debug.hpp"
+#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 struct ConfigOptions;
@@ -23,7 +24,7 @@ class RunnerPool
 {
 public:
 
-    typedef std::unique_lock<std::mutex> UniqueLock;
+    using UniqueLock = std::unique_lock<std::mutex>;
 
     /** Scoped wrapper for accessing a runner under a lock */
     class LockedRunner
@@ -33,6 +34,8 @@ public:
             mPool(pool), mRunner(runner), mLock(std::move(lock)) { }
 
         ~LockedRunner();
+        DELETE_COPY(LockedRunner)
+        DELETE_MOVE(LockedRunner)
 
         BaseRunner& operator*() { return mRunner; }
         BaseRunner* operator->() { return &mRunner; }
@@ -48,11 +51,15 @@ public:
      */
     explicit RunnerPool(BaseRunner& runner, const Andromeda::ConfigOptions& options);
 
+    ~RunnerPool() = default;
+    DELETE_COPY(RunnerPool)
+    DELETE_MOVE(RunnerPool)
+
     /** Returns a reference to a runner and accompanying lock */
     LockedRunner GetRunner();
 
     /** Returns a const reference to the first runner */
-    const BaseRunner& GetFirst() const;
+    [[nodiscard]] const BaseRunner& GetFirst() const;
 
 private:
 
@@ -70,11 +77,7 @@ private:
     /** Condition variable to wait for a runner */
     std::condition_variable mCV;
 
-    Andromeda::Debug mDebug;
-    
-    RunnerPool(const RunnerPool&) = delete; // no copying
-    RunnerPool& operator=(const RunnerPool&) = delete;
-    RunnerPool& operator=(RunnerPool&&) = delete;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace Backend

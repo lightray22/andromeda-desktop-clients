@@ -27,7 +27,11 @@ public:
 
     SystemTray(QApplication& application, MainWindow& mainWindow);
 
-    virtual ~SystemTray();
+    ~SystemTray() override;
+    SystemTray(const SystemTray&) = delete; // no copy
+    SystemTray& operator=(const SystemTray&) = delete;
+    SystemTray(SystemTray&&) = delete; // no move
+    SystemTray& operator=(SystemTray&&) = delete;
 
 private:
 
@@ -41,7 +45,7 @@ private:
     QApplication& mApplication;
     MainWindow& mMainWindow;
 
-    Andromeda::Debug mDebug;
+    mutable Andromeda::Debug mDebug;
 };
 
 } // namespace Gui

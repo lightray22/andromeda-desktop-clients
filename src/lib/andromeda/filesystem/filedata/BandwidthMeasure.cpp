@@ -8,19 +8,20 @@ namespace Filesystem {
 namespace Filedata {
 
 /*****************************************************/
-BandwidthMeasure::BandwidthMeasure(const char* debugName, const std::chrono::milliseconds& timeTarget):
+BandwidthMeasure::BandwidthMeasure(const char* debugName, const milliseconds& timeTarget):
     mTimeTarget(timeTarget), mDebug(std::string(__func__)+"_"+debugName,this) { }
 
 /*****************************************************/
 size_t BandwidthMeasure::UpdateBandwidth(const size_t bytes, const std::chrono::steady_clock::duration& time)
 {
-    using namespace std::chrono;
+    using std::chrono::duration;
+    using std::chrono::duration_cast;
 
     MDBG_INFO("(bytes:" << bytes << " time(ms):" << duration_cast<milliseconds>(time).count());
 
     if (bytes > 0) // useless if 0
     {
-        MDBG_INFO("... bandwidth:" << (static_cast<double>(bytes)/duration<double>(time).count()/(1<<20)) << " MiB/s");
+        MDBG_INFO("... bandwidth:" << (static_cast<double>(bytes)/duration<double>(time).count()/1048576UL) << " MiB/s");
 
         const double timeFrac { duration<double>(time) / duration<double>(mTimeTarget) };
         const size_t targetBytesN { static_cast<size_t>(static_cast<double>(bytes) / timeFrac) };

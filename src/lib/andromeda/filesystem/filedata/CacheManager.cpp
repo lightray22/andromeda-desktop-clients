@@ -7,9 +7,7 @@
 #include "CachingAllocator.hpp"
 #include "Page.hpp"
 #include "PageManager.hpp"
-
 #include "andromeda/BaseException.hpp"
-using Andromeda::BaseException;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -123,7 +121,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
     UniqueLock lock(mMutex);
     static const std::string fname { __func__ };
 
-    { PageQueue::iterator itQueue { mPageQueue.find(&page) };
+    { const PageQueue::iterator itQueue { mPageQueue.find(&page) };
     if (itQueue != mPageQueue.end()) 
     {
         const size_t oldSize { itQueue->second.mPageSize };
@@ -136,7 +134,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
             HandleMemory(pageMgr, page, true, lock, mgrLock);
     } }
 
-    { PageQueue::iterator itQueue { mDirtyQueue.find(&page) };
+    { const PageQueue::iterator itQueue { mDirtyQueue.find(&page) };
     if (itQueue != mDirtyQueue.end()) 
     {
         const size_t oldSize { itQueue->second.mPageSize };
@@ -263,7 +261,7 @@ bool CacheManager::ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock
 /*****************************************************/
 void CacheManager::RemovePage(const Page& page)
 {
-    UniqueLock lock(mMutex);
+    const UniqueLock lock(mMutex);
     RemovePage(page, lock);
 
     static const std::string fname { __func__ };
@@ -274,7 +272,7 @@ void CacheManager::RemovePage(const Page& page)
 /*****************************************************/
 void CacheManager::RemoveDirty(const Page& page)
 {
-    UniqueLock lock(mMutex);
+    const UniqueLock lock(mMutex);
     RemoveDirty(page, lock);
 
     static const std::string fname { __func__ };
@@ -285,7 +283,7 @@ void CacheManager::RemoveDirty(const Page& page)
 size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 {
     size_t pageSize { 0 }; // size of page removed
-    PageQueue::lookup_iterator itLookup { mPageQueue.lookup(&page) };
+    const PageQueue::lookup_iterator itLookup { mPageQueue.lookup(&page) };
     if (itLookup != mPageQueue.lend())
     {
         MDBG_INFO("(page:" << &page << ")");
@@ -301,7 +299,7 @@ size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
 /*****************************************************/
 void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 {
-    PageQueue::lookup_iterator itLookup { mDirtyQueue.lookup(&page) };
+    const PageQueue::lookup_iterator itLookup { mDirtyQueue.lookup(&page) };
     if (itLookup != mDirtyQueue.lend())
     {
         MDBG_INFO("(page:" << &page << ")");
@@ -393,7 +391,7 @@ void CacheManager::DoPageEvictions()
     std::map<PageManager*, EvictSet> currentEvicts;
 
     { // lock scope
-        UniqueLock lock(mMutex);
+        const UniqueLock lock(mMutex);
 
         static const std::string fname { __func__ };
         PrintStatus(fname, lock);
@@ -406,7 +404,7 @@ void CacheManager::DoPageEvictions()
             const Page& pageRef { *pageIt->first };
             PageInfo& pageInfo { pageIt->second };
 
-            decltype(currentEvicts)::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
+            const decltype(currentEvicts)::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
             EvictSet& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), EvictList())).first->second };
 
@@ -426,19 +424,19 @@ void CacheManager::DoPageEvictions()
         MDBG_INFO("... evicting pages:" << evictSet.second.size() << " pageMgr:" << evictIt->first);
         
         { // let waiters on this file continue so we can lock
-            UniqueLock lock(mMutex);
+            const UniqueLock lock(mMutex);
             mSkipEvictWait = evictIt->first;
             mEvictWaitCV.notify_all();
         }
 
-        SharedLockW mgrLock { evictIt->first->GetWriteLock() };
+        const SharedLockW mgrLock { evictIt->first->GetWriteLock() };
         
         { // have the mgrLock now
-            UniqueLock lock(mMutex);
+            const UniqueLock lock(mMutex);
             mSkipEvictWait = nullptr;
         }
 
-        for (EvictList::value_type& pagePair : evictSet.second)
+        for (const EvictList::value_type& pagePair : evictSet.second)
         {
             const Page& pageRef { pagePair.first };
             const PageInfo& pageInfo { pagePair.second };
@@ -446,7 +444,7 @@ void CacheManager::DoPageEvictions()
             try { pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, mgrLock); }
             catch (BaseException& ex)
             {
-                UniqueLock lock(mMutex);
+                const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
                 
                 // move the failed page to the end so we try a different (maybe non-dirty) one next to prevent memory runaway
@@ -478,7 +476,7 @@ void CacheManager::DoPageFlushes()
     std::map<PageManager*, FlushSet> currentFlushes;
 
     { // lock scope
-        UniqueLock lock(mMutex);
+        const UniqueLock lock(mMutex);
 
         static const std::string fname { __func__ };
         PrintDirtyStatus(fname, lock);
@@ -490,7 +488,7 @@ void CacheManager::DoPageFlushes()
             const Page& pageRef { *pageIt->first };
             PageInfo& pageInfo { pageIt->second };
 
-            decltype(currentFlushes)::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
+            const decltype(currentFlushes)::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
             FlushSet& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
                 &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), FlushList())).first->second };
 
@@ -510,26 +508,26 @@ void CacheManager::DoPageFlushes()
         MDBG_INFO("... flushing pages:" << flushSet.second.size() << " pageMgr:" << flushIt->first);
 
         { // let waiters on this file continue so we can lock
-            UniqueLock lock(mMutex);
+            const UniqueLock lock(mMutex);
             mSkipFlushWait = flushIt->first;
             mFlushWaitCV.notify_all();
         }
 
-        SharedLockW mgrLock { flushIt->first->GetWriteLock() };
+        const SharedLockW mgrLock { flushIt->first->GetWriteLock() };
         
         { // have the mgrLock now
-            UniqueLock lock(mMutex);
+            const UniqueLock lock(mMutex);
             mSkipFlushWait = nullptr;
         }
 
-        for (FlushList::value_type& pagePair : flushSet.second)
+        for (const FlushList::value_type& pagePair : flushSet.second)
         {
             const PageInfo& pageInfo { pagePair.second };
 
             try { FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, mgrLock); }
             catch (BaseException& ex)
             {
-                UniqueLock lock(mMutex);
+                const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
                 mFlushFailure = std::current_exception();
                 mFlushWaitCV.notify_all();
@@ -548,10 +546,10 @@ void CacheManager::DoPageFlushes()
 template<class T>
 void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock)
 {
-    std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
-    size_t written { pageMgr.FlushPage(index, mgrLock) };
+    const std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
+    const size_t written { pageMgr.FlushPage(index, mgrLock) };
 
-    UniqueLock lock(mMutex); // protect mDirtyLimit
+    const UniqueLock lock(mMutex); // protect mDirtyLimit
     mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 }
 
