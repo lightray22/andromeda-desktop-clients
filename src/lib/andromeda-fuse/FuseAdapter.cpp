@@ -369,7 +369,6 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
 
         { // retval scope
             int retval = -1;
-
             if (mOptions.enableThreading)
             {
             #if LIBFUSE2

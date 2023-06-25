@@ -78,7 +78,7 @@ public:
     size_t FetchPages(uint64_t index, size_t count, const PageHandler& pageHandler, const SharedLock& thisLock);
 
     /** Vector of **consecutive** non-null page pointers */
-    using PagePtrList = std::vector<Page *>;
+    using PagePtrList = std::vector<Page*>;
 
     /** 
      * Writes a series of **consecutive** pages (total < size_t)
