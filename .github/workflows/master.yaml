@@ -1,0 +1,33 @@
+name: Master CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-posix:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt update
+        sudo apt install -y cmake clang-tidy cppcheck
+
+    - name: Build and Test
+      run: tools/builddev
