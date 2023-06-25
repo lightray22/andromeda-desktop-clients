@@ -25,11 +25,16 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: >
         sudo apt update && sudo apt install -y 
-        cmake g++ clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev libglx-dev
+        cmake g++ clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev
     - name: Install (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
       run: >
         sudo apt update && sudo apt install -y 
         cmake g++ clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev
-    - name: Build and Test
+
+    - name: Build and Test (ubuntu-latest)
+      if: matrix.os == 'ubuntu-latest'
+      run: tools/builddev -DOPENGL_INCLUDE_DIR=/usr/include
+    - name: Build and Test (ubuntu-20.04)
+      if: matrix.os == 'ubuntu-latest'
       run: tools/builddev
