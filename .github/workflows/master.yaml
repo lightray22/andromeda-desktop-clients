@@ -9,32 +9,61 @@ on:
       - master
 
 jobs:
-  build-posix:
+  build:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
+            compiler: gcc
+          - os: ubuntu-22.04
+            compiler: clang
           - os: ubuntu-20.04
+            compiler: gcc
+          - os: ubuntu-20.04
+            compiler: clang
+          - os: macos-latest
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install (ubuntu-latest)
-      if: matrix.os == 'ubuntu-latest'
-      run: >
-        sudo apt update && sudo apt install -y 
-        cmake g++ clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev
+    - name: Install (ubuntu-22.04)
+      if: matrix.os == 'ubuntu-22.04'
+      run: |
+        sudo apt update
+        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev
+        echo OPENGL_INCLUDE_DIR=/usr/include >> $GITHUB_ENV
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
+        fi
     - name: Install (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
-      run: >
-        sudo apt update && sudo apt install -y 
-        cmake g++ clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev
-
-    - name: Build and Test (ubuntu-latest)
-      if: matrix.os == 'ubuntu-latest'
-      run: tools/builddev -DOPENGL_INCLUDE_DIR=/usr/include
+      run: |
+        sudo apt update
+        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
+        fi
+    - name: Install (macos-latest)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew search fuse
+        brew search macfuse
+        brew install bash make cmake openssl qt 
+        
+    - name: Build and Test (ubuntu-22.04)
+      if: matrix.os == 'ubuntu-22.04'
+      run: |
+        tools/builddev
+        tools/buildrel -DTESTS_CATCH2=1
     - name: Build and Test (ubuntu-20.04)
-      if: matrix.os == 'ubuntu-latest'
-      run: tools/builddev
+      if: matrix.os == 'ubuntu-20.04'
+      run: |
+        tools/builddev
+        tools/buildrel -DTESTS_CATCH2=1
+    - name: Build and Test (macos-latest)
+      if: matrix.os == 'macos-latest'
+      run: |
+        tools/builddev -DTESTS_CLANGTIDY=0 -DTESTS_CPPCHECK=0
+        tools/buildrel -DTESTS_CATCH2=1
