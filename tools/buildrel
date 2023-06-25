@@ -3,6 +3,10 @@ set -e
 
 BUILD_TYPE=Release
 
+if [ "$1" == "inst" ]; then
+    INSTALL=1; shift
+fi
+
 if ! [ -e build-$BUILD_TYPE ]; then mkdir build-$BUILD_TYPE; fi; 
 rm build || true; ln -s build-$BUILD_TYPE build
 
@@ -12,6 +16,6 @@ cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE "$@"
 
 cmake --build . -j$(nproc)
 
-if [ "$1" == "inst" ]; then
-   sudo cmake --install .
+if [ "$INSTALL" ]; then
+    sudo cmake --install .
 fi
