@@ -48,7 +48,7 @@ jobs:
     - name: Install (macos-latest)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install bash cmake clang openssl macfuse qt 
+        brew install bash cmake openssl macfuse qt 
         
     - name: Build and Test (ubuntu-22.04)
       if: matrix.os == 'ubuntu-22.04'
