@@ -58,7 +58,7 @@ jobs:
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       uses: jurplel/install-qt-action@v3
       with:
-        version: '6.5.0'
+        version: '6.5.1'
     - name: Install (windows)
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
@@ -103,12 +103,7 @@ jobs:
     - name: Execute --version (windows)
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
-        dir
-        cd build/bin/cli/Release
-        dir
-        andromeda-cli.exe --version
-        cd ../../fuse/Release
-        andromeda-fuse.exe --version
-        cd ../../gui/Release
-        andromeda-gui.exe --version
+        build/bin/cli/Release/andromeda-cli.exe --version
+        build/bin/fuse/Release/andromeda-fuse.exe --version
+        build/bin/gui/Release/andromeda-gui.exe --version
         
