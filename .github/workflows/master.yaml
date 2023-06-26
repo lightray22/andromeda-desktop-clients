@@ -83,7 +83,7 @@ jobs:
     - name: Build and Test (windows)
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
-        mkdir build; cd build-
+        mkdir build; cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DTESTS_CATCH2=1
         cmake --build . --config Release
 
