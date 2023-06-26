@@ -52,9 +52,11 @@ jobs:
       run: |
         brew update
         brew install -y bash cmake openssl macfuse qt 
-    - name: Install (windows-2019)
+    - name: Install Qt (windows-2019)
       if: matrix.os == 'windows-2019'
       uses: jurplel/install-qt-action@v3
+    - name: Install (windows-2019)
+      if: matrix.os == 'windows-2019'
       run: |
         choco --yes install openssl winfsp 
         
