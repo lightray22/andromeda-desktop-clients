@@ -8,7 +8,7 @@ include(../../andromeda.cmake)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets)
 
-if (WIN32)
+if (WIN32) # QT >= 6.3
     qt_standard_project_setup()
 else()
     set(CMAKE_AUTOMOC ON)

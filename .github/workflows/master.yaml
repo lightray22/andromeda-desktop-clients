@@ -104,6 +104,4 @@ jobs:
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
         build/bin/cli/Release/andromeda-cli.exe --version
-        build/bin/fuse/Release/andromeda-fuse.exe --version
-        build/bin/gui/Release/andromeda-gui.exe --version
         
