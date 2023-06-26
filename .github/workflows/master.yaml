@@ -51,14 +51,16 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew update
-        brew install -y bash cmake openssl macfuse qt 
+        brew install bash cmake openssl macfuse qt 
     - name: Install Qt (windows-2019)
       if: matrix.os == 'windows-2019'
       uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.5.0'
     - name: Install (windows-2019)
       if: matrix.os == 'windows-2019'
       run: |
-        choco --yes install openssl winfsp 
+        choco install openssl winfsp -y
         
     - name: Build and Test (ubuntu-22.04)
       if: matrix.os == 'ubuntu-22.04'
@@ -85,8 +87,18 @@ jobs:
         cmake --build . --config Debug
 
     - name: Execute --version (ubuntu, macos)
-    #  if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
+      if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
       run: |
         build/bin/cli/andromeda-cli --version
         build/bin/fuse/andromeda-fuse --version
         build/bin/gui/andromeda-gui --version
+    - name: Execute --version (windows)
+      if: matrix.os == 'windows-2019'
+      run: |
+        cd build/bin/cli
+        andromeda-cli.exe --version
+        cd ../fuse
+        andromeda-fuse.exe --version
+        cd ../gui
+        andromeda-gui.exe --version
+        
