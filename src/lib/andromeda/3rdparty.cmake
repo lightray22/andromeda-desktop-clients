@@ -33,7 +33,7 @@ set(REPROC_INSTALL OFF)
 FetchContent_Declare(reproc
     GIT_REPOSITORY  ${DEPS_BASEURL}/stingray-11/reproc.git
     #GIT_REPOSITORY ${DEPS_BASEURL}/DaanDeMeyer/reproc.git
-    GIT_TAG         57602bf # main
+    GIT_TAG         0b10db3 # main
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(reproc)
 
