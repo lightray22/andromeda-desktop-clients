@@ -63,6 +63,7 @@ jobs:
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
         choco install openssl winfsp -y
+        Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\WinFsp\bin"
         
     - name: Build and Test (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
