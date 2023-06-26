@@ -26,6 +26,8 @@ jobs:
             compiler: clang
           - os: macos-latest
             compiler: clang
+          - os: windows-2019
+            compiler: msvc
 
     steps:
     - uses: actions/checkout@v3
@@ -48,7 +50,13 @@ jobs:
     - name: Install (macos-latest)
       if: matrix.os == 'macos-latest'
       run: |
-        brew install bash cmake openssl macfuse qt 
+        brew update
+        brew install -y bash cmake openssl macfuse qt 
+    - name: Install (windows-2019)
+      if: matrix.os == 'windows-2019'
+      uses: jurplel/install-qt-action@v3
+      run: |
+        choco --yes install openssl winfsp 
         
     - name: Build and Test (ubuntu-22.04)
       if: matrix.os == 'ubuntu-22.04'
@@ -66,10 +74,17 @@ jobs:
       run: |
         tools/builddev -DTESTS_CLANGTIDY=0 -DTESTS_CPPCHECK=0
         tools/buildrel -DTESTS_CATCH2=1
+    - name: Build and Test (windows-2019)
+      if: matrix.os == 'windows-2019'
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DTESTS_CATCH2=1
+        cmake --build . --config Debug
 
     - name: Execute --version (ubuntu, macos)
-      if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
+    #  if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
       run: |
         build/bin/cli/andromeda-cli --version
         build/bin/fuse/andromeda-fuse --version
-        build/bin/gui/andromeda-gui --version)
+        build/bin/gui/andromeda-gui --version
