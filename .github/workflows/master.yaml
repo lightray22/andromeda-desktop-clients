@@ -71,7 +71,6 @@ jobs:
         tools/buildrel -DTESTS_CATCH2=1
     - name: Build and Test (ubuntu-22.04)
       if: matrix.os == 'ubuntu-22.04'
-      # github ubuntu22 seems to have an issue with OPENGL_INCLUDE_DIR
       run: |
         tools/builddev -DOPENGL_INCLUDE_DIR=/usr/include
         tools/buildrel -DOPENGL_INCLUDE_DIR=/usr/include -DTESTS_CATCH2=1
@@ -84,7 +83,7 @@ jobs:
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
         mkdir build; cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DTESTS_CATCH2=1
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="../install" -DTESTS_CATCH2=1
         cmake --build . --config Release
         cmake --install .
 
