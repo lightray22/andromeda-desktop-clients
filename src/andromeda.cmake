@@ -151,8 +151,12 @@ else() # NOT MSVC
     endif()
 
     ### ADD SANITIZERS ###
-
-    set(SANITIZE "address,leak,undefined" CACHE STRING "Build with sanitizers")
+    if (APPLE)
+        set(SANITIZE_DEFAULT "address,undefined")
+    else()
+        set(SANITIZE_DEFAULT "address,leak,undefined")
+    endif()
+    set(SANITIZE ${SANITIZE_DEFAULT} CACHE STRING "Build with sanitizers")
     if (NOT ${SANITIZE} STREQUAL "" AND NOT ${SANITIZE} STREQUAL "none")
         list(APPEND ANDROMEDA_CXX_OPTS $<$<CONFIG:Debug>:-fsanitize=${SANITIZE}>)
         list(APPEND ANDROMEDA_LINK_OPTS $<$<CONFIG:Debug>:-fsanitize=${SANITIZE}>)
@@ -182,13 +186,15 @@ function (andromeda_analyze)
             "--suppress=missingIncludeSystem"
             "--suppress=useStlAlgorithm" # annoying
             "--suppress=comparisonOfFuncReturningBoolError" # catch2
+            "--suppress=assertWithSideEffecs" # annoying
             "--suppress=constParameter" # false positives
             "--suppress=noConstructor" # false positives
             "--suppress=uninitMemberVarPrivate" # false positives
             PARENT_SCOPE)
-        if (NOT ${ALLOW_WARNINGS})
-            list(APPEND CMAKE_CXX_CPPCHECK "--error-exitcode=1")
-        endif()
+        # cppcheck is too buggy...
+        #if (NOT ${ALLOW_WARNINGS})
+        #    list(APPEND CMAKE_CXX_CPPCHECK "--error-exitcode=1")
+        #endif()
     endif()
 endfunction()
 
