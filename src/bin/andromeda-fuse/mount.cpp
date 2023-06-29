@@ -9,17 +9,21 @@
 
 #include "andromeda/Utilities.hpp"
 using Andromeda::Utilities;
+#include "andromeda/backend/CLIRunner.hpp"
+using Andromeda::Backend::CLIRunner;
 
 /** Print help text to std::cout */
 void PrintHelp()
 {
     using std::endl;
-    std::cout << "usage: mount.andromeda url|none path [-o fuseopt,--andromedaopt=val,+]" << endl
+    std::cout << "usage: mount.andromeda url|none path [-o fuseopt,--andromedaopt=val,...]" << endl
         << "... if url is \"none\" then no url will be passed (e.g. to use a CLI path instead)" << endl
         << "... \"mount -t andromeda\" can be used to call mount.andromeda if installed" << endl << endl;
     
-    std::cout << "example: mount.andromeda http://myserv /mnt -o ro,--no-chmod,-u=myuser" << endl
-        << "example fstab: http://myserv /mnt andromeda ro,--no-chmod,-u=myuser 0 0" << endl;
+    std::cout 
+        << "example (manual):    mount.andromeda http://myserv /mnt -o ro,--no-chmod,-u=myuser" << endl
+        << "example (use fstab): mount /mnt -o ro,--no-chmod,-u=myuser" << endl
+        << "example fstab line:  http://myserv /mnt andromeda ro,--no-chmod,-u=myuser 0 0" << endl;
 }
 
 int main(int argc, char** argv)
@@ -27,11 +31,12 @@ int main(int argc, char** argv)
     if (argc < 3) { 
         PrintHelp(); return 1; }
 
-    std::string cmd("andromeda-fuse -q"); // quiet
+    CLIRunner::ArgList args { "andromeda-fuse", "-q" }; // quiet
     
     if (!strcmp(argv[1],"none"))
-        { cmd += " -a "; cmd += Utilities::quoteString(argv[1]); } // url
-    cmd += " -m "; cmd += Utilities::quoteString(argv[2]); // path
+        { args.emplace_back("-a"); args.emplace_back(argv[1]); } // apiurl
+
+    args.emplace_back("-m"); args.emplace_back(argv[2]); // mountpath
 
     if (argc > 3) // -o is optional
     {
@@ -42,12 +47,12 @@ int main(int argc, char** argv)
         {
             if (arg.empty()) continue; // invalid
 
-            if (arg[0] == '-') 
-                cmd += " "+Utilities::quoteString(arg); // andromeda option
-            else cmd += " -o "+Utilities::quoteString(arg); // libfuse option
+            if (arg[0] == '-') args.emplace_back(arg); // andromeda option
+            else { args.emplace_back("-o"); args.emplace_back(arg); } // libfuse option
         }
     }
 
-    //std::cout << cmd << std::endl; // debug
-    return std::system(cmd.c_str()); // NOLINT(cert-env33-c) // NOLINT(concurrency-mt-unsafe)
+    try { return CLIRunner::RunPosixCommand(args); }
+    catch (const CLIRunner::CmdException& ex){ 
+        std::cerr << ex.what() << std::endl; return 2; }
 }

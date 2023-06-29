@@ -109,6 +109,11 @@ private:
     /** Signals initialization complete */
     void SignalInit();
 
+#if !WIN32
+    /** Calls system unmount on the given path (ignores failure) */
+    void TrySystemUnmount(const std::string& path);
+#endif // !WIN32
+
     mutable Andromeda::Debug mDebug;
     
     std::string mMountPath;

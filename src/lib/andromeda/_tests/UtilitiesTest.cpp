@@ -165,13 +165,6 @@ TEST_CASE("replaceAll", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("quoteString", "[Utilities]")
-{
-    REQUIRE(Utilities::quoteString("") == "\"\"");
-    REQUIRE(Utilities::quoteString("this is a \"test\"") == "\"this is a \\\"test\\\"\"");
-}
-
-/*****************************************************/
 TEST_CASE("stringToBool", "[Utilities]") 
 {
     REQUIRE(!Utilities::stringToBool(""));

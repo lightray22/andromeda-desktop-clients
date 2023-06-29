@@ -16,8 +16,8 @@
 using Andromeda::Debug;
 #include "andromeda/SharedMutex.hpp"
 using Andromeda::SharedLockW;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/backend/CLIRunner.hpp"
+using Andromeda::Backend::CLIRunner;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
@@ -151,12 +151,7 @@ struct FuseContext
             unmount(mMount.mPath, MNT_FORCE);
             MDBG_INFO("... unmount returned");
         #else
-            std::stringstream cmd;
-            cmd << "umount " << Utilities::quoteString(mMount.mPath) << " &";
-
-            MDBG_INFO("... " << cmd.str());
-            const int retval { std::system(cmd.str().c_str()) }; // NOLINT(cert-env33-c) // NOLINT(concurrency-mt-unsafe)
-            if (retval) MDBG_ERROR("... system unmount returned: " << retval); // failure is okay
+            mAdapter.TrySystemUnmount(mMount.mPath);
         #endif
     }
 
@@ -229,14 +224,8 @@ struct FuseMount
         // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
         // ... doing this as a command rather than C call so we get the setuid elevation of umount
-        
         #if !WIN32
-            std::stringstream cmd;
-            cmd << "umount " << Utilities::quoteString(mPath) << " &";
-
-            MDBG_INFO("... " << cmd.str());
-            const int retval { std::system(cmd.str().c_str()) }; // NOLINT(cert-env33-c) // NOLINT(concurrency-mt-unsafe)
-            if (retval) MDBG_ERROR("... system unmount returned: " << retval); // failure is okay
+            mAdapter.TrySystemUnmount(mPath);
         #endif
     }
 
@@ -430,6 +419,23 @@ FuseAdapter::~FuseAdapter()
 
     MDBG_INFO("... return!");
 }
+
+#if !WIN32
+/*****************************************************/
+void FuseAdapter::TrySystemUnmount(const std::string& path)
+{
+     // failure is okay, just an optimization for fuse_exit
+    try {
+        MDBG_INFO("(path:" << path << ")");
+        CLIRunner::ArgList args { "umount", path };
+        int retval { CLIRunner::RunPosixCommand(args) };
+        if (retval != 0) MDBG_ERROR("... system umount returned:" << retval);
+    }
+    catch (const CLIRunner::CmdException& ex) {
+        MDBG_ERROR("... system umount threw: " << ex.what());
+    }
+}
+#endif // !WIN32
 
 /*****************************************************/
 void FuseAdapter::ShowVersionText()

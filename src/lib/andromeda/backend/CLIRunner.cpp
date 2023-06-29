@@ -1,13 +1,22 @@
 
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <list>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include "reproc++/reproc.hpp"
 #include "reproc++/drain.hpp"
 #include "reproc++/fill.hpp"
+
+#if !WIN32
+#include <string.h> // // NOLINT(*-deprecated-headers)
+#include <unistd.h> // execvp
+#include <sys/types.h> // pid_t
+#include <sys/wait.h> // waitpid
+#endif // !WIN32
 
 #include "CLIRunner.hpp"
 #include "RunnerInput.hpp"
@@ -87,7 +96,7 @@ void CLIRunner::PrintArgs(const CLIRunner::ArgList& argList)
 // TODO implement retries for CLI (can get 503's)
 
 /*****************************************************/
-void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env) const
+void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const EnvList& env)
 {
     reproc::options options; 
     options.env.extra = env;
@@ -95,22 +104,68 @@ void CLIRunner::StartProc(reproc::process& process, const ArgList& args, const E
 }
 
 /*****************************************************/
-void CLIRunner::DrainProc(reproc::process& process, std::string& output) const
+void CLIRunner::DrainProc(reproc::process& process, std::string& output, const size_t bufferSize)
 {
     reproc::sink::string sink(output);
     CheckError(process, reproc::drain(process, sink, 
-        reproc::sink::null, mOptions.streamBufferSize));
+        reproc::sink::null, bufferSize));
 }
 
 /*****************************************************/
-int CLIRunner::FinishProc(reproc::process& process) const
+int CLIRunner::FinishProc(reproc::process& process, const std::chrono::milliseconds& timeout)
 {
     int status = 0; 
     std::error_code error; 
-    std::tie(status,error) = process.wait(mOptions.timeout); 
+    std::tie(status,error) = process.wait(timeout); 
     CheckError(process, error);
     return status;
 }
+
+/*****************************************************/
+// TODO see https://github.com/DaanDeMeyer/reproc/issues/106
+/*int CLIRunner::RunCommand(const ArgList& args)
+{
+    const EnvList env; // empty
+    reproc::process process;
+    StartProc(process, args, env);
+    return FinishProc(process, reproc::infinite);
+}*/
+
+#if !WIN32
+/*****************************************************/
+int CLIRunner::RunPosixCommand(ArgList& args)
+{
+    if (args.empty()) throw CmdException("empty argument list");
+
+    std::vector<char*> argv(args.size());
+    std::transform(args.begin(),args.end(),argv.begin(),
+        [](std::string& arg)->char*{ return arg.data(); });
+
+    const pid_t pid { fork() };
+    if (pid < 0) throw CmdException(
+        std::string("fork: ")+strerror(errno)); // NOLINT(concurrency-mt-unsafe)
+
+    if (pid == 0 && execvp(argv[0], argv.data()) < 0)
+        _exit(errno < 128 ? 128+errno : 128);
+
+    int status = -1;
+    waitpid(pid, &status, 0);
+
+    if (WIFEXITED(status))
+    {
+        const int code { WEXITSTATUS(status) };
+        if (code >= 128) throw CmdException(
+            std::string("exec: ")+strerror(code-128)); // NOLINT(concurrency-mt-unsafe)
+        else return status;
+    }
+    else if (WIFSIGNALED(status))
+    {
+        const int sig { WTERMSIG(status) };
+        throw CmdException(std::string("signal: ")+strsignal(sig)); // NOLINT(concurrency-mt-unsafe)
+    }
+    else throw CmdException("unknown status");
+}
+#endif // !WIN32
 
 /*****************************************************/
 std::string CLIRunner::RunAction_Write(const RunnerInput& input)
@@ -125,8 +180,8 @@ std::string CLIRunner::RunAction_Write(const RunnerInput& input)
     StartProc(process, arguments, environment);
 
     std::string output;
-    DrainProc(process, output);
-    FinishProc(process);
+    DrainProc(process, output, mOptions.streamBufferSize);
+    FinishProc(process, mOptions.timeout);
     return output;
 }
 
@@ -163,8 +218,8 @@ std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
     }
 
     std::string output;
-    DrainProc(process, output);
-    const int status { FinishProc(process) };
+    DrainProc(process, output, mOptions.streamBufferSize);
+    const int status { FinishProc(process, mOptions.timeout) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -211,8 +266,8 @@ std::string CLIRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input)
     }
 
     std::string output;
-    DrainProc(process, output);
-    const int status { FinishProc(process) };
+    DrainProc(process, output, mOptions.streamBufferSize);
+    const int status { FinishProc(process, mOptions.timeout) };
 
     // if we got a fill error and the process claimed to succeed, throw
     if (!status && fillErr) CheckError(process, fillErr);
@@ -240,7 +295,7 @@ void CLIRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input)
         offset += size; return std::error_code(); // success
     }, reproc::sink::null, mOptions.streamBufferSize));
 
-    FinishProc(process);
+    FinishProc(process, mOptions.timeout);
 }
 
 } // namespace Backend

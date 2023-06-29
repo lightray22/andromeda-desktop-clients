@@ -64,9 +64,6 @@ public:
     /** Returns the string str with all occurences of from replaced by repl */
     static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
 
-    /** Surrounds the string with double quotes and escapes all quotes within it */
-    static std::string quoteString(const std::string& str);
-
     /** Returns false if the trimmed string is a false-like value */
     static bool stringToBool(const std::string& stri);
 

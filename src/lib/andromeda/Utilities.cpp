@@ -134,12 +134,6 @@ std::string Utilities::replaceAll(const std::string& str, const std::string& fro
 }
 
 /*****************************************************/
-std::string Utilities::quoteString(const std::string& str)
-{
-    return "\"" + replaceAll(str,"\"","\\\"") + "\"";
-}
-
-/*****************************************************/
 bool Utilities::stringToBool(const std::string& stri)
 {
     const std::string str { trim(stri) };

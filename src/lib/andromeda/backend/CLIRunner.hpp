@@ -2,11 +2,13 @@
 #define LIBA2_CLIRUNNER_H_
 
 #include <chrono>
+#include <list>
 #include <string>
 #include <system_error>
 
 #include "BaseRunner.hpp"
 #include "RunnerOptions.hpp"
+#include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace reproc { class process; }
@@ -22,10 +24,16 @@ class CLIRunner : public BaseRunner
 public:
 
     /** Exception indicating the CLI runner had an error */
-    class Exception : public EndpointException { public: 
+    class Exception : public EndpointException { public:
         /** @param msg error message string */
         explicit Exception(const std::string& msg) : 
-            EndpointException("Subprocess Error: "+msg) {} };
+            EndpointException("Subprocess Error: "+msg) {} 
+    };
+
+    /** A exception occurred running the posix command */
+    class CmdException : public BaseException { public:
+        explicit CmdException(const std::string& msg) : 
+            BaseException("Command Error: "+msg) {} };
 
     /** 
      * @param apiPath path to the API index.php 
@@ -36,6 +44,20 @@ public:
     [[nodiscard]] std::unique_ptr<BaseRunner> Clone() const override;
 
     [[nodiscard]] std::string GetHostname() const override { return "local-cli"; }
+
+    using ArgList = std::list<std::string>;
+    /** 
+     * Runs a system command with the given args, returns the exit code
+     * @throws CmdException if there an error running the command
+     */
+    //static int RunCommand(const ArgList& args);
+#if !WIN32
+    /** 
+     * Runs a system command with the given args, returns the exit code
+     * @throws CmdException if there an error running the command
+     */
+    static int RunPosixCommand(ArgList& args);
+#endif // WIN32
 
     std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
 
@@ -57,7 +79,6 @@ private:
     /** @throws Exception if given an error code */
     static void CheckError(reproc::process& process, const std::error_code& error);
 
-    using ArgList = std::list<std::string>;
     /** Return a list of arguments to run a command with the given input */
     ArgList GetArguments(const RunnerInput& input);
 
@@ -69,13 +90,13 @@ private:
     void PrintArgs(const ArgList& argList);
 
     /** Starts the process with the given arguments and environment */
-    void StartProc(reproc::process& process, const ArgList& args, const EnvList& env) const;
+    static void StartProc(reproc::process& process, const ArgList& args, const EnvList& env);
 
-    /** Drains output from the process into the given string */
-    void DrainProc(reproc::process& process, std::string& output) const;
+    /** Drains output from the process into the given string (with custom buffer size) */
+    static void DrainProc(reproc::process& process, std::string& output, size_t bufferSize);
 
     /** Waits for the given process to end and returns its exit code */
-    int FinishProc(reproc::process& process) const;
+    static int FinishProc(reproc::process& process, const std::chrono::milliseconds& timeout);
 
     mutable Debug mDebug;
 
