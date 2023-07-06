@@ -42,7 +42,7 @@ jobs:
       if: matrix.os == 'ubuntu-20.04'
       run: |
         sudo apt update
-        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev
+        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev libsqlite3-dev
         if [ "${{ matrix.compiler }}" = "clang" ]; then
           echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
         fi
@@ -50,7 +50,7 @@ jobs:
       if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt update
-        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev
+        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev libsqlite3-dev
         if [ "${{ matrix.compiler }}" = "clang" ]; then
           echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
         fi
@@ -58,7 +58,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         brew update
-        brew install bash cmake openssl macfuse qt 
+        brew install bash cmake openssl macfuse qt sqlite3
     - name: Install Qt (windows)
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       uses: jurplel/install-qt-action@v3
@@ -67,7 +67,7 @@ jobs:
     - name: Install (windows)
       if: matrix.os == 'windows-2019' || matrix.os == 'windows-latest'
       run: |
-        choco install openssl winfsp -y
+        choco install openssl winfsp sqlite -y
         Add-Content $env:GITHUB_PATH "C:\Program Files (x86)\WinFsp\bin"
         
     - name: Build and Test (ubuntu-20.04)

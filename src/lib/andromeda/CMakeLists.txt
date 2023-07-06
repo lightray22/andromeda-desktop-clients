@@ -24,3 +24,15 @@ add_subdirectory(backend)
 add_subdirectory(filesystem)
 
 include(3rdparty.cmake)
+
+# include/link libsqlite3
+
+if (WIN32 AND DEFINED ENV{SQLITE3_ROOT_DIR})
+    set(CMAKE_PREFIX_PATH $ENV{SQLITE3_ROOT_DIR})
+endif()
+
+include(FindSQLite3)
+find_package(SQLite3 REQUIRED)
+
+target_include_directories(libandromeda PRIVATE ${SQLite3_INCLUDE_DIRS})
+target_link_libraries(libandromeda INTERFACE ${SQLite3_LIBRARIES})
