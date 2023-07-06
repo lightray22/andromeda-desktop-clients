@@ -24,3 +24,6 @@ target_include_directories(libandromeda_tests
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(libandromeda_tests PRIVATE libandromeda)
+
+add_subdirectory(backend)
+add_subdirectory(database)

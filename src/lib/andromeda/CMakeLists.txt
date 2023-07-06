@@ -21,6 +21,7 @@ install(TARGETS libandromeda
 )
 
 add_subdirectory(backend)
+add_subdirectory(database)
 add_subdirectory(filesystem)
 
 include(3rdparty.cmake)

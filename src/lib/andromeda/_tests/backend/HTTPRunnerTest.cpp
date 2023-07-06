@@ -1,26 +1,23 @@
 #include "catch2/catch_test_macros.hpp"
 
-#include "HTTPRunner.hpp"
-#include "HTTPOptions.hpp"
+#include "backend/HTTPRunner.hpp"
+#include "backend/HTTPOptions.hpp"
+#include "backend/RunnerOptions.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
-class HTTPRunnerFriend
-{
-public:
-    HTTPRunnerFriend(HTTPRunner& runner) : mRunner(runner) { }
-
-    virtual ~HTTPRunnerFriend() = default;
-
-    virtual void HandleRedirect(const std::string& location) { mRunner.HandleRedirect(location); }
-
-    HTTPRunner& mRunner;
+class HTTPRunnerTest : public HTTPRunner
+{ 
+public:    
+    using HTTPRunner::HTTPRunner;
+    using HTTPRunner::RegisterRedirect;
 };
 
 /*****************************************************/
 TEST_CASE("ParseURL", "[HTTPRunner]")
 {
-    HTTPRunner::HostUrlPair result;
+    HTTPRunner::HostUrlPair result {};
 
     result = HTTPRunner::ParseURL("myhost");
     REQUIRE(result.first == "myhost"); 
@@ -66,40 +63,44 @@ TEST_CASE("ParseURL", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("GetHostname", "[HTTPRunner]")
 {
-    const HTTPOptions options;
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
 
-    REQUIRE(HTTPRunner("myhost","",options).GetHostname() == "myhost");
-    REQUIRE(HTTPRunner("http://myhost","",options).GetHostname() == "myhost");
-    REQUIRE(HTTPRunner("https://myhost","",options).GetHostname() == "myhost");
+    REQUIRE(HTTPRunner("myhost","","",ropts,hopts).GetHostname() == "myhost");
+    REQUIRE(HTTPRunner("http://myhost","","",ropts,hopts).GetHostname() == "myhost");
+    REQUIRE(HTTPRunner("https://myhost","","",ropts,hopts).GetHostname() == "myhost");
 }
 
 /*****************************************************/
 TEST_CASE("GetProtoHost", "[HTTPRunner]")
 {
-    const HTTPOptions options;
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
 
-    REQUIRE(HTTPRunner("myhost","",options).GetProtoHost() == "http://myhost");
-    REQUIRE(HTTPRunner("http://myhost","",options).GetProtoHost() == "http://myhost");
-    REQUIRE(HTTPRunner("https://myhost","",options).GetProtoHost() == "https://myhost");
+    REQUIRE(HTTPRunner("myhost","","",ropts,hopts).GetProtoHost() == "http://myhost");
+    REQUIRE(HTTPRunner("http://myhost","","",ropts,hopts).GetProtoHost() == "http://myhost");
+    REQUIRE(HTTPRunner("https://myhost","","",ropts,hopts).GetProtoHost() == "https://myhost");
 }
 
 /*****************************************************/
 TEST_CASE("GetBaseURL", "[HTTPRunner]")
 {
-    const HTTPOptions options;
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
 
-    REQUIRE(HTTPRunner("","",options).GetBaseURL() == "/");
-    REQUIRE(HTTPRunner("","/",options).GetBaseURL() == "/");
-    REQUIRE(HTTPRunner("","test",options).GetBaseURL() == "/test");
-    REQUIRE(HTTPRunner("","/test",options).GetBaseURL() == "/test");
-    REQUIRE(HTTPRunner("","/?test",options).GetBaseURL() == "/?test");
+    REQUIRE(HTTPRunner("","","",ropts,hopts).GetBaseURL() == "/");
+    REQUIRE(HTTPRunner("","/","",ropts,hopts).GetBaseURL() == "/");
+    REQUIRE(HTTPRunner("","test","",ropts,hopts).GetBaseURL() == "/test");
+    REQUIRE(HTTPRunner("","/test","",ropts,hopts).GetBaseURL() == "/test");
+    REQUIRE(HTTPRunner("","/?test","",ropts,hopts).GetBaseURL() == "/?test");
 }
 
 /*****************************************************/
 TEST_CASE("EnableRetry", "[HTTPRunner]")
 {
-    const HTTPOptions options;
-    HTTPRunner runner("", "", options);
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
+    HTTPRunner runner("","","",ropts,hopts);
 
     REQUIRE(runner.GetCanRetry() == false); // default
     runner.EnableRetry(); REQUIRE(runner.GetCanRetry());
@@ -107,16 +108,17 @@ TEST_CASE("EnableRetry", "[HTTPRunner]")
 }
 
 /*****************************************************/
-TEST_CASE("HandleRedirect", "[HTTPRunner]")
+TEST_CASE("RegisterRedirect", "[HTTPRunner]")
 {
-    const HTTPOptions options;
-    HTTPRunner runner("myhost", "/page", options);
-    HTTPRunnerFriend runnerFriend(runner);
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
+    HTTPRunnerTest runner("myhost","/page","",ropts,hopts);
 
-    runnerFriend.HandleRedirect("http://mytest/page2");
+    runner.RegisterRedirect("http://mytest/page2");
 
     REQUIRE(runner.GetProtoHost() == "http://mytest");
     REQUIRE(runner.GetBaseURL() == "/page2");
 }
 
+} // namespace Backend
 } // namespace Andromeda

@@ -26,7 +26,7 @@
 namespace Andromeda {
 namespace Backend {
 
-class HTTPRunnerFriend;
+class HTTPRunnerTest;
 struct RunnerInput;
 
 /** Runs the API remotely over HTTP */
@@ -118,7 +118,7 @@ public:
 
 private:
 
-    friend class HTTPRunnerFriend;
+    friend class HTTPRunnerTest;
 
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);
