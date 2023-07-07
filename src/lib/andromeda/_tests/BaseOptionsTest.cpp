@@ -6,6 +6,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "BaseOptions.hpp"
+#include "TempPath.hpp"
 #include "Utilities.hpp"
 
 namespace Andromeda {
@@ -88,9 +89,11 @@ TEST_CASE("ParseArgs", "[BaseOptions]")
 /*****************************************************/
 void DoParseFile(TestOptions& options, const std::string& fileData)
 {
-    const std::string tmppath { std::filesystem::temp_directory_path().string()+"/a2_testParseFile" };
-    std::ofstream tmpfile; tmpfile.open(tmppath); tmpfile << fileData; tmpfile.close();
-    options.ParseFile(tmppath); std::filesystem::remove(tmppath);
+    const TempPath tmppath("test_ParseFile"); 
+    std::ofstream tmpfile;
+    tmpfile.open(tmppath.Get()); 
+    tmpfile << fileData; tmpfile.close();
+    options.ParseFile(tmppath.Get());
 }
 
 TEST_CASE("ParseFile", "[BaseOptions]")

@@ -1,8 +1,8 @@
 #include "catch2/catch_test_macros.hpp"
 
-#include "backend/HTTPRunner.hpp"
-#include "backend/HTTPOptions.hpp"
-#include "backend/RunnerOptions.hpp"
+#include "andromeda/backend/HTTPRunner.hpp"
+#include "andromeda/backend/HTTPOptions.hpp"
+#include "andromeda/backend/RunnerOptions.hpp"
 
 namespace Andromeda {
 namespace Backend {

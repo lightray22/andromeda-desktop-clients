@@ -5,6 +5,15 @@
 namespace Andromeda {
 
 /*****************************************************/
+TEST_CASE("Random", "[Utilities]")
+{
+    REQUIRE(Utilities::Random(0).empty());
+    REQUIRE(Utilities::Random(1).size() == 1);
+    REQUIRE(Utilities::Random(64).size() == 64);
+    REQUIRE(Utilities::Random(65536).size() == 65536);
+}
+
+/*****************************************************/
 TEST_CASE("explode", "[Utilities]")
 {
     typedef std::vector<std::string> Strings; Strings result;

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include <mutex>
+#include <random>
 
 // SilentReadConsole()
 #if WIN32
@@ -25,6 +26,19 @@ extern char** environ;
 #include "Utilities.hpp"
 
 namespace Andromeda {
+
+/*****************************************************/
+std::string Utilities::Random(const size_t size)
+{
+    static const char chars[] = "0123456789abcdefghijkmnopqrstuvwxyz_"; // NOLINT(*-avoid-c-arrays)
+    std::default_random_engine rng(std::random_device{}());
+    std::uniform_int_distribution<> dist(0, sizeof(chars)-1);
+
+    std::string retval; retval.resize(size);
+    for (size_t i { 0 }; i < size; ++i)
+        retval[i] = chars[dist(rng)];
+    return retval;
+}
 
 /*****************************************************/
 Utilities::StringList Utilities::explode(

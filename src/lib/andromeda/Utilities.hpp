@@ -21,6 +21,9 @@ public:
 
     Utilities() = delete; // static only
 
+    /** Returns a random string of the given size */
+    static std::string Random(size_t size);
+
     using StringList = std::vector<std::string>;
 
     /**

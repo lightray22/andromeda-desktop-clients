@@ -74,7 +74,7 @@ MountContext::~MountContext()
 
     try
     {
-        if (mHomeRelative && fs::is_directory(mountPath) && fs::is_empty(mountPath))
+        if (mHomeRelative && fs::is_directory(mountPath))
         {
             MDBG_INFO("... remove mountPath");
             fs::remove(mountPath);
