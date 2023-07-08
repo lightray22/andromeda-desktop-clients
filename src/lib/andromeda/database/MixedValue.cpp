@@ -25,15 +25,15 @@ MixedValue::~MixedValue()
 }
 
 /*****************************************************/
-MixedValue::operator MixedValue::Bytes() const noexcept
+MixedValue::operator std::string() const noexcept
 {
-    Bytes retval(static_cast<size_t>(sqlite3_value_bytes(mValue)));
-    std::memcpy(retval.data(), sqlite3_value_blob(mValue), retval.size());
-    return retval;
+    return std::string(
+        static_cast<const char*>(sqlite3_value_blob(mValue)),
+        static_cast<size_t>(sqlite3_value_bytes(mValue)));
 }
 
 /*****************************************************/
-MixedValue::operator std::string() const noexcept
+MixedValue::operator const char*() const noexcept
 {
     return reinterpret_cast<const char*>(sqlite3_value_text(mValue));
 }

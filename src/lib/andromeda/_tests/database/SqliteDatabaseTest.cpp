@@ -29,7 +29,6 @@ TEST_CASE("Query", "[SqliteDatabase]")
     SqliteDatabase::RowList rows; RowVector rowsV;
 
     database.query("CREATE TABLE `mytest` (`id` INTEGER, `name` TEXT);",rows); REQUIRE(rows.empty());
-
     REQUIRE(database.query("INSERT INTO `mytest` VALUES (5, 'test1')",rows) == 1); REQUIRE(rows.empty());
     REQUIRE(database.query("INSERT INTO `mytest` VALUES (7, 'test2')",rows) == 1); REQUIRE(rows.empty());
 
@@ -37,18 +36,30 @@ TEST_CASE("Query", "[SqliteDatabase]")
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
     REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test1");
+    REQUIRE(std::string(static_cast<const char*>(rowsV[0]->at("name"))) == "test1");
     REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 7);
     REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test2");
 
     // note that only 1 column is modified, but 2 are matched, so retval is 2
     REQUIRE(database.query("UPDATE `mytest` SET `name` = 'test2'",rows) == 2); REQUIRE(rows.empty());
+    REQUIRE(database.query("INSERT INTO `mytest` VALUES (9, 'test3')",rows) == 1); REQUIRE(rows.empty());
 
-    database.query("SELECT * FROM `mytest`",rows);
+    database.query("SELECT * FROM `mytest` WHERE `name` = 'test2'",rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
     REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test2");
     REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 7);
     REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test2");
+
+    REQUIRE(database.query("DELETE FROM `mytest` WHERE `id` = 7",rows) == 1); REQUIRE(rows.empty());
+
+    database.query("SELECT * FROM `mytest`",rows);
+    REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
+    REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
+    REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test2");
+    REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 9);
+    REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test3");
+
 }
 
 } // namespace Database

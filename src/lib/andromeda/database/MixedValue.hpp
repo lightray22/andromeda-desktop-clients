@@ -24,10 +24,8 @@ public:
     MixedValue& operator=(const MixedValue&) = delete;
     MixedValue& operator=(MixedValue&&) = delete;
 
-    using Bytes = std::vector<std::byte>;
-    explicit operator Bytes() const noexcept;
-
     explicit operator std::string() const noexcept;
+    explicit operator const char*() const noexcept;
     explicit operator int() const noexcept;
     explicit operator int64_t() const noexcept;
     explicit operator double() const noexcept;
