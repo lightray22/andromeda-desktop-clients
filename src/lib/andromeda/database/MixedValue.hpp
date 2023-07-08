@@ -24,6 +24,8 @@ public:
     MixedValue& operator=(const MixedValue&) = delete;
     MixedValue& operator=(MixedValue&&) = delete;
 
+    [[nodiscard]] bool is_null() const;
+
     explicit operator std::string() const noexcept;
     explicit operator const char*() const noexcept;
     explicit operator int() const noexcept;

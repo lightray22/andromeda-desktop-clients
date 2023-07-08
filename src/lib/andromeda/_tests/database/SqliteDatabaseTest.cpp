@@ -6,6 +6,7 @@
 
 #include "andromeda/Debug.hpp" // TODO !! remove
 #include "andromeda/TempPath.hpp"
+#include "andromeda/database/MixedValue.hpp"
 #include "andromeda/database/SqliteDatabase.hpp"
 
 namespace Andromeda {
@@ -34,32 +35,37 @@ TEST_CASE("Query", "[SqliteDatabase]")
 
     database.query("SELECT * FROM `mytest`",rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
+
     REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
     REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test1");
     REQUIRE(std::string(static_cast<const char*>(rowsV[0]->at("name"))) == "test1");
+
     REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 7);
-    REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test2");
+    const MixedValue& name1 { rowsV[1]->at("name") };
+    REQUIRE(name1.is_null() == false);
+    REQUIRE(static_cast<std::string>(name1) == "test2");
 
     // note that only 1 column is modified, but 2 are matched, so retval is 2
     REQUIRE(database.query("UPDATE `mytest` SET `name` = 'test2'",rows) == 2); REQUIRE(rows.empty());
-    REQUIRE(database.query("INSERT INTO `mytest` VALUES (9, 'test3')",rows) == 1); REQUIRE(rows.empty());
+    REQUIRE(database.query("INSERT INTO `mytest` VALUES (9, NULL)",rows) == 1); REQUIRE(rows.empty());
 
     database.query("SELECT * FROM `mytest` WHERE `name` = 'test2'",rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
-    REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test2");
-    REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 7);
-    REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test2");
+    REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test2"); // updated
 
     REQUIRE(database.query("DELETE FROM `mytest` WHERE `id` = 7",rows) == 1); REQUIRE(rows.empty());
 
     database.query("SELECT * FROM `mytest`",rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
+
     REQUIRE(static_cast<int>(rowsV[0]->at("id")) == 5);
     REQUIRE(static_cast<std::string>(rowsV[0]->at("name")) == "test2");
-    REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 9);
-    REQUIRE(static_cast<std::string>(rowsV[1]->at("name")) == "test3");
 
+    REQUIRE(static_cast<int>(rowsV[1]->at("id")) == 9);
+    const MixedValue& name2 { rowsV[1]->at("name") };
+    REQUIRE(name2.is_null() == true);
+    REQUIRE(static_cast<const char*>(name2) == nullptr);
 }
 
 } // namespace Database

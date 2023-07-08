@@ -25,6 +25,12 @@ MixedValue::~MixedValue()
 }
 
 /*****************************************************/
+bool MixedValue::is_null() const
+{
+    return sqlite3_value_bytes(mValue) == 0;
+}
+
+/*****************************************************/
 MixedValue::operator std::string() const noexcept
 {
     return std::string(
