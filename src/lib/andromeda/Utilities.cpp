@@ -32,7 +32,9 @@ std::string Utilities::Random(const size_t size)
 {
     static const char chars[] = "0123456789abcdefghijkmnopqrstuvwxyz_"; // NOLINT(*-avoid-c-arrays)
     std::default_random_engine rng(std::random_device{}());
-    std::uniform_int_distribution<> dist(0, sizeof(chars)-1);
+
+    // set the max to chars-2 as chars has a NUL term, and dist includes max
+    std::uniform_int_distribution<> dist(0, sizeof(chars)-2);
 
     std::string retval; retval.resize(size);
     for (size_t i { 0 }; i < size; ++i)

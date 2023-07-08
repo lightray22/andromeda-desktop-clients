@@ -60,6 +60,7 @@ The manual cmake steps:
   - Qt (Windows/macOS: >= 6.5, Linux: >= 5.12)
 
 These libraries are dynamically linked and must be available at runtime.
+On Windows this means the folders containing the DLLs for each library must be in your $PATH.
 Some other dependencies will be fetched by cmake and built in-tree.
 
 ### Supported Platforms

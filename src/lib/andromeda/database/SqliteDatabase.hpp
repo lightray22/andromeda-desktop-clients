@@ -1,18 +1,25 @@
 #ifndef LIBA2_SQLITEDATABASE_H_
 #define LIBA2_SQLITEDATABASE_H_
 
+#include <functional>
+#include <list>
+#include <map>
+#include <mutex>
 #include <string>
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
+#include "andromeda/database/MixedValue.hpp"
 
 struct sqlite3;
+struct sqlite3_stmt;
 
 namespace Andromeda {
 namespace Database {
 
-/** Provides a nice C++ interface over sqlite3 */
+/** Provides a simple C++ interface with exceptions over sqlite3 */ 
+// TODO !! better comment... mention thread safe
 class SqliteDatabase
 {
 public:
@@ -34,9 +41,21 @@ public:
     DELETE_COPY(SqliteDatabase)
     DELETE_MOVE(SqliteDatabase)
 
+    using Row = std::map<std::string,MixedValue>;
+    using RowList = std::list<Row>;
+
+    size_t query(const std::string& sql, RowList& rows);
+    // TODO !! comment retval is only valid for INSERT, UPDATE, DELETE
+
 private:
 
-    Debug mDebug;
+    // TODO !! comments
+    std::string print_rc(int rc) const;
+    using VoidFunc = std::function<void()>;
+    void check_rc(int rc, const VoidFunc& func = nullptr) const;
+
+    mutable Debug mDebug;
+    std::mutex mMutex;
 
     // sqlite database instance
     sqlite3* mDatabase { nullptr };
