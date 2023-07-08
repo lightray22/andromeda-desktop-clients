@@ -83,7 +83,7 @@ size_t SqliteDatabase::query(const std::string& sql, RowList& rows)
         throw Exception("statement is nullptr");
     }
 
-    // TODO !! how to do mixed-type inputs? have specific bind_* functions for each input... MixedInput?
+    // TODO !! how to do mixed-type inputs? have specific bind_* functions for each input... MixedOutput?
     // should be a base class which we can just pass our statement object to a virtual function
     // need to create the specific TypeObject with the real type/value
 
@@ -95,7 +95,7 @@ size_t SqliteDatabase::query(const std::string& sql, RowList& rows)
         for (int idx = 0; idx < sqlite3_column_count(stmt); ++idx)
         {
             row.emplace(std::make_pair(sqlite3_column_name(stmt,idx), 
-                MixedValue(*sqlite3_column_value(stmt,idx))));
+                MixedOutput(*sqlite3_column_value(stmt,idx))));
         }
     }
     MDBG_INFO("... #rows returned:" << rows.size());

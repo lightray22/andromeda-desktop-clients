@@ -10,7 +10,7 @@
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
-#include "andromeda/database/MixedValue.hpp"
+#include "andromeda/database/MixedOutput.hpp"
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -41,7 +41,7 @@ public:
     DELETE_COPY(SqliteDatabase)
     DELETE_MOVE(SqliteDatabase)
 
-    using Row = std::map<std::string,MixedValue>;
+    using Row = std::map<std::string,MixedOutput>;
     using RowList = std::list<Row>;
 
     size_t query(const std::string& sql, RowList& rows);
