@@ -41,6 +41,8 @@ public:
     DELETE_COPY(SqliteDatabase)
     DELETE_MOVE(SqliteDatabase)
 
+    using UniqueLock = std::lock_guard<std::mutex>;
+
     using Row = std::map<std::string,MixedOutput>;
     using RowList = std::list<Row>;
 
@@ -56,9 +58,21 @@ public:
 
     /** 
      * Same as query() but assumes no rows output
-     * @throws Exception if rows output is not empty
+     * @throws Exception if the query fails or rows output is not empty
      */
     size_t query(const std::string& sql, const MixedParams& params);
+
+    // pre-locked/no BEGIN TRANSACTION versions of the above
+    size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);
+    size_t query(const std::string& sql, const MixedParams& params, RowList& rows, const UniqueLock& lock);
+
+    using LockedFunc = std::function<void(const UniqueLock& lock)>;
+    /**
+     * Runs the given function as a transaction, with auto commit/rollback at the end
+     * @param func function to run under a atomic locked transaction (must call pre-locked query!)
+     * @throws Exception if anything fails or already in a transaction (will auto-rollback)
+     */
+    void transaction(const LockedFunc& func);
 
     /** 
      * Rolls back the current database transaction 
@@ -73,12 +87,6 @@ public:
     void commit();
 
 private:
-
-    using UniqueLock = std::lock_guard<std::mutex>;
-
-    // pre-locked/no BEGIN TRANSACTION versions of the above
-    size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);
-    size_t query(const std::string& sql, const MixedParams& params, RowList& rows, const UniqueLock& lock);
 
     using VoidFunc = std::function<void()>;
     /**

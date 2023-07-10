@@ -116,7 +116,7 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
 }
 
 /*****************************************************/
-TEST_CASE("Transactions", "[SqliteDatabase]")
+TEST_CASE("CommitRollback", "[SqliteDatabase]")
 {
     const TempPath tmppath("test_sqlite_query.s3db"); 
     SqliteDatabase database(tmppath.Get());
@@ -141,6 +141,41 @@ TEST_CASE("Transactions", "[SqliteDatabase]")
     database.commit();
     database.rollback();
     
+    rows.clear();
+    database.query("SELECT * from `mytest`",{},rows);
+    REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
+}
+
+/*****************************************************/
+TEST_CASE("AutoTransaction", "[SqliteDatabase]")
+{
+    const TempPath tmppath("test_sqlite_query.s3db"); 
+    SqliteDatabase database(tmppath.Get());
+
+    database.query("CREATE TABLE `mytest` (`id` INTEGER);",{});
+    database.commit();
+
+    bool inserted { false };
+    REQUIRE_THROWS_AS(database.transaction([&](const SqliteDatabase::UniqueLock& lock)
+    {
+        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}},lock);
+        inserted = true;
+        throw SqliteDatabase::Exception("should rollback");
+    }), SqliteDatabase::Exception);
+    REQUIRE(inserted);
+
+    SqliteDatabase::RowList rows;
+    database.query("SELECT * from `mytest`",{},rows);
+    REQUIRE(rows.empty());
+    database.commit();
+
+    database.transaction([&](const SqliteDatabase::UniqueLock& lock)
+    {
+        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}},lock);
+    });
+
+    database.rollback(); // no effect
+
     rows.clear();
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);

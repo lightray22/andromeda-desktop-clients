@@ -43,7 +43,7 @@ SqliteDatabase::~SqliteDatabase()
 {
     MDBG_INFO("()");
 
-    print_rc(sqlite3_close(mDatabase));
+    print_rc(sqlite3_close(mDatabase)); // nothrow
 }
 
 /*****************************************************/
@@ -62,9 +62,9 @@ std::string SqliteDatabase::print_rc(int rc) const
 {
     if (rc != SQLITE_OK)
     {
-        std::ostringstream msg;
         const std::string errmsg(sqlite3_errmsg(mDatabase)); // get first
 
+        std::ostringstream msg;
         msg << sqlite3_errstr(rc) << " (" << errmsg << ")";
         MDBG_ERROR("... error:" << rc << " (" << msg.str() << ")");
         return msg.str();
@@ -133,6 +133,23 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
 
     // count of rows matched, only valid for INSERT, UPDATE, DELETE
     return static_cast<size_t>(sqlite3_changes(mDatabase));
+}
+
+/*****************************************************/
+void SqliteDatabase::transaction(const LockedFunc& func)
+{
+    const std::lock_guard<std::mutex> lock(mMutex);
+
+    if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
+        throw Exception("already in transaction");
+    else query("BEGIN TRANSACTION",{},lock);
+
+    try { func(lock); query("COMMIT TRANSACTION",{},lock); }
+    catch (const Exception& e)
+    {
+        query("ROLLBACK TRANSACTION",{},lock);
+        throw; // rethrow
+    }
 }
 
 /*****************************************************/
