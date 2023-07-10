@@ -147,7 +147,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 fdat.append(buf.data(), static_cast<std::size_t>(file.gcount()));
             }
 
-            dataParams[param] = fdat;
+            dataParams.emplace(param, fdat);
         }
         else if (special == '!')
         {
@@ -157,7 +157,8 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             std::cout << "enter " << param << "..." << std::endl;
             std::string val; std::getline(std::cin, val);
 
-            dataParams[param] = Utilities::trim(val);
+            Utilities::trim(val);
+            dataParams.emplace(param, val);
         }
         else if (special == '%')
         {
@@ -196,9 +197,9 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 (param.find("password") != std::string::npos || param.find("auth_") != std::string::npos))
                 throw PrivateDataException(param); // hardcoded sanity check for now...
 
-            const std::string next { getNextValue(args, i) };
-            if (isPriv) dataParams[param] = next;
-            else plainParams[param] = next;
+            std::string next { getNextValue(args, i) }; // non-const for move
+            if (isPriv) dataParams.emplace(param, next);
+            else plainParams.emplace(param, next);
         }
     }
 }

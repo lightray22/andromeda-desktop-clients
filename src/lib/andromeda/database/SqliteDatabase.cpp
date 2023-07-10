@@ -43,6 +43,9 @@ SqliteDatabase::~SqliteDatabase()
 {
     MDBG_INFO("()");
 
+    try { rollback(); } catch (const Exception& e) { 
+        MDBG_ERROR("... rollback:" << e.what()); }
+
     print_rc(sqlite3_close(mDatabase)); // nothrow
 }
 
@@ -112,7 +115,7 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
     for (const MixedParams::value_type& param : params)
     {
         const int idx { sqlite3_bind_parameter_index(stmt, param.first.c_str()) };
-        check_rc(param.second.bind(*stmt, idx));
+        check_rc(param.second.bind(*stmt, idx), [stmt]{ sqlite3_finalize(stmt); });
     }
 
     int rc { -1 };
@@ -121,8 +124,8 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
         Row& row { rows.emplace_back() };
         for (int idx = 0; idx < sqlite3_column_count(stmt); ++idx)
         {
-            row.emplace(std::make_pair(sqlite3_column_name(stmt,idx), 
-                MixedOutput(*sqlite3_column_value(stmt,idx))));
+            row.emplace(sqlite3_column_name(stmt,idx), 
+                *sqlite3_column_value(stmt,idx));
         }
     }
     MDBG_INFO("... #rows returned:" << rows.size());

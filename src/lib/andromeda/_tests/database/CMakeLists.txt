@@ -1,6 +1,7 @@
 
 set(SOURCE_FILES 
     ObjectDatabaseTest.cpp
+    QueryBuilderTest.cpp
     SqliteDatabaseTest.cpp
     )
 

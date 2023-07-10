@@ -52,7 +52,7 @@ MixedParams::MixedParams(const std::initializer_list<MixedInputPair>& list) noex
     // so that the typeless {{":d0",5},{":d1","test"}} syntax works
 
     for (const MixedInputPair& pair : list)
-        emplace(pair.mName, pair.mInput);
+        emplace(pair.first, pair.second);
 }
 
 } // namespace Database

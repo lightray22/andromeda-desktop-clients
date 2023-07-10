@@ -1,8 +1,11 @@
 
 set(SOURCE_FILES 
+    BaseObject.cpp
+    FieldTypes.cpp
     MixedInput.cpp
     MixedOutput.cpp
     ObjectDatabase.cpp
+    QueryBuilder.cpp
     SqliteDatabase.cpp
     )
 

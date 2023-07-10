@@ -17,6 +17,22 @@ TEST_CASE("Random", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("implode", "[Utilities]")
+{
+    std::vector<std::string> arr;
+    REQUIRE(Utilities::implode("",arr).empty());
+    REQUIRE(Utilities::implode("xyz",arr).empty());
+
+    arr = {"test1"};
+    REQUIRE(Utilities::implode("",arr) == "test1");
+    REQUIRE(Utilities::implode("xyz",arr) == "test1");
+
+    arr = {"test1","test2","test3"};
+    REQUIRE(Utilities::implode("",arr) == "test1test2test3");
+    REQUIRE(Utilities::implode("xyz",arr) == "test1xyztest2xyztest3");
+}
+
+/*****************************************************/
 TEST_CASE("explode", "[Utilities]")
 {
     typedef std::vector<std::string> Strings; Strings result;
@@ -155,6 +171,13 @@ TEST_CASE("trim", "[Utilities]")
     REQUIRE(Utilities::trim("test1  ") == "test1");
     REQUIRE(Utilities::trim("\ttest\n") == "test");
     REQUIRE(Utilities::trim("test\ntest") == "test\ntest");
+
+    std::string s; Utilities::trim(s); REQUIRE(s.empty());
+    s = "test"; Utilities::trim(s); REQUIRE(s == "test");
+    s = " test"; Utilities::trim(s); REQUIRE(s == "test");
+    s = "test1  "; Utilities::trim(s); REQUIRE(s == "test1");
+    s = "\ttest\n"; Utilities::trim(s); REQUIRE(s == "test");
+    s = "test\ntest"; Utilities::trim(s); REQUIRE(s == "test\ntest");
 }
 
 /*****************************************************/

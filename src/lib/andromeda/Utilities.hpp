@@ -24,8 +24,22 @@ public:
     /** Returns a random string of the given size */
     static std::string Random(size_t size);
 
-    using StringList = std::vector<std::string>;
+    template<typename T>
+    static std::string implode(const std::string& glue, const T& arr)
+    {
+        std::string retval;
+        typename T::const_iterator it { std::begin(arr) };
+        if (it != std::end(arr)) retval += *it++;
 
+        while (it != std::end(arr))
+        {
+            retval += glue;
+            retval += *it++;
+        }
+        return retval;
+    }
+
+    using StringList = std::vector<std::string>;
     /**
      * Split a string into an array
      * @param str string to split
@@ -40,7 +54,6 @@ public:
         size_t max = static_cast<size_t>(-1));
 
     using StringPair = std::pair<std::string, std::string>;
-
     /** 
      * Special case of explode with max=1,skip=0 and returns a pair 
      * @param str string to split
@@ -61,8 +74,11 @@ public:
     /** Returns true iff str ends with end */
     static bool endsWith(const std::string& str, const std::string& end);
 
+    /** Removes leading/trailing whitespace from the string */
+    static void trim(std::string& str);
+
     /** Returns the string with leading/trailing whitespace stripped */
-    static std::string trim(const std::string& str);
+    [[nodiscard]] static std::string trim(const std::string& str);
 
     /** Returns the string str with all occurences of from replaced by repl */
     static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);

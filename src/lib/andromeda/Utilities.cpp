@@ -128,6 +128,17 @@ bool Utilities::endsWith(const std::string& str, const std::string& end)
 }
 
 /*****************************************************/
+void Utilities::trim(std::string& str)
+{
+    const size_t size { str.size() };
+
+    size_t start = 0; while (start < size && std::isspace(str[start])) ++start;
+    size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
+
+    str.erase(end); str.erase(0, start);
+}
+
+/*****************************************************/
 std::string Utilities::trim(const std::string& str)
 {
     const size_t size { str.size() };
@@ -168,7 +179,7 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
     
     if (unit < '0' || unit > '9')
     {
-        str.pop_back(); str = trim(str);
+        str.pop_back(); trim(str);
         if (str.empty()) return 0;
     }
 
