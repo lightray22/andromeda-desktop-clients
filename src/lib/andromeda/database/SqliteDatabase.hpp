@@ -76,6 +76,7 @@ private:
 
     using UniqueLock = std::lock_guard<std::mutex>;
 
+    // pre-locked/no BEGIN TRANSACTION versions of the above
     size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);
     size_t query(const std::string& sql, const MixedParams& params, RowList& rows, const UniqueLock& lock);
 

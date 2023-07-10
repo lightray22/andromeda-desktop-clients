@@ -115,7 +115,6 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
         check_rc(param.second.bind(*stmt, idx));
     }
 
-    rows.clear();
     int rc { -1 };
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
     {

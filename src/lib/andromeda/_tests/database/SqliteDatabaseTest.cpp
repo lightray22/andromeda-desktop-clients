@@ -46,6 +46,7 @@ TEST_CASE("Query", "[SqliteDatabase]")
     REQUIRE(database.query("UPDATE `mytest` SET `name`=:d0", {{":d0","test2"}}) == 2);
     REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",9},{":d1",nullptr}}) == 1);
 
+    rows.clear();
     database.query("SELECT * FROM `mytest` WHERE `name`=:d0", {{":d0","test2"}}, rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(rowsV[0]->at("id") == 5);
@@ -53,6 +54,7 @@ TEST_CASE("Query", "[SqliteDatabase]")
 
     REQUIRE(database.query("DELETE FROM `mytest` WHERE `id`=:d0", {{":d0",7}}) == 1);
 
+    rows.clear();
     database.query("SELECT * FROM `mytest`",{},rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(rowsV[0]->at("id") == 5);
@@ -92,7 +94,6 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
         {{":d0",myint},{":d1",myint64},{":d2",mystr},{":d3",myblob},{":d4",myfloat},{":d5",nullptr}});
 
     SqliteDatabase::RowList rows; 
-
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); SqliteDatabase::Row& row { rows.front() };
 
@@ -126,12 +127,12 @@ TEST_CASE("Transactions", "[SqliteDatabase]")
     database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
 
     SqliteDatabase::RowList rows; 
-    
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
 
     database.rollback();
 
+    rows.clear();
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.empty());
 
@@ -140,6 +141,7 @@ TEST_CASE("Transactions", "[SqliteDatabase]")
     database.commit();
     database.rollback();
     
+    rows.clear();
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
 }
