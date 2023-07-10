@@ -26,12 +26,13 @@ TEST_CASE("Query", "[SqliteDatabase]")
 {
     const TempPath tmppath("test_sqlite_query.s3db"); 
     SqliteDatabase database(tmppath.Get());
+
+    database.query("CREATE TABLE `mytest` (`id` INTEGER, `name` TEXT);",{});
+
+    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",5},{":d1","test1"}}) == 1);
+    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",7},{":d1","test2"}}) == 1);
+
     SqliteDatabase::RowList rows; RowVector rowsV;
-
-    database.query("CREATE TABLE `mytest` (`id` INTEGER, `name` TEXT);",{},rows); REQUIRE(rows.empty());
-
-    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",5},{":d1","test1"}}, rows) == 1); REQUIRE(rows.empty());
-    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",7},{":d1","test2"}}, rows) == 1); REQUIRE(rows.empty());
 
     database.query("SELECT * FROM `mytest`",{},rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
@@ -42,15 +43,15 @@ TEST_CASE("Query", "[SqliteDatabase]")
     REQUIRE(rowsV[1]->at("name") == "test2");
 
     // note that only 1 column is modified, but 2 are matched, so retval is 2
-    REQUIRE(database.query("UPDATE `mytest` SET `name`=:d0", {{":d0","test2"}}, rows) == 2); REQUIRE(rows.empty());
-    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",9},{":d1",nullptr}}, rows) == 1); REQUIRE(rows.empty());
+    REQUIRE(database.query("UPDATE `mytest` SET `name`=:d0", {{":d0","test2"}}) == 2);
+    REQUIRE(database.query("INSERT INTO `mytest` VALUES (:d0,:d1)", {{":d0",9},{":d1",nullptr}}) == 1);
 
     database.query("SELECT * FROM `mytest` WHERE `name`=:d0", {{":d0","test2"}}, rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
     REQUIRE(rowsV[0]->at("id") == 5);
     REQUIRE(rowsV[0]->at("name") == "test2"); // updated
 
-    REQUIRE(database.query("DELETE FROM `mytest` WHERE `id`=:d0", {{":d0",7}}, rows) == 1); REQUIRE(rows.empty());
+    REQUIRE(database.query("DELETE FROM `mytest` WHERE `id`=:d0", {{":d0",7}}) == 1);
 
     database.query("SELECT * FROM `mytest`",{},rows);
     REQUIRE(rows.size() == 2); ToVector(rows,rowsV);
@@ -59,6 +60,8 @@ TEST_CASE("Query", "[SqliteDatabase]")
     REQUIRE(rowsV[1]->at("id") == 9);
     REQUIRE(rowsV[1]->at("name").is_null());
     REQUIRE(rowsV[1]->at("name") == nullptr);
+
+    database.commit();
 }
 
 /*****************************************************/
@@ -66,9 +69,8 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
 {
     const TempPath tmppath("test_sqlite_types.s3db"); 
     SqliteDatabase database(tmppath.Get());
-    SqliteDatabase::RowList rows; 
 
-    database.query("CREATE TABLE `mytest` (`int` INTEGER, `int64` INTEGER, `string` VARCHAR(32), `blob` BLOB, `float` REAL, `null` TEXT);",{},rows);
+    database.query("CREATE TABLE `mytest` (`int` INTEGER, `int64` INTEGER, `string` VARCHAR(32), `blob` BLOB, `float` REAL, `null` TEXT);",{});
 
     const int myint { -3874 };
     const int64_t myint64 { static_cast<int64_t>(1024)*1024*1024*1024 }; // 1T
@@ -87,7 +89,9 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
     const double myfloat { 3.1415926 };
 
     database.query("INSERT INTO `mytest` VALUES(:d0,:d1,:d2,:d3,:d4,:d5)", 
-        {{":d0",myint},{":d1",myint64},{":d2",mystr},{":d3",myblob},{":d4",myfloat},{":d5",nullptr}}, rows); REQUIRE(rows.empty());
+        {{":d0",myint},{":d1",myint64},{":d2",mystr},{":d3",myblob},{":d4",myfloat},{":d5",nullptr}});
+
+    SqliteDatabase::RowList rows; 
 
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); SqliteDatabase::Row& row { rows.front() };
@@ -106,6 +110,38 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
     REQUIRE(row.at("int64") == myint64);
     REQUIRE(row.at("float") == myfloat);
     REQUIRE(row.at("null") == nullptr);
+
+    database.commit();
+}
+
+/*****************************************************/
+TEST_CASE("Transactions", "[SqliteDatabase]")
+{
+    const TempPath tmppath("test_sqlite_query.s3db"); 
+    SqliteDatabase database(tmppath.Get());
+
+    database.query("CREATE TABLE `mytest` (`id` INTEGER);",{});
+    database.commit();
+
+    database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
+
+    SqliteDatabase::RowList rows; 
+    
+    database.query("SELECT * from `mytest`",{},rows);
+    REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
+
+    database.rollback();
+
+    database.query("SELECT * from `mytest`",{},rows);
+    REQUIRE(rows.empty());
+
+    database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
+
+    database.commit();
+    database.rollback();
+    
+    database.query("SELECT * from `mytest`",{},rows);
+    REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
 }
 
 } // namespace Database

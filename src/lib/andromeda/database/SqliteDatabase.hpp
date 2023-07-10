@@ -45,19 +45,39 @@ public:
     using RowList = std::list<Row>;
 
     /**
-     * Perform a query against the database - THREAD SAFE (INTERNAL LOCK)
-     * @param sql the SQL query string
-     * @param params array of parameters to substitute
+     * Sends an SQL query down to the database, possibly beginning a transaction - THREAD SAFE (INTERNAL LOCK)
+     * @param sql the SQL query string, with placeholder data values
+     * @param params param replacements for the prepared statement
      * @param[out] rows reference to list of rows to output
      * @return size_t number of rows matched (valid for INSERT, UPDATE, DELETE only)
      * @throws Exception if the query fails
      */
     size_t query(const std::string& sql, const MixedParams& params, RowList& rows);
 
+    /** 
+     * Same as query() but assumes no rows output
+     * @throws Exception if rows output is not empty
+     */
+    size_t query(const std::string& sql, const MixedParams& params);
+
+    /** 
+     * Rolls back the current database transaction 
+     * @throws Exception if the query fails
+     */
+    void rollback();
+
+    /** 
+     * Commits the current database transaction 
+     * @throws Exception if the query fails
+     */
+    void commit();
+
 private:
 
-    /** Print and return an error text string if rc != SQLITE_OK */
-    std::string print_rc(int rc) const;
+    using UniqueLock = std::lock_guard<std::mutex>;
+
+    size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);
+    size_t query(const std::string& sql, const MixedParams& params, RowList& rows, const UniqueLock& lock);
 
     using VoidFunc = std::function<void()>;
     /**
@@ -67,6 +87,9 @@ private:
      * @throws Exception if the rc is not SQLITE_OK
      */
     void check_rc(int rc, const VoidFunc& func = nullptr) const;
+
+    /** Print and return an error text string if rc != SQLITE_OK */
+    std::string print_rc(int rc) const;
 
     mutable Debug mDebug;
     std::mutex mMutex;
