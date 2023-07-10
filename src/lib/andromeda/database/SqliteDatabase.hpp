@@ -10,6 +10,7 @@
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
+#include "andromeda/database/MixedInput.hpp"
 #include "andromeda/database/MixedOutput.hpp"
 
 struct sqlite3;
@@ -18,8 +19,7 @@ struct sqlite3_stmt;
 namespace Andromeda {
 namespace Database {
 
-/** Provides a simple C++ interface with exceptions over sqlite3 */ 
-// TODO !! better comment... mention thread safe
+/** Provides a simple C++ interface with exceptions over sqlite3 - THREAD SAFE (INTERNAL LOCK) */
 class SqliteDatabase
 {
 public:
@@ -44,14 +44,28 @@ public:
     using Row = std::map<std::string,MixedOutput>;
     using RowList = std::list<Row>;
 
-    size_t query(const std::string& sql, RowList& rows);
-    // TODO !! comment retval is only valid for INSERT, UPDATE, DELETE
+    /**
+     * Perform a query against the database - THREAD SAFE (INTERNAL LOCK)
+     * @param sql the SQL query string
+     * @param params array of parameters to substitute
+     * @param[out] rows reference to list of rows to output
+     * @return size_t number of rows matched (valid for INSERT, UPDATE, DELETE only)
+     * @throws Exception if the query fails
+     */
+    size_t query(const std::string& sql, const MixedParams& params, RowList& rows);
 
 private:
 
-    // TODO !! comments
+    /** Print and return an error text string if rc != SQLITE_OK */
     std::string print_rc(int rc) const;
+
     using VoidFunc = std::function<void()>;
+    /**
+     * Handle the given rc if != SQLITE_OK
+     * @param rc sqlite return code/result
+     * @param func optional function to run before throwing
+     * @throws Exception if the rc is not SQLITE_OK
+     */
     void check_rc(int rc, const VoidFunc& func = nullptr) const;
 
     mutable Debug mDebug;

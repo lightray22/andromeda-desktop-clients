@@ -1,5 +1,4 @@
 
-#include <cstring>
 #include <sqlite3.h>
 
 #include "MixedOutput.hpp"
@@ -41,6 +40,7 @@ MixedOutput::operator std::string() const noexcept
 /*****************************************************/
 MixedOutput::operator const char*() const noexcept
 {
+    // need reinterpret_cast, sqlite gives unsigned char
     return reinterpret_cast<const char*>(sqlite3_value_text(mValue));
 }
 

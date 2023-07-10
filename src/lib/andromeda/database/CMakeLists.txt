@@ -1,5 +1,6 @@
 
 set(SOURCE_FILES 
+    MixedInput.cpp
     MixedOutput.cpp
     ObjectDatabase.cpp
     SqliteDatabase.cpp

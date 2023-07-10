@@ -18,19 +18,22 @@ void print_error(void* pArg, int errCode, const char* zMsg){
     SDBG_ERROR("... code:" << errCode << " (" << zMsg << ")");
 }
 
+struct SqliteLog { SqliteLog() noexcept { // run at startup
+    sqlite3_config(SQLITE_CONFIG_LOG, print_error, nullptr);
+} } sqlite_log;
+
 } // anonymous namespace
 
 /*****************************************************/
 SqliteDatabase::SqliteDatabase(const std::string& path) :
     mDebug(__func__,this)
 {
-    // the sqlite3 error log is static/global
-    sqlite3_config(SQLITE_CONFIG_LOG, print_error, nullptr);
-
     MDBG_INFO("(path:" << path << ")");
 
     const int rc = sqlite3_open(path.c_str(), &mDatabase);
     check_rc(rc, [this]{ sqlite3_close(mDatabase); });
+
+    RowList rows; query("PRAGMA foreign_keys = true",{},rows);
 }
 
 /*****************************************************/
@@ -68,7 +71,7 @@ void SqliteDatabase::check_rc(int rc, const VoidFunc& func) const
 }
 
 /*****************************************************/
-size_t SqliteDatabase::query(const std::string& sql, RowList& rows)
+size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, RowList& rows)
 {
     MDBG_INFO("(sql:" << sql << ")");
     const std::lock_guard<std::mutex> lock(mMutex);
@@ -76,16 +79,13 @@ size_t SqliteDatabase::query(const std::string& sql, RowList& rows)
     sqlite3_stmt* stmt { nullptr };
     const int sqllen { static_cast<int>(sql.size())+1 };
     check_rc(sqlite3_prepare_v2(mDatabase, sql.c_str(), sqllen, &stmt, nullptr));
+    if (stmt == nullptr) throw Exception("statement is nullptr");
 
-    if (stmt == nullptr)
+    for (const MixedParams::value_type& param : params)
     {
-        MDBG_ERROR("... statement is nullptr");
-        throw Exception("statement is nullptr");
+        const int idx { sqlite3_bind_parameter_index(stmt, param.first.c_str()) };
+        check_rc(param.second.bind(*stmt, idx));
     }
-
-    // TODO !! how to do mixed-type inputs? have specific bind_* functions for each input... MixedOutput?
-    // should be a base class which we can just pass our statement object to a virtual function
-    // need to create the specific TypeObject with the real type/value
 
     rows.clear();
     int rc { -1 };
