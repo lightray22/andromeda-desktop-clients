@@ -49,12 +49,14 @@ public:
         out = static_cast<T>(*this);
     }
 
+    /** Compare to any type by first casting to it */
     template<typename T>
     inline bool operator==(const T& cmp) const noexcept
     {
         return static_cast<T>(*this) == cmp;
     }
 
+    /** Can't cast to std::nullptr_t so use is_null() */
     inline bool operator==(std::nullptr_t) const noexcept
     {
         return is_null();
