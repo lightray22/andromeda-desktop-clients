@@ -6,8 +6,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "andromeda/TempPath.hpp"
-#include "andromeda/database/MixedInput.hpp"
-#include "andromeda/database/MixedOutput.hpp"
+#include "andromeda/database/MixedValue.hpp"
 #include "andromeda/database/SqliteDatabase.hpp"
 
 namespace Andromeda {
@@ -79,16 +78,7 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
     const int myint { -3874 };
     const int64_t myint64 { static_cast<int64_t>(1024)*1024*1024*1024 }; // 1T
     const char* const mystr { "mytest123" };
-    const std::array<char, 8> myblob_ { 
-        static_cast<char>(0x10),
-        static_cast<char>(0x00),
-        static_cast<char>(0x21),
-        static_cast<char>(0xD0),
-        static_cast<char>(0x9C),
-        static_cast<char>(0x61),
-        static_cast<char>(0xFF),
-        static_cast<char>(0x46),
-    };
+    const std::array<char, 8> myblob_ { '\x10','\x00','\x21','\xD0','\x9C','\x61','\xFF','\x46' };
     const std::string myblob(myblob_.data(), myblob_.size());
     const double myfloat { 3.1415926 };
 
@@ -101,7 +91,6 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
 
     // test the various interfaces for getting data
     REQUIRE(row.at("int") == myint);
-    REQUIRE(static_cast<int>(row.at("int")) == myint);
     REQUIRE(row.at("int").get<int>() == myint);
     { int out { 0 }; row.at("int").get_to(out); REQUIRE(out == myint); }
 

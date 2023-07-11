@@ -7,7 +7,7 @@
 #include <list>
 #include <string>
 
-#include "MixedInput.hpp"
+#include "MixedValue.hpp"
 #include "andromeda/Utilities.hpp"
 
 namespace Andromeda {

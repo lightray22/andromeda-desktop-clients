@@ -3,15 +3,14 @@
 
 #include <functional>
 #include <list>
-#include <map>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
-#include "andromeda/database/MixedInput.hpp"
-#include "andromeda/database/MixedOutput.hpp"
+#include "andromeda/database/MixedValue.hpp"
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -43,7 +42,7 @@ public:
 
     using UniqueLock = std::lock_guard<std::mutex>;
 
-    using Row = std::map<std::string,MixedOutput>;
+    using Row = std::unordered_map<std::string,MixedValue>;
     using RowList = std::list<Row>;
 
     /**
