@@ -9,6 +9,7 @@
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 namespace Andromeda { 
+    namespace Database { class SqliteDatabase; }
     namespace Filesystem { namespace Filedata { struct CacheOptions; } }
 }
 
@@ -63,12 +64,15 @@ private:
     /** Returns the current AccountTab or nullptr if none */
     AccountTab* GetCurrentTab();
 
-    std::unique_ptr<Ui::MainWindow> mQtUi;
+    mutable Andromeda::Debug mDebug;
 
     /** Global cache manager to apply to all mounts */
     Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
 
-    mutable Andromeda::Debug mDebug;
+    /** SqliteDatabase instance for data storage */
+    std::unique_ptr<Andromeda::Database::SqliteDatabase> mDatabase;
+
+    std::unique_ptr<Ui::MainWindow> mQtUi;
 };
 
 } // namespace Gui

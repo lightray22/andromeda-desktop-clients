@@ -28,10 +28,6 @@ public:
         explicit Exception(const std::string& message) :
             Andromeda::BaseException("Mount Error: "+message) {}; };
 
-    /** Exception indicating that no home directory was found */
-    class UnknownHomeException : public Exception { public:
-        UnknownHomeException() : Exception("Unknown Home Directory") {}; };
-
     /** Exception indicating the desired mount directory is not empty */
     class NonEmptyMountException : public Exception { public:
         explicit NonEmptyMountException(const std::string& path) : 

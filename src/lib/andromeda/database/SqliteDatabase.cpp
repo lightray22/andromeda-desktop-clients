@@ -144,7 +144,7 @@ void SqliteDatabase::transaction(const LockedFunc& func)
     const std::lock_guard<std::mutex> lock(mMutex);
 
     if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
-        throw Exception("already in transaction");
+        throw AlreadyTransactionException();
     else query("BEGIN TRANSACTION",{},lock);
 
     try { func(lock); query("COMMIT TRANSACTION",{},lock); }

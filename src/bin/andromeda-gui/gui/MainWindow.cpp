@@ -1,5 +1,7 @@
 
+#include <filesystem>
 #include <sstream>
+#include <QtCore/QStandardPaths>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QWidget>
 
@@ -10,6 +12,8 @@
 #include "LoginDialog.hpp"
 
 #include "andromeda/backend/BackendImpl.hpp" // GetBackend()
+#include "andromeda/database/SqliteDatabase.hpp"
+using Andromeda::Database::SqliteDatabase;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda-gui/BackendContext.hpp"
@@ -19,11 +23,20 @@ namespace Gui {
 
 /*****************************************************/
 MainWindow::MainWindow(CacheOptions& cacheOptions) : 
-    mQtUi(std::make_unique<Ui::MainWindow>()),
+    mDebug(__func__,this),
     mCacheManager(cacheOptions),
-    mDebug(__func__,this)
+    mQtUi(std::make_unique<Ui::MainWindow>())
 {
     MDBG_INFO("()");
+
+    std::string dbPath { QStandardPaths::writableLocation(
+        QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
+    std::filesystem::create_directories(dbPath);
+
+    dbPath += "/database.s3db"; MDBG_INFO("... dbPath:" << dbPath);
+    // TODO shouldn't crash if the DB throws... at least catch exception in main and exit
+    // maybe delete, show an alert to the user, try again if the db is corrupt
+    mDatabase = std::make_unique<SqliteDatabase>(dbPath);
 
     mQtUi->setupUi(this);
 }

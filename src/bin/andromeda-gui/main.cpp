@@ -26,15 +26,12 @@ int main(int argc, char** argv)
     Debug debug("main",nullptr); 
 
     CacheOptions cacheOptions;
-
     Options options(cacheOptions);
 
     try
     {
         options.ParseConfig("andromeda-gui");
-
         options.ParseArgs(static_cast<size_t>(argc), argv);
-
         options.Validate();
     }
     catch (const Options::ShowHelpException& ex)

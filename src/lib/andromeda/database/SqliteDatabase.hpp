@@ -29,6 +29,10 @@ public:
         explicit Exception(const std::string& message) :
             BaseException("Sqlite Error: "+message) {}; };
 
+    /** Exception indicating already in a transaction */
+    class AlreadyTransactionException : public Exception { public:
+        AlreadyTransactionException() : Exception("already in transaction") {}; };
+
     /** 
      * Opens an SQLite database with the given path
      * @param path path to database file, will be created if not existing
@@ -69,7 +73,8 @@ public:
     /**
      * Runs the given function as a transaction, with auto commit/rollback at the end
      * @param func function to run under a atomic locked transaction (must call pre-locked query!)
-     * @throws Exception if anything fails or already in a transaction (will auto-rollback)
+     * @throws AlreadyTransactionException if already in a transaction
+     * @throws Exception if any queries fail (will auto-rollback)
      */
     void transaction(const LockedFunc& func);
 
