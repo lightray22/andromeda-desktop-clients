@@ -190,9 +190,9 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## Testing
 
-Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
+Unit testing is done with catch2 and trompeloeil, which are built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
 
-Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.
+Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.  cppcheck is somewhat buggy and can be ignored with careful analysis.
 
 Unit tests and static analysis are both enabled in the `tools/builddev` script.
 
