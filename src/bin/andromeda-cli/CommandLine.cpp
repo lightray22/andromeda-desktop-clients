@@ -147,7 +147,8 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 fdat.append(buf.data(), static_cast<std::size_t>(file.gcount()));
             }
 
-            dataParams.emplace(param, fdat);
+            // want to overwrite, not emplace
+            dataParams[param] = fdat;
         }
         else if (special == '!')
         {
@@ -158,7 +159,8 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             std::string val; std::getline(std::cin, val);
 
             Utilities::trim(val);
-            dataParams.emplace(param, val);
+            // want to overwrite, not emplace
+            dataParams[param] = val;
         }
         else if (special == '%')
         {
@@ -198,8 +200,9 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 throw PrivateDataException(param); // hardcoded sanity check for now...
 
             std::string next { getNextValue(args, i) }; // non-const for move
-            if (isPriv) dataParams.emplace(param, next);
-            else plainParams.emplace(param, next);
+            // want to overwrite, not emplace
+            if (isPriv) dataParams[param] = std::move(next);
+            else plainParams[param] = std::move(next);
         }
     }
 }
