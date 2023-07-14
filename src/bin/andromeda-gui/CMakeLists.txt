@@ -12,9 +12,9 @@ if (WIN32) # QT >= 6.3
     qt_standard_project_setup()
 else()
     set(CMAKE_AUTOMOC ON)
-    set(CMAKE_AUTORCC ON)
     set(CMAKE_AUTOUIC ON)
 endif()
+set(CMAKE_AUTORCC ON)
 
 # build the andromeda-gui executable
 
@@ -75,6 +75,10 @@ add_subdirectory(gui)
 
 # include/link libandromeda
 
+if (NOT TARGET libandromeda)
+    add_subdirectory(../../lib/andromeda lib/andromeda)
+endif()
+
 if (NOT TARGET libandromeda-fuse)
     add_subdirectory(../../lib/andromeda-fuse lib/andromeda-fuse)
 endif()
@@ -83,6 +87,7 @@ if (NOT TARGET libandromeda-sync)
     add_subdirectory(../../lib/andromeda-sync lib/andromeda-sync)
 endif()
 
+target_link_libraries(andromeda-gui PRIVATE libandromeda)
 target_link_libraries(andromeda-gui PRIVATE libandromeda-fuse)
 #target_link_libraries(andromeda-gui PRIVATE libandromeda-sync)
 
