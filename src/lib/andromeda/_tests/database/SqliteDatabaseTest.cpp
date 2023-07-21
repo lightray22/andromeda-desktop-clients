@@ -78,8 +78,7 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
     const int myint { -3874 };
     const int64_t myint64 { static_cast<int64_t>(1024)*1024*1024*1024 }; // 1T
     const char* const mystr { "mytest123" };
-    const std::array<char, 8> myblob_ { '\x10','\x00','\x21','\xD0','\x9C','\x61','\xFF','\x46' };
-    const std::string myblob(myblob_.data(), myblob_.size());
+    const std::string myblob("\x10\x00\x21\xD0\x9C\x61\xFF\x46",8);
     const double myfloat { 3.1415926 };
 
     database.query("INSERT INTO `mytest` VALUES(:d0,:d1,:d2,:d3,:d4,:d5)", 

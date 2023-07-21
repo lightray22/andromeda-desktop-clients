@@ -17,8 +17,7 @@ TEST_CASE("Encode", "base64")
     REQUIRE(base64::encode("What's in a name? That which we call a rose By any other word would smell as sweet.")
         == "V2hhdCdzIGluIGEgbmFtZT8gVGhhdCB3aGljaCB3ZSBjYWxsIGEgcm9zZSBCeSBhbnkgb3RoZXIgd29yZCB3b3VsZCBzbWVsbCBhcyBzd2VldC4=");
 
-    const std::array<char, 8> dat { '\x10','\x00','\x21','\xD0','\x9C','\x61','\xFF','\x46' };
-    const std::string str(dat.data(), dat.size());
+    const std::string str("\x10\x00\x21\xD0\x9C\x61\xFF\x46",8);
     REQUIRE(base64::encode(str) == "EAAh0Jxh/0Y=");
 }
 

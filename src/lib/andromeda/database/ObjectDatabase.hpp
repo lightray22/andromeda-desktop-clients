@@ -72,6 +72,9 @@ public:
     /** Insert created objects, update all objects that notified us as needing it */
     void SaveObjects();
 
+    /** Return the number of loaded objects (not counting newly created) */
+    inline size_t getLoadedCount() const { return mObjects.size(); }
+
     /** Return the database table name for a class */
     static std::string GetClassTableName(const std::string& className);
 
