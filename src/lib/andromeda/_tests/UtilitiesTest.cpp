@@ -181,6 +181,14 @@ TEST_CASE("trim", "[Utilities]")
 }
 
 /*****************************************************/
+TEST_CASE("tolower", "[Utilities]")
+{
+    REQUIRE(Utilities::tolower("").empty());
+    REQUIRE(Utilities::tolower("test") == "test");
+    REQUIRE(Utilities::tolower("MyTEsT1 aBc") == "mytest1 abc");
+}
+
+/*****************************************************/
 TEST_CASE("replaceAll", "[Utilities]")
 {
     REQUIRE(Utilities::replaceAll("","","").empty());

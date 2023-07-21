@@ -12,6 +12,8 @@
 #include "LoginDialog.hpp"
 
 #include "andromeda/backend/BackendImpl.hpp" // GetBackend()
+#include "andromeda/database/ObjectDatabase.hpp"
+using Andromeda::Database::ObjectDatabase;
 #include "andromeda/database/SqliteDatabase.hpp"
 using Andromeda::Database::SqliteDatabase;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
@@ -36,7 +38,8 @@ MainWindow::MainWindow(CacheOptions& cacheOptions) :
     dbPath += "/database.s3db"; MDBG_INFO("... dbPath:" << dbPath);
     // TODO shouldn't crash if the DB throws... at least catch exception in main and exit
     // maybe delete, show an alert to the user, try again if the db is corrupt
-    mDatabase = std::make_unique<SqliteDatabase>(dbPath);
+    mSqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
+    mObjDatabase = std::make_unique<ObjectDatabase>(*mSqlDatabase);
 
     mQtUi->setupUi(this);
 }

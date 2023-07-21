@@ -20,6 +20,7 @@ target_sources(andromeda-gui PRIVATE ${SOURCE_FILES})
 
 target_sources(andromeda-gui PRIVATE resources/resources.qrc)
 
+# https://doc.qt.io/qt-6/appicon.html
 if (WIN32)
     set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/resources/andromeda-gui.rc")
     target_sources(andromeda-gui PRIVATE ${app_icon_resource_windows})

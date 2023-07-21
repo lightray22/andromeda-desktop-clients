@@ -135,8 +135,9 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
         else
         {
             const int code { val.at("code").get<int>() };
-            const auto [message, details] { Utilities::split(
+            const Utilities::StringPair mpair { Utilities::split(
                 val.at("message").get<std::string>(),":") };
+            const std::string& message { mpair.first };
 
             const std::string fname(__func__); // cannot be static
             mDebug.Backend([fname,message=&message](std::ostream& str){ 

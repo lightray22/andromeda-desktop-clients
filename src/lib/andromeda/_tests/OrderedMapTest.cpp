@@ -18,23 +18,25 @@ TEST_CASE("TestBasic", "[OrderedMap]")
     TestM testM; TestQ testQ;
     testM.enqueue_front(5, "myval"); testQ.enqueue_front(5);
     testM.enqueue_front(7, "myval2"); testQ.enqueue_front(7);
+    testM.enqueue_back(9, "myval3"); testQ.enqueue_back(9);
 
-    TestMV e1{7, "myval2"}; const int v1 = 7;
-    TestMV e2(5, "myval"); const int v2 = 5;
+    const TestMV e1{7, "myval2"}; const int v1 = 7;
+    const TestMV e2(5, "myval"); const int v2 = 5;
+    const TestMV e3(9, "myval3"); const int v3 = 9;
 
-    REQUIRE(testM == TestM{e1, e2}); REQUIRE(testQ == TestQ{v1, v2});
-    REQUIRE(testM.size() == 2); REQUIRE(testQ.size() == 2);
+    REQUIRE(testM == TestM{e1, e2, e3}); REQUIRE(testQ == TestQ{v1, v2, v3});
+    REQUIRE(testM.size() == 3); REQUIRE(testQ.size() == 3);
     REQUIRE(!testM.empty()); REQUIRE(!testQ.empty());
     REQUIRE(testM.front() == e1); REQUIRE(testQ.front() == v1);
-    REQUIRE(testM.back() == e2); REQUIRE(testQ.back() == v2);
+    REQUIRE(testM.back() == e3); REQUIRE(testQ.back() == v3);
 
     REQUIRE(*testM.begin() == e1); REQUIRE(*testQ.begin() == v1);
     REQUIRE(*testM.cbegin() == e1); REQUIRE(*testQ.cbegin() == v1);
-    REQUIRE(*testM.rbegin() == e2); REQUIRE(*testQ.rbegin() == v2);
-    REQUIRE(*testM.crbegin() == e2); REQUIRE(*testQ.crbegin() == v2);
+    REQUIRE(*testM.rbegin() == e3); REQUIRE(*testQ.rbegin() == v3);
+    REQUIRE(*testM.crbegin() == e3); REQUIRE(*testQ.crbegin() == v3);
 
-    REQUIRE(*std::prev(testM.end()) == e2); REQUIRE(*std::prev(testQ.end()) == v2);
-    REQUIRE(*std::prev(testM.cend()) == e2); REQUIRE(*std::prev(testQ.cend()) == v2);
+    REQUIRE(*std::prev(testM.end()) == e3); REQUIRE(*std::prev(testQ.end()) == v3);
+    REQUIRE(*std::prev(testM.cend()) == e3); REQUIRE(*std::prev(testQ.cend()) == v3);
     REQUIRE(*std::prev(testM.rend()) == e1); REQUIRE(*std::prev(testQ.rend()) == v1);
     REQUIRE(*std::prev(testM.crend()) == e1); REQUIRE(*std::prev(testQ.crend()) == v1);
     

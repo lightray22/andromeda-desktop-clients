@@ -18,7 +18,10 @@ struct sqlite3_stmt;
 namespace Andromeda {
 namespace Database {
 
-/** Provides a simple C++ interface with exceptions over sqlite3 - THREAD SAFE (INTERNAL LOCK) */
+/** 
+ * Provides a simple C++ interface with exceptions over sqlite3
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
 class SqliteDatabase
 {
 public:
@@ -50,20 +53,20 @@ public:
     using RowList = std::list<Row>;
 
     /**
-     * Sends an SQL query down to the database, possibly beginning a transaction - THREAD SAFE (INTERNAL LOCK)
+     * Sends an SQL query down to the database, possibly beginning a transaction
      * @param sql the SQL query string, with placeholder data values
      * @param params param replacements for the prepared statement
      * @param[out] rows reference to list of rows to output
      * @return size_t number of rows matched (valid for INSERT, UPDATE, DELETE only)
      * @throws Exception if the query fails
      */
-    size_t query(const std::string& sql, const MixedParams& params, RowList& rows);
+    virtual size_t query(const std::string& sql, const MixedParams& params, RowList& rows);
 
     /** 
      * Same as query() but assumes no rows output
      * @throws Exception if the query fails or rows output is not empty
      */
-    size_t query(const std::string& sql, const MixedParams& params);
+    virtual size_t query(const std::string& sql, const MixedParams& params);
 
     // pre-locked/no BEGIN TRANSACTION versions of the above
     size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);
@@ -89,6 +92,10 @@ public:
      * @throws Exception if the query fails
      */
     void commit();
+
+protected:
+
+    SqliteDatabase() : mDebug(__func__,this) { } // unit test
 
 private:
 

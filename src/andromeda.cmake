@@ -198,6 +198,7 @@ function (andromeda_analyze)
             "--suppress=constParameter" # false positives
             "--suppress=noConstructor" # false positives
             "--suppress=uninitMemberVarPrivate" # false positives
+            "--suppress=knownConditionTrueFalse" # false positives
             PARENT_SCOPE)
         # cppcheck is too buggy...
         #if (NOT ${ALLOW_WARNINGS})

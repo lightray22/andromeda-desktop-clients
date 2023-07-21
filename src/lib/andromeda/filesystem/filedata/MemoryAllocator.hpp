@@ -84,7 +84,7 @@ private:
     /** stat-counter mutex */
     std::mutex mMutex;
 
-    using LockGuard = std::lock_guard<decltype(mMutex)>;
+    using LockGuard = std::lock_guard<std::mutex>;
     mutable Debug mDebug;
 };
 

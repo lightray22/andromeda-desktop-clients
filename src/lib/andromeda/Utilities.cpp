@@ -3,6 +3,7 @@
 #include <array>
 #include <cstring>
 #include <iostream>
+#include <locale>
 #include <mutex>
 #include <random>
 
@@ -147,6 +148,15 @@ std::string Utilities::trim(const std::string& str)
     size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
 
     return str.substr(start, end-start);
+}
+
+/*****************************************************/
+std::string Utilities::tolower(const std::string& str)
+{
+    std::string ret(str);
+    std::transform(ret.begin(), ret.end(), ret.begin(),
+        [](char c)->char{ return std::tolower(c, std::locale()); });
+    return ret;
 }
 
 /*****************************************************/

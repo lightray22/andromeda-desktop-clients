@@ -9,7 +9,7 @@
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 namespace Andromeda { 
-    namespace Database { class SqliteDatabase; }
+    namespace Database { class SqliteDatabase; class ObjectDatabase; }
     namespace Filesystem { namespace Filedata { struct CacheOptions; } }
 }
 
@@ -69,8 +69,10 @@ private:
     /** Global cache manager to apply to all mounts */
     Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
 
-    /** SqliteDatabase instance for data storage */
-    std::unique_ptr<Andromeda::Database::SqliteDatabase> mDatabase;
+    /** SqliteDatabase instance for the ObjectDatabase */
+    std::unique_ptr<Andromeda::Database::SqliteDatabase> mSqlDatabase;
+    /** ObjectDatabase instance for object storage */
+    std::unique_ptr<Andromeda::Database::ObjectDatabase> mObjDatabase;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 };

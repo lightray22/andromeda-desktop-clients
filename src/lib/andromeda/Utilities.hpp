@@ -22,10 +22,10 @@ public:
     Utilities() = delete; // static only
 
     /** Returns a random string of the given size */
-    static std::string Random(size_t size);
+    [[nodiscard]] static std::string Random(size_t size);
 
     template<typename T>
-    static std::string implode(const std::string& glue, const T& arr)
+    [[nodiscard]] static std::string implode(const std::string& glue, const T& arr)
     {
         std::string retval;
         typename T::const_iterator it { std::begin(arr) };
@@ -48,7 +48,7 @@ public:
      * @param reverse if true, find delims from end
      * @param max max # of elements to return
      */
-    static StringList explode(
+    [[nodiscard]] static StringList explode(
         std::string str, const std::string& delim, 
         size_t skip = 0, bool reverse = false,
         size_t max = static_cast<size_t>(-1));
@@ -61,18 +61,18 @@ public:
      * @param skip the number of delims to skip
      * @param reverse if true, find delims from end
      */
-    static StringPair split(
+    [[nodiscard]] static StringPair split(
         const std::string& str, const std::string& delim, 
         size_t skip = 0, bool reverse = false);
 
     /** Splits a path into its dirname and basename */
-    static StringPair splitPath(const std::string& str); // TODO unit test
+    [[nodiscard]] static StringPair splitPath(const std::string& str); // TODO unit test
 
     /** Returns true iff str starts with start */
-    static bool startsWith(const std::string& str, const std::string& start);
+    [[nodiscard]] static bool startsWith(const std::string& str, const std::string& start);
 
     /** Returns true iff str ends with end */
-    static bool endsWith(const std::string& str, const std::string& end);
+    [[nodiscard]] static bool endsWith(const std::string& str, const std::string& end);
 
     /** Removes leading/trailing whitespace from the string */
     static void trim(std::string& str);
@@ -80,23 +80,26 @@ public:
     /** Returns the string with leading/trailing whitespace stripped */
     [[nodiscard]] static std::string trim(const std::string& str);
 
+    /** Returns the string converted to lowercase */
+    [[nodiscard]] static std::string tolower(const std::string& str);
+
     /** Returns the string str with all occurences of from replaced by repl */
-    static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
+    [[nodiscard]] static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
 
     /** Returns false if the trimmed string is a false-like value */
-    static bool stringToBool(const std::string& stri);
+    [[nodiscard]] static bool stringToBool(const std::string& stri);
 
     /** 
      * Converts a string like "4096" or "256M" to # of bytes
      * @throws std::logic_error if we fail to convert to a number
      */
-    static uint64_t stringToBytes(const std::string& stri);
+    [[nodiscard]] static uint64_t stringToBytes(const std::string& stri);
 
     /**
      * Converts # of bytes to a string like "256K" or "4M"
      * stopping at the biggest possible unit (whole numbers only)
      */
-    static std::string bytesToString(uint64_t bytes);
+    [[nodiscard]] static std::string bytesToString(uint64_t bytes);
 
     /**
      * Silently read a line of input from stdin
@@ -110,13 +113,13 @@ public:
      * Returns a string map of the process environment variables 
      * @param prefix if not empty, only return env vars whose keys start with this
      */
-    static StringMap GetEnvironment(const std::string& prefix = "");
+    [[nodiscard]] static StringMap GetEnvironment(const std::string& prefix = "");
 
     /** Returns the user's home directory path if found */
-    static std::string GetHomeDirectory();
+    [[nodiscard]] static std::string GetHomeDirectory();
 
     /** Returns strerror(err) but thread safe */
-    static std::string GetErrorString(int err);
+    [[nodiscard]] static std::string GetErrorString(int err);
 };
 
 } // namespace Andromeda

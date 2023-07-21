@@ -78,6 +78,7 @@ bool MixedValue::is_null() const
 {
     if (mSqlValue != nullptr)
         return sqlite3_value_bytes(mSqlValue) == 0;
+
     else return std::holds_alternative<std::nullptr_t>(mVariant);
 }
 
@@ -87,6 +88,10 @@ void MixedValue::get_to(std::string& out) const
     if (mSqlValue != nullptr) out = std::string( // new copy
         static_cast<const char*>(sqlite3_value_blob(mSqlValue)),
         static_cast<size_t>(sqlite3_value_bytes(mSqlValue)));
+
+    else if (std::holds_alternative<const char*>(mVariant)) // allow conversion
+        out = std::get<const char*>(mVariant);
+
     else out = *std::get<const std::string*>(mVariant);
 }
 
@@ -95,6 +100,10 @@ void MixedValue::get_to(const char*& out) const
 {
     if (mSqlValue != nullptr) // reinterpret_cast, sqlite gives unsigned char
         out = reinterpret_cast<const char*>(sqlite3_value_text(mSqlValue));
+
+    else if (std::holds_alternative<const std::string*>(mVariant)) // allow conversion
+        out = std::get<const std::string*>(mVariant)->c_str();
+
     else out = std::get<const char*>(mVariant);
 }
 
@@ -103,6 +112,7 @@ void MixedValue::get_to(int& out) const
 {
     if (mSqlValue != nullptr) 
         out = sqlite3_value_int(mSqlValue);
+
     else out = std::get<int>(mVariant);
 }
 
@@ -111,6 +121,7 @@ void MixedValue::get_to(int64_t& out) const
 {
     if (mSqlValue != nullptr) 
         out = sqlite3_value_int64(mSqlValue);
+
     else out = std::get<int64_t>(mVariant);
 }
 
@@ -119,6 +130,7 @@ void MixedValue::get_to(double& out) const
 {
     if (mSqlValue != nullptr) 
         out = sqlite3_value_double(mSqlValue);
+
     else out = std::get<double>(mVariant);
 }
 

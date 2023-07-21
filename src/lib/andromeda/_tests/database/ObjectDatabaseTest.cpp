@@ -1,18 +1,20 @@
 #include "catch2/catch_test_macros.hpp"
-#include "trompeloeil.hpp"
+#include "catch2/trompeloeil.hpp"
 
-#include "database/ObjectDatabase.hpp"
-#include "database/SqliteDatabase.hpp"
+#include "testObjects.hpp"
+#include "andromeda/database/ObjectDatabase.hpp"
+#include "andromeda/database/SqliteDatabase.hpp"
 
 namespace Andromeda {
 namespace Database {
 
-class MockSqliteDatabase : public SqliteDatabase
+// TODO !! unit tests
+
+/*****************************************************/
+TEST_CASE("GetClassTable", "[ObjectDatabase]")
 {
-public:
-    MAKE_MOCK2(query, size_t(const std::string&, const MixedParams&)); // not virtual, don't override
-    MAKE_MOCK3(query, size_t(const std::string&, const MixedParams&, RowList&)); // not virtual, don't override
-};
+    REQUIRE(ObjectDatabase::GetClassTableName("Andromeda\\Database\\EasyObject") == "a2obj_database_easyobject");
+}
 
 } // namespace Database
 } // namespace Andromeda

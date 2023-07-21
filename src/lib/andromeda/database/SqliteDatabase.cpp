@@ -43,6 +43,8 @@ SqliteDatabase::~SqliteDatabase()
 {
     MDBG_INFO("()");
 
+    if (mDatabase == nullptr) return; // unit test
+
     try { rollback(); } catch (const Exception& e) { 
         MDBG_ERROR("... rollback:" << e.what()); }
 

@@ -1,9 +1,256 @@
 #ifndef LIBA2_OBJECTDATABASE_H_
 #define LIBA2_OBJECTDATABASE_H_
 
+#include <list>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <unordered_map>
+
+#include "BaseObject.hpp"
+#include "FieldTypes.hpp"
+#include "MixedValue.hpp"
+#include "QueryBuilder.hpp"
+#include "SqliteDatabase.hpp"
+#include "andromeda/Debug.hpp"
+#include "andromeda/OrderedMap.hpp"
+#include "andromeda/Utilities.hpp"
+
 namespace Andromeda {
 namespace Database {
 
+/**
+ * Provides the interfaces between BaseObject and the underlying database
+ *
+ * Basic functions include loading, caching, updating, creating, and deleting objects.
+ * This class should only be used internally by BaseObjects.
+ * 
+ * Mostly ported from the server's PHP implementation, but simplified
+ * without support for object inheritance or object caching by unique key
+ * 
+ * THREAD SAFE (INTERNAL LOCKS)
+ */
+class ObjectDatabase
+{
+private:
+    mutable Debug mDebug;
+
+public:
+
+    /** Exception indicating that multiple objects were loaded for by-unique query */
+    class MultipleUniqueKeyException : public SqliteDatabase::Exception { public:
+        explicit MultipleUniqueKeyException(const std::string& className) : Exception("Multiple unique objects: "+className) {}; };
+
+    /** Exception indicating that the row update failed */
+    class UpdateFailedException : public SqliteDatabase::Exception { public:
+        explicit UpdateFailedException(const std::string& className) : Exception("Object row update failed: "+className) {}; };
+
+    /** Exception indicating that the row insert failed */
+    class InsertFailedException : public SqliteDatabase::Exception { public:
+        explicit InsertFailedException(const std::string& className) : Exception("Object row insert failed: "+className) {}; };
+
+    /** Exception indicating that the row delete failed */
+    class DeleteFailedException : public SqliteDatabase::Exception { public:
+        explicit DeleteFailedException(const std::string& className) : Exception("Object row delete failed: "+className) {}; };
+
+    explicit ObjectDatabase(SqliteDatabase& db) : 
+        mDebug(__func__,this), mDb(db) { }
+    
+    virtual ~ObjectDatabase() = default;
+    DELETE_COPY(ObjectDatabase)
+    DELETE_MOVE(ObjectDatabase)
+
+    /** Commits the internal database */
+    void commit();
+
+    /** Rolls back the internal database */
+    void rollback();
+
+    /** Notify the DB that the given object needs to be updated */
+    void notifyModified(BaseObject& object);
+
+    /** Insert created objects, update all objects that notified us as needing it */
+    void SaveObjects();
+
+    /** Return the database table name for a class */
+    static std::string GetClassTableName(const std::string& className);
+
+    /**
+     * Counts objects using the given query (ignores limit/offset)
+     * @tparam T type of object
+     * @param query query used to match objects
+     */
+    template<class T>
+    size_t CountObjectsByQuery(const QueryBuilder& query)
+    {
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
+
+        static const std::string table { GetClassTableName(T::GetClassNameS()) };
+        static const std::string prop { "COUNT("+table+".id)" };
+        const std::string querystr { "SELECT "+prop+" FROM "+table+" "+query.GetText() };
+
+        SqliteDatabase::RowList rows;
+        mDb.query(querystr, query.GetParams(), rows);
+        return static_cast<size_t>(rows.front().at(prop).get<int>());
+    }
+
+    /**
+     * Loads a list of objects matching the given query
+     * @tparam T type of object
+     * @param query query used to match objects
+     * @return list of non-null pointers to objects
+     */
+    template<class T>
+    std::list<T*> LoadObjectsByQuery(const QueryBuilder& query)
+    {
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
+        
+        static const std::string table { GetClassTableName(T::GetClassNameS()) };
+        const std::string querystr { "SELECT * FROM "+table+" "+query.GetText() };
+
+        SqliteDatabase::RowList rows;
+        mDb.query(querystr, query.GetParams(), rows);
+
+        std::list<T*> objects;
+        for (const SqliteDatabase::Row& row : rows)
+            objects.emplace_back(ConstructObject<T>(row));
+        return objects;
+    }
+
+    /**
+     * Immediately delete objects matching the given query
+     * The objects will be loaded and have their NotifyDeleted() run
+     * @tparam T type of object
+     * @param query query used to match objects
+     * @return size_t number of deleted objects
+     */
+    template<class T>
+    size_t DeleteObjectsByQuery(const QueryBuilder& query)
+    {
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
+        
+        // no RETURNING, just load the objects and delete individually
+        const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
+        for (T* obj : objs) DeleteObject(*obj);
+        return objs.count();
+    }
+
+    /**
+     * Loads a unique object matching the given query
+     * @see LoadObjectsByQuery()
+     * @throws MultipleUniqueKeyException if > 1 object is found
+     * @return possibly null pointer to an object
+     */
+    template<class T>
+    T* TryLoadUniqueByQuery(const QueryBuilder& query)
+    {
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")");
+        
+        const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
+        if (objs.count() > 1) throw MultipleUniqueKeyException(T::GetClassNameS());
+        return !objs.empty() ? objs.front() : nullptr;
+    }
+
+    /**
+     * Deletes a unique object matching the given query
+     * @see DeleteObjectsByQuery()
+     * @throws MultipleUniqueKeyException if > 1 object is found
+     * @return true if an object was found
+     */
+    template<class T>
+    bool TryDeleteUniqueByQuery(const QueryBuilder& query)
+    {
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")");
+        
+        const size_t count { DeleteObjectsByQuery<T>(query) };
+        if (count > 1) throw MultipleUniqueKeyException(T::GetClassNameS());
+        return count != 0;
+    }
+
+    /**
+     * Creates a new object and registers it to be inserted
+     * @tparam T type of object
+     * @return T* non-null pointer to new object
+     */
+    template<class T>
+    T* CreateObject()
+    {
+        const UniqueLock lock(mMutex);
+        MDBG_INFO("(T:" << T::GetClassNameS() << ")");
+
+        std::unique_ptr<BaseObject> retobj { std::make_unique<T>(*this, MixedParams()) };
+        mCreated.enqueue_back(retobj.get(), std::move(retobj));
+        return mCreated.back().second.get();
+    }
+
+    /** 
+     * Immediately deletes a single object from the database 
+     * @throws DeleteFailedException if nothing is deleted
+     */
+    void DeleteObject(BaseObject& object);
+
+    /**
+     * INSERTS or UPDATES the given object as necessary
+     * @param fields list of modified fields to send
+     * @throws UpdateFailedException if UPDATE does nothing
+     * @throws InsertFailedException if INSERT does nothing
+     */
+    void SaveObject(BaseObject& object, const BaseObject::FieldList& fields);
+
+private:
+
+    using UniqueLock = std::lock_guard<std::recursive_mutex>;
+
+    /** 
+     * Sends an UPDATE for the given object
+     * @param fields list of modified fields to send
+     * @throws UpdateFailedException if UPDATE does nothing
+    */
+    void UpdateObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+
+    /** 
+     * Sends an INSERT for the given object
+     * @param fields list of modified fields to send
+     * @throws InsertFailedException if INSERT does nothing
+    */
+    void InsertObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+
+    /** OrderedMap of objects that have notified us of being modified, indexed by pointer */
+    OrderedMap<BaseObject*, BaseObject&> mModified;
+    /** OrderedMap of objects that were newly created and not yet saved, indexed by pointer */
+    OrderedMap<BaseObject*, std::unique_ptr<BaseObject>> mCreated;
+
+    /** map of loaded objects (to prevent duplicates) indexed by ID:ClassName */
+    std::unordered_map<std::string, std::unique_ptr<BaseObject>> mObjects;
+
+    /**
+     * Constructs a new object from a row if not already loaded
+     * @tparam T type of object
+     * @param row database row of fields
+     * @return non-null pointer to loaded object
+     */
+    template<class T>
+    T* ConstructObject(const SqliteDatabase::Row& row)
+    {
+        const UniqueLock lock(mMutex);
+
+        std::string id; row.at("id").get_to(id);
+        const std::string key { id+":"+T::GetClassNameS() };
+        MDBG_INFO("(T:" << T::GetClassNameS() << " id:" << id << ")");
+
+        const decltype(mObjects)::iterator it { mObjects.find(key) };
+        if (it != mObjects.end()) // already loaded, don't replace it
+            return dynamic_cast<T*>(it->second.get());
+        else
+        {
+            std::unique_ptr<BaseObject> retobj { std::make_unique<T>(*this, row) };
+            return mObjects.emplace(key, std::move(retobj)).first->second.get();
+        }
+    }
+
+    SqliteDatabase& mDb;
+    std::recursive_mutex mMutex;
+};
 
 } // namespace Database
 } // namespace Andromeda

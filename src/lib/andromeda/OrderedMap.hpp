@@ -234,6 +234,20 @@ public:
         mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
     }
 
+    /**
+     * Emplaces a new element on the end of the list (KEY MUST NOT EXIST)
+     * Complexity: O(1) average, O(N) worst
+     */
+    template<class... Args>
+    void enqueue_back(Args&&... args) noexcept
+    {
+    #if DEBUG // key must not exist
+        assert(!erase(get_key(value_type(std::forward<Args>(args)...))));
+    #endif // DEBUG
+        mQueue.emplace_back(std::forward<Args>(args)...); // O(1)
+        mLookup[get_key(mQueue.back())] = std::prev(mQueue.end()); // O(1)-O(n)
+    }
+
 private:
     ValueQueue mQueue;
     ValueLookup mLookup;
