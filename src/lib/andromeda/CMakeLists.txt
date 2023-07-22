@@ -8,6 +8,7 @@ include(../../andromeda.cmake)
 set(SOURCE_FILES 
     BaseOptions.cpp
     ConfigOptions.cpp
+    Crypto.cpp
     Debug.cpp
     Utilities.cpp
     )
@@ -92,3 +93,11 @@ find_package(SQLite3 REQUIRED)
 
 target_include_directories(libandromeda PRIVATE ${SQLite3_INCLUDE_DIRS})
 target_link_libraries(libandromeda INTERFACE ${SQLite3_LIBRARIES})
+
+# include/link libsodium
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_package(Sodium REQUIRED)
+
+target_link_libraries(libandromeda PRIVATE sodium)
