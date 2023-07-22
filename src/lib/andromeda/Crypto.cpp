@@ -133,7 +133,7 @@ std::string Crypto::EncryptSecret(const std::string& msg, const std::string& non
         throw SodiumFailedException(0);
     }
 
-    enc.resize(clen); // maybe smaller
+    enc.resize(static_cast<size_t>(clen)); // maybe smaller
     return enc;
 }
 
@@ -172,7 +172,7 @@ std::string Crypto::DecryptSecret(const std::string& enc, const std::string& non
         throw SodiumFailedException(0);
     }
 
-    msg.resize(mlen); // maybe smaller
+    msg.resize(static_cast<size_t>(mlen)); // maybe smaller
     return msg;
 }
 
