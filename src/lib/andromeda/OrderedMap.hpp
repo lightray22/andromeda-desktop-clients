@@ -228,9 +228,12 @@ public:
     void enqueue_front(Args&&... args) noexcept
     {
     #if DEBUG // key must not exist
-        assert(!erase(get_key(value_type(std::forward<Args>(args)...))));
-    #endif // DEBUG
+        value_type v(std::forward<Args>(args)...); // NOLINT(misc-const-correctness)
+        assert(!erase(get_key(v)));
+        mQueue.emplace_front(std::move(v)); // O(1)
+    #else // !DEBUG
         mQueue.emplace_front(std::forward<Args>(args)...); // O(1)
+    #endif // DEBUG
         mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
     }
 
@@ -242,9 +245,12 @@ public:
     void enqueue_back(Args&&... args) noexcept
     {
     #if DEBUG // key must not exist
-        assert(!erase(get_key(value_type(std::forward<Args>(args)...))));
-    #endif // DEBUG
+        value_type v(std::forward<Args>(args)...); // NOLINT(misc-const-correctness)
+        assert(!erase(get_key(v)));
+        mQueue.emplace_back(std::move(v)); // O(1)
+    #else // !DEBUG
         mQueue.emplace_back(std::forward<Args>(args)...); // O(1)
+    #endif // DEBUG
         mLookup[get_key(mQueue.back())] = std::prev(mQueue.end()); // O(1)-O(n)
     }
 
@@ -253,7 +259,7 @@ private:
     ValueLookup mLookup;
 };
 
-/** A std::unordered_map that also acts as an ordered queue (keeps insertion order) */
+/** A std::unordered_map (fast lookup) that also acts as an ordered queue (keeps insertion order) */
 template<typename Key, typename Value>
 class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>
 {
@@ -265,7 +271,7 @@ public:
 };
 
 /** 
- * A std::list that provides fast lookup using a hash map (must be unique values)
+ * A std::list (ordered) that provides fast lookup using a hash map (must be unique values)
  * This is an OrderedMap but with Values as Keys, and the value_type is just the Value not a pair
  */
 template<typename Value>

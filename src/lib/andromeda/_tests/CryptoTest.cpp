@@ -81,6 +81,7 @@ TEST_CASE("CryptoPublic", "[Crypto]")
     const std::string nonce { "0123456789ABCDEF01234567" }; // 24 bytes
 
     const std::string enc { Crypto::EncryptPublic(msg, nonce, priv1, pub2) };
+    REQUIRE(enc.size() == msg.size()+Crypto::PublicOutputOverhead());
     REQUIRE(enc == std::string("\xff\x05\xee\x40\x7b\x1f\x91\xc7\x64\xe1\x12\xf9\xc5\x9a\x97\x16\x05\x5a\x62\xd0\x02\x2d\xd9\x31\xc5\x7f\x50\xfd\x3c\x11\xdf\xca\x55\x9a\xda\xba\x70\xb7\x3e",39));
     REQUIRE(Crypto::DecryptPublic(enc, nonce, priv2, pub1) == msg);
 

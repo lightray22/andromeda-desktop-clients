@@ -29,11 +29,7 @@ public:
     class SodiumFailedException : public Exception { public:
         explicit SodiumFailedException(int code) : Exception("Sodium failed: "+std::to_string(code)) {}; };
 
-    /** Exception indicating that sodium encryption failed */
-    class EncryptFailedException : public Exception { public:
-        explicit EncryptFailedException(int code) : Exception("Encryption failed: "+std::to_string(code)) {}; };
-
-    /** Exception indicating that a sodium operation failed */
+    /** Exception indicating that a sodium operation failed to decrypt */
     class DecryptFailedException : public Exception { public:
         explicit DecryptFailedException(int code) : Exception("Decryption failed: "+std::to_string(code)) {}; };
 
