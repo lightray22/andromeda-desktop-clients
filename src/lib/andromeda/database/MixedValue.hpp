@@ -59,7 +59,7 @@ public:
     void get_to(int64_t& out) const;
     void get_to(double& out) const;
 
-    /** Return any type in string form (for debug) */
+    /** Return any type in string form (for debug printing) */
     [[nodiscard]] std::string ToString() const;
 
     /** 
@@ -72,7 +72,10 @@ public:
         T out; get_to(out); return out;
     }
 
-    /** Compared to another MixedValue object */
+    /** 
+     * Compare to another MixedValue object 
+     * Always returns false if one is a variant and one is an sqlite_value
+     */
     bool operator==(const MixedValue& rhs) const;
 
     /** 
@@ -84,6 +87,9 @@ public:
     {
         return get<T>() == cmp;
     }
+
+    template<typename T>
+    inline bool operator!=(const T& rhs) const { return !(*this==rhs); }
 
     /** Can't cast to std::nullptr_t so use is_null() */
     inline bool operator==(std::nullptr_t) const
@@ -98,12 +104,6 @@ public:
     inline bool operator==(const char* str) const
     {
         return !std::strcmp(get<const char*>(), str);
-    }
-
-    template<typename T>
-    inline bool operator!=(const T& rhs) const
-    {
-        return this!=&rhs || !(*this==rhs);
     }
 
 private:

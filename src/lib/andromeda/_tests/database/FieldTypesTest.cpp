@@ -73,6 +73,27 @@ TEST_CASE("Basic", "[FieldTypes]")
 }
 
 /*****************************************************/
+TEST_CASE("Operators", "[FieldTypes]")
+{
+    GET_MOCK_OBJECTS();
+
+    FieldTypes::ScalarType<std::string> field1("myfield",parent);
+    field1 = "test2";
+    REQUIRE(static_cast<const std::string>(field1) == "test2");
+    REQUIRE(field1 == "test2"); // operator==
+    REQUIRE(field1 != "test3"); // operator!=
+
+    FieldTypes::NullScalarType<std::string> field2("myfield",parent);
+    field2 = nullptr;
+    REQUIRE(field2 == nullptr);
+    REQUIRE(static_cast<const std::string*>(field2) == nullptr);
+    field2 = "test3";
+    REQUIRE(field2 != nullptr);
+    REQUIRE(*field2 == "test3");
+    REQUIRE(*static_cast<const std::string*>(field2) == "test3");
+}
+
+/*****************************************************/
 TEST_CASE("SetUnmodified", "[FieldTypes]")
 {
     GET_MOCK_OBJECTS();

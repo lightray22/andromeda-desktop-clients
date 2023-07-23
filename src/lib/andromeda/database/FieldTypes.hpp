@@ -119,9 +119,17 @@ public:
         else return mRealNull ? nullptr : &mRealValue;
     }
 
-    bool operator==(const T& value) const { return mTempValue == *value; }
+    /** Returns a pointer to the value or nullptr if NULL */
+    inline explicit operator const T*() const { return TryGetValue(); }
 
-    bool operator==(std::nullptr_t) const { return mTempNull; }
+    /** Returns a reference to the value (assumes not NULL) */
+    inline const T& operator*() const { return *TryGetValue(); }
+
+    /** Return true if NULL */
+    inline bool operator==(std::nullptr_t) const { return mTempNull; }
+
+    /** Return true if NOT NULL */
+    inline bool operator!=(std::nullptr_t) const { return !(*this==nullptr); }
 
     /**
      * Sets the field to the given value
@@ -162,6 +170,12 @@ public:
 
         return false;
     }
+
+    /** Sets the field to the given value */
+    inline NullScalarType& operator=(const T& value) { SetValue(value); return *this; }
+
+    /** Sets the field to NULL */
+    inline NullScalarType& operator=(std::nullptr_t) { SetValue(nullptr); return *this; }
 
 protected:
     bool mTempNull { true };
@@ -220,13 +234,14 @@ public:
         if (allowTemp) return mTempValue; else return mRealValue;
     }
 
-    bool operator==(const T& value) const
-    {
-        return mTempValue == *value;
-    }
+    /** Returns the field's value */
+    inline explicit operator const T&() const { return GetValue(); }
 
-    // TODO !! add operator= and static_cast, keep GetValue/SetValue due to allowTemp+return bool
-    // TODO !! can move these templates to the CPP, just explicitly instantiate the 4 possible types
+    /** Return true if equal to the given value */
+    inline bool operator==(const T& value) const { return GetValue() == value; }
+
+    /** Return true if not equal to the given value */
+    inline bool operator!=(const T& rhs) const { return !(*this==rhs); }
 
     /**
      * Sets the field to the given value
@@ -248,6 +263,9 @@ public:
 
         return false;
     }
+
+    /** Sets the field to the given value */
+    inline ScalarType& operator=(const T& value) { SetValue(value); return *this; }
 
 protected:
     bool mTempInitd { false };
