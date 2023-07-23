@@ -74,6 +74,22 @@ int MixedValue::bind(sqlite3_stmt& stmt, int idx) const
 }
 
 /*****************************************************/
+std::string MixedValue::ToString() const
+{
+    if (mSqlValue != nullptr)
+        return get<std::string>();
+
+    return std::visit([&](auto&& val)->std::string
+    {
+        using T = std::decay_t<decltype(val)>;
+        if constexpr (std::is_same_v<T, std::nullptr_t>) return "NULL";
+        else if constexpr (std::is_same_v<T, const std::string*>) return *val;
+        else if constexpr (std::is_same_v<T, const char*>) return std::string(val);
+        else return std::to_string(val); // int, int64_t, double
+    }, mVariant);
+}
+
+/*****************************************************/
 bool MixedValue::is_null() const
 {
     if (mSqlValue != nullptr)
@@ -132,6 +148,49 @@ void MixedValue::get_to(double& out) const
         out = sqlite3_value_double(mSqlValue);
 
     else out = std::get<double>(mVariant);
+}
+
+/*****************************************************/
+bool MixedValue::operator==(const MixedValue& rhs) const
+{
+    if (this == &rhs) return true;
+    
+    if (mSqlValue != nullptr && rhs.mSqlValue != nullptr)
+    {
+        int bytes { 0 };
+        return sqlite3_value_type(mSqlValue) == sqlite3_value_type(rhs.mSqlValue)
+            && (bytes = sqlite3_value_bytes(mSqlValue)) == sqlite3_value_bytes(rhs.mSqlValue)
+            && !memcmp(sqlite3_value_blob(mSqlValue), sqlite3_value_blob(rhs.mSqlValue), static_cast<size_t>(bytes));
+    }
+    
+    return std::visit([&](auto&& val)->bool
+    {
+        // const char* and std::string* are pointers, we want to compare content not just pointer equality
+        // so these require special handling.  Also allow comparing string vs. char* or vice versa.
+
+        using T = std::decay_t<decltype(val)>;
+        if constexpr (std::is_same_v<T, const std::string*>)
+        {
+            const std::string* const* rh1 = std::get_if<const std::string*>(&rhs.mVariant);
+            if (rh1 != nullptr) return *val == **rh1;
+
+            const char* const* rh2 = std::get_if<const char*>(&rhs.mVariant);
+            if (rh2 != nullptr) return *val == *rh2;
+
+            return false; // wrong type
+        }
+        else if constexpr (std::is_same_v<T, const char*>)
+        {
+            const std::string* const* rh1 = std::get_if<const std::string*>(&rhs.mVariant);
+            if (rh1 != nullptr) return !std::strcmp(val, (**rh1).c_str());
+
+            const char* const* rh2 = std::get_if<const char*>(&rhs.mVariant);
+            if (rh2 != nullptr) return !std::strcmp(val, *rh2);
+
+            return false; // wrong type
+        }
+        else return mVariant == rhs.mVariant;
+    }, mVariant);
 }
 
 /*****************************************************/

@@ -5,7 +5,6 @@
 #include <list>
 #include <mutex>
 #include <string>
-#include <unordered_map>
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
@@ -49,7 +48,7 @@ public:
 
     using UniqueLock = std::lock_guard<std::mutex>;
 
-    using Row = std::unordered_map<std::string,MixedValue>;
+    using Row = MixedParams;
     using RowList = std::list<Row>;
 
     /**

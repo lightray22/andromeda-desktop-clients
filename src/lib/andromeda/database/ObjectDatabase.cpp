@@ -115,16 +115,21 @@ void ObjectDatabase::UpdateObject(BaseObject& object, const BaseObject::FieldLis
         if (val.is_null())
         {
             sets.emplace_back(key+"=NULL");
+            MDBG_INFO("... " << key << " is NULL");
         }
         else if (field->UseDBIncrement())
         {
-            std::string s(key); s+="="; s+=key; s+="+:d"; s+=std::to_string(i); // += for efficiency
-            sets.emplace_back(s); data.emplace(std::string(":d")+std::to_string(i++), val);
+            const std::string istr { std::to_string(i) };
+            std::string s(key); s+="="; s+=key; s+="+:d"; s+=istr; // += for efficiency
+            sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
+            MDBG_INFO("... " << key << " += :d" << istr << "(" << val.ToString() << ")");
         }
         else
         {
-            std::string s(key); s+="=:d"; s+=std::to_string(i); // += for efficiency
-            sets.emplace_back(s); data.emplace(std::string(":d")+std::to_string(i++), val);
+            const std::string istr { std::to_string(i) };
+            std::string s(key); s+="=:d"; s+=istr; // += for efficiency
+            sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
+            MDBG_INFO("... " << key << " = :d" << istr << "(" << val.ToString() << ")");
         }
     }
 
@@ -161,11 +166,14 @@ void ObjectDatabase::InsertObject(BaseObject& object, const BaseObject::FieldLis
         if (val.is_null())
         {
             indexes.emplace_back("NULL");
+            MDBG_INFO("... " << key << " is NULL");
         }
         else
         {
-            indexes.emplace_back(":d"+std::to_string(i));
-            data.emplace(std::string(":d")+std::to_string(i++), val);
+            const std::string istr { std::to_string(i) };
+            indexes.emplace_back(":d"+istr);
+            data.emplace(":d"+istr, val); ++i;
+            MDBG_INFO("... " << key << " = :d" << istr << "(" << val.ToString() << ")");
         }
     }
 

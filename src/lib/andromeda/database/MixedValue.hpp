@@ -59,6 +59,9 @@ public:
     void get_to(int64_t& out) const;
     void get_to(double& out) const;
 
+    /** Return any type in string form (for debug) */
+    [[nodiscard]] std::string ToString() const;
+
     /** 
      * Returns the value as the desired type 
      * @throws std::bad_variant_access if holding a variant of a different type
@@ -68,6 +71,9 @@ public:
     {
         T out; get_to(out); return out;
     }
+
+    /** Compared to another MixedValue object */
+    bool operator==(const MixedValue& rhs) const;
 
     /** 
      * Compare to any type by first casting to it 
@@ -92,6 +98,12 @@ public:
     inline bool operator==(const char* str) const
     {
         return !std::strcmp(get<const char*>(), str);
+    }
+
+    template<typename T>
+    inline bool operator!=(const T& rhs) const
+    {
+        return this!=&rhs || !(*this==rhs);
     }
 
 private:

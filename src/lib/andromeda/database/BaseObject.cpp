@@ -9,15 +9,10 @@ namespace Andromeda {
 namespace Database {
 
 /*****************************************************/
-BaseObject::BaseObject(ObjectDatabase& database, const MixedParams& data) :
+BaseObject::BaseObject(ObjectDatabase& database) :
     mDatabase(database), mIdField("id", *this)
 {
     RegisterFields({&mIdField});
-
-    for (const MixedParams::value_type& pair : data)
-    {
-        mFields.at(pair.first).InitDBValue(pair.second);
-    }
 }
 
 /*****************************************************/
@@ -25,6 +20,13 @@ void BaseObject::RegisterFields(const FieldList& list)
 {
     for (FieldTypes::BaseField* field : list)
         mFields.emplace(field->GetName(), *field);
+}
+
+/*****************************************************/
+void BaseObject::InitializeFields(const MixedParams& data)
+{
+    for (const MixedParams::value_type& pair : data)
+        mFields.at(pair.first).InitDBValue(pair.second);
 }
 
 /*****************************************************/

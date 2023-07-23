@@ -33,12 +33,13 @@ public:
         inline static const char* GetClassNameS() { return name; } \
         inline const char* GetClassName() const override { return T::GetClassNameS(); }
 
-    /** 
-     * Construct an object from loaded database data
-     * @param database associated database
-     * @param data map of fields from the database
-    */
-    BaseObject(ObjectDatabase& database, const MixedParams& data);
+    #define BASEOBJECT_CONSTRUCT(T) \
+        T(ObjectDatabase& database, const MixedParams& data): \
+            BaseObject(database),
+
+    #define BASEOBJECT_REGISTER(...) \
+        RegisterFields({__VA_ARGS__}); \
+        InitializeFields(data);
 
     virtual ~BaseObject() = default;
     DELETE_COPY(BaseObject)
@@ -50,15 +51,10 @@ public:
     /** Returns this object's base-unique ID */
     const std::string& ID() const;
 
+    /** Return the object type and ID as a string for debug */
     explicit operator std::string() const;
 
     inline bool operator==(const BaseObject& cmp) const { return &cmp == this; }
-
-    /**
-     * Notifies this object that the DB has deleted it - internal call only
-     * Child classes can extend this if they need extra on-delete logic
-     */
-    virtual void NotifyDeleted() { }
 
     /** Gives modified fields to the database to UPDATE or INSERT */
     virtual void Save();
@@ -68,12 +64,32 @@ public:
 
 protected:
 
+    friend class ObjectDatabase;
+
+    /** 
+     * Construct an object from a database reference
+     * @param database associated database
+    */
+    explicit BaseObject(ObjectDatabase& database);
+
+    /**
+     * Notifies this object that the DB has deleted it - INTERNAL ONLY
+     * Child classes can extend this if they need extra on-delete logic
+     */
+    virtual void NotifyDeleted() { }
+
     /**
      * Registers fields for the object so the DB can save/load objects
      * Child classes MUST call this in their constructor to initialize
      * @param list list of fields for this object
      */
     void RegisterFields(const FieldList& list);
+
+    /**
+     * Initialize all fields from database data
+     * @param data map of fields from the database
+     */
+    void InitializeFields(const MixedParams& data);
 
     /** Sets the ID field on a newly created object */
     void InitializeID(size_t len = 16);

@@ -88,8 +88,8 @@ public:
     {
         MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
 
+        static const std::string prop { "COUNT(id)" };
         static const std::string table { GetClassTableName(T::GetClassNameS()) };
-        static const std::string prop { "COUNT("+table+".id)" };
         const std::string querystr { "SELECT "+prop+" FROM "+table+" "+query.GetText() };
 
         SqliteDatabase::RowList rows;
@@ -116,7 +116,7 @@ public:
 
         std::list<T*> objects;
         for (const SqliteDatabase::Row& row : rows)
-            objects.emplace_back(ConstructObject<T>(row));
+            objects.emplace_back(&ConstructObject<T>(row));
         return objects;
     }
 
@@ -135,7 +135,7 @@ public:
         // no RETURNING, just load the objects and delete individually
         const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
         for (T* obj : objs) DeleteObject(*obj);
-        return objs.count();
+        return objs.size();
     }
 
     /**
@@ -150,8 +150,8 @@ public:
         MDBG_INFO("(T:" << T::GetClassNameS() << ")");
         
         const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
-        if (objs.count() > 1) throw MultipleUniqueKeyException(T::GetClassNameS());
-        return !objs.empty() ? objs.front() : nullptr;
+        if (objs.size() > 1) throw MultipleUniqueKeyException(T::GetClassNameS()); // cppcheck-suppress knownConditionTrueFalse
+        return !objs.empty() ? objs.front() : nullptr; // cppcheck-suppress knownConditionTrueFalse
     }
 
     /**
@@ -173,17 +173,20 @@ public:
     /**
      * Creates a new object and registers it to be inserted
      * @tparam T type of object
-     * @return T* non-null pointer to new object
+     * @return T& ref to new object
      */
     template<class T>
-    T* CreateObject()
+    T& CreateObject()
     {
         const UniqueLock lock(mMutex);
         MDBG_INFO("(T:" << T::GetClassNameS() << ")");
 
-        std::unique_ptr<BaseObject> retobj { std::make_unique<T>(*this, MixedParams()) };
-        mCreated.enqueue_back(retobj.get(), std::move(retobj));
-        return mCreated.back().second.get();
+        std::unique_ptr<T> objptr { std::make_unique<T>(*this, MixedParams()) };
+        T& retobj { *objptr.get() };
+        retobj.InitializeID();
+
+        mCreated.enqueue_back(&retobj, std::move(objptr));
+        return retobj; // cppcheck-suppress returnReference
     }
 
     /** 
@@ -230,10 +233,10 @@ private:
      * Constructs a new object from a row if not already loaded
      * @tparam T type of object
      * @param row database row of fields
-     * @return non-null pointer to loaded object
+     * @return ref to loaded object
      */
     template<class T>
-    T* ConstructObject(const SqliteDatabase::Row& row)
+    T& ConstructObject(const SqliteDatabase::Row& row)
     {
         const UniqueLock lock(mMutex);
 
@@ -243,11 +246,14 @@ private:
 
         const decltype(mObjects)::iterator it { mObjects.find(key) };
         if (it != mObjects.end()) // already loaded, don't replace it
-            return dynamic_cast<T*>(it->second.get());
+            return *dynamic_cast<T*>(it->second.get());
         else
         {
-            std::unique_ptr<BaseObject> retobj { std::make_unique<T>(*this, row) };
-            return mObjects.emplace(key, std::move(retobj)).first->second.get();
+            std::unique_ptr<T> objptr { std::make_unique<T>(*this, row) };
+            T& retobj { *objptr.get() };
+
+            mObjects.emplace(key, std::move(objptr));
+            return retobj; // cppcheck-suppress returnReference
         }
     }
 

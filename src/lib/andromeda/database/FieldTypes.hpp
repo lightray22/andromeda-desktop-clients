@@ -225,6 +225,9 @@ public:
         return mTempValue == *value;
     }
 
+    // TODO !! add operator= and static_cast, keep GetValue/SetValue due to allowTemp+return bool
+    // TODO !! can move these templates to the CPP, just explicitly instantiate the 4 possible types
+
     /**
      * Sets the field to the given value
      * @param isTemp if true, this is temporary (don't save to DB)

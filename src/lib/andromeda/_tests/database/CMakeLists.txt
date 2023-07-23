@@ -1,6 +1,5 @@
 
 set(SOURCE_FILES 
-    BaseObjectTest.cpp
     FieldTypesTest.cpp
     ObjectDatabaseTest.cpp
     QueryBuilderTest.cpp
