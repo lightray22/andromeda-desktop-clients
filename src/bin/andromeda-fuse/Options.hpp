@@ -104,11 +104,11 @@ public:
 
 private:
 
-    Andromeda::ConfigOptions& mConfigOptions;
-    Andromeda::Backend::HTTPOptions& mHttpOptions;
-    Andromeda::Backend::RunnerOptions& mRunnerOptions;
-    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
-    AndromedaFuse::FuseOptions& mFuseOptions;
+    Andromeda::ConfigOptions& mConfigOptions; // cppcheck-suppress uninitMemberVarPrivate
+    Andromeda::Backend::HTTPOptions& mHttpOptions; // cppcheck-suppress uninitMemberVarPrivate
+    Andromeda::Backend::RunnerOptions& mRunnerOptions; // cppcheck-suppress uninitMemberVarPrivate
+    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions; // cppcheck-suppress uninitMemberVarPrivate
+    AndromedaFuse::FuseOptions& mFuseOptions; // cppcheck-suppress uninitMemberVarPrivate
 
     ApiType mApiType { static_cast<ApiType>(-1) };
     std::string mApiPath;

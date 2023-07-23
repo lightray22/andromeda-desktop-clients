@@ -28,7 +28,7 @@ public:
 
 private:
 
-    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
+    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions; // cppcheck-suppress uninitMemberVarPrivate
 };
 
 } // namespace AndromedaGui

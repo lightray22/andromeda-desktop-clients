@@ -185,7 +185,7 @@ function (andromeda_analyze)
     endif()
 
     if (${TESTS_CPPCHECK})
-        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet"
+        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
             "--enable=style,performance,portability,information"
             "--suppress=*:*_deps/*"
             "--suppress=*:*_autogen/*" # qt
@@ -195,10 +195,6 @@ function (andromeda_analyze)
             "--suppress=useStlAlgorithm" # annoying
             "--suppress=comparisonOfFuncReturningBoolError" # catch2
             "--suppress=assertWithSideEffecs" # annoying
-            "--suppress=constParameter" # false positives
-            "--suppress=noConstructor" # false positives
-            "--suppress=uninitMemberVarPrivate" # false positives
-            "--suppress=knownConditionTrueFalse" # false positives
             PARENT_SCOPE)
         # cppcheck is too buggy...
         #if (NOT ${ALLOW_WARNINGS})

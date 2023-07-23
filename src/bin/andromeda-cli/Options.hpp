@@ -50,8 +50,8 @@ public:
 
 private:
 
-    Andromeda::Backend::HTTPOptions& mHttpOptions;
-    Andromeda::Backend::RunnerOptions& mRunnerOptions;
+    Andromeda::Backend::HTTPOptions& mHttpOptions; // cppcheck-suppress uninitMemberVarPrivate
+    Andromeda::Backend::RunnerOptions& mRunnerOptions; // cppcheck-suppress uninitMemberVarPrivate
 
     std::string mApiUrl;
     bool mStreamOut { false };
