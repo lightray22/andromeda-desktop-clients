@@ -10,8 +10,9 @@ namespace Database {
 
 /*****************************************************/
 BaseObject::BaseObject(ObjectDatabase& database) :
-    mDatabase(database), mIdField("id", *this)
+    mDatabase(database), mDebug(__func__,this), mIdField("id", *this)
 {
+    MDBG_INFO("()");
     RegisterFields({&mIdField});
 }
 
@@ -26,13 +27,17 @@ void BaseObject::RegisterFields(const FieldList& list)
 void BaseObject::InitializeFields(const MixedParams& data)
 {
     for (const MixedParams::value_type& pair : data)
+    {
+        MDBG_INFO("... " << pair.first << ":" << pair.second.ToString());
         mFields.at(pair.first).InitDBValue(pair.second);
+    }
 }
 
 /*****************************************************/
 void BaseObject::InitializeID(size_t len)
 {
     mIdField.SetValue(Utilities::Random(len));
+    OBJDBG_INFO("()"); // AFTER ID is set
 }
 
 /*****************************************************/
@@ -58,6 +63,8 @@ bool BaseObject::isModified() const
 /*****************************************************/
 void BaseObject::Save()
 {
+    OBJDBG_INFO("()");
+
     FieldList fields;
     for (const FieldMap::value_type& pair : mFields)
     {

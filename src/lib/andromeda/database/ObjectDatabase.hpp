@@ -179,11 +179,12 @@ public:
     T& CreateObject()
     {
         const UniqueLock lock(mMutex);
-        MDBG_INFO("(T:" << T::GetClassNameS() << ")");
 
         std::unique_ptr<T> objptr { std::make_unique<T>(*this, MixedParams()) };
         T& retobj { *objptr.get() };
         retobj.InitializeID();
+
+        MDBG_INFO("(T:" << T::GetClassNameS() << " id:" << retobj.ID() << ")");
 
         mCreated.enqueue_back(&retobj, std::move(objptr));
         return retobj; // cppcheck-suppress returnReference

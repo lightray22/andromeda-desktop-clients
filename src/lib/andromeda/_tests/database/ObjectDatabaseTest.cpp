@@ -114,7 +114,7 @@ TEST_CASE("LoadUnique", "[ObjectDatabase]")
 }
 
 /*****************************************************/
-TEST_CASE("InsertObject", "[ObjectDatabase]")
+TEST_CASE("SaveObject", "[ObjectDatabase]")
 {
     MockSqliteDatabase sqldb;
     ObjectDatabase objdb(sqldb);
@@ -124,26 +124,46 @@ TEST_CASE("InsertObject", "[ObjectDatabase]")
     REQUIRE(objdb.getLoadedCount() == 0);
 
     REQUIRE_CALL(sqldb, query(_,_))
-        .WITH(_1 == "INSERT INTO a2obj_database_easyobject (myint,id) VALUES (:d0,:d1)")
-        .WITH(_2 == MixedParams{{":d0",8},{":d1",id}}).RETURN(1UL);
+        .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myint) VALUES (:d0,:d1)")
+        .WITH(_2 == MixedParams{{":d0",id},{":d1",8}}).RETURN(1UL);
 
     obj.Save();
     REQUIRE(objdb.getLoadedCount() == 1);
-}
+    obj.Save(); // no-op
 
-// TODO !! unit tests
+    obj.setMyStr("test123");
+    
+    REQUIRE_CALL(sqldb, query(_,_))
+        .WITH(_1 == "UPDATE a2obj_database_easyobject SET mystr=:d0 WHERE id=:id")
+        .WITH(_2 == MixedParams{{":d0","test123"},{":id",id}}).RETURN(1UL);
 
-/*****************************************************/
-TEST_CASE("UpdateObject", "[ObjectDatabase]")
-{
-
+    obj.Save();
+    obj.Save(); // no-op
 }
 
 /*****************************************************/
 TEST_CASE("SaveAllObjects", "[ObjectDatabase]")
 {
+    MockSqliteDatabase sqldb;
+    ObjectDatabase objdb(sqldb);
 
+    const EasyObject& obj1 { EasyObject::Create(objdb, 1) };
+    const std::string id1 { obj1.ID() };
+    EasyObject obj2(objdb, MixedParams{{"id","obj2"},{"myint",2}});
+    obj2.setMyStr("test2"); // modify
+
+    REQUIRE_CALL(sqldb, query(_,_))
+        .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myint) VALUES (:d0,:d1)")
+        .WITH(_2 == MixedParams{{":d0",id1},{":d1",1}}).RETURN(1UL);
+
+    REQUIRE_CALL(sqldb, query(_,_))
+        .WITH(_1 == "UPDATE a2obj_database_easyobject SET mystr=:d0 WHERE id=:id")
+        .WITH(_2 == MixedParams{{":d0","test2"},{":id","obj2"}}).RETURN(1UL);
+
+    objdb.SaveObjects();
 }
+
+// TODO !! unit tests
 
 /*****************************************************/
 TEST_CASE("DeleteByQuery", "[ObjectDatabase]")

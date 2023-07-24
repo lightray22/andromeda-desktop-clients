@@ -2,10 +2,12 @@
 #define LIBA2_BASEOBJECT_H_
 
 #include <list>
+#include <map>
 #include <string>
 #include <unordered_map>
 
 #include "FieldTypes.hpp"
+#include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
@@ -60,9 +62,16 @@ public:
     virtual void Save();
 
     using FieldList = std::list<FieldTypes::BaseField*>;
+    #if DEBUG // ordered map for unit test
+    using FieldMap = std::map<std::string, FieldTypes::BaseField&>;
+    #else // !DEBUG
     using FieldMap = std::unordered_map<std::string, FieldTypes::BaseField&>;
+    #endif // DEBUG
 
 protected:
+
+    #define OBJDBG_INFO(strfunc) MDBG_INFO("(" << ID() << ")" << strfunc)
+    #define OBJDBG_ERROR(strfunc) MDBG_ERROR("(" << ID() << ")" << strfunc)
 
     friend class ObjectDatabase;
 
@@ -101,6 +110,8 @@ protected:
     ObjectDatabase& mDatabase;
 
 private:
+
+    mutable Debug mDebug;
 
     FieldTypes::ScalarType<std::string> mIdField;
 

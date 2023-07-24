@@ -38,8 +38,8 @@ void ObjectDatabase::SaveObjects()
     MDBG_INFO("() created:" << mCreated.size() << " modified:" << mModified.size());
 
     // insert new objects first for foreign keys
-    for (decltype(mCreated)::value_type& pair : mCreated) pair.second->Save();
-    for (decltype(mModified)::value_type& pair : mModified) pair.second.Save();
+    while (!mCreated.empty()) mCreated.front().second->Save();
+    while (!mModified.empty()) mModified.front().second.Save();
 
     mCreated.clear();
     mModified.clear();
@@ -122,14 +122,14 @@ void ObjectDatabase::UpdateObject(BaseObject& object, const BaseObject::FieldLis
             const std::string istr { std::to_string(i) };
             std::string s(key); s+="="; s+=key; s+="+:d"; s+=istr; // += for efficiency
             sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
-            MDBG_INFO("... " << key << " += :d" << istr << "(" << val.ToString() << ")");
+            MDBG_INFO("... " << key << "+=:d" << istr << "(" << val.ToString() << ")");
         }
         else
         {
             const std::string istr { std::to_string(i) };
             std::string s(key); s+="=:d"; s+=istr; // += for efficiency
             sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
-            MDBG_INFO("... " << key << " = :d" << istr << "(" << val.ToString() << ")");
+            MDBG_INFO("... " << key << "=:d" << istr << "(" << val.ToString() << ")");
         }
     }
 
