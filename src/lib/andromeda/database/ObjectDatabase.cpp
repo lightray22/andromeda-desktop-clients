@@ -40,9 +40,6 @@ void ObjectDatabase::SaveObjects()
     // insert new objects first for foreign keys
     while (!mCreated.empty()) mCreated.front().second->Save();
     while (!mModified.empty()) mModified.front().second.Save();
-
-    mCreated.clear();
-    mModified.clear();
 }
 
 /*****************************************************/
@@ -62,22 +59,19 @@ void ObjectDatabase::DeleteObject(BaseObject& object)
 
     if (mCreated.exists(&object))
     {
-        MDBG_INFO("... was created!");
+        MDBG_INFO("... deleting created!");
         object.NotifyDeleted();
         mModified.erase(&object);
         mCreated.erase(&object);
     }
     else
     {
-        QueryBuilder query;
-        query.Where(query.Equals("id",object.ID()));
-
         const std::string table { GetClassTableName(object.GetClassName()) };
 
         // DELETE FROM $table $query
-        std::string qstr("DELETE FROM "); qstr+=table; qstr+=" "; qstr+=query.GetText(); // += for efficiency
+        std::string qstr("DELETE FROM "); qstr+=table; qstr+=" WHERE id=:id"; // += for efficiency
 
-        if (mDb.query(qstr, query.GetParams()) != 1)
+        if (mDb.query(qstr, {{":id",object.ID()}}) != 1)
             throw DeleteFailedException(object.GetClassName());
         
         object.NotifyDeleted();

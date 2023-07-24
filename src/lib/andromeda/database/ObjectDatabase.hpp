@@ -8,13 +8,13 @@
 #include <unordered_map>
 
 #include "BaseObject.hpp"
-#include "FieldTypes.hpp"
 #include "MixedValue.hpp"
 #include "QueryBuilder.hpp"
 #include "SqliteDatabase.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
 #include "andromeda/Utilities.hpp"
+#include "fieldtypes/BaseField.hpp"
 
 namespace Andromeda {
 namespace Database {
@@ -133,6 +133,8 @@ public:
         MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
         
         // no RETURNING, just load the objects and delete individually
+        // TODO FUTURE will be supported in sqlite 3.35
+
         const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
         for (T* obj : objs) DeleteObject(*obj);
         return objs.size();

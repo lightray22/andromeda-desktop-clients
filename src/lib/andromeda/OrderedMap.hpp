@@ -224,15 +224,15 @@ public:
      * Emplaces a new element on the front of the list (KEY MUST NOT EXIST)
      * Complexity: O(1) average, O(N) worst
      */
-    template<class... Args>
-    void enqueue_front(Args&&... args) noexcept
+    template<class... Ts>
+    void enqueue_front(Ts&&... args) noexcept
     {
     #if DEBUG // key must not exist
-        value_type v(std::forward<Args>(args)...); // NOLINT(misc-const-correctness)
+        value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
         assert(!erase(get_key(v)));
         mQueue.emplace_front(std::move(v)); // O(1)
     #else // !DEBUG
-        mQueue.emplace_front(std::forward<Args>(args)...); // O(1)
+        mQueue.emplace_front(std::forward<Ts>(args)...); // O(1)
     #endif // DEBUG
         mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
     }
@@ -241,15 +241,15 @@ public:
      * Emplaces a new element on the end of the list (KEY MUST NOT EXIST)
      * Complexity: O(1) average, O(N) worst
      */
-    template<class... Args>
-    void enqueue_back(Args&&... args) noexcept
+    template<class... Ts>
+    void enqueue_back(Ts&&... args) noexcept
     {
     #if DEBUG // key must not exist
-        value_type v(std::forward<Args>(args)...); // NOLINT(misc-const-correctness)
+        value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
         assert(!erase(get_key(v)));
         mQueue.emplace_back(std::move(v)); // O(1)
     #else // !DEBUG
-        mQueue.emplace_back(std::forward<Args>(args)...); // O(1)
+        mQueue.emplace_back(std::forward<Ts>(args)...); // O(1)
     #endif // DEBUG
         mLookup[get_key(mQueue.back())] = std::prev(mQueue.end()); // O(1)-O(n)
     }

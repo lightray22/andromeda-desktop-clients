@@ -162,7 +162,7 @@ void SqliteDatabase::rollback()
 {
     const std::lock_guard<std::mutex> lock(mMutex);
 
-    if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
+    if (mDatabase && sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
         query("ROLLBACK TRANSACTION",{},lock);
 }
 
@@ -171,7 +171,7 @@ void SqliteDatabase::commit()
 {
     const std::lock_guard<std::mutex> lock(mMutex);
 
-    if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
+    if (mDatabase && sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
         query("COMMIT TRANSACTION",{},lock);
 }
 

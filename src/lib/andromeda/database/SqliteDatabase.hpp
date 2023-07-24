@@ -65,7 +65,7 @@ public:
      * Same as query() but assumes no rows output
      * @throws Exception if the query fails or rows output is not empty
      */
-    virtual size_t query(const std::string& sql, const MixedParams& params);
+    size_t query(const std::string& sql, const MixedParams& params);
 
     // pre-locked/no BEGIN TRANSACTION versions of the above
     size_t query(const std::string& sql, const MixedParams& params, const UniqueLock& lock);

@@ -6,9 +6,10 @@
 #include <string>
 #include <unordered_map>
 
-#include "FieldTypes.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
+#include "fieldtypes/BaseField.hpp"
+#include "fieldtypes/ScalarType.hpp"
 
 namespace Andromeda {
 namespace Database {

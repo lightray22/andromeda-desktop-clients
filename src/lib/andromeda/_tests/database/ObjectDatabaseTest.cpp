@@ -123,7 +123,7 @@ TEST_CASE("SaveObject", "[ObjectDatabase]")
     const std::string id { obj.ID() };
     REQUIRE(objdb.getLoadedCount() == 0);
 
-    REQUIRE_CALL(sqldb, query(_,_))
+    REQUIRE_CALL(sqldb, query(_,_,_))
         .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myint) VALUES (:d0,:d1)")
         .WITH(_2 == MixedParams{{":d0",id},{":d1",8}}).RETURN(1UL);
 
@@ -133,7 +133,7 @@ TEST_CASE("SaveObject", "[ObjectDatabase]")
 
     obj.setMyStr("test123");
     
-    REQUIRE_CALL(sqldb, query(_,_))
+    REQUIRE_CALL(sqldb, query(_,_,_))
         .WITH(_1 == "UPDATE a2obj_database_easyobject SET mystr=:d0 WHERE id=:id")
         .WITH(_2 == MixedParams{{":d0","test123"},{":id",id}}).RETURN(1UL);
 
@@ -152,40 +152,93 @@ TEST_CASE("SaveAllObjects", "[ObjectDatabase]")
     EasyObject obj2(objdb, MixedParams{{"id","obj2"},{"myint",2}});
     obj2.setMyStr("test2"); // modify
 
-    REQUIRE_CALL(sqldb, query(_,_))
+    REQUIRE_CALL(sqldb, query(_,_,_))
         .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myint) VALUES (:d0,:d1)")
         .WITH(_2 == MixedParams{{":d0",id1},{":d1",1}}).RETURN(1UL);
 
-    REQUIRE_CALL(sqldb, query(_,_))
+    REQUIRE_CALL(sqldb, query(_,_,_))
         .WITH(_1 == "UPDATE a2obj_database_easyobject SET mystr=:d0 WHERE id=:id")
         .WITH(_2 == MixedParams{{":d0","test2"},{":id","obj2"}}).RETURN(1UL);
 
     objdb.SaveObjects();
 }
 
-// TODO !! unit tests
+/*****************************************************/
+TEST_CASE("DeleteObject", "[ObjectDatabase]")
+{
+    MockSqliteDatabase sqldb;
+    ObjectDatabase objdb(sqldb);
+
+    EasyObject& obj1 { EasyObject::Create(objdb, 1) };
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "SELECT * FROM a2obj_database_easyobject ").WITH(_2 == MixedParams{})
+        .SIDE_EFFECT(_3.emplace_back(Row{{"id","abc"},{"myint",33}})).RETURN(0UL);
+
+    EasyObject* obj2 { objdb.TryLoadUniqueByQuery<EasyObject>({}) };
+    REQUIRE(obj2 != nullptr);
+    REQUIRE(objdb.getLoadedCount() == 1);
+
+    bool obj1Del { false };
+    bool obj2Del { false };
+    obj1.onDelete([&](){ obj1Del = true; });
+    obj2->onDelete([&](){ obj2Del = true; });
+
+    objdb.DeleteObject(obj1);
+    REQUIRE(obj1Del == true);
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "DELETE FROM a2obj_database_easyobject WHERE id=:id")
+        .WITH(_2 == MixedParams{{":id","abc"}}).RETURN(1UL);
+
+    objdb.DeleteObject(*obj2);
+    REQUIRE(obj2Del == true);
+    REQUIRE(objdb.getLoadedCount() == 0);
+}
 
 /*****************************************************/
 TEST_CASE("DeleteByQuery", "[ObjectDatabase]")
 {
-    /*MockSqliteDatabase sqldb;
+    MockSqliteDatabase sqldb;
     ObjectDatabase objdb(sqldb);
 
     QueryBuilder q; q.Where(q.Equals("myint",5));
 
-    objdb.DeleteObjectsByQuery<EasyObject>(q);*/
-}
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "SELECT * FROM a2obj_database_easyobject WHERE myint = :d0")
+        .WITH(_2 == MixedParams{{":d0",5}})
+        .SIDE_EFFECT(_3.emplace_back(Row{{"id","abc"},{"myint",5}}))
+        .SIDE_EFFECT(_3.emplace_back(Row{{"id","xyz"},{"myint",5}})).RETURN(0UL);
 
-/*****************************************************/
-TEST_CASE("DeleteObject", "[ObjectDatabase]")
-{
-    // TODO also test DeleteByQuery?
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "DELETE FROM a2obj_database_easyobject WHERE id=:id")
+        .WITH(_2 == MixedParams{{":id","abc"}}).RETURN(1UL);
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "DELETE FROM a2obj_database_easyobject WHERE id=:id")
+        .WITH(_2 == MixedParams{{":id","xyz"}}).RETURN(1UL);
+
+    REQUIRE(objdb.DeleteObjectsByQuery<EasyObject>(q) == 2);
 }
 
 /*****************************************************/
 TEST_CASE("DeleteUnique", "[ObjectDatabase]")
 {
+    MockSqliteDatabase sqldb;
+    ObjectDatabase objdb(sqldb);
 
+    QueryBuilder q; q.Where(q.Equals("myint",5));
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "SELECT * FROM a2obj_database_easyobject WHERE myint = :d0")
+        .WITH(_2 == MixedParams{{":d0",5}})
+        .SIDE_EFFECT(_3.emplace_back(Row{{"id","abc"},{"myint",5}})).RETURN(0UL);
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "DELETE FROM a2obj_database_easyobject WHERE id=:id")
+        .WITH(_2 == MixedParams{{":id","abc"}}).RETURN(1UL);
+
+    REQUIRE(objdb.TryDeleteUniqueByQuery<EasyObject>(q) == true);
 }
 
 } // namespace Database

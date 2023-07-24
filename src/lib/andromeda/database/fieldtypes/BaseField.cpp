@@ -1,14 +1,14 @@
 
-#include "BaseObject.hpp"
-#include "FieldTypes.hpp"
-#include "ObjectDatabase.hpp"
+#include "BaseField.hpp"
+#include "andromeda/database/BaseObject.hpp"
+#include "andromeda/database/ObjectDatabase.hpp"
 
 namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
 
 /*****************************************************/
-BaseField::BaseField(const char* name, BaseObject& parent, size_t delta) :
+BaseField::BaseField(const char* name, BaseObject& parent, int delta) :
     mName(name), mDelta(delta), mParent(parent), mDatabase(parent.GetDatabase()) { }
 
 /*****************************************************/
