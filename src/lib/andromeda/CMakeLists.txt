@@ -100,4 +100,4 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(Sodium REQUIRED)
 
-target_link_libraries(libandromeda PRIVATE sodium)
+target_link_libraries(libandromeda PUBLIC sodium)
