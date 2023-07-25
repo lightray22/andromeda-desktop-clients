@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "CommandLine.hpp"
 using AndromedaCli::CommandLine;

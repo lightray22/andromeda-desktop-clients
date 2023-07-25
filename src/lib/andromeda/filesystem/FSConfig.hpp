@@ -2,7 +2,7 @@
 #define LIBA2_FSCONFIG_H_
 
 #include <string>
-#include <nlohmann/json_fwd.hpp>
+#include "nlohmann/json_fwd.hpp"
 
 #include "andromeda/Debug.hpp"
 

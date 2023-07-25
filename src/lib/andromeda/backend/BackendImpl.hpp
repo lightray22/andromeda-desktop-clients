@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 
-#include <nlohmann/json_fwd.hpp>
+#include "nlohmann/json_fwd.hpp"
 
 #include "Config.hpp"
 #include "RunnerInput.hpp"

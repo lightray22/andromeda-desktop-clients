@@ -1,5 +1,5 @@
 #include <utility>
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "Folder.hpp"
 #include "andromeda/ConfigOptions.hpp"

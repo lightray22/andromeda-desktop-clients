@@ -1,6 +1,6 @@
 #include <vector>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "Config.hpp"
 #include "BackendImpl.hpp"

@@ -3,7 +3,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <nlohmann/json_fwd.hpp>
+#include "nlohmann/json_fwd.hpp"
 
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
