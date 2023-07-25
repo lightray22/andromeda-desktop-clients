@@ -21,7 +21,7 @@ MixedValue::MixedValue(const MixedValue& src) noexcept : // copy
 /*****************************************************/
 MixedValue::MixedValue(MixedValue&& old) noexcept : // move
     mSqlValue(old.mSqlValue),
-    mVariant(old.mVariant)
+    mVariant(std::move(old.mVariant))
 {
     old.mSqlValue = nullptr; // don't free
 }
@@ -48,10 +48,10 @@ int MixedValue::bind(sqlite3_stmt& stmt, int idx) const
         {
             return sqlite3_bind_null(&stmt, idx);
         }
-        else if constexpr (std::is_same_v<T, const std::string*>)
+        else if constexpr (std::is_same_v<T, std::string>)
         {
-            return sqlite3_bind_blob(&stmt, idx, val->data(), 
-                static_cast<int>(val->size()), nullptr);
+            return sqlite3_bind_blob(&stmt, idx, val.data(), 
+                static_cast<int>(val.size()), nullptr);
         }
         else if constexpr (std::is_same_v<T, const char*>)
         {
@@ -83,7 +83,7 @@ std::string MixedValue::ToString() const
     {
         using T = std::decay_t<decltype(val)>;
         if constexpr (std::is_same_v<T, std::nullptr_t>) return "NULL";
-        else if constexpr (std::is_same_v<T, const std::string*>) return *val;
+        else if constexpr (std::is_same_v<T, std::string>) return val;
         else if constexpr (std::is_same_v<T, const char*>) return std::string(val);
         else return std::to_string(val); // int, int64_t, double
     }, mVariant);
@@ -108,7 +108,7 @@ void MixedValue::get_to(std::string& out) const
     else if (std::holds_alternative<const char*>(mVariant)) // allow conversion
         out = std::get<const char*>(mVariant);
 
-    else out = *std::get<const std::string*>(mVariant);
+    else out = std::get<std::string>(mVariant);
 }
 
 /*****************************************************/
@@ -117,8 +117,8 @@ void MixedValue::get_to(const char*& out) const
     if (mSqlValue != nullptr) // reinterpret_cast, sqlite gives unsigned char
         out = reinterpret_cast<const char*>(sqlite3_value_text(mSqlValue));
 
-    else if (std::holds_alternative<const std::string*>(mVariant)) // allow conversion
-        out = std::get<const std::string*>(mVariant)->c_str();
+    else if (std::holds_alternative<std::string>(mVariant)) // allow conversion
+        out = std::get<std::string>(mVariant).c_str();
 
     else out = std::get<const char*>(mVariant);
 }
@@ -169,20 +169,20 @@ bool MixedValue::operator==(const MixedValue& rhs) const
         // so these require special handling.  Also allow comparing string vs. char* or vice versa.
 
         using T = std::decay_t<decltype(val)>;
-        if constexpr (std::is_same_v<T, const std::string*>)
+        if constexpr (std::is_same_v<T, std::string>)
         {
-            const std::string* const* rh1 = std::get_if<const std::string*>(&rhs.mVariant);
-            if (rh1 != nullptr) return *val == **rh1;
+            std::string const* rh1 = std::get_if<std::string>(&rhs.mVariant);
+            if (rh1 != nullptr) return val == *rh1;
 
             const char* const* rh2 = std::get_if<const char*>(&rhs.mVariant);
-            if (rh2 != nullptr) return *val == *rh2;
+            if (rh2 != nullptr) return val == *rh2;
 
             return false; // wrong type
         }
         else if constexpr (std::is_same_v<T, const char*>)
         {
-            const std::string* const* rh1 = std::get_if<const std::string*>(&rhs.mVariant);
-            if (rh1 != nullptr) return !std::strcmp(val, (**rh1).c_str());
+            std::string const* rh1 = std::get_if<std::string>(&rhs.mVariant);
+            if (rh1 != nullptr) return !std::strcmp(val, (*rh1).c_str());
 
             const char* const* rh2 = std::get_if<const char*>(&rhs.mVariant);
             if (rh2 != nullptr) return !std::strcmp(val, *rh2);

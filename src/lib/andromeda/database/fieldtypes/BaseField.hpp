@@ -9,7 +9,6 @@
 
 namespace Andromeda {
 namespace Database {
-
 class BaseObject;
 class ObjectDatabase;
 
@@ -22,6 +21,8 @@ namespace FieldTypes {
 class BaseField
 {
 public:
+    BaseField(const char* name, BaseObject& parent, int delta = 0);
+
     virtual ~BaseField() = default;
     DELETE_COPY(BaseField)
     DELETE_MOVE(BaseField)
@@ -54,8 +55,6 @@ public:
 
 protected:
 
-    BaseField(const char* name, BaseObject& parent, int delta = 0);
-
     /** notifies the database our parent is modified */
     void notifyModified();
 
@@ -71,10 +70,6 @@ protected:
     /** database reference */
     ObjectDatabase& mDatabase;
 };
-
-// TODO !! add other types - JSON array, ObjectRef
-// will definitely want JSON/ObjectRef in other files... JSON will include nlohmann
-// and ObjectRef will need to include ObjectDatabase.hpp
 
 } // namespace FieldTypes
 } // namespace Database

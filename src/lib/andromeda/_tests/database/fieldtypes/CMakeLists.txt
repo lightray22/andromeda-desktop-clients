@@ -1,6 +1,7 @@
 
 set(SOURCE_FILES 
     CounterTypeTest.cpp
+    JsonTypeTest.cpp
     ScalarTypeTest.cpp
     )
 

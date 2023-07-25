@@ -16,7 +16,7 @@ namespace FieldTypes {
     EasyObject parent(objdb,{});
 
 /*****************************************************/
-TEST_CASE("Counter", "[FieldTypes]")
+TEST_CASE("BasicCounter", "[CounterType]")
 {
     GET_MOCK_OBJECTS();
     

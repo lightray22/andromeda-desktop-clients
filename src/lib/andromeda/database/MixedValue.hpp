@@ -26,9 +26,6 @@ public:
     template<typename T>
     explicit MixedValue(const T& value) noexcept : mVariant(value) { }
 
-    // allow std::string& rather than std::string* (variant can't hold a &)
-    explicit MixedValue(const std::string& value) noexcept : mVariant(&value) { }
-
     /** Initialize (copy) from an sqlite3_value */
     explicit MixedValue(const sqlite3_value& value) noexcept;
 
@@ -111,7 +108,7 @@ private:
     sqlite3_value* mSqlValue { nullptr };
 
     /** The manually-set value of any allowable type */
-    std::variant<std::nullptr_t, const std::string*, const char*, int, int64_t, double> mVariant;
+    std::variant<std::nullptr_t, std::string, const char*, int, int64_t, double> mVariant;
 };
 
 using MixedParamsBase = std::unordered_map<std::string, MixedValue>;

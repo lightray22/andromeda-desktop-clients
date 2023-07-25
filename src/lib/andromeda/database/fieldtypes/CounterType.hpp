@@ -5,9 +5,6 @@
 
 namespace Andromeda {
 namespace Database {
-
-class BaseObject;
-
 namespace FieldTypes {
 
 /** A field holding a incrementable counter */
@@ -15,8 +12,7 @@ class CounterType : public BaseField
 {
 public:
     /** Construct with a 0 default value */
-    CounterType(const char* name, BaseObject& parent) :
-        BaseField(name, parent) { }
+    using BaseField::BaseField;
 
     [[nodiscard]] bool UseDBIncrement() const override { return true; }
 
@@ -62,10 +58,6 @@ public:
 protected:
     int mValue { 0 };
 };
-
-// TODO !! add other types - JSON array, ObjectRef
-// will definitely want JSON/ObjectRef in other files... JSON will include nlohmann
-// and ObjectRef will need to include ObjectDatabase.hpp
 
 } // namespace FieldTypes
 } // namespace Database

@@ -8,7 +8,6 @@
 
 namespace Andromeda {
 namespace Database {
-
 class BaseObject;
 
 namespace FieldTypes {
@@ -22,8 +21,7 @@ class NullScalarType : public BaseField
 {
 public:
     /** Construct with a null default value */
-    NullScalarType(const char* name, BaseObject& parent) :
-        BaseField(name, parent) { }
+    using BaseField::BaseField;
 
     /** Construct with a non-null default value and set dirty */
     NullScalarType(const char* name, BaseObject& parent, const T& defaultt) :
@@ -133,8 +131,7 @@ class ScalarType : public BaseField
 {
 public:
     /** Construct uninitialized */
-    ScalarType(const char* name, BaseObject& parent) :
-        BaseField(name, parent) { }
+    using BaseField::BaseField;
 
     /** Construct with a default value and set dirty */
     ScalarType(const char* name, BaseObject& parent, const T& defaultt) :
@@ -215,10 +212,6 @@ protected:
     bool mRealInitd { false };
     T mRealValue {};
 };
-
-// TODO !! add other types - JSON array, ObjectRef
-// will definitely want JSON/ObjectRef in other files... JSON will include nlohmann
-// and ObjectRef will need to include ObjectDatabase.hpp
 
 } // namespace FieldTypes
 } // namespace Database

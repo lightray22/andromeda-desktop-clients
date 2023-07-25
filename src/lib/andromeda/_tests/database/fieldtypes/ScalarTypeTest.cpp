@@ -16,7 +16,7 @@ namespace FieldTypes {
     EasyObject parent(objdb,{});
 
 /*****************************************************/
-TEST_CASE("Basic", "[FieldTypes]")
+TEST_CASE("Basic", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
 
@@ -33,7 +33,7 @@ TEST_CASE("Basic", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("Operators", "[FieldTypes]")
+TEST_CASE("Operators", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
 
@@ -54,7 +54,7 @@ TEST_CASE("Operators", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("SetUnmodified", "[FieldTypes]")
+TEST_CASE("SetUnmodified", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -68,7 +68,7 @@ TEST_CASE("SetUnmodified", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("Uninitialized", "[FieldTypes]")
+TEST_CASE("Uninitialized", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -77,7 +77,7 @@ TEST_CASE("Uninitialized", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("NullStringValue", "[FieldTypes]")
+TEST_CASE("NullStringValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -98,10 +98,13 @@ TEST_CASE("NullStringValue", "[FieldTypes]")
     REQUIRE(*field.TryGetValue() == "test2");
 
     REQUIRE(field.GetDelta() == 2);
+
+    REQUIRE(field.SetValue(nullptr) == true);
+    REQUIRE(field.is_null() == true);
 }
 
 /*****************************************************/
-TEST_CASE("NullStringTempValue", "[FieldTypes]")
+TEST_CASE("NullStringTempValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -118,7 +121,7 @@ TEST_CASE("NullStringTempValue", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("NullStringDBValue", "[FieldTypes]")
+TEST_CASE("NullStringDBValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -130,7 +133,7 @@ TEST_CASE("NullStringDBValue", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("NullStringDefault", "[FieldTypes]")
+TEST_CASE("NullStringDefault", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -147,7 +150,7 @@ TEST_CASE("NullStringDefault", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("StringValue", "[FieldTypes]")
+TEST_CASE("StringValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -166,7 +169,7 @@ TEST_CASE("StringValue", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("StringTempValue", "[FieldTypes]")
+TEST_CASE("StringTempValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -184,7 +187,7 @@ TEST_CASE("StringTempValue", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("StringDBValue", "[FieldTypes]")
+TEST_CASE("StringDBValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
@@ -201,7 +204,7 @@ TEST_CASE("StringDBValue", "[FieldTypes]")
 }
 
 /*****************************************************/
-TEST_CASE("StringDefault", "[FieldTypes]")
+TEST_CASE("StringDefault", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
