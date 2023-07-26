@@ -6,10 +6,10 @@
 #include <mutex>
 #include <string>
 
-#include "andromeda/BaseException.hpp"
+#include "DatabaseException.hpp"
+#include "MixedValue.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/Utilities.hpp"
-#include "andromeda/database/MixedValue.hpp"
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -26,14 +26,14 @@ class SqliteDatabase
 public:
 
     /** Base Exception for sqlite issues */
-    class Exception : public BaseException { public:
+    class SqliteException : public DatabaseException { public:
         /** @param message error message */
-        explicit Exception(const std::string& message) :
-            BaseException("Sqlite Error: "+message) {}; };
+        explicit SqliteException(const std::string& message) :
+            DatabaseException("Sqlite Error: "+message) {}; };
 
     /** Exception indicating already in a transaction */
-    class AlreadyTransactionException : public Exception { public:
-        AlreadyTransactionException() : Exception("already in transaction") {}; };
+    class AlreadyTransactionException : public DatabaseException { public:
+        AlreadyTransactionException() : DatabaseException("already in transaction") {}; };
 
     /** 
      * Opens an SQLite database with the given path

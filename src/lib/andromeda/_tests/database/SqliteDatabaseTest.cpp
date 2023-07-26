@@ -6,6 +6,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "andromeda/TempPath.hpp"
+#include "andromeda/database/DatabaseException.hpp"
 #include "andromeda/database/MixedValue.hpp"
 #include "andromeda/database/SqliteDatabase.hpp"
 
@@ -150,8 +151,8 @@ TEST_CASE("AutoTransaction", "[SqliteDatabase]")
     {
         database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}},lock);
         inserted = true;
-        throw SqliteDatabase::Exception("should rollback");
-    }), SqliteDatabase::Exception);
+        throw DatabaseException("should rollback");
+    }), DatabaseException);
     REQUIRE(inserted);
 
     SqliteDatabase::RowList rows;

@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "BaseObject.hpp"
+#include "DatabaseException.hpp"
 #include "MixedValue.hpp"
 #include "QueryBuilder.hpp"
 #include "SqliteDatabase.hpp"
@@ -38,20 +39,24 @@ private:
 public:
 
     /** Exception indicating that multiple objects were loaded for by-unique query */
-    class MultipleUniqueKeyException : public SqliteDatabase::Exception { public:
-        explicit MultipleUniqueKeyException(const std::string& className) : Exception("Multiple unique objects: "+className) {}; };
+    class MultipleUniqueKeyException : public DatabaseException { public:
+        explicit MultipleUniqueKeyException(const std::string& className) : 
+            DatabaseException("Multiple unique objects: "+className) {}; };
 
     /** Exception indicating that the row update failed */
-    class UpdateFailedException : public SqliteDatabase::Exception { public:
-        explicit UpdateFailedException(const std::string& className) : Exception("Object row update failed: "+className) {}; };
+    class UpdateFailedException : public DatabaseException { public:
+        explicit UpdateFailedException(const std::string& className) : 
+            DatabaseException("Object row update failed: "+className) {}; };
 
     /** Exception indicating that the row insert failed */
-    class InsertFailedException : public SqliteDatabase::Exception { public:
-        explicit InsertFailedException(const std::string& className) : Exception("Object row insert failed: "+className) {}; };
+    class InsertFailedException : public DatabaseException { public:
+        explicit InsertFailedException(const std::string& className) : 
+            DatabaseException("Object row insert failed: "+className) {}; };
 
     /** Exception indicating that the row delete failed */
-    class DeleteFailedException : public SqliteDatabase::Exception { public:
-        explicit DeleteFailedException(const std::string& className) : Exception("Object row delete failed: "+className) {}; };
+    class DeleteFailedException : public DatabaseException { public:
+        explicit DeleteFailedException(const std::string& className) : 
+            DatabaseException("Object row delete failed: "+className) {}; };
 
     explicit ObjectDatabase(SqliteDatabase& db) : 
         mDebug(__func__,this), mDb(db) { }
@@ -59,12 +64,6 @@ public:
     virtual ~ObjectDatabase() = default;
     DELETE_COPY(ObjectDatabase)
     DELETE_MOVE(ObjectDatabase)
-
-    /** Commits the internal database */
-    void commit();
-
-    /** Rolls back the internal database */
-    void rollback();
 
     /** Notify the DB that the given object needs to be updated */
     void notifyModified(BaseObject& object);

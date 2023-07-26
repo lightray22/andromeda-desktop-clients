@@ -11,7 +11,6 @@ namespace Database {
 
 using trompeloeil::_;
 using Row = SqliteDatabase::Row;
-using RowList = SqliteDatabase::RowList;
 
 /*****************************************************/
 TEST_CASE("GetClassTable", "[ObjectDatabase]")
@@ -147,18 +146,22 @@ TEST_CASE("SaveAllObjects", "[ObjectDatabase]")
     MockSqliteDatabase sqldb;
     ObjectDatabase objdb(sqldb);
 
-    const EasyObject& obj1 { EasyObject::Create(objdb, 1) };
+    EasyObject& obj1 { EasyObject::Create(objdb, 3) };
     const std::string id1 { obj1.ID() };
+
     EasyObject obj2(objdb, MixedParams{{"id","obj2"},{"myint",2}});
     obj2.setMyStr("test2"); // modify
 
-    REQUIRE_CALL(sqldb, query(_,_,_))
-        .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myint) VALUES (:d0,:d1)")
-        .WITH(_2 == MixedParams{{":d0",id1},{":d1",1}}).RETURN(1UL);
+    obj1.deltaCounter(1); 
+    obj2.deltaCounter(2); // test counter
 
     REQUIRE_CALL(sqldb, query(_,_,_))
-        .WITH(_1 == "UPDATE a2obj_database_easyobject SET mystr=:d0 WHERE id=:id")
-        .WITH(_2 == MixedParams{{":d0","test2"},{":id","obj2"}}).RETURN(1UL);
+        .WITH(_1 == "INSERT INTO a2obj_database_easyobject (id,myctr,myint) VALUES (:d0,:d1,:d2)")
+        .WITH(_2 == MixedParams{{":d0",id1},{":d1",1},{":d2",3}}).RETURN(1UL);
+
+    REQUIRE_CALL(sqldb, query(_,_,_))
+        .WITH(_1 == "UPDATE a2obj_database_easyobject SET myctr=myctr+:d0, mystr=:d1 WHERE id=:id")
+        .WITH(_2 == MixedParams{{":d0",2},{":d1","test2"},{":id","obj2"}}).RETURN(1UL);
 
     objdb.SaveObjects();
 }

@@ -6,20 +6,6 @@ namespace Andromeda {
 namespace Database {
 
 /*****************************************************/
-void ObjectDatabase::commit()
-{
-    MDBG_INFO("()");
-    mDb.commit();
-}
-
-/*****************************************************/
-void ObjectDatabase::rollback()
-{
-    MDBG_INFO("()");
-    mDb.rollback();
-}
-
-/*****************************************************/
 void ObjectDatabase::notifyModified(BaseObject& object)
 { 
     const UniqueLock lock(mMutex);

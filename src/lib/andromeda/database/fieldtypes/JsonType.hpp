@@ -20,10 +20,15 @@ public:
     /** Construct with a null default value */
     using BaseField::BaseField;
 
+    /** Exception indicating a JSON decoding failed */
+    class JsonDecodeException : public DatabaseException { public:
+        explicit JsonDecodeException(const std::string& errTxt) :
+            DatabaseException("JSON decode error: "+errTxt) {}; };
+
     /** Construct with a non-null default value and set dirty */
     JsonType(const char* name, BaseObject& parent, const nlohmann::json& defaultt);
 
-    /** @throws nlohmann::json::exception if the string is bad */
+    /** @throws JsonDecodeException if the string is bad */
     void InitDBValue(const MixedValue& value) override;
 
     [[nodiscard]] MixedValue GetDBValue() const override;
@@ -39,7 +44,7 @@ public:
     /** Returns a reference to the value (assumes not NULL) */
     inline const nlohmann::json& operator*() const { return *TryGetJson(); }
     /** Return true if NULL */
-    inline bool operator==(std::nullptr_t) const { return mJsonPtr == nullptr; }
+    inline bool operator==(std::nullptr_t) const { return is_null(); }
     /** Return true if NOT NULL */
     inline bool operator!=(std::nullptr_t) const { return !(*this==nullptr); }
 

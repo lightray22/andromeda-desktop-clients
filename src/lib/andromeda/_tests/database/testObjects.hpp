@@ -11,6 +11,7 @@
 #include "andromeda/database/MixedValue.hpp"
 #include "andromeda/database/ObjectDatabase.hpp"
 #include "andromeda/database/SqliteDatabase.hpp"
+#include "andromeda/database/fieldtypes/CounterType.hpp"
 #include "andromeda/database/fieldtypes/ScalarType.hpp"
 
 namespace Andromeda {
@@ -28,9 +29,10 @@ public:
 
     BASEOBJECT_CONSTRUCT(EasyObject)
         mMyStr("mystr",*this),
-        mMyInt("myint",*this)
+        mMyInt("myint",*this),
+        mCounter("myctr",*this)
     {
-        BASEOBJECT_REGISTER(&mMyStr, &mMyInt)
+        BASEOBJECT_REGISTER(&mMyStr, &mMyInt, &mCounter)
     }
 
     static EasyObject& Create(ObjectDatabase& db, int myInt)
@@ -50,6 +52,11 @@ public:
         return mMyStr.TryGetValue();
     }
 
+    void deltaCounter(int delta)
+    {
+        mCounter.DeltaValue(delta);
+    }
+
     void onDelete(const std::function<void()>& func)
     {
         mOnDelete = func;
@@ -63,6 +70,7 @@ public:
 private:
     FieldTypes::NullScalarType<std::string> mMyStr;
     FieldTypes::ScalarType<int> mMyInt;
+    FieldTypes::CounterType mCounter;
 
     std::function<void()> mOnDelete;
 };

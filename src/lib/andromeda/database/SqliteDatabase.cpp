@@ -45,7 +45,7 @@ SqliteDatabase::~SqliteDatabase()
 
     if (mDatabase == nullptr) return; // unit test
 
-    try { rollback(); } catch (const Exception& e) { 
+    try { rollback(); } catch (const DatabaseException& e) { 
         MDBG_ERROR("... rollback:" << e.what()); }
 
     print_rc(sqlite3_close(mDatabase)); // nothrow
@@ -58,7 +58,7 @@ void SqliteDatabase::check_rc(int rc, const VoidFunc& func) const
     {
         const std::string errmsg { print_rc(rc) };
         if (func) func(); // custom handler
-        throw Exception(errmsg);
+        throw SqliteException(errmsg);
     }
 }
 
@@ -81,7 +81,7 @@ std::string SqliteDatabase::print_rc(int rc) const
 size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params)
 {
     RowList rows; const size_t retval { query(sql, params, rows) };
-    if (!rows.empty()) throw Exception("non-empty rows!");
+    if (!rows.empty()) throw SqliteException("non-empty rows!");
     else return retval;
 }
 
@@ -89,7 +89,7 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params)
 size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, const UniqueLock& lock)
 {
     RowList rows; const size_t retval { query(sql, params, rows, lock) };
-    if (!rows.empty()) throw Exception("non-empty rows!");
+    if (!rows.empty()) throw SqliteException("non-empty rows!");
     else return retval;
 }
 
@@ -112,7 +112,7 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
     sqlite3_stmt* stmt { nullptr };
     const int sqllen { static_cast<int>(sql.size())+1 };
     check_rc(sqlite3_prepare_v2(mDatabase, sql.c_str(), sqllen, &stmt, nullptr));
-    if (stmt == nullptr) throw Exception("statement is nullptr");
+    if (stmt == nullptr) throw SqliteException("statement is nullptr");
 
     for (const MixedParams::value_type& param : params)
     {
@@ -150,7 +150,7 @@ void SqliteDatabase::transaction(const LockedFunc& func)
     else query("BEGIN TRANSACTION",{},lock);
 
     try { func(lock); query("COMMIT TRANSACTION",{},lock); }
-    catch (const Exception& e)
+    catch (const DatabaseException& e)
     {
         query("ROLLBACK TRANSACTION",{},lock);
         throw; // rethrow

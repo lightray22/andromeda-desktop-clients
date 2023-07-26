@@ -66,7 +66,7 @@ public:
     /** Returns a reference to the value (assumes not NULL) */
     inline const T& operator*() const { return *TryGetValue(); }
     /** Return true if NULL */
-    inline bool operator==(std::nullptr_t) const { return mTempNull; }
+    inline bool operator==(std::nullptr_t) const { return is_null(); }
     /** Return true if NOT NULL */
     inline bool operator!=(std::nullptr_t) const { return !(*this==nullptr); }
 
@@ -139,8 +139,11 @@ public:
         mTempInitd(true), mTempValue(defaultt),
         mRealInitd(true), mRealValue(defaultt) { }
 
+    /** @throws DBValueNullException if the given DB value is null */
     void InitDBValue(const MixedValue& value) override
     {
+        if (value.is_null()) throw DBValueNullException(mName);
+
         mDelta = 0;
         mTempInitd = true;
         mRealInitd = true;
@@ -152,8 +155,7 @@ public:
     [[nodiscard]] MixedValue GetDBValue() const override
     {
         if (!mRealInitd) throw UninitializedException(mName);
-
-        return MixedValue(mRealValue);
+        else return MixedValue(mRealValue);
     }
 
     /** Returns true if the value is initialized */

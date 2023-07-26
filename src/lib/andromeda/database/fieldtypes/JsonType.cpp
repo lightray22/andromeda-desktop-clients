@@ -15,8 +15,14 @@ void JsonType::InitDBValue(const MixedValue& value)
 {
     mDelta = 0;
     if (value == nullptr) mJsonPtr = nullptr;
-    else mJsonPtr = std::make_unique<nlohmann::json>(
-        nlohmann::json::parse(value.get<std::string>()));
+    else try
+    {
+        mJsonPtr = std::make_unique<nlohmann::json>(
+            nlohmann::json::parse(value.get<std::string>()));
+    }
+    catch (const nlohmann::json::exception& ex) {
+        throw JsonDecodeException(ex.what());
+    }
 }
 
 /*****************************************************/

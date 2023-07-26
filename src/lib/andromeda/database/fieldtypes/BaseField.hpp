@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "andromeda/BaseException.hpp"
 #include "andromeda/Utilities.hpp"
+#include "andromeda/database/DatabaseException.hpp"
 #include "andromeda/database/MixedValue.hpp"
 
 namespace Andromeda {
@@ -28,9 +28,14 @@ public:
     DELETE_MOVE(BaseField)
 
     /** Exception indicating an uninitialized non-null field was accessed */
-    class UninitializedException : public BaseException { public:
+    class UninitializedException : public DatabaseException { public:
         explicit UninitializedException(const std::string& name) :
-            BaseException("Uninitialized Field: "+name) {}; };
+            DatabaseException("Uninitialized Field: "+name) {}; };
+
+    /** Exception indicating a null DBValue was given to a non-null field */
+    class DBValueNullException : public DatabaseException { public:
+        explicit DBValueNullException(const std::string& name) :
+            DatabaseException("null DBValue on non-null field: "+name) {}; };
 
     /** @return string field name in the DB */
     [[nodiscard]] inline const char* GetName() const { return mName; }
