@@ -67,7 +67,6 @@ public:
      */
     size_t query(const std::string& sql, const MixedParams& params);
 
-
     /**
      * Runs the given function as a transaction, with auto commit/rollback at the end
      * @param func function to run under a atomic locked transaction
@@ -96,6 +95,11 @@ public:
      * @throws DatabaseException if the query fails
      */
     void commit();
+
+    /** Gets the database user_version */
+    int getVersion();
+    /** Sets the database user_version */
+    void setVersion(int version);
 
 protected:
 

@@ -33,9 +33,23 @@ SqliteDatabase::SqliteDatabase(const std::string& path) :
     const int rc = sqlite3_open(path.c_str(), &mDatabase);
     check_rc(rc, [this]{ sqlite3_close(mDatabase); });
 
-    // run the pre-locked version, must be non-virtual
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
     query("PRAGMA foreign_keys = true",{},lock);
+    query("PRAGMA trusted_schema = false",{},lock);
+    { RowList rows; query("PRAGMA journal_mode = TRUNCATE",{},rows,lock); } // ignore rows
+
+    if (mDebug.GetLevel() >= Debug::Level::INFO)
+    {
+        RowList rows; query("PRAGMA integrity_check",{},rows,lock);
+        for (const Row& row : rows)
+        {
+            const char* err { nullptr }; row.begin()->second.get_to(err);
+            MDBG_INFO("... integrity check: " << err);
+        }
+    }
+
+    const int version { getVersion() };
+    MDBG_INFO("... version: " << version);
 }
 
 /*****************************************************/
@@ -45,18 +59,21 @@ SqliteDatabase::~SqliteDatabase()
 
     if (mDatabase == nullptr) return; // unit test
 
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    
     if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
     {
         MDBG_ERROR("... still in transaction! rolling back...");
-
-        // run the pre-locked version, must be non-virtual
-        const std::lock_guard<std::recursive_mutex> lock(mMutex);
 
         try { query("ROLLBACK TRANSACTION",{},lock); }
         catch (const DatabaseException& e) { 
             MDBG_ERROR("... rollback error:" << e.what()); }
     }
 
+    try { query("PRAGMA optimize",{},lock); }
+    catch (const DatabaseException& e) { 
+        MDBG_ERROR("... optimize error:" << e.what()); }
+    
     print_rc(sqlite3_close(mDatabase)); // nothrow
 }
 
@@ -194,6 +211,21 @@ void SqliteDatabase::commit()
     if (sqlite3_get_autocommit(mDatabase) != 0) // !inTransaction
         throw TransactionException();
     else query("COMMIT TRANSACTION",{},lock);
+}
+
+/*****************************************************/
+int SqliteDatabase::getVersion()
+{
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    RowList rows; query("PRAGMA user_version",{},rows,lock);
+    return rows.begin()->begin()->second.get<int>();
+}
+
+/*****************************************************/
+void SqliteDatabase::setVersion(int version)
+{
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    query("PRAGMA user_version = :ver",{{":ver",version}});
 }
 
 } // namespace Database
