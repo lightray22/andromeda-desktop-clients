@@ -64,8 +64,6 @@ TEST_CASE("Query", "[SqliteDatabase]")
     REQUIRE(rowsV[1]->at("id") == 9);
     REQUIRE(rowsV[1]->at("name").is_null());
     REQUIRE(rowsV[1]->at("name") == nullptr);
-
-    database.commit();
 }
 
 /*****************************************************/
@@ -102,8 +100,6 @@ TEST_CASE("MixedTypes", "[SqliteDatabase]")
     REQUIRE(row.at("int64") == myint64);
     REQUIRE(row.at("float") == myfloat);
     REQUIRE(row.at("null") == nullptr);
-
-    database.commit();
 }
 
 /*****************************************************/
@@ -112,25 +108,28 @@ TEST_CASE("CommitRollback", "[SqliteDatabase]")
     const TempPath tmppath("test_sqlite_query.s3db"); 
     SqliteDatabase database(tmppath.Get());
 
+    database.beginTransaction();
     database.query("CREATE TABLE `mytest` (`id` INTEGER);",{});
     database.commit();
 
+    database.beginTransaction();
     database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
 
     SqliteDatabase::RowList rows; 
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
-
     database.rollback();
 
     rows.clear();
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.empty());
 
+    database.beginTransaction();
     database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
-
     database.commit();
-    database.rollback();
+
+    database.beginTransaction();
+    database.rollback(); // no effect
     
     rows.clear();
     database.query("SELECT * from `mytest`",{},rows);
@@ -144,12 +143,11 @@ TEST_CASE("AutoTransaction", "[SqliteDatabase]")
     SqliteDatabase database(tmppath.Get());
 
     database.query("CREATE TABLE `mytest` (`id` INTEGER);",{});
-    database.commit();
 
     bool inserted { false };
-    REQUIRE_THROWS_AS(database.transaction([&](const SqliteDatabase::UniqueLock& lock)
+    REQUIRE_THROWS_AS(database.transaction([&]()
     {
-        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}},lock);
+        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
         inserted = true;
         throw DatabaseException("should rollback");
     }), DatabaseException);
@@ -158,13 +156,13 @@ TEST_CASE("AutoTransaction", "[SqliteDatabase]")
     SqliteDatabase::RowList rows;
     database.query("SELECT * from `mytest`",{},rows);
     REQUIRE(rows.empty());
-    database.commit();
 
-    database.transaction([&](const SqliteDatabase::UniqueLock& lock)
+    database.transaction([&]()
     {
-        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}},lock);
+        database.query("INSERT INTO `mytest` VALUES(:d0)",{{":d0",5}});
     });
 
+    database.beginTransaction();
     database.rollback(); // no effect
 
     rows.clear();

@@ -61,6 +61,13 @@ bool BaseObject::isModified() const
 }
 
 /*****************************************************/
+void BaseObject::SetUnmodified()
+{
+    for (FieldMap::value_type& pair : mFields)
+        pair.second.SetUnmodified();
+}
+
+/*****************************************************/
 void BaseObject::Save()
 {
     OBJDBG_INFO("()");

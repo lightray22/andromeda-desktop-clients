@@ -107,6 +107,9 @@ protected:
     /** Returns true if this object has a modified field */
     bool isModified() const;
 
+    /** Set all fields as unmodified */
+    void SetUnmodified();
+
     /** object database reference */
     ObjectDatabase& mDatabase;
 

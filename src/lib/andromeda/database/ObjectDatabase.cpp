@@ -11,21 +11,29 @@ void ObjectDatabase::notifyModified(BaseObject& object)
     const UniqueLock lock(mMutex);
 
     if (!mModified.exists(&object))
-    {
-        MDBG_INFO("... object:" << static_cast<std::string>(object));
-        mModified.enqueue_front(&object, object);
-    }
+        mModified.enqueue_back(&object, object);
 }
 
 /*****************************************************/
 void ObjectDatabase::SaveObjects()
 {
-    const UniqueLock lock(mMutex);
+    const UniqueLockStore lock(mMutex, mAtomicOp);
+
     MDBG_INFO("() created:" << mCreated.size() << " modified:" << mModified.size());
 
-    // insert new objects first for foreign keys
-    while (!mCreated.empty()) mCreated.front().second->Save();
-    while (!mModified.empty()) mModified.front().second.Save();
+    mDb.transaction([&]()
+    {
+        // insert new objects first for foreign keys
+        for (decltype(mCreated)::value_type& pair : mCreated) pair.second->Save();
+
+        // check mCreated to avoid saving created objects twice
+        for (decltype(mModified)::value_type& pair : mModified) 
+            if (!mCreated.exists(&pair.second)) pair.second.Save();
+    });
+
+    // all queries are done, update data structures
+    while (!mCreated.empty()) InsertObject_Register(*mCreated.front().second, *mAtomicOp);
+    while (!mModified.empty()) UpdateObject_Register(mModified.front().second, *mAtomicOp);
 }
 
 /*****************************************************/
@@ -71,15 +79,23 @@ void ObjectDatabase::DeleteObject(BaseObject& object)
 /*****************************************************/
 void ObjectDatabase::SaveObject(BaseObject& object, const BaseObject::FieldList& fields)
 {
-    const UniqueLock lock(mMutex);
+    UniqueLock lock; if (!mAtomicOp) lock = UniqueLock(mMutex);
+    const UniqueLock& lockRef { mAtomicOp ? *mAtomicOp : lock };
     
     if (mCreated.exists(&object))
-        InsertObject(object, fields, lock);
-    else UpdateObject(object, fields, lock);
+    {
+        InsertObject_Query(object, fields, lockRef);
+        if (!mAtomicOp) InsertObject_Register(object, lockRef);
+    }
+    else
+    {
+        UpdateObject_Query(object, fields, lockRef);
+        if (!mAtomicOp) UpdateObject_Register(object, lockRef);
+    }
 }
 
 /*****************************************************/
-void ObjectDatabase::UpdateObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock)
+void ObjectDatabase::UpdateObject_Query(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock)
 {
     MDBG_INFO("(object:" << static_cast<std::string>(object) << ")");
 
@@ -90,7 +106,6 @@ void ObjectDatabase::UpdateObject(BaseObject& object, const BaseObject::FieldLis
     {
         const std::string key { field->GetName() };
         const MixedValue val { field->GetDBValue() };
-        field->SetUnmodified();
         
         if (val.is_null())
         {
@@ -123,12 +138,19 @@ void ObjectDatabase::UpdateObject(BaseObject& object, const BaseObject::FieldLis
     
     if (mDb.query(query, data) != 1)
         throw UpdateFailedException(object.GetClassName());
+}
 
+/*****************************************************/
+void ObjectDatabase::UpdateObject_Register(BaseObject& object, const UniqueLock& lock)
+{
+    MDBG_INFO("(object:" << static_cast<std::string>(object) << ")");
+
+    object.SetUnmodified();
     mModified.erase(&object);
 }
 
 /*****************************************************/
-void ObjectDatabase::InsertObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock)
+void ObjectDatabase::InsertObject_Query(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock)
 {
     MDBG_INFO("(object:" << static_cast<std::string>(object) << ")");
 
@@ -140,7 +162,6 @@ void ObjectDatabase::InsertObject(BaseObject& object, const BaseObject::FieldLis
     {
         const std::string key { field->GetName() };
         const MixedValue val { field->GetDBValue() };
-        field->SetUnmodified();
 
         columns.emplace_back(key);
         if (val.is_null())
@@ -166,7 +187,14 @@ void ObjectDatabase::InsertObject(BaseObject& object, const BaseObject::FieldLis
 
     if (mDb.query(query, data) != 1)
         throw InsertFailedException(object.GetClassName());
+}
 
+/*****************************************************/
+void ObjectDatabase::InsertObject_Register(BaseObject& object, const UniqueLock& lock)
+{
+    MDBG_INFO("(object:" << static_cast<std::string>(object) << ")");
+
+    object.SetUnmodified();
     mModified.erase(&object);
 
     const decltype(mCreated)::lookup_iterator it { mCreated.lookup(&object) };

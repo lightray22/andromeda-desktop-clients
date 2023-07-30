@@ -33,8 +33,8 @@ SqliteDatabase::SqliteDatabase(const std::string& path) :
     const int rc = sqlite3_open(path.c_str(), &mDatabase);
     check_rc(rc, [this]{ sqlite3_close(mDatabase); });
 
-    // run the pre-locked version to avoid BEGIN transaction
-    const std::lock_guard<std::mutex> lock(mMutex);
+    // run the pre-locked version, must be non-virtual
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     query("PRAGMA foreign_keys = true",{},lock);
 }
 
@@ -45,8 +45,17 @@ SqliteDatabase::~SqliteDatabase()
 
     if (mDatabase == nullptr) return; // unit test
 
-    try { rollback(); } catch (const DatabaseException& e) { 
-        MDBG_ERROR("... rollback:" << e.what()); }
+    if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
+    {
+        MDBG_ERROR("... still in transaction! rolling back...");
+
+        // run the pre-locked version, must be non-virtual
+        const std::lock_guard<std::recursive_mutex> lock(mMutex);
+
+        try { query("ROLLBACK TRANSACTION",{},lock); }
+        catch (const DatabaseException& e) { 
+            MDBG_ERROR("... rollback error:" << e.what()); }
+    }
 
     print_rc(sqlite3_close(mDatabase)); // nothrow
 }
@@ -96,11 +105,7 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
 /*****************************************************/
 size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, RowList& rows)
 {
-    const std::lock_guard<std::mutex> lock(mMutex);
-
-    if (sqlite3_get_autocommit(mDatabase) > 0) // !inTransaction
-        query("BEGIN TRANSACTION",{},lock);
-
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
     return query(sql, params, rows, lock);
 }
 
@@ -141,15 +146,16 @@ size_t SqliteDatabase::query(const std::string& sql, const MixedParams& params, 
 }
 
 /*****************************************************/
-void SqliteDatabase::transaction(const LockedFunc& func)
+void SqliteDatabase::transaction(const std::function<void()>& func)
 {
-    const std::lock_guard<std::mutex> lock(mMutex);
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!mDatabase) { func(); return; } // unit test
 
     if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
-        throw AlreadyTransactionException();
+        throw TransactionException();
     else query("BEGIN TRANSACTION",{},lock);
 
-    try { func(lock); query("COMMIT TRANSACTION",{},lock); }
+    try { func(); query("COMMIT TRANSACTION",{},lock); }
     catch (const DatabaseException& e)
     {
         query("ROLLBACK TRANSACTION",{},lock);
@@ -158,21 +164,36 @@ void SqliteDatabase::transaction(const LockedFunc& func)
 }
 
 /*****************************************************/
+void SqliteDatabase::beginTransaction()
+{
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!mDatabase) return; // unit test
+
+    if (sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
+        throw TransactionException();
+    else query("BEGIN TRANSACTION",{},lock);
+}
+
+/*****************************************************/
 void SqliteDatabase::rollback()
 {
-    const std::lock_guard<std::mutex> lock(mMutex);
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!mDatabase) return; // unit test
 
-    if (mDatabase && sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
-        query("ROLLBACK TRANSACTION",{},lock);
+    if (sqlite3_get_autocommit(mDatabase) != 0) // !inTransaction
+        throw TransactionException();
+    else query("ROLLBACK TRANSACTION",{},lock);
 }
 
 /*****************************************************/
 void SqliteDatabase::commit()
 {
-    const std::lock_guard<std::mutex> lock(mMutex);
+    const std::lock_guard<std::recursive_mutex> lock(mMutex);
+    if (!mDatabase) return; // unit test
 
-    if (mDatabase && sqlite3_get_autocommit(mDatabase) == 0) // inTransaction
-        query("COMMIT TRANSACTION",{},lock);
+    if (sqlite3_get_autocommit(mDatabase) != 0) // !inTransaction
+        throw TransactionException();
+    else query("COMMIT TRANSACTION",{},lock);
 }
 
 } // namespace Database

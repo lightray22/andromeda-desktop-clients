@@ -68,7 +68,12 @@ public:
     /** Notify the DB that the given object needs to be updated */
     void notifyModified(BaseObject& object);
 
-    /** Insert created objects, update all objects that notified us as needing it */
+    /** 
+     * Insert created objects, update all objects that notified us as needing it 
+     * Done as an ATOMIC LOCKED TRANSACTION - if an exception is thrown, nothing is changed
+     * @throws TransactionException if already in a transaction
+     * @throws DatabaseException if any myriad of things go wrong
+     */
     void SaveObjects();
 
     /** Return the number of loaded objects (not counting newly created) */
@@ -207,21 +212,25 @@ public:
 
 private:
 
-    using UniqueLock = std::lock_guard<std::recursive_mutex>;
+    using UniqueLock = std::unique_lock<std::recursive_mutex>;
 
     /** 
      * Sends an UPDATE for the given object
      * @param fields list of modified fields to send
      * @throws UpdateFailedException if UPDATE does nothing
     */
-    void UpdateObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+    void UpdateObject_Query(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+    /** Updates data structures to indicate the object is updated */
+    void UpdateObject_Register(BaseObject& object, const UniqueLock& lock);
 
     /** 
      * Sends an INSERT for the given object
      * @param fields list of modified fields to send
      * @throws InsertFailedException if INSERT does nothing
     */
-    void InsertObject(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+    void InsertObject_Query(BaseObject& object, const BaseObject::FieldList& fields, const UniqueLock& lock);
+    /** Updates data structures to indicate the object is inserted */
+    void InsertObject_Register(BaseObject& object, const UniqueLock& lock);
 
     /** OrderedMap of objects that have notified us of being modified, indexed by pointer */
     OrderedMap<BaseObject*, BaseObject&> mModified;
@@ -260,7 +269,25 @@ private:
     }
 
     SqliteDatabase& mDb;
+    /** Primary mutex used to protect data structures */
     std::recursive_mutex mMutex;
+
+    /** Struct used to get a UniqueLock and store a pointer to it */
+    class UniqueLockStore
+    {
+    public:
+        /** Locks the mutex and stores a pointer to the UniqueLock */
+        UniqueLockStore(std::recursive_mutex& mutex, const UniqueLock*& lockPtrRef) :
+            mUniqueLock(mutex), mLockPtrRef(lockPtrRef) { lockPtrRef = &mUniqueLock; }
+        virtual ~UniqueLockStore() { mLockPtrRef = nullptr; }
+        DELETE_COPY(UniqueLockStore)
+        DELETE_MOVE(UniqueLockStore)
+    private:
+        const UniqueLock mUniqueLock;
+        const UniqueLock*& mLockPtrRef;
+    };
+    /** Pointer to lock held if doing an atomic multiple save/delete */
+    const UniqueLock* mAtomicOp { nullptr };
 };
 
 } // namespace Database

@@ -163,7 +163,9 @@ TEST_CASE("SaveAllObjects", "[ObjectDatabase]")
         .WITH(_1 == "UPDATE a2obj_database_easyobject SET myctr=myctr+:d0, mystr=:d1 WHERE id=:id")
         .WITH(_2 == MixedParams{{":d0",2},{":d1","test2"},{":id","obj2"}}).RETURN(1UL);
 
+    REQUIRE(objdb.getLoadedCount() == 0);
     objdb.SaveObjects();
+    REQUIRE(objdb.getLoadedCount() == 1); // created!
 }
 
 /*****************************************************/
