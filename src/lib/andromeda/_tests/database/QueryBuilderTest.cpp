@@ -67,9 +67,15 @@ TEST_CASE("Compares", "[QueryBuilder]")
     }
 
     {
-        QueryBuilder q; q.Where(q.Like("mykey","myval%"));
+        QueryBuilder q; q.Where(q.Like("mykey","myval%",true));
         REQUIRE(q.GetParams().at(":d0") == "myval%"); 
-        REQUIRE(q.GetText() == "WHERE mykey LIKE :d0");
+        REQUIRE(q.GetText() == "WHERE mykey LIKE :d0 ESCAPE '\\'");
+    }
+
+    {
+        QueryBuilder q; q.Where(q.Like("mykey","my_val\\_%"));
+        REQUIRE(q.GetParams().at(":d0") == "%my\\_val\\\\\\_\\%%"); // EscapeWildcards
+        REQUIRE(q.GetText() == "WHERE mykey LIKE :d0 ESCAPE '\\'");
     }
 }
 

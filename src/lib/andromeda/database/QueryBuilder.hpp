@@ -33,16 +33,18 @@ public:
         return std::string(key)+" IS NULL";
     }
 
-    /** Returns a string comparing the given column to a string value using LIKE */
-    [[nodiscard]] std::string Like(const char* key, const char* val)
-    {
-        return std::string(key)+" LIKE "+AddParam(val);
-    }
+    /** Returns the given string with SQL wildcard characters escaped */
+    [[nodiscard]] static std::string EscapeWildcards(const std::string& q);
 
-    /** Returns a string comparing the given column to a string value using LIKE */
-    [[nodiscard]] std::string Like(const char* key, const std::string& val)
+    /** 
+     * Returns a string comparing the given column to a string value using LIKE 
+     * @param hasMatch if true, the string manages its own SQL wildcard characters else use %val%
+     */
+    template<typename T> // const char* or std::string
+    [[nodiscard]] std::string Like(const char* key, const T& val, bool hasMatch = false)
     {
-        return std::string(key)+" LIKE "+AddParam(val);
+        const std::string qval { hasMatch ? val : "%"+EscapeWildcards(val)+"%" };
+        return std::string(key)+" LIKE "+AddParam(qval)+" ESCAPE '\\'";
     }
 
     /** Returns a query string asserting the given column is less than the given value */

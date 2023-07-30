@@ -129,7 +129,7 @@ bool Utilities::endsWith(const std::string& str, const std::string& end)
 }
 
 /*****************************************************/
-void Utilities::trim(std::string& str)
+void Utilities::trim_void(std::string& str)
 {
     const size_t size { str.size() };
 
@@ -142,12 +142,8 @@ void Utilities::trim(std::string& str)
 /*****************************************************/
 std::string Utilities::trim(const std::string& str)
 {
-    const size_t size { str.size() };
-
-    size_t start = 0; while (start < size && std::isspace(str[start])) ++start;
-    size_t end = size; while (end > 0 && std::isspace(str[end-1])) --end;
-
-    return str.substr(start, end-start);
+    std::string retval { str }; // copy
+    trim_void(retval); return retval;
 }
 
 /*****************************************************/
@@ -160,13 +156,34 @@ std::string Utilities::tolower(const std::string& str)
 }
 
 /*****************************************************/
+void Utilities::replaceAll_void(std::string& str, const std::string& from, const std::string& repl)
+{
+    if (from.empty()) return; // invalid
+
+    for (size_t pos = 0; (pos = str.find(from, pos)) != std::string::npos; pos += repl.size())
+        str.replace(pos, from.size(), repl);
+}
+
+/*****************************************************/
 std::string Utilities::replaceAll(const std::string& str, const std::string& from, const std::string& repl)
 {
-    if (str.empty() || from.empty()) return str; // invalid
+    std::string retval(str); // copy
+    replaceAll_void(retval, from, repl); return retval;
+}
+
+/*****************************************************/
+std::string Utilities::escapeAll(const std::string& str, const std::list<char>& delims, const char escape)
+{
     std::string retval(str); // copy
 
-    for (size_t pos = 0; (pos = retval.find(from, pos)) != std::string::npos; pos += repl.size())
-        retval.replace(pos, from.size(), repl);
+    const std::string escapeStr(1,escape);
+    replaceAll_void(retval, escapeStr, std::string(2,escape));
+
+    for (const char& delim : delims)
+    {
+        const std::string delimStr(1,delim);
+        replaceAll_void(retval, delimStr, escapeStr+delimStr);
+    }
     return retval;
 }
 
@@ -189,7 +206,7 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
     
     if (unit < '0' || unit > '9')
     {
-        str.pop_back(); trim(str);
+        str.pop_back(); trim_void(str);
         if (str.empty()) return 0;
     }
 

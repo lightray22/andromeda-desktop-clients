@@ -172,12 +172,12 @@ TEST_CASE("trim", "[Utilities]")
     REQUIRE(Utilities::trim("\ttest\n") == "test");
     REQUIRE(Utilities::trim("test\ntest") == "test\ntest");
 
-    std::string s; Utilities::trim(s); REQUIRE(s.empty());
-    s = "test"; Utilities::trim(s); REQUIRE(s == "test");
-    s = " test"; Utilities::trim(s); REQUIRE(s == "test");
-    s = "test1  "; Utilities::trim(s); REQUIRE(s == "test1");
-    s = "\ttest\n"; Utilities::trim(s); REQUIRE(s == "test");
-    s = "test\ntest"; Utilities::trim(s); REQUIRE(s == "test\ntest");
+    std::string s; Utilities::trim_void(s); REQUIRE(s.empty());
+    s = "test"; Utilities::trim_void(s); REQUIRE(s == "test");
+    s = " test"; Utilities::trim_void(s); REQUIRE(s == "test");
+    s = "test1  "; Utilities::trim_void(s); REQUIRE(s == "test1");
+    s = "\ttest\n"; Utilities::trim_void(s); REQUIRE(s == "test");
+    s = "test\ntest"; Utilities::trim_void(s); REQUIRE(s == "test\ntest");
 }
 
 /*****************************************************/
@@ -205,6 +205,24 @@ TEST_CASE("replaceAll", "[Utilities]")
 
     REQUIRE(Utilities::replaceAll("test,test2,test3,test4",",",",,") == "test,,test2,,test3,,test4");
     REQUIRE(Utilities::replaceAll("str\"thing\"str2","\"","\\\"") == "str\\\"thing\\\"str2");
+}
+
+/*****************************************************/
+TEST_CASE("escapeAll", "[Utilities]")
+{
+    REQUIRE(Utilities::escapeAll("",{'a'},'b').empty());
+    REQUIRE(Utilities::escapeAll("a",{'a'},'r') == "ra");
+    REQUIRE(Utilities::escapeAll("\\",{'b'}) == "\\\\");
+
+    // test _ __ ___ 2  ->  test \_ \_\_ \_\_\_ 2
+    REQUIRE(Utilities::escapeAll("test _ __ ___ 2",{'_'}) == "test \\_ \\_\\_ \\_\\_\\_ 2");
+
+    // test __\__ 2  ->  test \_\_\\\_\_ 2
+    REQUIRE(Utilities::escapeAll("test __\\__ 2",{'_'}) == "test \\_\\_\\\\\\_\\_ 2");
+    
+    // test \_ \\_ \\\_ \\\\_ _%\%_ 2 -> test \\\_ \\\\\_ \\\\\\\_ \\\\\\\\\_ \_\%\\\%\_ 2
+    REQUIRE(Utilities::escapeAll("test \\_ \\\\_ \\\\\\_ \\\\\\\\_ __\\__ 2",{'_','%'},'\\')
+        == "test \\\\\\_ \\\\\\\\\\_ \\\\\\\\\\\\\\_ \\\\\\\\\\\\\\\\\\_ \\_\\_\\\\\\_\\_ 2");
 }
 
 /*****************************************************/

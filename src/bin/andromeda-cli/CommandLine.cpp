@@ -158,7 +158,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             std::cout << "enter " << param << "..." << std::endl;
             std::string val; std::getline(std::cin, val);
 
-            Utilities::trim(val);
+            Utilities::trim_void(val);
             // want to overwrite, not emplace
             dataParams[param] = val;
         }

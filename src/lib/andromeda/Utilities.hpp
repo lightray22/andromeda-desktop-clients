@@ -2,6 +2,7 @@
 #define LIBA2_UTILITIES_H_
 
 #include <cstdint>
+#include <list>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -74,8 +75,8 @@ public:
     /** Returns true iff str ends with end */
     [[nodiscard]] static bool endsWith(const std::string& str, const std::string& end);
 
-    /** Removes leading/trailing whitespace from the string */
-    static void trim(std::string& str);
+    /** Removes leading/trailing whitespace from the string (in place) */
+    static void trim_void(std::string& str);
 
     /** Returns the string with leading/trailing whitespace stripped */
     [[nodiscard]] static std::string trim(const std::string& str);
@@ -83,8 +84,14 @@ public:
     /** Returns the string converted to lowercase */
     [[nodiscard]] static std::string tolower(const std::string& str);
 
+    /** Replaces all occurences of from with repl in the given string (in place) */
+    static void replaceAll_void(std::string& str, const std::string& from, const std::string& repl);
+
     /** Returns the string str with all occurences of from replaced by repl */
     [[nodiscard]] static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
+
+    /** Escape a string replacing delims with escape (and correctly handling existing escape characters) */
+    [[nodiscard]] static std::string escapeAll(const std::string& str, const std::list<char>& delims, char escape = '\\');
 
     /** Returns false if the trimmed string is a false-like value */
     [[nodiscard]] static bool stringToBool(const std::string& stri);

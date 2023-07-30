@@ -7,6 +7,12 @@ namespace Andromeda {
 namespace Database {
 
 /*****************************************************/
+std::string QueryBuilder::EscapeWildcards(const std::string& q)
+{
+    return Utilities::escapeAll(q,{'_','%'},'\\');
+}
+
+/*****************************************************/
 std::string QueryBuilder::GetText() const
 {
     std::string query;
@@ -26,7 +32,7 @@ std::string QueryBuilder::GetText() const
     if (!mOffsetNull)
         query += " OFFSET "+std::to_string(mOffset);
 
-    Utilities::trim(query); return query;
+    Utilities::trim_void(query); return query;
 }
 
 } // namespace Database
