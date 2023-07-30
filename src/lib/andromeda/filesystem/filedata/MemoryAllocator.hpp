@@ -7,8 +7,8 @@
 #include <mutex>
 #include <string>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Filesystem {

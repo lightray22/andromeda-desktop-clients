@@ -24,10 +24,11 @@ void ObjectDatabase::SaveObjects()
     mDb.transaction([&]()
     {
         // insert new objects first for foreign keys
-        for (decltype(mCreated)::value_type& pair : mCreated) pair.second->Save();
+        for (ObjUPtrMap::value_type& pair : mCreated) 
+            pair.second->Save();
 
         // check mCreated to avoid saving created objects twice
-        for (decltype(mModified)::value_type& pair : mModified) 
+        for (ObjRefMap::value_type& pair : mModified) 
             if (!mCreated.exists(&pair.second)) pair.second.Save();
     });
 
@@ -39,10 +40,10 @@ void ObjectDatabase::SaveObjects()
 /*****************************************************/
 std::string ObjectDatabase::GetClassTableName(const std::string& className)
 {
-    Utilities::StringList pieces { Utilities::explode(className,"\\") };
+    StringUtil::StringList pieces { StringUtil::explode(className,"\\") };
     pieces.erase(pieces.begin()); // no Andromeda_ prefix
 
-    return std::string("a2obj_")+Utilities::tolower(Utilities::implode("_",pieces));
+    return std::string("a2obj_")+StringUtil::tolower(StringUtil::implode("_",pieces));
 }
 
 /*****************************************************/
@@ -130,7 +131,7 @@ void ObjectDatabase::UpdateObject_Query(BaseObject& object, const BaseObject::Fi
 
     if (sets.empty()) { MDBG_INFO("... nothing to do!"); return; }
 
-    const std::string setstr { Utilities::implode(", ",sets) };
+    const std::string setstr { StringUtil::implode(", ",sets) };
     const std::string table { GetClassTableName(object.GetClassName()) };
 
     // UPDATE $table SET $setstr WHERE id=:id
@@ -178,8 +179,8 @@ void ObjectDatabase::InsertObject_Query(BaseObject& object, const BaseObject::Fi
         }
     }
 
-    const std::string colstr { Utilities::implode(",",columns) };
-    const std::string idxstr { Utilities::implode(",",indexes) };
+    const std::string colstr { StringUtil::implode(",",columns) };
+    const std::string idxstr { StringUtil::implode(",",indexes) };
     const std::string table { GetClassTableName(object.GetClassName()) };
 
     // INSERT INTO $table ($colstr) VALUES ($idxstr)

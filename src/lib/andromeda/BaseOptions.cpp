@@ -5,7 +5,8 @@
 
 #include "BaseOptions.hpp"
 #include "Debug.hpp"
-#include "Utilities.hpp"
+#include "PlatformUtil.hpp"
+#include "StringUtil.hpp"
 
 namespace Andromeda {
 
@@ -63,7 +64,7 @@ size_t BaseOptions::ParseArgs(size_t argc, const char* const* argv, bool stopmm)
         
         if (key.find('=') != std::string::npos) // -x=3 or --x=3
         {
-            const Utilities::StringPair pair { Utilities::split(key, "=") };
+            const StringUtil::StringPair pair { StringUtil::split(key, "=") };
             options.emplace(pair.first, pair.second);
         }
         else if (!ext && key.size() > 1)
@@ -99,7 +100,7 @@ void BaseOptions::ParseFile(const std::filesystem::path& path)
         if (line.empty() || line.at(0) == '#' || line.at(0) == ' ') continue;
 
         if (line.find('=') == std::string::npos) flags.push_back(line);
-        else options.emplace(Utilities::split(line, "="));
+        else options.emplace(StringUtil::split(line, "="));
     }
 
     for (const decltype(flags)::value_type& flag : flags) 
@@ -115,7 +116,7 @@ void BaseOptions::ParseConfig(const std::string& prefix)
     std::list<std::string> paths { 
         "/etc/andromeda", "/usr/local/etc/andromeda" };
 
-    const std::string home { Utilities::GetHomeDirectory() };
+    const std::string home { PlatformUtil::GetHomeDirectory() };
     if (!home.empty()) paths.push_back(home+"/.config/andromeda");
 
     paths.emplace_back("."); for (std::string path : paths)
@@ -137,10 +138,10 @@ void BaseOptions::ParseUrl(const std::string& url)
     {
         const std::string& substr(url.substr(sep+1));
 
-        for (const std::string& param : Utilities::explode(substr,"&"))
+        for (const std::string& param : StringUtil::explode(substr,"&"))
         {
             if (param.find('=') == std::string::npos) flags.push_back(param);
-            else options.emplace(Utilities::split(param, "="));
+            else options.emplace(StringUtil::split(param, "="));
         }
     }
 
@@ -180,7 +181,7 @@ bool BaseOptions::AddOption(const std::string& option, const std::string& value)
     }
     else if (option == "debug-filter")
     {
-        for (const std::string& name : Utilities::explode(value,","))
+        for (const std::string& name : StringUtil::explode(value,","))
             Debug::AddFilter(name);
     }
     else return false; // not used

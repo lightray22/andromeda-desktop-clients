@@ -7,8 +7,8 @@
 #include <iostream>
 #include <string>
 
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/StringUtil.hpp"
+using Andromeda::StringUtil;
 #include "andromeda/backend/CLIRunner.hpp"
 using Andromeda::Backend::CLIRunner;
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
         if (argc != 5 || strcmp(argv[3],"-o") != 0) {
             PrintHelp(); return 1; }
 
-        for (const std::string& arg : Utilities::explode(argv[4],","))
+        for (const std::string& arg : StringUtil::explode(argv[4],","))
         {
             if (arg.empty()) continue; // invalid
 

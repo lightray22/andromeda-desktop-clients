@@ -8,7 +8,7 @@
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/base64.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -22,7 +22,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
     // allocate the stream buffer once so we don't alloc/free memory repeatedly
     mStreamBuffer(mBaseOptions.streamBufferSize) // not thread safe between requests!
 {
-    if (!Utilities::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
+    if (!StringUtil::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
 
     MDBG_INFO("(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")");
 
@@ -73,9 +73,9 @@ void HTTPRunner::InitializeClient(const std::string& protoHost)
 HTTPRunner::HostUrlPair HTTPRunner::ParseURL(const std::string& fullURL)
 {
     const bool hasProto = fullURL.find("://") != std::string::npos;
-    Utilities::StringPair pair { Utilities::split(fullURL, "/", hasProto ? 2 : 0) };
+    StringUtil::StringPair pair { StringUtil::split(fullURL, "/", hasProto ? 2 : 0) };
 
-    if (!Utilities::startsWith(pair.second,"/")) 
+    if (!StringUtil::startsWith(pair.second,"/")) 
         pair.second.insert(0, "/");
     return pair;
 }
@@ -83,7 +83,7 @@ HTTPRunner::HostUrlPair HTTPRunner::ParseURL(const std::string& fullURL)
 /*****************************************************/
 std::string HTTPRunner::GetHostname() const
 {
-    const Utilities::StringPair pair { Utilities::split(mProtoHost, "://") };
+    const StringUtil::StringPair pair { StringUtil::split(mProtoHost, "://") };
     return pair.second.empty() ? pair.first : pair.second; 
 }
 

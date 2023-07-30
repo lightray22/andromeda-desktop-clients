@@ -6,7 +6,7 @@ set(SOURCE_FILES
     BaseOptionsTest.cpp
     CryptoTest.cpp
     OrderedMapTest.cpp
-    UtilitiesTest.cpp
+    StringUtilTest.cpp
     )
 
 option(MUTEX_TESTS "Build mutex tests" OFF)

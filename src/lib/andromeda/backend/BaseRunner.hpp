@@ -7,7 +7,7 @@
 #include <string>
 
 #include "andromeda/BaseException.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/common.hpp"
 
 namespace Andromeda {
 namespace Backend {

@@ -5,6 +5,7 @@
 #include <QtWidgets/QDialog>
 #include <QtWidgets/QWidget>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace AndromedaGui {
@@ -24,10 +25,8 @@ public:
     explicit LoginDialog(QWidget& parent);
 
     ~LoginDialog() override;
-    LoginDialog(const LoginDialog&) = delete; // no copy
-    LoginDialog& operator=(const LoginDialog&) = delete;
-    LoginDialog(LoginDialog&&) = delete; // no move
-    LoginDialog& operator=(LoginDialog&&) = delete;
+    DELETE_COPY(LoginDialog)
+    DELETE_MOVE(LoginDialog)
 
     /** 
      * Runs QDialog::exec() and gives the created backend 

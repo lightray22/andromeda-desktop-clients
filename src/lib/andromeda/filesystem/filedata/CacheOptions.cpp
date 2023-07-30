@@ -3,7 +3,7 @@
 
 #include "CacheOptions.hpp"
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -19,7 +19,7 @@ std::string CacheOptions::HelpText()
     const size_t stBits { sizeof(size_t)*8 };
 
     output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")]"
-        << " [--memory-limit bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.memoryLimit) << ")]"
+        << " [--memory-limit bytes"<<stBits<<"(" << StringUtil::bytesToString(optDefault.memoryLimit) << ")]"
         << " [--evict-frac uint32(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
@@ -36,7 +36,7 @@ bool CacheOptions::AddOption(const std::string& option, const std::string& value
     }
     else if (option == "memory-limit")
     {
-        try { memoryLimit = static_cast<size_t>(Utilities::stringToBytes(value)); }
+        try { memoryLimit = static_cast<size_t>(StringUtil::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
     }

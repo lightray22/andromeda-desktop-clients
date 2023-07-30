@@ -5,6 +5,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <utility> // pair
+
+#include "common.hpp"
 #include "Semaphor.hpp"
 
 namespace Andromeda {

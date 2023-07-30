@@ -1,26 +1,21 @@
-#ifndef LIBA2_UTILITIES_H_
-#define LIBA2_UTILITIES_H_
+#ifndef LIBA2_STRINGUTIL_H_
+#define LIBA2_STRINGUTIL_H_
 
 #include <cstdint>
-#include <list>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #define BOOLSTR(x) ((x) ? "true" : "false")
 
-#define DELETE_COPY(cl) cl(const cl&) = delete; cl& operator=(const cl&) = delete;
-#define DELETE_MOVE(cl) cl(cl&&) = delete; cl& operator=(cl&&) = delete;
-
 namespace Andromeda {
 
-/** Misc Utilities */
-class Utilities
+/** String Utilities */
+class StringUtil
 {
 public:
 
-    Utilities() = delete; // static only
+    StringUtil() = delete; // static only
 
     /** Returns a random string of the given size */
     [[nodiscard]] static std::string Random(size_t size);
@@ -91,7 +86,7 @@ public:
     [[nodiscard]] static std::string replaceAll(const std::string& str, const std::string& from, const std::string& repl);
 
     /** Escape a string replacing delims with escape (and correctly handling existing escape characters) */
-    [[nodiscard]] static std::string escapeAll(const std::string& str, const std::list<char>& delims, char escape = '\\');
+    [[nodiscard]] static std::string escapeAll(const std::string& str, const std::vector<char>& delims, char escape = '\\');
 
     /** Returns false if the trimmed string is a false-like value */
     [[nodiscard]] static bool stringToBool(const std::string& stri);
@@ -107,28 +102,8 @@ public:
      * stopping at the biggest possible unit (whole numbers only)
      */
     [[nodiscard]] static std::string bytesToString(uint64_t bytes);
-
-    /**
-     * Silently read a line of input from stdin
-     * @param[out] retval reference to string to fill
-     */
-    static void SilentReadConsole(std::string& retval);
-
-    using StringMap = std::unordered_map<std::string, std::string>;
-
-    /** 
-     * Returns a string map of the process environment variables 
-     * @param prefix if not empty, only return env vars whose keys start with this
-     */
-    [[nodiscard]] static StringMap GetEnvironment(const std::string& prefix = "");
-
-    /** Returns the user's home directory path if found */
-    [[nodiscard]] static std::string GetHomeDirectory();
-
-    /** Returns strerror(err) but thread safe */
-    [[nodiscard]] static std::string GetErrorString(int err);
 };
 
 } // namespace Andromeda
 
-#endif // LIBA2_UTILITIES_H_
+#endif // LIBA2_STRINGUTIL_H_

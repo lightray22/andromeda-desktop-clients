@@ -9,9 +9,9 @@
 #include <utility>
 
 #include "MemoryAllocator.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 namespace Filesystem {

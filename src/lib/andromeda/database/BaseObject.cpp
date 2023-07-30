@@ -36,7 +36,7 @@ void BaseObject::InitializeFields(const MixedParams& data)
 /*****************************************************/
 void BaseObject::InitializeID(size_t len)
 {
-    mIdField.SetValue(Utilities::Random(len));
+    mIdField.SetValue(StringUtil::Random(len));
     OBJDBG_INFO("()"); // AFTER ID is set
 }
 

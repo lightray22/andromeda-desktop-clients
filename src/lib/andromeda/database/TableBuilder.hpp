@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Database {
@@ -68,7 +68,7 @@ public:
 
         const std::string table { GetTableName(mClassName) };
 
-        mIndexes.emplace_back("CREATE INDEX \"idx_"+table+"_"+Utilities::implode("_",strs)
+        mIndexes.emplace_back("CREATE INDEX \"idx_"+table+"_"+StringUtil::implode("_",strs)
             +"\" ON \""+table+"\" "+FormatFields(strs)); return *this;
     }
 
@@ -111,7 +111,7 @@ private:
         std::transform(strs.begin(), strs.end(), fields.begin(), 
             [](const std::string& str){ return "`"+str+"`"; });
 
-        return "("+Utilities::implode(",",fields)+")";
+        return "("+StringUtil::implode(",",fields)+")";
     }
 
     /** The BaseObject class name */

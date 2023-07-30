@@ -17,8 +17,8 @@ using Andromeda::Debug;
 #include "andromeda/SharedMutex.hpp"
 using Andromeda::SharedLockR;
 using Andromeda::SharedLockW;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/StringUtil.hpp"
+using Andromeda::StringUtil;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/HTTPRunner.hpp"
@@ -410,7 +410,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 /*****************************************************/
 int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
 {
-    const Utilities::StringPair pair(Utilities::splitPath(fullpath));
+    const StringUtil::StringPair pair(StringUtil::splitPath(fullpath));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
 
@@ -428,7 +428,7 @@ int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_i
 /*****************************************************/
 int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 {
-    const Utilities::StringPair pair(Utilities::splitPath(fullpath));
+    const StringUtil::StringPair pair(StringUtil::splitPath(fullpath));
     const std::string& path { pair.first }; 
     const std::string& name { pair.second };
     
@@ -486,11 +486,11 @@ int FuseOperations::rename(const char* oldpath, const char* newpath)
 int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned int flags)
 #endif // LIBFUSE2
 {
-    const Utilities::StringPair pair0(Utilities::splitPath(oldpath));
+    const StringUtil::StringPair pair0(StringUtil::splitPath(oldpath));
     const std::string& oldPath { pair0.first };  
     const std::string& oldName { pair0.second };
 
-    const Utilities::StringPair pair1(Utilities::splitPath(newpath));
+    const StringUtil::StringPair pair1(StringUtil::splitPath(newpath));
     const std::string& newPath { pair1.first };  
     const std::string& newName { pair1.second };
 

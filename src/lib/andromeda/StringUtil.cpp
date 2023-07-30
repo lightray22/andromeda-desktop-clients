@@ -1,35 +1,15 @@
 
 #include <algorithm>
 #include <array>
-#include <cstring>
-#include <iostream>
 #include <locale>
-#include <mutex>
 #include <random>
 
-// SilentReadConsole()
-#if WIN32
-#include <windows.h>
-#else // !WIN32
-#include <termios.h>
-#endif // WIN32
-
-// GetEnvironment()
-#if WIN32
-#include <processenv.h>
-#else // !WIN32
-#include <unistd.h>
-#ifndef _GNU_SOURCE
-extern char** environ;
-#endif
-#endif // WIN32
-
-#include "Utilities.hpp"
+#include "StringUtil.hpp"
 
 namespace Andromeda {
 
 /*****************************************************/
-std::string Utilities::Random(const size_t size)
+std::string StringUtil::Random(const size_t size)
 {
     static const char chars[] = "0123456789abcdefghijkmnopqrstuvwxyz_"; // NOLINT(*-avoid-c-arrays)
     std::default_random_engine rng(std::random_device{}());
@@ -44,7 +24,7 @@ std::string Utilities::Random(const size_t size)
 }
 
 /*****************************************************/
-Utilities::StringList Utilities::explode(
+StringUtil::StringList StringUtil::explode(
     std::string str, const std::string& delim, 
     const size_t skip, const bool reverse, const size_t max)
 {
@@ -90,11 +70,11 @@ Utilities::StringList Utilities::explode(
 }
 
 /*****************************************************/
-Utilities::StringPair Utilities::split(
+StringUtil::StringPair StringUtil::split(
     const std::string& str, const std::string& delim, 
     const size_t skip, const bool reverse)
 {
-    Utilities::StringList list { explode(str, delim, skip, reverse, 2) };
+    StringUtil::StringList list { explode(str, delim, skip, reverse, 2) };
 
     while (list.size() < 2)
     {
@@ -102,18 +82,18 @@ Utilities::StringPair Utilities::split(
         else list.insert(list.begin(),"");
     }
 
-    return Utilities::StringPair { list[0], list[1] };
+    return StringUtil::StringPair { list[0], list[1] };
 }
 
 /*****************************************************/
-Utilities::StringPair Utilities::splitPath(const std::string& str)
+StringUtil::StringPair StringUtil::splitPath(const std::string& str)
 {
     // TODO does this work if str ends with / ? why own function?
     return split(str,"/",0,true);
 }
 
 /*****************************************************/
-bool Utilities::startsWith(const std::string& str, const std::string& start)
+bool StringUtil::startsWith(const std::string& str, const std::string& start)
 {
     if (start.size() > str.size()) return false;
 
@@ -121,7 +101,7 @@ bool Utilities::startsWith(const std::string& str, const std::string& start)
 }
 
 /*****************************************************/
-bool Utilities::endsWith(const std::string& str, const std::string& end)
+bool StringUtil::endsWith(const std::string& str, const std::string& end)
 {
     if (end.size() > str.size()) return false;
 
@@ -129,7 +109,7 @@ bool Utilities::endsWith(const std::string& str, const std::string& end)
 }
 
 /*****************************************************/
-void Utilities::trim_void(std::string& str)
+void StringUtil::trim_void(std::string& str)
 {
     const size_t size { str.size() };
 
@@ -140,14 +120,14 @@ void Utilities::trim_void(std::string& str)
 }
 
 /*****************************************************/
-std::string Utilities::trim(const std::string& str)
+std::string StringUtil::trim(const std::string& str)
 {
     std::string retval { str }; // copy
     trim_void(retval); return retval;
 }
 
 /*****************************************************/
-std::string Utilities::tolower(const std::string& str)
+std::string StringUtil::tolower(const std::string& str)
 {
     std::string ret(str);
     std::transform(ret.begin(), ret.end(), ret.begin(),
@@ -156,7 +136,7 @@ std::string Utilities::tolower(const std::string& str)
 }
 
 /*****************************************************/
-void Utilities::replaceAll_void(std::string& str, const std::string& from, const std::string& repl)
+void StringUtil::replaceAll_void(std::string& str, const std::string& from, const std::string& repl)
 {
     if (from.empty()) return; // invalid
 
@@ -165,14 +145,14 @@ void Utilities::replaceAll_void(std::string& str, const std::string& from, const
 }
 
 /*****************************************************/
-std::string Utilities::replaceAll(const std::string& str, const std::string& from, const std::string& repl)
+std::string StringUtil::replaceAll(const std::string& str, const std::string& from, const std::string& repl)
 {
     std::string retval(str); // copy
     replaceAll_void(retval, from, repl); return retval;
 }
 
 /*****************************************************/
-std::string Utilities::escapeAll(const std::string& str, const std::list<char>& delims, const char escape)
+std::string StringUtil::escapeAll(const std::string& str, const std::vector<char>& delims, const char escape)
 {
     std::string retval(str); // copy
 
@@ -188,7 +168,7 @@ std::string Utilities::escapeAll(const std::string& str, const std::list<char>& 
 }
 
 /*****************************************************/
-bool Utilities::stringToBool(const std::string& stri)
+bool StringUtil::stringToBool(const std::string& stri)
 {
     const std::string str { trim(stri) };
     return (!str.empty() && str != "0" && str != "false" && str != "off" && str != "no");
@@ -197,7 +177,7 @@ bool Utilities::stringToBool(const std::string& stri)
 static constexpr size_t bytesMul { 1024 };
 
 /*****************************************************/
-uint64_t Utilities::stringToBytes(const std::string& stri)
+uint64_t StringUtil::stringToBytes(const std::string& stri)
 {
     std::string str { trim(stri) };
     if (str.empty()) return 0;
@@ -232,7 +212,7 @@ uint64_t Utilities::stringToBytes(const std::string& stri)
 }
 
 /*****************************************************/
-std::string Utilities::bytesToString(uint64_t bytes)
+std::string StringUtil::bytesToString(uint64_t bytes)
 {
     size_t unit { 0 };
     static const std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
@@ -240,101 +220,6 @@ std::string Utilities::bytesToString(uint64_t bytes)
         ++unit; bytes /= bytesMul;
     }
     return std::to_string(bytes)+units[unit];
-}
-
-/*****************************************************/
-void Utilities::SilentReadConsole(std::string& retval)
-{
-    #if WIN32
-        HANDLE hStdin { GetStdHandle(STD_INPUT_HANDLE) }; 
-        DWORD mode { 0 }; GetConsoleMode(hStdin, &mode);
-        SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
-    #else // !WIN32
-        struct termios oflags { };
-        tcgetattr(fileno(stdin), &oflags);
-
-        struct termios nflags { oflags };
-        nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
-        tcsetattr(fileno(stdin), TCSANOW, &nflags);
-    #endif // WIN32
-
-    std::getline(std::cin, retval);
-    
-    #if WIN32
-        SetConsoleMode(hStdin, mode);
-    #else // !WIN32
-        tcsetattr(fileno(stdin), TCSANOW, &oflags);
-    #endif // WIN32
-
-    std::cout << std::endl;
-}
-
-/*****************************************************/
-Utilities::StringMap Utilities::GetEnvironment(const std::string& prefix)
-{
-    StringMap retval;
-
-#if WIN32
-    LPCH env { GetEnvironmentStrings() };
-    for (LPCTSTR var = env; var && var[0]; var += lstrlen(var)+1)
-    {
-#else // !WIN32
-    for (const char* const* env { environ }; env && *env; ++env)
-    {
-        const char* var { *env };
-#endif // WIN32
-
-        StringPair pair { split(var, "=") }; // non-const for move
-        if (prefix.empty() || startsWith(pair.first,prefix))
-            retval.emplace(std::move(pair));
-    }
-
-#if WIN32
-    FreeEnvironmentStrings(env);
-#endif // WIN32
-
-    return retval;
-}
-
-/*****************************************************/
-std::string Utilities::GetHomeDirectory()
-{
-    #if WIN32
-        #pragma warning(push)
-        #pragma warning(disable:4996) // getenv is safe in C++11
-    #endif // WIN32
-
-    for (const char* env : { "HOME", "HOMEDIR", "HOMEPATH" })
-    {
-        const char* path { std::getenv(env) }; // NOLINT(concurrency-mt-unsafe)
-        if (path != nullptr) return path;
-    }
-
-    #if WIN32
-        #pragma warning(pop)
-    #endif // WIN32
-
-    return ""; // not found
-}
-
-// mutex protecting std::strerror
-std::mutex sStrerrorMutex;
-
-/*****************************************************/
-std::string Utilities::GetErrorString(int err)
-{
-    const std::lock_guard<std::mutex> llock(sStrerrorMutex);
-
-    #if WIN32
-        #pragma warning(push)
-        #pragma warning(disable:4996) // we lock strerror
-    #endif // WIN32
-
-    return std::string(std::strerror(err)); // NOLINT(concurrency-mt-unsafe)
-
-    #if WIN32
-        #pragma warning(pop)
-    #endif // WIN32
 }
 
 } // namespace Andromeda

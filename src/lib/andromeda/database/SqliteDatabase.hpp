@@ -8,8 +8,8 @@
 
 #include "DatabaseException.hpp"
 #include "MixedValue.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 
 struct sqlite3;
 struct sqlite3_stmt;

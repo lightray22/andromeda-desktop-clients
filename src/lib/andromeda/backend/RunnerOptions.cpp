@@ -3,7 +3,7 @@
 
 #include "RunnerOptions.hpp"
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -21,7 +21,7 @@ std::string RunnerOptions::HelpText()
     using std::endl;
 
     output << "Runner Advanced: [--req-timeout secs(" << defTimeout << ")] [--max-retries uint32(" << optDefault.maxRetries << ")] [--retry-time secs(" << defRetry << ")] "
-           << "[--stream-buffer-size bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.streamBufferSize) << ")]";
+           << "[--stream-buffer-size bytes"<<stBits<<"(" << StringUtil::bytesToString(optDefault.streamBufferSize) << ")]";
 
     return output.str();
 }
@@ -49,7 +49,7 @@ bool RunnerOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "stream-buffer-size")
     {
-        try { streamBufferSize = static_cast<size_t>(Utilities::stringToBytes(value)); }
+        try { streamBufferSize = static_cast<size_t>(StringUtil::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 

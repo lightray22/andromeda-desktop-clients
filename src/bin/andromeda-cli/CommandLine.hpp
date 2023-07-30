@@ -6,7 +6,7 @@
 #include <string>
 
 #include "andromeda/BaseOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/backend/RunnerInput.hpp"
 
 namespace Andromeda { namespace Backend { class HTTPRunner; } }
@@ -57,7 +57,7 @@ private:
      * @param argv command line argument list
      * @param i current index to check after
      */
-    std::string getNextValue(const Andromeda::Utilities::StringList& argv, size_t& i);
+    std::string getNextValue(const Andromeda::StringUtil::StringList& argv, size_t& i);
 
     /**
      * Processes Andromeda action params from the command line
@@ -68,7 +68,7 @@ private:
      * @param[out] dataParams data parameters ref to fill
      * @param[out] inStreams file input streams ref to fill
      */
-    void ProcessArgList(const Andromeda::Utilities::StringList& args, bool isPriv,
+    void ProcessArgList(const Andromeda::StringUtil::StringList& args, bool isPriv,
         Andromeda::Backend::RunnerInput::Params& plainParams, 
         Andromeda::Backend::RunnerInput::Params& dataParams,
         Andromeda::Backend::RunnerInput_StreamIn::FileStreams& inStreams);

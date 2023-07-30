@@ -10,7 +10,8 @@ set(SOURCE_FILES
     ConfigOptions.cpp
     Crypto.cpp
     Debug.cpp
-    Utilities.cpp
+    PlatformUtil.cpp
+    StringUtil.cpp
     )
 andromeda_lib(libandromeda "${SOURCE_FILES}")
 

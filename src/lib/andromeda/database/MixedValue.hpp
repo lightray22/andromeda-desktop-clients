@@ -34,8 +34,8 @@ public:
     MixedValue(const MixedValue& src) noexcept; // copy
     MixedValue(MixedValue&& old) noexcept; // move
 
-    MixedValue& operator=(const MixedValue&) = delete;
-    MixedValue& operator=(MixedValue&&) = delete;
+    MixedValue& operator=(const MixedValue&) = delete; // copy
+    MixedValue& operator=(MixedValue&&) = delete; // move
 
     /** 
      * Bind the value to the statement with the appropriate sqlite function 

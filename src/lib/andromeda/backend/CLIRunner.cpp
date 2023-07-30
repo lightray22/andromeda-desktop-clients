@@ -20,7 +20,7 @@
 
 #include "CLIRunner.hpp"
 #include "RunnerInput.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -63,7 +63,7 @@ CLIRunner::ArgList CLIRunner::GetArguments(const RunnerInput& input)
 {
     ArgList arguments { mApiPath, "--json", input.app, input.action };
 
-    if (Utilities::endsWith(mApiPath, ".php"))
+    if (StringUtil::endsWith(mApiPath, ".php"))
         arguments.emplace_front("php");
 
     for (const RunnerInput::Params::value_type& param : input.plainParams)

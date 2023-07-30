@@ -9,7 +9,7 @@ namespace Database {
 /*****************************************************/
 std::string QueryBuilder::EscapeWildcards(const std::string& q)
 {
-    return Utilities::escapeAll(q,{'_','%'},'\\');
+    return StringUtil::escapeAll(q,{'_','%'},'\\');
 }
 
 /*****************************************************/
@@ -32,7 +32,7 @@ std::string QueryBuilder::GetText() const
     if (!mOffsetNull)
         query += " OFFSET "+std::to_string(mOffset);
 
-    Utilities::trim_void(query); return query;
+    StringUtil::trim_void(query); return query;
 }
 
 } // namespace Database

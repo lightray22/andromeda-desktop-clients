@@ -8,7 +8,7 @@
 #include <string>
 
 #include "MixedValue.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Database {
@@ -38,6 +38,7 @@ public:
 
     /** 
      * Returns a string comparing the given column to a string value using LIKE 
+     * NOTE if using hasMatch, MAKE SURE input is ESCAPED with EscapeWildcards!
      * @param hasMatch if true, the string manages its own SQL wildcard characters else use %val%
      */
     template<typename T> // const char* or std::string
@@ -116,7 +117,7 @@ public:
         std::vector<std::string> parts(vals.size());
         std::transform(std::begin(vals), std::end(vals), std::begin(parts), 
             [&](const char* val)->std::string { return Equals(key, val); });
-        return "("+Utilities::implode(" OR ",parts)+")";
+        return "("+StringUtil::implode(" OR ",parts)+")";
     }
     
     // TODO could add ManyEqualsAnd that takes in MixedParams?
@@ -133,7 +134,7 @@ public:
     {
         // convert parameter pack to array of strings
         const std::array<std::string, sizeof...(Ts)> strs {{ std::forward<Ts>(args) ... }};
-        return "("+Utilities::implode(" OR ",strs)+")";
+        return "("+StringUtil::implode(" OR ",strs)+")";
     }
 
     /** Returns a query string that combines the given arguments using AND */
@@ -142,7 +143,7 @@ public:
     {
         // convert parameter pack to array of strings
         const std::array<std::string, sizeof...(Ts)> strs {{ std::forward<Ts>(args) ... }};
-        return "("+Utilities::implode(" AND ",strs)+")";
+        return "("+StringUtil::implode(" AND ",strs)+")";
     }
 
     /**

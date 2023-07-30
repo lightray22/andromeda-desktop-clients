@@ -7,10 +7,10 @@
 #include "nlohmann/json_fwd.hpp"
 
 #include "andromeda/BaseException.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 

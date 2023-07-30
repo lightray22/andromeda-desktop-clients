@@ -5,9 +5,9 @@
 #include <memory>
 #include <string>
 
+#include "andromeda/common.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
 namespace Andromeda { 

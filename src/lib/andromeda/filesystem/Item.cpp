@@ -5,7 +5,6 @@
 
 #include "Folder.hpp"
 #include "FSConfig.hpp"
-#include "andromeda/Utilities.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 

@@ -5,6 +5,7 @@
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QMainWindow>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
@@ -30,10 +31,8 @@ public:
     explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     ~MainWindow() override;
-    MainWindow(const MainWindow&) = delete; // no copy
-    MainWindow& operator=(const MainWindow&) = delete;
-    MainWindow(MainWindow&&) = delete; // no move
-    MainWindow& operator=(MainWindow&&) = delete;
+    DELETE_COPY(MainWindow)
+    DELETE_MOVE(MainWindow)
 
     void closeEvent(QCloseEvent* event) override;
 

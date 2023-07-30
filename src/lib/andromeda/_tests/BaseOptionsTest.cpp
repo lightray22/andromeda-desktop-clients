@@ -7,7 +7,6 @@
 
 #include "BaseOptions.hpp"
 #include "TempPath.hpp"
-#include "Utilities.hpp"
 
 namespace Andromeda {
 

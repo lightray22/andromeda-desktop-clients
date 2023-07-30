@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/database/DatabaseException.hpp"
 #include "andromeda/database/MixedValue.hpp"
 

@@ -12,7 +12,8 @@
 #include "RunnerInput.hpp"
 #include "RunnerPool.hpp"
 #include "andromeda/ConfigOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/PlatformUtil.hpp"
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 #include "andromeda/filesystem/filedata/CachingAllocator.hpp"
 using Andromeda::Filesystem::Filedata::CachingAllocator;
@@ -135,7 +136,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
         else
         {
             const int code { val.at("code").get<int>() };
-            const Utilities::StringPair mpair { Utilities::split(
+            const StringUtil::StringPair mpair { StringUtil::split(
                 val.at("message").get<std::string>(),":") };
             const std::string& message { mpair.first };
 
@@ -256,7 +257,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
             if (mOptions.quiet) throw AuthenticationFailedException();
 
             std::cout << "Password? ";
-            Utilities::SilentReadConsole(password);
+            PlatformUtil::SilentReadConsole(password);
         }
 
         try
@@ -268,7 +269,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
             if (mOptions.quiet) throw; // rethrow
 
             std::string twofactor; std::cout << "Two Factor? ";
-            Utilities::SilentReadConsole(twofactor);
+            PlatformUtil::SilentReadConsole(twofactor);
 
             Authenticate(username, password, twofactor);
         }

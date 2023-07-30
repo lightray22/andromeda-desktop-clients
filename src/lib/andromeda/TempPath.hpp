@@ -5,7 +5,8 @@
 #include <random>
 #include <string>
 
-#include "Utilities.hpp"
+#include "common.hpp"
+#include "StringUtil.hpp"
 
 namespace Andromeda {
 
@@ -17,7 +18,7 @@ public:
     /** Create a temp path with the given suffix - does NOT create the file! */
     explicit TempPath(const std::string& suffix) :
         mPath(std::filesystem::temp_directory_path().string()+"/a2_"
-            +Utilities::Random(16)+"_"+suffix) { }
+            +StringUtil::Random(16)+"_"+suffix) { }
 
     virtual ~TempPath()
     {

@@ -12,9 +12,9 @@
 #include "MixedValue.hpp"
 #include "QueryBuilder.hpp"
 #include "SqliteDatabase.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
-#include "andromeda/Utilities.hpp"
 #include "fieldtypes/BaseField.hpp"
 
 namespace Andromeda {
@@ -233,9 +233,9 @@ private:
     void InsertObject_Register(BaseObject& object, const UniqueLock& lock);
 
     /** OrderedMap of objects that have notified us of being modified, indexed by pointer */
-    OrderedMap<BaseObject*, BaseObject&> mModified;
+    using ObjRefMap = OrderedMap<BaseObject*, BaseObject&>; ObjRefMap mModified;
     /** OrderedMap of objects that were newly created and not yet saved, indexed by pointer */
-    OrderedMap<BaseObject*, std::unique_ptr<BaseObject>> mCreated;
+    using ObjUPtrMap = OrderedMap<BaseObject*, std::unique_ptr<BaseObject>>; ObjUPtrMap mCreated;
 
     /** map of loaded objects (to prevent duplicates) indexed by ID:ClassName */
     std::unordered_map<std::string, std::unique_ptr<BaseObject>> mObjects;

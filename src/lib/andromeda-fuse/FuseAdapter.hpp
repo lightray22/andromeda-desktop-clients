@@ -11,8 +11,9 @@
 
 #include "FuseOptions.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/PlatformUtil.hpp"
 #include "andromeda/filesystem/Folder.hpp"
 
 namespace AndromedaFuse {
@@ -38,7 +39,7 @@ public:
          */
         explicit Exception(const std::string& message, int retval) :
             Andromeda::BaseException("FUSE Error: "+message+": "
-                +Andromeda::Utilities::GetErrorString(-retval)) {};
+                +Andromeda::PlatformUtil::GetErrorString(-retval)) {};
     };
 
     /** Thread mode for the FUSE Adapter */

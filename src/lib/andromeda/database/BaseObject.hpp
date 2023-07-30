@@ -6,8 +6,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 #include "fieldtypes/BaseField.hpp"
 #include "fieldtypes/ScalarType.hpp"
 

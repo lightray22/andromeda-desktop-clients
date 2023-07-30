@@ -12,9 +12,9 @@
 #include "Config.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 
