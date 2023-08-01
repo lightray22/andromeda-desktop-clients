@@ -200,6 +200,36 @@ public:
     static void CheckAuthCode(const std::string& mac, const std::string& msg, const std::string& key);
 };
 
+/** Sodium secure memory allocation functions */
+struct SecureMemory
+{
+    SecureMemory() = delete; // static only
+
+    /** sodium_malloc num*size, aligned */
+    [[nodiscard]] static void* alloc(size_t num, size_t size) noexcept;
+    /** sodium_free the given pointer */
+    static void free(void* ptr) noexcept;
+};
+
+/** A memory allocator that locks memory (no paging) and zeroes it before freeing */
+template<typename T>
+struct SecureAllocator
+{
+    using value_type = T;
+
+    /** Allocate num number of elements of size T */
+    [[nodiscard]] inline T* allocate(size_t num) const noexcept { 
+        return static_cast<T*>(SecureMemory::alloc(num,sizeof(T)));
+    }
+    /** Deallocate num number of elements at ptr */
+    inline void deallocate(T* ptr, size_t num) const noexcept {
+        SecureMemory::free(static_cast<void*>(ptr));
+    }
+};
+
+/** A std::string using SecureAlloc (no paging, zeroes memory before freeing) */
+using SecureString = std::basic_string<char, std::char_traits<char>, SecureAllocator<char>>;
+
 } // namespace Andromeda
 
 #endif // LIBA2_CRYPTO_H_

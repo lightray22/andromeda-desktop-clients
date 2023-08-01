@@ -62,7 +62,7 @@ public:
         size_t skip = 0, bool reverse = false);
 
     /** Splits a path into its dirname and basename */
-    [[nodiscard]] static StringPair splitPath(const std::string& str); // TODO unit test
+    [[nodiscard]] static StringPair splitPath(const std::string& stri);
 
     /** Returns true iff str starts with start */
     [[nodiscard]] static bool startsWith(const std::string& str, const std::string& start);
@@ -76,7 +76,7 @@ public:
     /** Returns the string with leading/trailing whitespace stripped */
     [[nodiscard]] static std::string trim(const std::string& str);
 
-    /** Returns the string converted to lowercase */
+    /** Returns the (ascii) string converted to lowercase */
     [[nodiscard]] static std::string tolower(const std::string& str);
 
     /** Replaces all occurences of from with repl in the given string (in place) */

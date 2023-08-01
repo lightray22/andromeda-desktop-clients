@@ -110,4 +110,15 @@ TEST_CASE("CryptoAuth", "[Crypto]")
     REQUIRE_THROWS_AS(Crypto::CheckAuthCode(badmac, msg, key), Crypto::DecryptFailedException);
 }
 
+/*****************************************************/
+TEST_CASE("SecureString","[Crypto]")
+{
+    SecureString s = "test";
+    REQUIRE(s == "test");
+
+    s.resize(5); s[4] = '2';
+    s += "..stuff";
+    REQUIRE(s == "test2..stuff");
+}
+
 } // namespace Andromeda

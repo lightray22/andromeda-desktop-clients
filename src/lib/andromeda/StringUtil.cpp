@@ -86,9 +86,12 @@ StringUtil::StringPair StringUtil::split(
 }
 
 /*****************************************************/
-StringUtil::StringPair StringUtil::splitPath(const std::string& str)
+StringUtil::StringPair StringUtil::splitPath(const std::string& stri)
 {
-    // TODO does this work if str ends with / ? why own function?
+    std::string str { stri }; // copy
+    while (!str.empty() && str.back() == '/')
+        str.pop_back(); // remove trailing /
+    
     return split(str,"/",0,true);
 }
 

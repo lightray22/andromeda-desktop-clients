@@ -5,7 +5,7 @@
 namespace Andromeda {
 
 /*****************************************************/
-TEST_CASE("Random", "[Utilities]")
+TEST_CASE("Random", "[StringUtil]")
 {
     REQUIRE(StringUtil::Random(0).empty());
     
@@ -17,7 +17,7 @@ TEST_CASE("Random", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("implode", "[Utilities]")
+TEST_CASE("implode", "[StringUtil]")
 {
     std::vector<std::string> arr;
     REQUIRE(StringUtil::implode("",arr).empty());
@@ -33,7 +33,7 @@ TEST_CASE("implode", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("explode", "[Utilities]")
+TEST_CASE("explode", "[StringUtil]")
 {
     typedef std::vector<std::string> Strings; Strings result;
     
@@ -78,7 +78,7 @@ TEST_CASE("explode", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("split", "[Utilities]")
+TEST_CASE("split", "[StringUtil]")
 {
     typedef std::pair<std::string,std::string> StrPair; StrPair result;
 
@@ -129,7 +129,24 @@ TEST_CASE("split", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("startsWith", "[Utilities]")
+TEST_CASE("splitPath", "[StringUtil]")
+{
+    using StringPair = StringUtil::StringPair;
+    REQUIRE(StringUtil::splitPath("") == StringPair{"",""});
+    REQUIRE(StringUtil::splitPath("/") == StringPair{"",""});
+    REQUIRE(StringUtil::splitPath("a/") == StringPair{"","a"});
+    REQUIRE(StringUtil::splitPath("/a") == StringPair{"","a"});
+    REQUIRE(StringUtil::splitPath("a/b") == StringPair{"a","b"});
+    REQUIRE(StringUtil::splitPath("a//b") == StringPair{"a/","b"});
+    REQUIRE(StringUtil::splitPath("/a/b") == StringPair{"/a","b"});
+    REQUIRE(StringUtil::splitPath("a/b/") == StringPair{"a","b"});
+    REQUIRE(StringUtil::splitPath("/a/b/") == StringPair{"/a","b"});
+    REQUIRE(StringUtil::splitPath("a/b/c") == StringPair{"a/b","c"});
+    REQUIRE(StringUtil::splitPath("/a/b/c/") == StringPair{"/a/b","c"});
+}
+
+/*****************************************************/
+TEST_CASE("startsWith", "[StringUtil]")
 {
     REQUIRE(StringUtil::startsWith("",""));
     REQUIRE(StringUtil::startsWith("a",""));
@@ -146,7 +163,7 @@ TEST_CASE("startsWith", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("endsWith", "[Utilities]")
+TEST_CASE("endsWith", "[StringUtil]")
 {
     REQUIRE(StringUtil::endsWith("",""));
     REQUIRE(StringUtil::endsWith("a",""));
@@ -163,7 +180,7 @@ TEST_CASE("endsWith", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("trim", "[Utilities]") 
+TEST_CASE("trim", "[StringUtil]") 
 {
     REQUIRE(StringUtil::trim("").empty());
     REQUIRE(StringUtil::trim("test") == "test");
@@ -181,7 +198,7 @@ TEST_CASE("trim", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("tolower", "[Utilities]")
+TEST_CASE("tolower", "[StringUtil]")
 {
     REQUIRE(StringUtil::tolower("").empty());
     REQUIRE(StringUtil::tolower("test") == "test");
@@ -189,7 +206,7 @@ TEST_CASE("tolower", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("replaceAll", "[Utilities]")
+TEST_CASE("replaceAll", "[StringUtil]")
 {
     REQUIRE(StringUtil::replaceAll("","","").empty());
     REQUIRE(StringUtil::replaceAll("","a","").empty());
@@ -208,7 +225,7 @@ TEST_CASE("replaceAll", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("escapeAll", "[Utilities]")
+TEST_CASE("escapeAll", "[StringUtil]")
 {
     REQUIRE(StringUtil::escapeAll("",{'a'},'b').empty());
     REQUIRE(StringUtil::escapeAll("a",{'a'},'r') == "ra");
@@ -226,7 +243,7 @@ TEST_CASE("escapeAll", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("stringToBool", "[Utilities]") 
+TEST_CASE("stringToBool", "[StringUtil]") 
 {
     REQUIRE(!StringUtil::stringToBool(""));
     REQUIRE(!StringUtil::stringToBool("0"));
@@ -243,7 +260,7 @@ TEST_CASE("stringToBool", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("stringToBytes", "[Utilities]")
+TEST_CASE("stringToBytes", "[StringUtil]")
 {
     REQUIRE(StringUtil::stringToBytes("") == 0);
     REQUIRE(StringUtil::stringToBytes(" ") == 0);
@@ -263,7 +280,7 @@ TEST_CASE("stringToBytes", "[Utilities]")
 }
 
 /*****************************************************/
-TEST_CASE("bytesToString", "[Utilities]")
+TEST_CASE("bytesToString", "[StringUtil]")
 {
     REQUIRE(StringUtil::bytesToString(0) == "0");
     REQUIRE(StringUtil::bytesToString(123) == "123");

@@ -38,8 +38,8 @@ void* CachingAllocator::alloc(size_t pages)
         mCurAlloc += pages*mPageSize;
         mMaxAlloc = std::max(mCurAlloc, mMaxAlloc);
 
-        MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
-            << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
+        MDBG_INFO("... mBaseline:" << mBaseline 
+            << " mCurAlloc:" << mCurAlloc << " mMaxAlloc:" << mMaxAlloc);
 
         FreeListMap::iterator fmIt { mFreeLists.lower_bound(pages) };
         if (fmIt != mFreeLists.end())

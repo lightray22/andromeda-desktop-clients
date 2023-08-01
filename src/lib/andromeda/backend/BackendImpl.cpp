@@ -12,6 +12,7 @@
 #include "RunnerInput.hpp"
 #include "RunnerPool.hpp"
 #include "andromeda/ConfigOptions.hpp"
+#include "andromeda/Crypto.hpp"
 #include "andromeda/PlatformUtil.hpp"
 #include "andromeda/StringUtil.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
@@ -213,10 +214,20 @@ void BackendImpl::RunAction_StreamOut(RunnerInput_StreamOut& input)
 /*****************************************************/
 void BackendImpl::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
+    // TODO probably should be using SecureString for passwords/sessionKey, etc.
     MDBG_INFO("(username:" << username << ")");
 
     CloseSession();
 
+    const std::string password_fullkey_salt(Crypto::SaltLength(),'\0'); // no salt here
+    const std::string password_fullkey { Crypto::DeriveKey(password,password_fullkey_salt,64) };
+
+    const std::string password_authkey { password_fullkey.substr(0,32) };
+    const std::string password_cryptkey { password_fullkey.substr(32,32) };
+
+    MDBG_INFO("... password_authkey:"); mDebug.Info(mDebug.DumpBytes(password_authkey.data(), password_authkey.size()));
+    MDBG_INFO("... password_cryptkey:"); mDebug.Info(mDebug.DumpBytes(password_cryptkey.data(), password_cryptkey.size()));
+    
     RunnerInput input { "accounts", "createsession", {{ "username", username }}, // plainParams
         {{ "auth_password", password }}}; // dataParams
 
@@ -226,6 +237,11 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
 
     nlohmann::json resp(RunAction_Write(input));
 
+    // TODO this is demo placeholder code for e2ee later... master_keywrap_salt comes from the server
+    const std::string master_keywrap_salt { "\x7f\x1e\xc2\xb4\xf9\x09\xcc\xfb\xae\x64\x1d\xfd\x0f\x70\xb8\x05" };
+    const std::string master_keywrap { Crypto::DeriveKey(password_cryptkey,master_keywrap_salt,32) };
+    MDBG_INFO("... master_keywrap:"); mDebug.Info(mDebug.DumpBytes(master_keywrap.data(), master_keywrap.size()));
+
     try
     {
         mCreatedSession = true;
@@ -234,7 +250,7 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
         resp.at("client").at("session").at("id").get_to(mSessionID);
         resp.at("client").at("session").at("authkey").get_to(mSessionKey);
 
-        MDBG_INFO("... sessionID:" << mSessionID);
+        MDBG_INFO("... accountID:" << mAccountID << " sessionID:" << mSessionID << " sessionKey:" << mSessionKey);
     }
     catch (const nlohmann::json::exception& ex) {
         throw JSONErrorException(ex.what()); }
