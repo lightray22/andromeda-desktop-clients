@@ -88,7 +88,7 @@ MainWindow::~MainWindow()
     while (mQtUi->tabAccounts->count() != 0)
     {
         QWidget* accountTab { mQtUi->tabAccounts->widget(0) };
-        mQtUi->tabAccounts->removeTab(0); delete accountTab;
+        mQtUi->tabAccounts->removeTab(0); delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
     }
 }
 
@@ -177,7 +177,7 @@ void MainWindow::RemoveAccount()
         }
 
         const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
-        mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
+        mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
     }
 
     if (GetCurrentTab() == nullptr) // no accounts left

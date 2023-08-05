@@ -6,8 +6,6 @@
 
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/filesystem/Folder.hpp"
-using Andromeda::Filesystem::Folder;
 #include "andromeda/filesystem/folders/SuperRoot.hpp"
 using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda-fuse/FuseAdapter.hpp"

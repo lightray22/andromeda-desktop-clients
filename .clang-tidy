@@ -51,6 +51,7 @@ readability-*,
 -readability-implicit-bool-conversion,
 -readability-isolate-declaration,
 -readability-magic-numbers,
+-readability-redundant-access-specifiers,
 -readability-static-accessed-through-instance,
 '
 CheckOptions:

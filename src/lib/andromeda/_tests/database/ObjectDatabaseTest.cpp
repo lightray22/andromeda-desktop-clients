@@ -99,7 +99,7 @@ TEST_CASE("LoadUnique", "[ObjectDatabase]")
         .WITH(_2 == MixedParams{{":d0",5}})
         .SIDE_EFFECT(_3.emplace_back(Row{{"id","abc"},{"myint",5},{"mystr","test1"}})).RETURN(0UL);
 
-    EasyObject* obj { objdb.TryLoadUniqueByQuery<EasyObject>(q) };
+    const EasyObject* obj { objdb.TryLoadUniqueByQuery<EasyObject>(q) };
 
     REQUIRE(obj != nullptr);
     REQUIRE(obj->ID() == "abc");

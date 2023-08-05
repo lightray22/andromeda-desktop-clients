@@ -26,7 +26,7 @@ public:
         const std::string& password, const std::string& twofactor);
 
     /** Create a new BackendContext from a known session and store ref */
-    BackendContext(Andromeda::Backend::SessionStore& session);
+    explicit BackendContext(Andromeda::Backend::SessionStore& session);
 
     virtual ~BackendContext();
     DELETE_COPY(BackendContext)

@@ -4,7 +4,6 @@
 #include "Options.hpp"
 
 #include "andromeda/BaseOptions.hpp"
-using Andromeda::BaseOptions;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
 

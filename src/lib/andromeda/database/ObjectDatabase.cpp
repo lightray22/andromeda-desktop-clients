@@ -120,7 +120,7 @@ void ObjectDatabase::UpdateObject_Query(BaseObject& object, const BaseObject::Fi
     MixedParams data {{":id", object.ID()}};
     std::list<std::string> sets; size_t i { 0 };
 
-    for (FieldTypes::BaseField* field : fields)
+    for (const FieldTypes::BaseField* field : fields)
     {
         const std::string key { field->GetName() };
         const MixedValue val { field->GetDBValue() };
@@ -176,7 +176,7 @@ void ObjectDatabase::InsertObject_Query(BaseObject& object, const BaseObject::Fi
     std::list<std::string> indexes;
     MixedParams data; size_t i { 0 };
 
-    for (FieldTypes::BaseField* field : fields)
+    for (const FieldTypes::BaseField* field : fields)
     {
         const std::string key { field->GetName() };
         const MixedValue val { field->GetDBValue() };
