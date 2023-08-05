@@ -25,7 +25,7 @@ public:
 
     explicit MemoryAllocator();
 
-#if DEBUG
+#if DEBUG // sanity checks
     virtual ~MemoryAllocator();
 #else // !DEBUG
     virtual ~MemoryAllocator() = default;
@@ -67,7 +67,7 @@ private:
     /** Updates and prints allocator statistics (debug) */
     void stats(const std::string& fname, size_t pages, bool alloc);
 
-#if DEBUG
+#if DEBUG // sanity checks
     using AllocMap = std::map<void*, size_t, std::greater<>>;
     /** Map of all allocations for verifying frees */
     AllocMap mAllocMap;

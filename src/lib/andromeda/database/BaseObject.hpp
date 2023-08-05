@@ -4,7 +4,6 @@
 #include <list>
 #include <map>
 #include <string>
-#include <unordered_map>
 
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
@@ -55,11 +54,8 @@ public:
     virtual void Save();
 
     using FieldList = std::list<FieldTypes::BaseField*>;
-    #if DEBUG // ordered map for unit test
+    // ordered map for unit test checking queries
     using FieldMap = std::map<std::string, FieldTypes::BaseField&>;
-    #else // !DEBUG
-    using FieldMap = std::unordered_map<std::string, FieldTypes::BaseField&>;
-    #endif // DEBUG
 
 protected:
 

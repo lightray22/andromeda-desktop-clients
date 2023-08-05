@@ -28,6 +28,8 @@ set(SOURCE_FILES
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
     # cmake < 3.27 wants to analyze Qt generated files
     andromeda_analyze()
+else()
+    message(WARNING "Skipping andromeda_analyze() on andromeda-gui, cmake >= 3.27 required")
 endif()
 
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
