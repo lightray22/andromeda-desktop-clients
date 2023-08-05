@@ -9,13 +9,21 @@
 #include "ui_MainWindow.h"
 
 #include "AccountTab.hpp"
+#include "ExceptionBox.hpp"
 #include "LoginDialog.hpp"
 
-#include "andromeda/backend/BackendImpl.hpp" // GetBackend()
+#include "andromeda/backend/BackendImpl.hpp"
+using Andromeda::Backend::BackendImpl;
+#include "andromeda/backend/SessionStore.hpp"
+using Andromeda::Backend::SessionStore;
+#include "andromeda/database/DatabaseException.hpp"
+using Andromeda::Database::DatabaseException;
 #include "andromeda/database/ObjectDatabase.hpp"
 using Andromeda::Database::ObjectDatabase;
 #include "andromeda/database/SqliteDatabase.hpp"
 using Andromeda::Database::SqliteDatabase;
+#include "andromeda/database/TableInstaller.hpp"
+using Andromeda::Database::TableInstaller;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda-gui/BackendContext.hpp"
@@ -31,17 +39,44 @@ MainWindow::MainWindow(CacheOptions& cacheOptions) :
 {
     MDBG_INFO("()");
 
-    std::string dbPath { QStandardPaths::writableLocation(
-        QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
-    std::filesystem::create_directories(dbPath);
-
-    dbPath += "/database.s3db"; MDBG_INFO("... dbPath:" << dbPath);
-    // TODO shouldn't crash if the DB throws... at least catch exception in main and exit
-    // maybe delete, show an alert to the user, try again if the db is corrupt
-    mSqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
-    mObjDatabase = std::make_unique<ObjectDatabase>(*mSqlDatabase);
-
     mQtUi->setupUi(this);
+
+    try
+    {
+        std::string dbPath { QStandardPaths::writableLocation(
+            QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
+
+        try { std::filesystem::create_directories(dbPath); }
+        catch (const std::filesystem::filesystem_error& ex)
+            { throw DatabaseException(ex.what()); }
+        
+        dbPath += "/database.s3db"; MDBG_INFO("... init dbPath:" << dbPath);
+        mSqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
+        mObjDatabase = std::make_unique<ObjectDatabase>(*mSqlDatabase);
+
+        MDBG_INFO("... installing database tables");
+        TableInstaller tableInst(*mObjDatabase);
+        tableInst.InstallTable<SessionStore>();
+
+        MDBG_INFO("... loading existing sessions");
+        for (SessionStore* session : SessionStore::LoadAll(*mObjDatabase))
+        {
+            std::unique_ptr<BackendContext> backendCtx {
+                std::make_unique<BackendContext>(*session) };
+
+            backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+            AddAccountTab(std::move(backendCtx));
+        }
+    }
+    catch (const DatabaseException& ex)
+    {
+        MDBG_ERROR("... " << ex.what());
+
+        std::stringstream str;
+        str << "Failed to initialize the database. This is probably a bug, please report." << std::endl;
+        str << "Previously saved accounts are unavailable, and new ones will not be saved.";
+        ExceptionBox::warning(this, "Database Error", str.str(), ex);
+    }
 }
 
 /*****************************************************/
@@ -94,17 +129,30 @@ void MainWindow::AddAccount()
     std::unique_ptr<BackendContext> backendCtx;
     if (loginDialog.CreateBackend(backendCtx))
     {
+        try { if (mObjDatabase) backendCtx->StoreSession(*mObjDatabase); }
+        catch (const DatabaseException& ex)
+        {
+            MDBG_ERROR("... " << ex.what());
+            ExceptionBox::warning(this, "Database Error", "Failed to add the account to the database. This is probably a bug, please report.", ex);
+        }
+
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
-        AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
-
-        mQtUi->tabAccounts->setCurrentIndex(
-            mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
-
-        mQtUi->actionMount_Storage->setEnabled(true);
-        mQtUi->actionUnmount_Storage->setEnabled(true);
-        mQtUi->actionBrowse_Storage->setEnabled(true);
-        mQtUi->actionRemove_Account->setEnabled(true);
+        AddAccountTab(std::move(backendCtx));
     }
+}
+
+/*****************************************************/
+void MainWindow::AddAccountTab(std::unique_ptr<BackendContext> backendCtx)
+{
+    AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
+
+    mQtUi->tabAccounts->setCurrentIndex(
+        mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
+
+    mQtUi->actionMount_Storage->setEnabled(true);
+    mQtUi->actionUnmount_Storage->setEnabled(true);
+    mQtUi->actionBrowse_Storage->setEnabled(true);
+    mQtUi->actionRemove_Account->setEnabled(true);
 }
 
 /*****************************************************/
@@ -119,6 +167,15 @@ void MainWindow::RemoveAccount()
     AccountTab* accountTab { GetCurrentTab() };
     if (accountTab != nullptr)
     {
+        SessionStore* session { accountTab->GetBackendContext().GetSessionStore() };
+        
+        try { if (session != nullptr) mObjDatabase->DeleteObject(*session); }
+        catch (const DatabaseException& ex)
+        {
+            MDBG_ERROR("... " << ex.what());
+            ExceptionBox::warning(this, "Database Error", "Failed to remove the account from the database. This is probably a bug, please report.", ex);
+        }
+
         const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
         mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab;
     }

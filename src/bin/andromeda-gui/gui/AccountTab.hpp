@@ -36,6 +36,9 @@ public:
     /** Returns the string to be used for this tab's title */
     std::string GetTabName() const;
 
+    /** Returns a reference to the BackendContext in use */
+    inline BackendContext& GetBackendContext() const { return *mBackendContext; }
+
 public slots:
 
     /** 

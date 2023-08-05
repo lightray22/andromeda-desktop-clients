@@ -14,17 +14,18 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
+HTTPRunner::HTTPRunner(const std::string& fullURL, const std::string& userAgent,
     const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions) : 
-    mDebug(__func__,this), 
-    mProtoHost(protoHost), mBaseURL(baseURL), mUserAgent(userAgent),
+    mDebug(__func__,this), mUserAgent(userAgent),
     mBaseOptions(runnerOptions), mHttpOptions(httpOptions),
     // allocate the stream buffer once so we don't alloc/free memory repeatedly
     mStreamBuffer(mBaseOptions.streamBufferSize) // not thread safe between requests!
 {
-    if (!StringUtil::startsWith(mBaseURL,"/")) mBaseURL.insert(0, "/");
+    const HostUrlPair urlPair { ParseURL(fullURL) };
+    mProtoHost = urlPair.first;
+    mBaseURL = urlPair.second;
 
-    MDBG_INFO("(protoHost:" << mProtoHost << " baseURL:" << mBaseURL << ")");
+    MDBG_INFO("(url:" << fullURL << ") protoHost:" << mProtoHost << " baseURL:" << mBaseURL);
 
     InitializeClient(mProtoHost);
 }
@@ -33,7 +34,7 @@ HTTPRunner::HTTPRunner(const std::string& protoHost, const std::string& baseURL,
 std::unique_ptr<BaseRunner> HTTPRunner::Clone() const
 {
     return std::make_unique<HTTPRunner>(
-        mProtoHost, mBaseURL, mUserAgent, mBaseOptions, mHttpOptions);
+        GetFullURL(), mUserAgent, mBaseOptions, mHttpOptions);
 }
 
 /*****************************************************/
@@ -72,26 +73,20 @@ void HTTPRunner::InitializeClient(const std::string& protoHost)
 /*****************************************************/
 HTTPRunner::HostUrlPair HTTPRunner::ParseURL(const std::string& fullURL)
 {
-    const bool hasProto = fullURL.find("://") != std::string::npos;
-    StringUtil::StringPair pair { StringUtil::split(fullURL, "/", hasProto ? 2 : 0) };
+    const std::string fullerURL { 
+        (fullURL.find("://") != std::string::npos)
+            ? fullURL : ("http://"+fullURL) };
 
+    StringUtil::StringPair pair { StringUtil::split(fullerURL, "/", 2) };
     if (!StringUtil::startsWith(pair.second,"/")) 
-        pair.second.insert(0, "/");
+        pair.second.insert(0,"/");
     return pair;
 }
 
 /*****************************************************/
 std::string HTTPRunner::GetHostname() const
 {
-    const StringUtil::StringPair pair { StringUtil::split(mProtoHost, "://") };
-    return pair.second.empty() ? pair.first : pair.second; 
-}
-
-/*****************************************************/
-std::string HTTPRunner::GetProtoHost() const
-{
-    return (mProtoHost.find("://") != std::string::npos)
-        ? mProtoHost : ("http://"+mProtoHost);
+    return StringUtil::split(mProtoHost, "://").second;
 }
 
 /*****************************************************/
@@ -338,13 +333,13 @@ void HTTPRunner::RegisterRedirect(const std::string& location)
 {
     MDBG_INFO("(location:" << location << ")");
 
-    HTTPRunner::HostUrlPair newPair { HTTPRunner::ParseURL(location) };
+    HostUrlPair newPair { ParseURL(location) };
 
     const size_t paramsPos { newPair.second.find("?") };
     if (paramsPos != std::string::npos) // remove URL params
         newPair.second.erase(paramsPos);
     
-    if (newPair.first != GetProtoHost())
+    if (newPair.first != mProtoHost)
     {
         MDBG_INFO("... new protoHost:" << newPair.first);
         mProtoHost = newPair.first;

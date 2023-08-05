@@ -13,6 +13,8 @@ namespace Database {
 TEST_CASE("GetQueries", "[TableBuilder]")
 {
     TableBuilder tb { TableBuilder::For<EasyObject>() };
+    REQUIRE(tb.GetQueries().empty());
+
     tb.AddColumn("id","char(20)",false)
       .AddColumn("test1","integer",false)
       .AddColumn("test2","longtext",true)

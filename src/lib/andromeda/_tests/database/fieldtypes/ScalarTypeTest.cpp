@@ -1,5 +1,6 @@
 
 #include "catch2/catch_test_macros.hpp"
+#include "catch2/trompeloeil.hpp"
 
 #include "../testObjects.hpp"
 #include "andromeda/database/BaseObject.hpp"
@@ -10,9 +11,11 @@ namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
 
+using trompeloeil::_;
+
 #define GET_MOCK_OBJECTS() \
     MockSqliteDatabase sqldb; \
-    ObjectDatabase objdb(sqldb); \
+    MockObjectDatabase objdb(sqldb); \
     EasyObject parent(objdb,{});
 
 /*****************************************************/
@@ -26,6 +29,8 @@ TEST_CASE("Basic", "[ScalarType]")
     REQUIRE(field.GetDelta() == 0);
     REQUIRE(field.isModified() == false);
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     REQUIRE(field.SetValue("test") == true);
     REQUIRE(field.SetValue("test") == false);
     REQUIRE(field.GetDelta() == 1);
@@ -36,6 +41,8 @@ TEST_CASE("Basic", "[ScalarType]")
 TEST_CASE("Operators", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
+
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(2);
 
     ScalarType<std::string> field1("myfield",parent);
     field1 = "test2";
@@ -58,6 +65,8 @@ TEST_CASE("SetUnmodified", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     ScalarType<std::string> field("myfield",parent);
 
     field.SetValue("test");
@@ -81,6 +90,8 @@ TEST_CASE("NullStringValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(3);
+
     NullScalarType<std::string> field("myfield",parent);
 
     REQUIRE(field.SetValue(nullptr) == false);
@@ -108,6 +119,8 @@ TEST_CASE("NullStringTempValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     NullScalarType<std::string> field("myfield",parent);
 
     REQUIRE(field.SetValue("test",true) == false);
@@ -137,6 +150,8 @@ TEST_CASE("NullStringDefault", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     {
         const NullScalarType<std::string> field("myfield",parent);
         REQUIRE(field.TryGetValue() == nullptr);
@@ -145,7 +160,7 @@ TEST_CASE("NullStringDefault", "[ScalarType]")
     {
         const NullScalarType<std::string> field("myfield",parent,"a");
         REQUIRE(*field.TryGetValue() == "a");
-        REQUIRE(field.GetDelta() == 1);
+        REQUIRE(field.GetDelta() == 2); // default adds 1
     }
 }
 
@@ -154,6 +169,8 @@ TEST_CASE("StringValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(2);
+
     ScalarType<std::string> field("myfield",parent);
 
     REQUIRE(field.SetValue("test") == true);
@@ -173,6 +190,8 @@ TEST_CASE("StringTempValue", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     ScalarType<std::string> field("myfield",parent);
     field.InitDBValue(MixedValue("init"));
 
@@ -208,9 +227,11 @@ TEST_CASE("StringDefault", "[ScalarType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     const ScalarType<std::string> field("myfield",parent,"a");
     REQUIRE(field.GetValue() == "a");
-    REQUIRE(field.GetDelta() == 1);
+    REQUIRE(field.GetDelta() == 2); // default adds 1
 }
 
 } // namespace FieldTypes

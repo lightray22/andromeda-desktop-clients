@@ -16,6 +16,7 @@ namespace Database {
 class TableBuilder
 {
 public:
+    // TODO add table modification facilities later for schema upgrades
 
     /** Creates a TableBuilder for a BaseObject class */
     template<class T>

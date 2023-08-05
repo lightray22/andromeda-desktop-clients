@@ -36,14 +36,6 @@ public:
         inline static const char* GetClassNameS() { return name; } \
         inline const char* GetClassName() const override { return T::GetClassNameS(); }
 
-    #define BASEOBJECT_CONSTRUCT(T) \
-        T(ObjectDatabase& database, const MixedParams& data): \
-            BaseObject(database),
-
-    #define BASEOBJECT_REGISTER(...) \
-        RegisterFields({__VA_ARGS__}); \
-        InitializeFields(data);
-
     virtual ~BaseObject() = default;
     DELETE_COPY(BaseObject)
     DELETE_MOVE(BaseObject)
@@ -102,7 +94,7 @@ protected:
     void InitializeFields(const MixedParams& data);
 
     /** Sets the ID field on a newly created object */
-    void InitializeID(size_t len = 16);
+    void InitializeID(size_t len = 12);
 
     /** Returns true if this object has a modified field */
     bool isModified() const;

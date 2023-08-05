@@ -6,6 +6,8 @@ set(SOURCE_FILES
     QueryBuilder.cpp
     SqliteDatabase.cpp
     TableBuilder.cpp
+    TableInstaller.cpp
+    VersionEntry.cpp
     )
 
 target_sources(libandromeda PRIVATE ${SOURCE_FILES})

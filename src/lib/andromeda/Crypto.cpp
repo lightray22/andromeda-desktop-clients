@@ -1,5 +1,5 @@
 
-#include "sodium.h"
+#include <sodium.h>
 
 #include "Crypto.hpp"
 #include "andromeda/Debug.hpp"
@@ -11,7 +11,7 @@ Debug sDebug("Crypto",nullptr); // NOLINT(cert-err58-cpp)
 } // anonymous namespace
 
 /*****************************************************/
-void SodiumInit() // @throws SodiumFailedException
+void Crypto::SodiumInit() // @throws SodiumFailedException
 {
     const int initc { sodium_init() };
     if (initc < 0)
@@ -32,6 +32,16 @@ std::string Crypto::GenerateRandom(size_t len)
 }
 
 /*****************************************************/
+SecureBuffer Crypto::GenerateSecRandom(size_t len)
+{
+    SodiumInit();
+
+    SecureBuffer ret(len);
+    randombytes_buf(ret.data(), len);
+    return ret;
+}
+
+/*****************************************************/
 size_t Crypto::SaltLength()
 {
     return crypto_pwhash_argon2id_SALTBYTES;
@@ -44,17 +54,17 @@ std::string Crypto::GenerateSalt()
 }
 
 /*****************************************************/
-std::string Crypto::DeriveKey(const std::string& password, const std::string& salt, size_t bytes)
+SecureBuffer Crypto::DeriveKey(const SecureBuffer& password, const std::string& salt, size_t bytes)
 {
     if (salt.size() != SaltLength())
         throw ArgumentException("salt was "+std::to_string(salt.size())+" bytes, expected "+std::to_string(SaltLength()));
 
     SodiumInit();
 
-    std::string key; key.resize(bytes);
+    SecureBuffer key(bytes);
     const int err = crypto_pwhash( 
         reinterpret_cast<unsigned char*>(key.data()), key.size(),
-        password.data(), password.size(), 
+        reinterpret_cast<const char*>(password.data()), password.size(), 
         reinterpret_cast<const unsigned char*>(salt.data()),
         crypto_pwhash_argon2id_OPSLIMIT_INTERACTIVE,
         crypto_pwhash_argon2id_MEMLIMIT_INTERACTIVE,
@@ -88,9 +98,9 @@ size_t Crypto::SecretOutputOverhead()
 }
 
 /*****************************************************/
-std::string Crypto::GenerateSecretKey()
+SecureBuffer Crypto::GenerateSecretKey()
 {
-    return GenerateRandom(SecretKeyLength());
+    return GenerateSecRandom(SecretKeyLength());
 }
 
 /*****************************************************/
@@ -100,7 +110,7 @@ std::string Crypto::GenerateSecretNonce()
 }
 
 /*****************************************************/
-std::string Crypto::EncryptSecret(const std::string& msg, const std::string& nonce, const std::string& key, const std::string& extra)
+std::string Crypto::EncryptSecret(const SecureBuffer& msg, const std::string& nonce, const SecureBuffer& key, const std::string& extra)
 {
     if (nonce.size() != SecretNonceLength())
         throw ArgumentException("nonce was "+std::to_string(nonce.size())+" bytes, expected "+std::to_string(SecretNonceLength()));
@@ -138,7 +148,7 @@ std::string Crypto::EncryptSecret(const std::string& msg, const std::string& non
 }
 
 /*****************************************************/
-std::string Crypto::DecryptSecret(const std::string& enc, const std::string& nonce, const std::string& key, const std::string& extra)
+SecureBuffer Crypto::DecryptSecret(const std::string& enc, const std::string& nonce, const SecureBuffer& key, const std::string& extra)
 {
     if (nonce.size() != SecretNonceLength())
         throw ArgumentException("nonce was "+std::to_string(nonce.size())+" bytes, expected "+std::to_string(SecretNonceLength()));
@@ -147,7 +157,7 @@ std::string Crypto::DecryptSecret(const std::string& enc, const std::string& non
 
     SodiumInit();
 
-    std::string msg; msg.resize(enc.size());
+    SecureBuffer msg(enc.size());
 
     unsigned long long mlen { 0 }; // NOLINT(google-runtime-int)
     const int err = crypto_aead_xchacha20poly1305_ietf_decrypt(
@@ -193,9 +203,8 @@ Crypto::KeyPair Crypto::GeneratePublicKeyPair()
 {
     SodiumInit();
 
-    KeyPair keypair;
+    KeyPair keypair { { }, SecureBuffer(crypto_box_SECRETKEYBYTES) };
     keypair.pubkey.resize(crypto_box_PUBLICKEYBYTES);
-    keypair.privkey.resize(crypto_box_SECRETKEYBYTES);
 
     const int err = crypto_box_keypair(
         reinterpret_cast<unsigned char*>(keypair.pubkey.data()),
@@ -218,7 +227,7 @@ size_t Crypto::PublicOutputOverhead()
 }
 
 /*****************************************************/
-std::string Crypto::EncryptPublic(const std::string& msg, const std::string& nonce, const std::string& sender_private, const std::string& recipient_public)
+std::string Crypto::EncryptPublic(const SecureBuffer& msg, const std::string& nonce, const SecureBuffer& sender_private, const std::string& recipient_public)
 {
     if (nonce.size() != PublicNonceLength())
         throw ArgumentException("nonce was "+std::to_string(nonce.size())+" bytes, expected "+std::to_string(PublicNonceLength()));
@@ -249,7 +258,7 @@ std::string Crypto::EncryptPublic(const std::string& msg, const std::string& non
 }
 
 /*****************************************************/
-std::string Crypto::DecryptPublic(const std::string& enc, const std::string& nonce, const std::string& recipient_private, const std::string& sender_public)
+SecureBuffer Crypto::DecryptPublic(const std::string& enc, const std::string& nonce, const SecureBuffer& recipient_private, const std::string& sender_public)
 {
     if (nonce.size() != PublicNonceLength())
         throw ArgumentException("nonce was "+std::to_string(nonce.size())+" bytes, expected "+std::to_string(PublicNonceLength()));
@@ -260,7 +269,7 @@ std::string Crypto::DecryptPublic(const std::string& enc, const std::string& non
 
     SodiumInit();
 
-    std::string msg; msg.resize(enc.size()-PublicOutputOverhead());
+    SecureBuffer msg(enc.size()-PublicOutputOverhead());
 
     const int err = crypto_box_open_easy(
         reinterpret_cast<unsigned char*>(msg.data()), 
@@ -293,13 +302,13 @@ size_t Crypto::AuthTagLength()
 }
 
 /*****************************************************/
-std::string Crypto::GenerateAuthKey()
+SecureBuffer Crypto::GenerateAuthKey()
 {
-    return GenerateRandom(AuthKeyLength());
+    return GenerateSecRandom(AuthKeyLength());
 }
 
 /*****************************************************/
-std::string Crypto::MakeAuthCode(const std::string& msg, const std::string& key)
+std::string Crypto::MakeAuthCode(const std::string& msg, const SecureBuffer& key)
 {
     if (key.size() != AuthKeyLength())
         throw ArgumentException("key was "+std::to_string(key.size())+" bytes, expected "+std::to_string(AuthKeyLength()));
@@ -324,7 +333,7 @@ std::string Crypto::MakeAuthCode(const std::string& msg, const std::string& key)
 }
 
 /*****************************************************/
-bool Crypto::TryCheckAuthCode(const std::string& mac, const std::string& msg, const std::string& key)
+bool Crypto::TryCheckAuthCode(const std::string& mac, const std::string& msg, const SecureBuffer& key)
 {
     if (key.size() != AuthKeyLength())
         throw ArgumentException("key was "+std::to_string(key.size())+" bytes, expected "+std::to_string(AuthKeyLength()));
@@ -349,22 +358,10 @@ bool Crypto::TryCheckAuthCode(const std::string& mac, const std::string& msg, co
 }
 
 /*****************************************************/
-void Crypto::CheckAuthCode(const std::string& mac, const std::string& msg, const std::string& key)
+void Crypto::CheckAuthCode(const std::string& mac, const std::string& msg, const SecureBuffer& key)
 {
     if (!TryCheckAuthCode(mac, msg, key))
         throw DecryptFailedException(0);
-}
-
-/*****************************************************/
-void* SecureMemory::alloc(size_t num, size_t size) noexcept
-{
-    return sodium_allocarray(num, size); // alloc, lock
-}
-
-/*****************************************************/
-void SecureMemory::free(void* ptr) noexcept
-{
-    sodium_free(ptr); // unlock, zero, dealloc
 }
 
 } // namespace Andromeda

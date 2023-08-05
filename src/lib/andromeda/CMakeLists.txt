@@ -11,6 +11,7 @@ set(SOURCE_FILES
     Crypto.cpp
     Debug.cpp
     PlatformUtil.cpp
+    SecureBuffer.cpp
     StringUtil.cpp
     )
 andromeda_lib(libandromeda "${SOURCE_FILES}")

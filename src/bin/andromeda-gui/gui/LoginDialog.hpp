@@ -29,8 +29,9 @@ public:
     DELETE_MOVE(LoginDialog)
 
     /** 
-     * Runs QDialog::exec() and gives the created backend 
+     * Runs QDialog::exec() and creates a backend from the input username/password etc.
      * @param[out] backend backend gets created here
+     * @return the return value of QDialog::exec()
      */
     int CreateBackend(std::unique_ptr<BackendContext>& backend);
 

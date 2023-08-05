@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include "andromeda/BaseException.hpp"
+#include "andromeda/SecureBuffer.hpp"
 
 namespace Andromeda {
 
@@ -16,7 +17,7 @@ class Crypto
 public:
 
     Crypto() = delete; // static only
-    
+
     /** Base Exception indicating a failure with a crypto operation */
     class Exception : public BaseException { public:
         explicit Exception(const std::string& msg) : BaseException("Crypto error: "+msg) {}; };
@@ -38,6 +39,11 @@ public:
      * @throws SodiumFailedException
      */
     static std::string GenerateRandom(size_t len);
+    /** 
+     * Generates a random SecureBuffer suitable for cryptography
+     * @throws SodiumFailedException
+     */
+    static SecureBuffer GenerateSecRandom(size_t len);
 
     /** Returns the length of a generated salt */
     static size_t SaltLength();
@@ -57,7 +63,7 @@ public:
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
     */
-    static std::string DeriveKey(const std::string& password, const std::string& salt, size_t bytes);
+    static SecureBuffer DeriveKey(const SecureBuffer& password, const std::string& salt, size_t bytes = SecretKeyLength());
     // TODO maybe add support for "sensitive" hash, right now only have "interactive" (later, for signing in, etc.)
 
     /** Returns the length of a key for use with secret crypto */
@@ -76,7 +82,7 @@ public:
      * Generates a crypto key for use with secret crypto 
      * @throws SodiumFailedException
      */
-    static std::string GenerateSecretKey();
+    static SecureBuffer GenerateSecretKey();
 
     /** 
      * Generates a crypto nonce for use with secret crypto
@@ -94,7 +100,7 @@ public:
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      */
-    static std::string EncryptSecret(const std::string& msg, const std::string& nonce, const std::string& key, const std::string& extra = "");
+    static std::string EncryptSecret(const SecureBuffer& msg, const std::string& nonce, const SecureBuffer& key, const std::string& extra = "");
 
     /**
      * Decrypts the given data
@@ -102,12 +108,12 @@ public:
      * @param nonce the nonce that was used to encrypt
      * @param key the key that was used to encrypt
      * @param extra the extra auth data used to encrypt
-     * @return std::string the decrypted and authenticated plaintext
+     * @return SecureBuffer the decrypted and authenticated plaintext
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      * @throws DecryptFailedException
      */
-    static std::string DecryptSecret(const std::string& enc, const std::string& nonce, const std::string& key, const std::string& extra = "");
+    static SecureBuffer DecryptSecret(const std::string& enc, const std::string& nonce, const SecureBuffer& key, const std::string& extra = "");
 
     /** Returns the length of a nonce for use with public crypto */
     static size_t PublicNonceLength();
@@ -122,7 +128,7 @@ public:
     struct KeyPair
     {
         std::string pubkey;
-        std::string privkey;
+        SecureBuffer privkey;
     };
 
     /** 
@@ -144,7 +150,7 @@ public:
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      */
-    static std::string EncryptPublic(const std::string& msg, const std::string& nonce, const std::string& sender_private, const std::string& recipient_public);
+    static std::string EncryptPublic(const SecureBuffer& msg, const std::string& nonce, const SecureBuffer& sender_private, const std::string& recipient_public);
 
     /**
      * Decrypts and verifies data from a sender to a recipient
@@ -152,12 +158,12 @@ public:
      * @param nonce the nonce that was used to encrypt
      * @param recipient_private the recipient's private key
      * @param sender_public the sender's public key
-     * @return std::string the decrypted and verified plaintext
+     * @return SecureBuffer the decrypted and verified plaintext
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      * @throws DecryptFailedException
      */
-    static std::string DecryptPublic(const std::string& enc, const std::string& nonce, const std::string& recipient_private, const std::string& sender_public);
+    static SecureBuffer DecryptPublic(const std::string& enc, const std::string& nonce, const SecureBuffer& recipient_private, const std::string& sender_public);
 
     /** Returns the length of a key for use with auth crypto */
     static size_t AuthKeyLength();
@@ -169,7 +175,7 @@ public:
      * Generates a crypto key for use with auth crypto
      * @throws SodiumFailedException
      */
-    static std::string GenerateAuthKey();
+    static SecureBuffer GenerateAuthKey();
 
     /**
      * Creates an authentication code (MAC) from a message and key
@@ -179,7 +185,7 @@ public:
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      */
-    static std::string MakeAuthCode(const std::string& msg, const std::string& key);
+    static std::string MakeAuthCode(const std::string& msg, const SecureBuffer& key);
 
     /**
      * Tries to authenticate a message using a secret key
@@ -190,45 +196,25 @@ public:
      * @throws InvalidArgumentException
      * @throws SodiumFailedException
      */
-    static bool TryCheckAuthCode(const std::string& mac, const std::string& msg, const std::string& key);
+    static bool TryCheckAuthCode(const std::string& mac, const std::string& msg, const SecureBuffer& key);
 
     /**
      * Same as TryCheckAuthCode() but throws an exception on decrypt failure
      * @see TryCheckAuthCode()
      * @throws DecryptFailedException
      */
-    static void CheckAuthCode(const std::string& mac, const std::string& msg, const std::string& key);
+    static void CheckAuthCode(const std::string& mac, const std::string& msg, const SecureBuffer& key);
+
+private:
+
+    friend struct SecureMemory; // SodiumInit
+
+    /**
+     * Calls sodium_init() to initialize
+     * @throws SodiumFailedException
+     */
+    static void SodiumInit();
 };
-
-/** Sodium secure memory allocation functions */
-struct SecureMemory
-{
-    SecureMemory() = delete; // static only
-
-    /** sodium_malloc num*size, aligned */
-    [[nodiscard]] static void* alloc(size_t num, size_t size) noexcept;
-    /** sodium_free the given pointer */
-    static void free(void* ptr) noexcept;
-};
-
-/** A memory allocator that locks memory (no paging) and zeroes it before freeing */
-template<typename T>
-struct SecureAllocator
-{
-    using value_type = T;
-
-    /** Allocate num number of elements of size T */
-    [[nodiscard]] inline T* allocate(size_t num) const noexcept { 
-        return static_cast<T*>(SecureMemory::alloc(num,sizeof(T)));
-    }
-    /** Deallocate num number of elements at ptr */
-    inline void deallocate(T* ptr, size_t num) const noexcept {
-        SecureMemory::free(static_cast<void*>(ptr));
-    }
-};
-
-/** A std::string using SecureAlloc (no paging, zeroes memory before freeing) */
-using SecureString = std::basic_string<char, std::char_traits<char>, SecureAllocator<char>>;
 
 } // namespace Andromeda
 

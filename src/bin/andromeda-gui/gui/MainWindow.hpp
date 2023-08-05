@@ -15,8 +15,9 @@ namespace Andromeda {
 }
 
 namespace AndromedaGui {
-namespace Gui {
+class BackendContext;
 
+namespace Gui {
 class AccountTab;
 
 namespace Ui { class MainWindow; }
@@ -28,6 +29,7 @@ class MainWindow : public QMainWindow
 
 public:
 
+    /** Instantiates the main window UI, initializes the database */
     explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     ~MainWindow() override;
@@ -63,15 +65,18 @@ private:
     /** Returns the current AccountTab or nullptr if none */
     AccountTab* GetCurrentTab();
 
+    /** Adds a new account tab for a created backend context */
+    void AddAccountTab(std::unique_ptr<BackendContext> backendCtx);
+
     mutable Andromeda::Debug mDebug;
+
+    /** SqliteDatabase instance for the ObjectDatabase (maybe null!) */
+    std::unique_ptr<Andromeda::Database::SqliteDatabase> mSqlDatabase;
+    /** ObjectDatabase instance for object storage (maybe null!) */
+    std::unique_ptr<Andromeda::Database::ObjectDatabase> mObjDatabase;
 
     /** Global cache manager to apply to all mounts */
     Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
-
-    /** SqliteDatabase instance for the ObjectDatabase */
-    std::unique_ptr<Andromeda::Database::SqliteDatabase> mSqlDatabase;
-    /** ObjectDatabase instance for object storage */
-    std::unique_ptr<Andromeda::Database::ObjectDatabase> mObjDatabase;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 };

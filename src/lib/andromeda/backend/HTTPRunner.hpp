@@ -56,33 +56,27 @@ public:
         InputSizeException() : EndpointException("413 Request Too Large") {} };
 
     /**
-     * @param protoHost (protocol://)hostname
-     * @param baseURL baseURL of the endpoint
+     * @param fullURL (protocol://)hostname/endpoint
      * @param userAgent name of the program running
      * @param runnerOptions base runner config options
      * @param httpOptions HTTP config options
      */
-    HTTPRunner(const std::string& protoHost, const std::string& baseURL, const std::string& userAgent,
+    HTTPRunner(const std::string& fullURL, const std::string& userAgent,
         const RunnerOptions& runnerOptions, const HTTPOptions& httpOptions);
 
     [[nodiscard]] std::unique_ptr<BaseRunner> Clone() const override;
-
-    using HostUrlPair = std::pair<std::string, std::string>;
-
-    /**
-     * Parse a URL for the constructor
-     * @return std::pair<std::string> protoHost, baseURL pair
-     */
-    static HostUrlPair ParseURL(const std::string& fullURL);
 
     /** Returns the HTTP hostname (without proto://) */
     [[nodiscard]] std::string GetHostname() const override;
 
     /** Returns the proto://hostname string */
-    [[nodiscard]] virtual std::string GetProtoHost() const final;
+    [[nodiscard]] inline const std::string& GetProtoHost() const { return mProtoHost; }
 
     /** Returns the base URL being used */
-    [[nodiscard]] virtual const std::string& GetBaseURL() const final { return mBaseURL; }
+    [[nodiscard]] inline const std::string& GetBaseURL() const { return mBaseURL; }
+
+    /** Returns the full URL as mProtoHost + mBaseURL */
+    [[nodiscard]] inline std::string GetFullURL() const { return mProtoHost+mBaseURL; }
 
     inline std::string RunAction_Read(const RunnerInput& input) override { 
         bool isJson = false; return RunAction_Read(input, isJson); };
@@ -119,6 +113,10 @@ public:
 private:
 
     friend class HTTPRunnerTest;
+
+    using HostUrlPair = std::pair<std::string, std::string>;
+    /** Parse a full URL into a protoHost/baseURL pair */
+    static HostUrlPair ParseURL(const std::string& fullURL);
 
     /** Initializes the HTTP client */
     void InitializeClient(const std::string& protoHost);

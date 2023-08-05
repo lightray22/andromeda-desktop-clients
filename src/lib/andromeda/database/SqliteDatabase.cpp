@@ -225,7 +225,7 @@ int SqliteDatabase::getVersion()
 void SqliteDatabase::setVersion(int version)
 {
     const std::lock_guard<std::recursive_mutex> lock(mMutex);
-    query("PRAGMA user_version = :ver",{{":ver",version}});
+    query("PRAGMA user_version = "+std::to_string(version),{});
 }
 
 } // namespace Database

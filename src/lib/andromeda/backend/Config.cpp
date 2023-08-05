@@ -35,6 +35,9 @@ Config::Config(BackendImpl& backend) :
 
         const nlohmann::json& maxbytes { config.at("files").at("upload_maxbytes") };
         if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>();
+
+        // TODO the server also has upload_maxsize... what is that?
+        // TODO the server also has crchunksize... what is that?
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

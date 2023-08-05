@@ -1,6 +1,7 @@
 
 #include "nlohmann/json.hpp"
 #include "catch2/catch_test_macros.hpp"
+#include "catch2/trompeloeil.hpp"
 
 #include "../testObjects.hpp"
 #include "andromeda/database/BaseObject.hpp"
@@ -11,9 +12,11 @@ namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
 
+using trompeloeil::_;
+
 #define GET_MOCK_OBJECTS() \
     MockSqliteDatabase sqldb; \
-    ObjectDatabase objdb(sqldb); \
+    MockObjectDatabase objdb(sqldb); \
     EasyObject parent(objdb,{});
 
 /*****************************************************/
@@ -32,6 +35,8 @@ TEST_CASE("BasicJson", "[JsonType]")
     REQUIRE(field.isModified() == false);
     REQUIRE(*field.TryGetJson() == testJ1);
 
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(2);
+
     nlohmann::json testJ2 {"mytest",58};
     field.SetJson(testJ2);
     REQUIRE(field.isModified() == true);
@@ -47,6 +52,8 @@ TEST_CASE("DefaultJson", "[JsonType]")
 {
     GET_MOCK_OBJECTS();
     
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(1);
+
     nlohmann::json testJ {"mytest",58};
     const JsonType field("myjson",parent,testJ);
 

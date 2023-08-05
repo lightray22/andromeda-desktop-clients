@@ -6,12 +6,29 @@ namespace Andromeda {
 namespace Database {
 
 /*****************************************************/
+ObjectDatabase::~ObjectDatabase()
+{
+    MDBG_INFO("()"); 
+
+    if (!mModified.empty() || !mCreated.empty())
+        MDBG_ERROR("... UNSAVED! mModified:" << mModified.size() << " mCreated:" << mCreated.size());
+}
+
+/*****************************************************/
 void ObjectDatabase::notifyModified(BaseObject& object)
 { 
     const UniqueLock lock(mMutex);
 
     if (!mModified.exists(&object))
         mModified.enqueue_back(&object, object);
+}
+
+/*****************************************************/
+void ObjectDatabase::unsetModified(BaseObject& object)
+{ 
+    const UniqueLock lock(mMutex);
+
+    mModified.erase(&object);
 }
 
 /*****************************************************/
@@ -111,21 +128,21 @@ void ObjectDatabase::UpdateObject_Query(BaseObject& object, const BaseObject::Fi
         if (val.is_null())
         {
             sets.emplace_back(key+"=NULL");
-            MDBG_INFO("... " << key << " is NULL");
+            //MDBG_INFO("... " << key << " is NULL");
         }
         else if (field->UseDBIncrement())
         {
             const std::string istr { std::to_string(i) };
             std::string s(key); s+="="; s+=key; s+="+:d"; s+=istr; // += for efficiency
             sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
-            MDBG_INFO("... " << key << "+=:d" << istr << "(" << val.ToString() << ")");
+            //MDBG_INFO("... " << key << "+=:d" << istr << "(" << val.ToString() << ")");
         }
         else
         {
             const std::string istr { std::to_string(i) };
             std::string s(key); s+="=:d"; s+=istr; // += for efficiency
             sets.emplace_back(s); data.emplace(":d"+istr, val); ++i;
-            MDBG_INFO("... " << key << "=:d" << istr << "(" << val.ToString() << ")");
+            //MDBG_INFO("... " << key << "=:d" << istr << "(" << val.ToString() << ")");
         }
     }
 
@@ -168,14 +185,14 @@ void ObjectDatabase::InsertObject_Query(BaseObject& object, const BaseObject::Fi
         if (val.is_null())
         {
             indexes.emplace_back("NULL");
-            MDBG_INFO("... " << key << " is NULL");
+            //MDBG_INFO("... " << key << " is NULL");
         }
         else
         {
             const std::string istr { std::to_string(i) };
             indexes.emplace_back(":d"+istr);
             data.emplace(":d"+istr, val); ++i;
-            MDBG_INFO("... " << key << " = :d" << istr << "(" << val.ToString() << ")");
+            //MDBG_INFO("... " << key << " = :d" << istr << "(" << val.ToString() << ")");
         }
     }
 

@@ -23,7 +23,7 @@ std::list<std::string> TableBuilder::GetQueries() const
 
     std::list<std::string> queries;
     const std::string table { ObjectDatabase::GetClassTableName(mClassName) };
-    queries.emplace_front("CREATE TABLE `"+table+"` ("+StringUtil::implode(", ",props)+")");
+    if (!props.empty()) queries.emplace_front("CREATE TABLE `"+table+"` ("+StringUtil::implode(", ",props)+")");
     std::copy(mIndexes.cbegin(), mIndexes.cend(), std::back_inserter(queries)); // each CREATE INDEX is a query
     return queries;
 }

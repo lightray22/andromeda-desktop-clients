@@ -58,8 +58,8 @@ int main(int argc, char** argv)
     MainWindow mainWindow(cacheOptions); 
     SystemTray systemTray(application, mainWindow);
 
-    mainWindow.show();
     systemTray.show();
+    mainWindow.show();
 
     int retval = application.exec();
 

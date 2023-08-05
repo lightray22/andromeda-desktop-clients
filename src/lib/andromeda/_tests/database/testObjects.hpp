@@ -22,17 +22,24 @@ class MockSqliteDatabase : public SqliteDatabase { public:
     MAKE_MOCK3(query, size_t(const std::string&, const MixedParams&, RowList&), override);
 };
 
+class MockObjectDatabase : public ObjectDatabase { public:
+    using ObjectDatabase::ObjectDatabase;
+    MAKE_MOCK1(notifyModified, void(BaseObject&), override);
+};
+
 class EasyObject : public BaseObject
 {
 public:
     BASEOBJECT_NAME(EasyObject, "Andromeda\\Database\\EasyObject")
 
-    BASEOBJECT_CONSTRUCT(EasyObject)
+    EasyObject(ObjectDatabase& database, const MixedParams& data):
+        BaseObject(database),
         mMyStr("mystr",*this),
         mMyInt("myint",*this),
         mCounter("myctr",*this)
     {
-        BASEOBJECT_REGISTER(&mMyStr, &mMyInt, &mCounter)
+        RegisterFields({&mMyStr, &mMyInt, &mCounter});
+        InitializeFields(data);
     }
 
     static EasyObject& Create(ObjectDatabase& db, int myInt)
@@ -68,6 +75,7 @@ public:
     }
 
 private:
+
     FieldTypes::NullScalarType<std::string> mMyStr;
     FieldTypes::ScalarType<int> mMyInt;
     FieldTypes::CounterType mCounter;
@@ -80,10 +88,12 @@ class EasyObject2 : public BaseObject
 public:
     BASEOBJECT_NAME(EasyObject2, "Andromeda\\Database\\EasyObject2")
 
-    BASEOBJECT_CONSTRUCT(EasyObject2)
+    EasyObject2(ObjectDatabase& database, const MixedParams& data):
+        BaseObject(database),
         mMyInt("myint",*this)
     {
-        BASEOBJECT_REGISTER(&mMyInt)
+        RegisterFields({&mMyInt});
+        InitializeFields(data);
     }
 
 private:

@@ -19,9 +19,10 @@ set(CMAKE_AUTORCC ON)
 # build the andromeda-gui executable
 
 set(SOURCE_FILES 
-    main.cpp Options.cpp
+    main.cpp
     BackendContext.cpp
     MountContext.cpp
+    Options.cpp
     )
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)

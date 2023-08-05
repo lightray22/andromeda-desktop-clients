@@ -25,9 +25,7 @@ public:
 
     /** Construct with a non-null default value and set dirty */
     NullScalarType(const char* name, BaseObject& parent, const T& defaultt) :
-        BaseField(name, parent, 1), 
-        mTempNull(false), mTempValue(defaultt),
-        mRealNull(false), mRealValue(defaultt) { }
+        BaseField(name, parent, 1) { SetValue(defaultt); }
 
     void InitDBValue(const MixedValue& value) override
     {
@@ -135,9 +133,7 @@ public:
 
     /** Construct with a default value and set dirty */
     ScalarType(const char* name, BaseObject& parent, const T& defaultt) :
-        BaseField(name, parent, 1), 
-        mTempInitd(true), mTempValue(defaultt),
-        mRealInitd(true), mRealValue(defaultt) { }
+        BaseField(name, parent, 1) { SetValue(defaultt); }
 
     /** @throws DBValueNullException if the given DB value is null */
     void InitDBValue(const MixedValue& value) override

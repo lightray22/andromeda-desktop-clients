@@ -6,6 +6,7 @@ set(SOURCE_FILES
     BaseOptionsTest.cpp
     CryptoTest.cpp
     OrderedMapTest.cpp
+    SecureBufferTest.cpp
     StringUtilTest.cpp
     )
 

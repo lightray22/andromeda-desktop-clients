@@ -59,14 +59,20 @@ public:
             DatabaseException("Object row delete failed: "+className) {}; };
 
     explicit ObjectDatabase(SqliteDatabase& db) : 
-        mDebug(__func__,this), mDb(db) { }
+        mDebug(__func__,this), mDb(db) { MDBG_INFO("()"); }
     
-    virtual ~ObjectDatabase() = default;
+    virtual ~ObjectDatabase();
     DELETE_COPY(ObjectDatabase)
     DELETE_MOVE(ObjectDatabase)
 
+    /** Returns the internal sqlite database */
+    SqliteDatabase& getInternal() { return mDb; }
+
     /** Notify the DB that the given object needs to be updated */
-    void notifyModified(BaseObject& object);
+    virtual void notifyModified(BaseObject& object); // virtual for unit test
+
+    /** Notify the DB that the given object does not need to be updated (unit test only) */
+    void unsetModified(BaseObject& object);
 
     /** 
      * Insert created objects, update all objects that notified us as needing it 
@@ -78,6 +84,9 @@ public:
 
     /** Return the number of loaded objects (not counting newly created) */
     inline size_t getLoadedCount() const { return mObjects.size(); }
+
+    /** Return the number of objects registered as modified */
+    inline size_t getModifiedCount() const { return mModified.size(); }
 
     /** Return the database table name for a class */
     static std::string GetClassTableName(const std::string& className);

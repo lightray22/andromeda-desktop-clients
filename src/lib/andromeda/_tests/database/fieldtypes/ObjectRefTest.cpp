@@ -63,6 +63,9 @@ TEST_CASE("NullObject", "[ObjectRef]")
 
     REQUIRE(field.is_null() == false);
     REQUIRE(*field.TryGetObject() == *testObj); // no query!
+
+    REQUIRE(objdb.getModifiedCount() == 1);
+    objdb.unsetModified(parent);
 }
 
 /*****************************************************/
@@ -120,6 +123,9 @@ TEST_CASE("NonNullObjectSet", "[ObjectRef]")
     REQUIRE(field.GetObject() == testObj); // no query!
     REQUIRE(field.GetDBValue() == "abcd");
     REQUIRE(field.SetObject(testObj) == false);
+
+    REQUIRE(objdb.getModifiedCount() == 1);
+    objdb.unsetModified(parent);
 }
 
 } // namespace FieldTypes

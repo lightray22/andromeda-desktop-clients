@@ -320,9 +320,7 @@ size_t PageManager::GetFetchSize(const uint64_t index, const SharedLock& thisLoc
     const UniqueLock llock(mFetchSizeMutex);
     const size_t maxReadCount { min64st(lastPage-index+1, mFetchSize) };
 
-    MDBG_INFO("(index:" << index << ") backendSize:" << backendSize << " maxReadCount:" << maxReadCount);
-
-    if (mPages.find(index) != mPages.end()) { MDBG_INFO("... return 0(c)"); return 0; } // page exists
+    if (mPages.find(index) != mPages.end()) return 0; // page exists
 
     // no read-ahead for the first page as file managers often read just metadata
     size_t readCount { (index > 0) ? maxReadCount : 1 };
@@ -346,7 +344,6 @@ size_t PageManager::GetFetchSize(const uint64_t index, const SharedLock& thisLoc
         }
     }
 
-    MDBG_INFO("... return:"  << readCount);
     return readCount;
 }
 
@@ -361,7 +358,7 @@ void PageManager::DoAdvanceRead(const uint64_t index, const SharedLock& thisLock
         const size_t fetchSize { GetFetchSize(nextIdx, thisLock, pagesLock) };
         if (fetchSize)
         {
-            MDBG_INFO("... read-ahead nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
+            MDBG_INFO("... advance read nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
             StartFetch(nextIdx, fetchSize, pagesLock);
             break; // exit loop
         }

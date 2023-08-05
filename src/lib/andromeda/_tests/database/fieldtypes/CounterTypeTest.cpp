@@ -1,5 +1,6 @@
 
 #include "catch2/catch_test_macros.hpp"
+#include "catch2/trompeloeil.hpp"
 
 #include "../testObjects.hpp"
 #include "andromeda/database/BaseObject.hpp"
@@ -10,9 +11,11 @@ namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
 
+using trompeloeil::_;
+
 #define GET_MOCK_OBJECTS() \
     MockSqliteDatabase sqldb; \
-    ObjectDatabase objdb(sqldb); \
+    MockObjectDatabase objdb(sqldb); \
     EasyObject parent(objdb,{});
 
 /*****************************************************/
@@ -27,6 +30,8 @@ TEST_CASE("BasicCounter", "[CounterType]")
 
     field.InitDBValue(MixedValue(5));
     REQUIRE(field.GetValue() == 5);
+
+    REQUIRE_CALL(objdb, notifyModified(_)).TIMES(3);
 
     REQUIRE(field.DeltaValue(10) == true);
     REQUIRE(field.GetValue() == 15);

@@ -230,7 +230,7 @@ public:
     #if DEBUG // key must not exist
         value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
         assert(!erase(get_key(v)));
-        mQueue.emplace_front(std::move(v)); // O(1)
+        mQueue.emplace_front(std::move(v)); // O(1) // non-const for move
     #else // !DEBUG
         mQueue.emplace_front(std::forward<Ts>(args)...); // O(1)
     #endif // DEBUG
@@ -247,7 +247,7 @@ public:
     #if DEBUG // key must not exist
         value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
         assert(!erase(get_key(v)));
-        mQueue.emplace_back(std::move(v)); // O(1)
+        mQueue.emplace_back(std::move(v)); // O(1) // non-const for move
     #else // !DEBUG
         mQueue.emplace_back(std::forward<Ts>(args)...); // O(1)
     #endif // DEBUG

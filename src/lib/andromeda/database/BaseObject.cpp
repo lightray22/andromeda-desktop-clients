@@ -28,7 +28,7 @@ void BaseObject::InitializeFields(const MixedParams& data)
 {
     for (const MixedParams::value_type& pair : data)
     {
-        MDBG_INFO("... " << pair.first << ":" << pair.second.ToString());
+        //MDBG_INFO("... " << pair.first << ":" << pair.second.ToString());
         mFields.at(pair.first).InitDBValue(pair.second);
     }
 }
