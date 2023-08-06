@@ -28,7 +28,7 @@ set(SOURCE_FILES
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
     # cmake < 3.27 wants to analyze Qt generated files
     andromeda_analyze()
-else()
+elseif (${TESTS_CLANGTIDY} OR ${TESTS_CPPCHECK})
     message(WARNING "Skipping andromeda_analyze() on andromeda-gui, cmake >= 3.27 required")
 endif()
 
@@ -54,6 +54,17 @@ set_target_properties(andromeda-gui PROPERTIES
     WIN32_EXECUTABLE TRUE
     MACOSX_BUNDLE TRUE
 )
+
+# https://doc.qt.io/qt-6/appicon.html
+if (WIN32)
+    set(app_icon_resource_windows gui/resources/andromeda-gui.rc)
+    target_sources(andromeda-gui PRIVATE ${app_icon_resource_windows})
+elseif (APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE andromeda.icns)
+    set(app_icon_macos gui/resources/andromeda.icns)
+    set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(andromeda-gui PRIVATE ${app_icon_macos})
+endif()
 
 if (WIN32 OR APPLE)
     qt_generate_deploy_app_script(

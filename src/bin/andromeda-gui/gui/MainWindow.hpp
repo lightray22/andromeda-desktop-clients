@@ -10,6 +10,7 @@
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 namespace Andromeda { 
+    namespace Backend { class SessionStore; }
     namespace Database { class SqliteDatabase; class ObjectDatabase; }
     namespace Filesystem { namespace Filedata { struct CacheOptions; } }
 }
@@ -37,6 +38,9 @@ public:
     DELETE_MOVE(MainWindow)
 
     void closeEvent(QCloseEvent* event) override;
+
+    /** Add an account tab for an existing session, shows an error box on failure */
+    void TryLoadAccount(Andromeda::Backend::SessionStore& session);
 
 public slots:
 

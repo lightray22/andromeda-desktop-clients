@@ -12,6 +12,8 @@
 #include "ExceptionBox.hpp"
 #include "LoginDialog.hpp"
 
+#include "andromeda/BaseException.hpp"
+using Andromeda::BaseException;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/SessionStore.hpp"
@@ -60,18 +62,11 @@ MainWindow::MainWindow(CacheOptions& cacheOptions) :
 
         MDBG_INFO("... loading existing sessions");
         for (SessionStore* session : SessionStore::LoadAll(*mObjDatabase))
-        {
-            std::unique_ptr<BackendContext> backendCtx {
-                std::make_unique<BackendContext>(*session) };
-
-            backendCtx->GetBackend().SetCacheManager(&mCacheManager);
-            AddAccountTab(std::move(backendCtx));
-        }
+            TryLoadAccount(*session);
     }
     catch (const DatabaseException& ex)
     {
         MDBG_ERROR("... " << ex.what());
-
         std::stringstream str;
         str << "Failed to initialize the database. This is probably a bug, please report." << std::endl;
         str << "Previously saved accounts are unavailable, and new ones will not be saved.";
@@ -117,6 +112,27 @@ void MainWindow::closeEvent(QCloseEvent* event)
     {
         MDBG_INFO("... hiding");
         event->ignore(); hide();
+    }
+}
+
+/*****************************************************/
+void MainWindow::TryLoadAccount(SessionStore& session)
+{
+    MDBG_INFO("(serverUrl:" << session.GetServerUrl() << ")");
+
+    try
+    {
+        std::unique_ptr<BackendContext> backendCtx {
+            std::make_unique<BackendContext>(session) };
+
+        backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+        AddAccountTab(std::move(backendCtx));
+    }
+    catch (const BaseException& ex)
+    {
+        MDBG_ERROR("... " << ex.what());
+        std::string msg("Failed to connect login to the server at ");
+        ExceptionBox::warning(this, "Connection Error", msg+session.GetServerUrl(), ex);
     }
 }
 

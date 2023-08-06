@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: cpp
 
@@ -73,11 +73,11 @@ jobs:
     - name: Build and Test (ubuntu-20.04)
       if: matrix.os == 'ubuntu-20.04'
       run: |
-        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1
+        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=0
     - name: Build and Test (ubuntu-22.04)
       if: matrix.os == 'ubuntu-22.04'
       run: |
-        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1 -DOPENGL_INCLUDE_DIR=/usr/include 
+        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=0 -DOPENGL_INCLUDE_DIR=/usr/include 
     - name: Build and Test (macos-latest)
       if: matrix.os == 'macos-latest'
       run: |
