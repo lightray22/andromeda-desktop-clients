@@ -131,7 +131,7 @@ void MainWindow::TryLoadAccount(SessionStore& session)
     catch (const BaseException& ex)
     {
         MDBG_ERROR("... " << ex.what());
-        std::string msg("Failed to connect login to the server at ");
+        const std::string msg("Failed to connect login to the server at ");
         ExceptionBox::warning(this, "Connection Error", msg+session.GetServerUrl(), ex);
     }
 }

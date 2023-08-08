@@ -85,7 +85,7 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
 The following platforms are supported minus the Qt GUI (it may work, just not tested):
 
 - Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev sqlite-dev libsodium-dev`
-- FreeBSD 12.3/13.1 amd64: `pkg install cmake python fusefs-libs3 sqlite3 libsodium`
+- FreeBSD 12.4/13.2 amd64: `pkg install cmake python fusefs-libs3 sqlite3 libsodium`
 
 Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
 
