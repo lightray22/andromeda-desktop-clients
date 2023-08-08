@@ -7,12 +7,11 @@
 
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 namespace Andromeda { 
     namespace Backend { class SessionStore; }
-    namespace Database { class SqliteDatabase; class ObjectDatabase; }
-    namespace Filesystem { namespace Filedata { struct CacheOptions; } }
+    namespace Database { class ObjectDatabase; }
+    namespace Filesystem { namespace Filedata { class CacheManager; } }
 }
 
 namespace AndromedaGui {
@@ -30,8 +29,10 @@ class MainWindow : public QMainWindow
 
 public:
 
-    /** Instantiates the main window UI, initializes the database */
-    explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
+    /** Instantiates the main window UI */
+    explicit MainWindow(
+        Andromeda::Filesystem::Filedata::CacheManager& cacheManager,
+        Andromeda::Database::ObjectDatabase* objDatabase);
 
     ~MainWindow() override;
     DELETE_COPY(MainWindow)
@@ -74,13 +75,11 @@ private:
 
     mutable Andromeda::Debug mDebug;
 
-    /** SqliteDatabase instance for the ObjectDatabase (maybe null!) */
-    std::unique_ptr<Andromeda::Database::SqliteDatabase> mSqlDatabase;
-    /** ObjectDatabase instance for object storage (maybe null!) */
-    std::unique_ptr<Andromeda::Database::ObjectDatabase> mObjDatabase;
-
     /** Global cache manager to apply to all mounts */
-    Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
+    Andromeda::Filesystem::Filedata::CacheManager& mCacheManager;
+
+    /** ObjectDatabase instance for object storage (maybe null!) */
+    Andromeda::Database::ObjectDatabase* mObjDatabase;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
 };

@@ -1,9 +1,16 @@
 
+#include <filesystem>
 #include <iostream>
+#include <memory>
+#include <sstream>
+
+#include <QtCore/QStandardPaths>
 #include <QtWidgets/QApplication>
 
 #include "Options.hpp"
 using AndromedaGui::Options;
+#include "qtgui/ExceptionBox.hpp"
+using AndromedaGui::QtGui::ExceptionBox;
 #include "qtgui/MainWindow.hpp"
 using AndromedaGui::QtGui::MainWindow;
 #include "qtgui/SystemTray.hpp"
@@ -11,8 +18,20 @@ using AndromedaGui::QtGui::SystemTray;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/database/DatabaseException.hpp"
+using Andromeda::Database::DatabaseException;
+#include "andromeda/database/ObjectDatabase.hpp"
+using Andromeda::Database::ObjectDatabase;
+#include "andromeda/backend/SessionStore.hpp"
+using Andromeda::Backend::SessionStore;
+#include "andromeda/database/SqliteDatabase.hpp"
+using Andromeda::Database::SqliteDatabase;
+#include "andromeda/database/TableInstaller.hpp"
+using Andromeda::Database::TableInstaller;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 
 enum class ExitCode
 {
@@ -55,15 +74,52 @@ int main(int argc, char** argv)
 
     QApplication application(argc, argv);
 
-    MainWindow mainWindow(cacheOptions); 
+    const std::string dataPath { QStandardPaths::writableLocation(
+        QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
+
+    DDBG_INFO("... init dataPath:" << dataPath);
+
+    try { std::filesystem::create_directories(dataPath); }
+    catch (const std::filesystem::filesystem_error& ex)
+    {
+        DDBG_ERROR("... " << ex.what());
+        const std::string msg { "Failed to create appdata directory." };
+        ExceptionBox::critical(nullptr, "Initialize Error", msg.c_str(), ex);
+        application.exit(); // fatal
+    }
+    
+    const std::string dbPath { dataPath+"/database.s3db" };
+    DDBG_INFO("... init dbPath:" << dbPath);
+
+    std::unique_ptr<SqliteDatabase> sqlDatabase;
+    std::unique_ptr<ObjectDatabase> objDatabase;
+    try
+    {
+        sqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
+        objDatabase = std::make_unique<ObjectDatabase>(*sqlDatabase);
+
+        DDBG_INFO("... installing database tables");
+        TableInstaller tableInst(*objDatabase);
+        tableInst.InstallTable<SessionStore>();
+    }
+    catch (const DatabaseException& ex)
+    {
+        DDBG_ERROR("... " << ex.what());
+        std::stringstream str;
+        str << "Failed to initialize the database. This is probably a bug, please report." << std::endl;
+        str << "Previously saved accounts are unavailable, and new ones will not be saved.";
+        ExceptionBox::warning(nullptr, "Database Error", str.str(), ex);
+    }
+
+    CacheManager cacheManager(cacheOptions);
+
+    MainWindow mainWindow(cacheManager, objDatabase.get()); 
     SystemTray systemTray(application, mainWindow);
 
     systemTray.show();
     mainWindow.show();
 
     int retval = application.exec();
-
     DDBG_INFO("... return " << retval);
-
     return retval;
 }

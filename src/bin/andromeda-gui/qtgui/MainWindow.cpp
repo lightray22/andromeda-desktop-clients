@@ -1,7 +1,5 @@
 
-#include <filesystem>
 #include <sstream>
-#include <QtCore/QStandardPaths>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QWidget>
 
@@ -22,55 +20,29 @@ using Andromeda::Backend::SessionStore;
 using Andromeda::Database::DatabaseException;
 #include "andromeda/database/ObjectDatabase.hpp"
 using Andromeda::Database::ObjectDatabase;
-#include "andromeda/database/SqliteDatabase.hpp"
-using Andromeda::Database::SqliteDatabase;
-#include "andromeda/database/TableInstaller.hpp"
-using Andromeda::Database::TableInstaller;
-#include "andromeda/filesystem/filedata/CacheOptions.hpp"
-using Andromeda::Filesystem::Filedata::CacheOptions;
+#include "andromeda/filesystem/filedata/CacheManager.hpp"
+using Andromeda::Filesystem::Filedata::CacheManager;
 #include "andromeda-gui/BackendContext.hpp"
 
 namespace AndromedaGui {
 namespace QtGui {
 
 /*****************************************************/
-MainWindow::MainWindow(CacheOptions& cacheOptions) : 
+MainWindow::MainWindow(CacheManager& cacheManager, ObjectDatabase* objDatabase) : 
     mDebug(__func__,this),
-    mCacheManager(cacheOptions),
+    mCacheManager(cacheManager),
+    mObjDatabase(objDatabase),
     mQtUi(std::make_unique<Ui::MainWindow>())
 {
     MDBG_INFO("()");
 
     mQtUi->setupUi(this);
 
-    try
+    if (mObjDatabase != nullptr)
     {
-        std::string dbPath { QStandardPaths::writableLocation(
-            QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
-
-        try { std::filesystem::create_directories(dbPath); }
-        catch (const std::filesystem::filesystem_error& ex)
-            { throw DatabaseException(ex.what()); }
-        
-        dbPath += "/database.s3db"; MDBG_INFO("... init dbPath:" << dbPath);
-        mSqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
-        mObjDatabase = std::make_unique<ObjectDatabase>(*mSqlDatabase);
-
-        MDBG_INFO("... installing database tables");
-        TableInstaller tableInst(*mObjDatabase);
-        tableInst.InstallTable<SessionStore>();
-
         MDBG_INFO("... loading existing sessions");
         for (SessionStore* session : SessionStore::LoadAll(*mObjDatabase))
             TryLoadAccount(*session);
-    }
-    catch (const DatabaseException& ex)
-    {
-        MDBG_ERROR("... " << ex.what());
-        std::stringstream str;
-        str << "Failed to initialize the database. This is probably a bug, please report." << std::endl;
-        str << "Previously saved accounts are unavailable, and new ones will not be saved.";
-        ExceptionBox::warning(this, "Database Error", str.str(), ex);
     }
 }
 
@@ -149,7 +121,8 @@ void MainWindow::AddAccount()
         catch (const DatabaseException& ex)
         {
             MDBG_ERROR("... " << ex.what());
-            ExceptionBox::warning(this, "Database Error", "Failed to add the account to the database. This is probably a bug, please report.", ex);
+            const std::string msg { "Failed to add the account to the database. This is probably a bug, please report." };
+            ExceptionBox::warning(this, "Database Error", msg.c_str(), ex);
         }
 
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
@@ -189,7 +162,8 @@ void MainWindow::RemoveAccount()
         catch (const DatabaseException& ex)
         {
             MDBG_ERROR("... " << ex.what());
-            ExceptionBox::warning(this, "Database Error", "Failed to remove the account from the database. This is probably a bug, please report.", ex);
+            const std::string msg { "Failed to remove the account from the database. This is probably a bug, please report." };
+            ExceptionBox::warning(this, "Database Error", msg.c_str(), ex);
         }
 
         const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
