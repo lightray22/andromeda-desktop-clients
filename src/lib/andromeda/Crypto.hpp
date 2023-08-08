@@ -11,6 +11,7 @@ namespace Andromeda {
 /** 
  * libsodium wrapper class for crypto 
  * ported from the server's PHP implementation
+ * THREAD SAFE (static only)
  */
 class Crypto
 {

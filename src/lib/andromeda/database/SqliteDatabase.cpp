@@ -1,5 +1,6 @@
 
 #include <filesystem>
+#include <mutex>
 #include <sstream>
 #include <utility>
 
@@ -14,13 +15,12 @@ namespace { // anonymous
 
 Debug sDebug("libsqlite3",nullptr); // NOLINT(cert-err58-cpp)
 
+std::mutex sLogConfigMutex;
+bool sLogConfigured = false;
+
 void print_error(void* pArg, int errCode, const char* zMsg){
     SDBG_ERROR("... code:" << errCode << " (" << zMsg << ")");
 }
-
-struct SqliteLog { SqliteLog() noexcept { // run at startup
-    sqlite3_config(SQLITE_CONFIG_LOG, print_error, nullptr);
-} } sqlite_log;
 
 } // anonymous namespace
 
@@ -29,6 +29,16 @@ SqliteDatabase::SqliteDatabase(const std::string& path) :
     mDebug(__func__,this)
 {
     MDBG_INFO("(path:" << path << ")");
+
+    { // lock scope
+        const std::lock_guard<std::mutex> logLock(sLogConfigMutex);
+        if (!sLogConfigured)
+        {
+            MDBG_INFO("... sqlite3_config(SQLITE_CONFIG_LOG)");
+            sqlite3_config(SQLITE_CONFIG_LOG, print_error, nullptr);
+            sLogConfigured = true;
+        }
+    }
 
     const int rc = sqlite3_open(path.c_str(), &mDatabase);
     check_rc(rc, [this]{ sqlite3_close(mDatabase); });

@@ -5,7 +5,10 @@
 
 namespace Andromeda {
 
-/** Secure memory allocation functions */
+/** 
+ * Secure memory allocation functions
+ * THREAD SAFE (internal locks)
+ */
 struct SecureMemory
 {
     SecureMemory() = delete; // static only
@@ -27,7 +30,10 @@ struct SecureMemory
         free(static_cast<void*>(ptr)); }
 };
 
-/** Holds a buffer allocated with SecureMemory */
+/** 
+ * Holds a buffer allocated with SecureMemory
+ * NOT THREAD SAFE (protect externally)
+ */
 class SecureBuffer
 {
 public:
