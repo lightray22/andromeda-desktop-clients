@@ -4,10 +4,10 @@
 
 #include "Options.hpp"
 using AndromedaGui::Options;
-#include "gui/MainWindow.hpp"
-using AndromedaGui::Gui::MainWindow;
-#include "gui/SystemTray.hpp"
-using AndromedaGui::Gui::SystemTray;
+#include "qtgui/MainWindow.hpp"
+using AndromedaGui::QtGui::MainWindow;
+#include "qtgui/SystemTray.hpp"
+using AndromedaGui::QtGui::SystemTray;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;

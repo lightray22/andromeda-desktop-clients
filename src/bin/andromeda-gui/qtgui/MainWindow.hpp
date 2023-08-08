@@ -18,7 +18,7 @@ namespace Andromeda {
 namespace AndromedaGui {
 class BackendContext;
 
-namespace Gui {
+namespace QtGui {
 class AccountTab;
 
 namespace Ui { class MainWindow; }
@@ -85,7 +85,7 @@ private:
     std::unique_ptr<Ui::MainWindow> mQtUi;
 };
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
 
 #endif // A2GUI_MAINWINDOW_H

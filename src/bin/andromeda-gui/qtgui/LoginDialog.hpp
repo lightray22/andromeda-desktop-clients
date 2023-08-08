@@ -11,7 +11,7 @@
 namespace AndromedaGui {
 class BackendContext;
 
-namespace Gui {
+namespace QtGui {
 
 namespace Ui { class LoginDialog; }
 
@@ -49,7 +49,7 @@ private:
     std::unique_ptr<Ui::LoginDialog> mQtUi;
 };
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
 
 #endif // LOGINDIALOG_HPP

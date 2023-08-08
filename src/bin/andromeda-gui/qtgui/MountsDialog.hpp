@@ -6,7 +6,7 @@
 #include "andromeda/common.hpp"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 namespace Ui { class MountsDialog; }
 
@@ -25,7 +25,7 @@ private:
     Ui::MountsDialog *ui;
 };
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
 
 #endif // MOUNTSDIALOG_HPP

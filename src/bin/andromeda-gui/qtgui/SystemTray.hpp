@@ -15,7 +15,7 @@
 #include "andromeda/Debug.hpp"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 class MainWindow;
 
@@ -47,7 +47,7 @@ private:
     mutable Andromeda::Debug mDebug;
 };
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
 
 #endif // A2GUI_SYSTEMTRAY_H

@@ -2,7 +2,7 @@
 #include "ui_MountsDialog.h"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 MountsDialog::MountsDialog(QWidget *parent) :
     QDialog(parent),
@@ -16,5 +16,5 @@ MountsDialog::~MountsDialog()
     delete ui;
 }
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui

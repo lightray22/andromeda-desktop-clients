@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AndromedaGui::Gui::AccountTab</class>
+ <class>AndromedaGui::QtGui::AccountTab</class>
  <widget class="QWidget" name="AccountTab">
   <property name="geometry">
    <rect>

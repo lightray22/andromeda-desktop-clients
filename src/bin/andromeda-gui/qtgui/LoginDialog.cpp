@@ -9,7 +9,7 @@ using Andromeda::BaseException;
 #include "andromeda-gui/BackendContext.hpp"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 /*****************************************************/
 LoginDialog::LoginDialog(QWidget& parent) : QDialog(&parent),
@@ -66,5 +66,5 @@ int LoginDialog::CreateBackend(std::unique_ptr<BackendContext>& backend)
     return retval;
 }
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui

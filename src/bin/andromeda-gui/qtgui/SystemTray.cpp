@@ -6,7 +6,7 @@
 #include "MainWindow.hpp"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 /*****************************************************/
 SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
@@ -39,5 +39,5 @@ SystemTray::~SystemTray()
     MDBG_INFO("()");
 }
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui

@@ -12,7 +12,7 @@ namespace AndromedaGui {
 class BackendContext;
 class MountContext;
 
-namespace Gui {
+namespace QtGui {
 
 namespace Ui { class AccountTab; }
 
@@ -65,7 +65,7 @@ private:
     mutable Andromeda::Debug mDebug;
 };
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
 
 #endif // A2GUI_ACCOUNTTAB_HPP

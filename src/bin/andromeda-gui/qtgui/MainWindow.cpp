@@ -31,7 +31,7 @@ using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda-gui/BackendContext.hpp"
 
 namespace AndromedaGui {
-namespace Gui {
+namespace QtGui {
 
 /*****************************************************/
 MainWindow::MainWindow(CacheOptions& cacheOptions) : 
@@ -249,5 +249,5 @@ void MainWindow::ShowAbout()
     QMessageBox::about(this, "Andromeda GUI", str.str().c_str());
 }
 
-} // namespace Gui
+} // namespace QtGui
 } // namespace AndromedaGui
