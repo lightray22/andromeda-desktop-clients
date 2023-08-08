@@ -38,15 +38,15 @@ void* CachingAllocator::alloc(size_t pages)
         mCurAlloc += pages*mPageSize;
         mMaxAlloc = std::max(mCurAlloc, mMaxAlloc);
 
-        MDBG_INFO("... mBaseline:" << mBaseline << " mCurAlloc:" << mCurAlloc 
-            << " mMaxAlloc:" << mMaxAlloc << " mMaxFree:" << mMaxAlloc-mBaseline);
+        MDBG_INFO("... mBaseline:" << mBaseline 
+            << " mCurAlloc:" << mCurAlloc << " mMaxAlloc:" << mMaxAlloc);
 
         FreeListMap::iterator fmIt { mFreeLists.lower_bound(pages) };
         if (fmIt != mFreeLists.end())
         {
             FreeList& freeList { fmIt->second };
             void* const ptr = freeList.front();
-#if DEBUG
+#if DEBUG // sanity checks
             assert(fmIt->first >= pages); // lower_bound
             std::memset(ptr, 0x55, pages*mPageSize); // poison
 #endif // DEBUG
@@ -79,7 +79,7 @@ void* CachingAllocator::alloc(size_t pages)
     }
 
     void* ptr = MemoryAllocator::alloc(pages); // not locked!
-#if DEBUG
+#if DEBUG // sanity checks
     std::memset(ptr, 0x55, pages*mPageSize); // poison
 #endif // DEBUG
     MDBG_INFO("... allocate ptr:" << ptr 
@@ -95,7 +95,7 @@ void CachingAllocator::free(void* const ptr, size_t pages)
 
     const LockGuard lock(mMutex);
     const size_t freeListSize { add_entry(ptr, pages, lock) };
-#if DEBUG
+#if DEBUG // sanity checks
     std::memset(ptr, 0xAA, pages*mPageSize); // poison
     assert(pages*mPageSize <= mCurAlloc);
 #endif // DEBUG

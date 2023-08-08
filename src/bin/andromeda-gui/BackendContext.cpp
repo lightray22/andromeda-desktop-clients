@@ -7,6 +7,10 @@ using Andromeda::Backend::BackendImpl;
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/RunnerPool.hpp"
 using Andromeda::Backend::RunnerPool;
+#include "andromeda/backend/SessionStore.hpp"
+using Andromeda::Backend::SessionStore;
+#include "andromeda/database/ObjectDatabase.hpp"
+using Andromeda::Database::ObjectDatabase;
 
 namespace AndromedaGui {
 
@@ -18,21 +22,21 @@ BackendContext::BackendContext(
 {
     MDBG_INFO("(url:" << url << ", username:" << username << ")");
 
-    const HTTPRunner::HostUrlPair urlPair { HTTPRunner::ParseURL(url) };
+    InitializeBackend(url);
 
-    const std::string userAgent(std::string("andromeda-gui/")
-        +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
+    mBackend->Authenticate(username, password, twofactor);
+    mRunner->EnableRetry(); // no retry during init
+}
 
-    mRunner = std::make_unique<HTTPRunner>(urlPair.first, urlPair.second, 
-        userAgent, mRunnerOptions, mHttpOptions);
+/*****************************************************/
+BackendContext::BackendContext(SessionStore& session) : 
+    mDebug(__func__,this), mSessionStore(&session)
+{
+    MDBG_INFO("(url:" << session.GetServerUrl() << ")");
 
-    mRunners = std::make_unique<RunnerPool>(*mRunner, mConfigOptions);
+    InitializeBackend(session.GetServerUrl());
 
-    mBackend = std::make_unique<BackendImpl>(mConfigOptions, *mRunners);
-    BackendImpl& backend { *mBackend }; // context will get moved
-
-    backend.Authenticate(username, password, twofactor);
-
+    mBackend->PreAuthenticate(session);
     mRunner->EnableRetry(); // no retry during init
 }
 
@@ -40,6 +44,33 @@ BackendContext::BackendContext(
 BackendContext::~BackendContext()
 {
     MDBG_INFO("()");
+}
+
+/*****************************************************/
+void BackendContext::StoreSession(ObjectDatabase& objdb)
+{
+    mSessionStore = &SessionStore::Create(objdb, 
+        mRunner->GetFullURL(), mBackend->GetAccountID());
+
+    mBackend->StoreSession(*mSessionStore);
+    mSessionStore->Save(); // store to DB
+}
+
+/*****************************************************/
+void BackendContext::InitializeBackend(const std::string& url)
+{
+    mRunner = std::make_unique<HTTPRunner>(url, 
+        GetUserAgent(), mRunnerOptions, mHttpOptions);
+
+    mRunners = std::make_unique<RunnerPool>(*mRunner, mConfigOptions);
+
+    mBackend = std::make_unique<BackendImpl>(mConfigOptions, *mRunners);
+}
+
+/*****************************************************/
+std::string BackendContext::GetUserAgent()
+{
+    return std::string("andromeda-gui/")+ANDROMEDA_VERSION+"/"+SYSTEM_NAME;
 }
 
 } // namespace AndromedaGui

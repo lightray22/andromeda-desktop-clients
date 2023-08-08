@@ -5,14 +5,17 @@
 #include <string>
 #include <sstream>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "BackendImpl.hpp"
 #include "HTTPRunner.hpp"
 #include "RunnerInput.hpp"
 #include "RunnerPool.hpp"
+#include "SessionStore.hpp"
 #include "andromeda/ConfigOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/Crypto.hpp"
+#include "andromeda/PlatformUtil.hpp"
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 #include "andromeda/filesystem/filedata/CachingAllocator.hpp"
 using Andromeda::Filesystem::Filedata::CachingAllocator;
@@ -135,8 +138,9 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
         else
         {
             const int code { val.at("code").get<int>() };
-            const auto [message, details] { Utilities::split(
+            const StringUtil::StringPair mpair { StringUtil::split(
                 val.at("message").get<std::string>(),":") };
+            const std::string& message { mpair.first };
 
             const std::string fname(__func__); // cannot be static
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
@@ -211,10 +215,23 @@ void BackendImpl::RunAction_StreamOut(RunnerInput_StreamOut& input)
 /*****************************************************/
 void BackendImpl::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
+    // TODO should be using SecureBuffer for passwords/sessionKey, etc... this is cheating
+    const SecureBuffer passwordBuf(password.data(), password.size());
+
     MDBG_INFO("(username:" << username << ")");
 
     CloseSession();
 
+    const size_t keySize { Crypto::SecretKeyLength() };
+    const std::string password_fullkey_salt(Crypto::SaltLength(),'\0'); // no salt here
+    const SecureBuffer password_fullkey { Crypto::DeriveKey(passwordBuf,password_fullkey_salt,keySize*2) };
+
+    const SecureBuffer password_authkey { password_fullkey.substr(0,keySize) };
+    const SecureBuffer password_cryptkey { password_fullkey.substr(keySize,keySize) };
+
+    MDBG_INFO("... password_authkey:"); mDebug.Info(mDebug.DumpBytes(password_authkey.data(), password_authkey.size()));
+    MDBG_INFO("... password_cryptkey:"); mDebug.Info(mDebug.DumpBytes(password_cryptkey.data(), password_cryptkey.size()));
+    
     RunnerInput input { "accounts", "createsession", {{ "username", username }}, // plainParams
         {{ "auth_password", password }}}; // dataParams
 
@@ -223,16 +240,20 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
     MDBG_BACKEND(input);
 
     nlohmann::json resp(RunAction_Write(input));
+    mDeleteSession = true;
+
+    // TODO this is demo placeholder code for e2ee later... master_keywrap_salt comes from the server
+    const std::string master_keywrap_salt { "\x7f\x1e\xc2\xb4\xf9\x09\xcc\xfb\xae\x64\x1d\xfd\x0f\x70\xb8\x05" };
+    const SecureBuffer master_keywrap { Crypto::DeriveKey(password_cryptkey,master_keywrap_salt) };
+    MDBG_INFO("... master_keywrap:"); mDebug.Info(mDebug.DumpBytes(master_keywrap.data(), master_keywrap.size()));
 
     try
     {
-        mCreatedSession = true;
-
         resp.at("account").at("id").get_to(mAccountID);
         resp.at("client").at("session").at("id").get_to(mSessionID);
         resp.at("client").at("session").at("authkey").get_to(mSessionKey);
 
-        MDBG_INFO("... sessionID:" << mSessionID);
+        MDBG_INFO("... accountID:" << mAccountID << " sessionID:" << mSessionID << " sessionKey:" << mSessionKey);
     }
     catch (const nlohmann::json::exception& ex) {
         throw JSONErrorException(ex.what()); }
@@ -255,7 +276,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
             if (mOptions.quiet) throw AuthenticationFailedException();
 
             std::cout << "Password? ";
-            Utilities::SilentReadConsole(password);
+            PlatformUtil::SilentReadConsole(password);
         }
 
         try
@@ -267,7 +288,7 @@ void BackendImpl::AuthInteractive(const std::string& username, std::string passw
             if (mOptions.quiet) throw; // rethrow
 
             std::string twofactor; std::cout << "Two Factor? ";
-            Utilities::SilentReadConsole(twofactor);
+            PlatformUtil::SilentReadConsole(twofactor);
 
             Authenticate(username, password, twofactor);
         }
@@ -302,20 +323,38 @@ void BackendImpl::PreAuthenticate(const std::string& sessionID, const std::strin
 }
 
 /*****************************************************/
+void BackendImpl::PreAuthenticate(const SessionStore& session)
+{
+    // TODO in the future with the logged-out state, need to check for null ID/key... also will need to store the username!
+    // or maybe the server could allow login via just the account ID? would be nicer
+
+    PreAuthenticate(*session.GetSessionID(), *session.GetSessionKey());
+}
+
+/*****************************************************/
 void BackendImpl::CloseSession()
 {
     MDBG_INFO("()");
     
-    if (mCreatedSession)
+    if (mDeleteSession)
     {
         RunnerInput input {"accounts", "deleteclient"}; MDBG_BACKEND(input);
         RunAction_Write(input);
     }
 
-    mCreatedSession = false;
+    mDeleteSession = false;
     mUsername.clear();
     mSessionID.clear();
     mSessionKey.clear();
+}
+
+/*****************************************************/
+void BackendImpl::StoreSession(SessionStore& sessionObj)
+{
+    if (mSessionID.empty()) sessionObj.SetSession(nullptr);
+    else sessionObj.SetSession(mSessionID, mSessionKey);
+
+    mDeleteSession = false;
 }
 
 /*****************************************************/

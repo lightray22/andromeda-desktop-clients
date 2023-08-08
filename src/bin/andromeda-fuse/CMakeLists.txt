@@ -28,12 +28,17 @@ endif()
 
 foreach(EXECUTABLE ${EXECUTABLES})
 
-    # include/link libandromeda-fuse
+    # include/link libandromeda
+
+    if (NOT TARGET libandromeda)
+        add_subdirectory(../../lib/andromeda lib/andromeda)
+    endif()
 
     if (NOT TARGET libandromeda-fuse)
         add_subdirectory(../../lib/andromeda-fuse lib/andromeda-fuse)
     endif()
 
+    target_link_libraries(${EXECUTABLE} PRIVATE libandromeda)
     target_link_libraries(${EXECUTABLE} PRIVATE libandromeda-fuse)
 
 endforeach(EXECUTABLE)

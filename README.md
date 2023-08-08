@@ -50,7 +50,9 @@ The manual cmake steps:
 ### Prerequisite Libraries
 
 - libandromeda
-  - OpenSSL (libssl, libcrypto) (1.1.1 or 3.x)
+  - OpenSSL (libssl, libcrypto) (1.1.1 or 3.0.x)
+  - sqlite3 (3.x >= 3.31)
+  - libsodium (1.0.x >= 1.0.18)
 - libandromeda-fuse
   - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://osxfuse.github.io/
@@ -59,26 +61,31 @@ The manual cmake steps:
   - Qt (Windows/macOS: >= 6.5, Linux: >= 5.12)
 
 These libraries are dynamically linked and must be available at runtime.
+On Windows this means the folders containing the DLLs for each library must be in your $PATH.
 Some other dependencies will be fetched by cmake and built in-tree.
 
 ### Supported Platforms
 
 The following platforms (GCC 9.4+, Clang 10+) are targeted for support and should work:
 
-- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download))
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download)), [SQLite3](https://www.sqlite.org/download.html), [Sodium](https://download.libsodium.org/libsodium/releases/)
   - You may need to add `OPENSSL_ROOT_DIR` to your system environment
+  - You may need to add `SQLITE3_ROOT_DIR` to your system environment
+    - To build sqlite3.lib, follow [this gist](https://gist.github.com/zeljic/d8b542788b225b1bcb5fce169ee28c55)
+  - You may need to add `sodium_DIR` to your system environment
+  - `WINFSP_ROOT_DIR` can also be set but defaults to `C:/Program Files (x86)/WinFsp`
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
-  - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev`
-  - Ubuntu 22.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev`
-  - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev`
-- Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base`
-- macOS amd64: `brew install make cmake openssl macfuse qt`
+  - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev`
+  - Ubuntu 23.04 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+  - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+- Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base sqlite libsodium`
+- macOS amd64: `brew install make cmake openssl macfuse qt sqlite libsodium`
 
 The following platforms are supported minus the Qt GUI (it may work, just not tested):
 
-- Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev`
-- FreeBSD 12.3/13.1 amd64: `pkg install cmake python fusefs-libs3`
+- Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev sqlite-dev libsodium-dev`
+- FreeBSD 12.4/13.2 amd64: `pkg install cmake python fusefs-libs3 sqlite3 libsodium`
 
 Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
 
@@ -185,9 +192,9 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 ## Testing
 
-Unit testing is done with catch2, which is built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
+Unit testing is done with catch2 and trompeloeil, which are built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
 
-Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.
+Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.  cppcheck is somewhat buggy and can be ignored with careful analysis.
 
 Unit tests and static analysis are both enabled in the `tools/builddev` script.
 

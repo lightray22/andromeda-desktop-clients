@@ -35,17 +35,25 @@ option(TESTS_CPPCHECK  "Use cppcheck static analysis"   OFF)
 
 if (TESTS_CATCH2)
     FetchContent_Declare(Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.3.2)
+        GIT_REPOSITORY  https://github.com/catchorg/Catch2.git
+        GIT_TAG         v3.3.2
+        GIT_PROGRESS    true)
     FetchContent_MakeAvailable(Catch2)
-    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-    
-    if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/_tests)
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/_tests)
-    endif()
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras) # Catch2WithMain
 
+    FetchContent_Declare(trompeloeil # header-only
+        GIT_REPOSITORY  https://github.com/rollbear/trompeloeil.git
+        GIT_TAG         v44
+        GIT_PROGRESS    true)
+    FetchContent_MakeAvailable(trompeloeil)
+    
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(Catch2 PRIVATE -Wno-psabi)
+    endif()
+
+    # andromeda bin/lib folders can contain _tests
+    if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/_tests)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/_tests)
     endif()
 endif()
 
@@ -177,7 +185,7 @@ function (andromeda_analyze)
     endif()
 
     if (${TESTS_CPPCHECK})
-        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet"
+        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
             "--enable=style,performance,portability,information"
             "--suppress=*:*_deps/*"
             "--suppress=*:*_autogen/*" # qt
@@ -187,9 +195,6 @@ function (andromeda_analyze)
             "--suppress=useStlAlgorithm" # annoying
             "--suppress=comparisonOfFuncReturningBoolError" # catch2
             "--suppress=assertWithSideEffecs" # annoying
-            "--suppress=constParameter" # false positives
-            "--suppress=noConstructor" # false positives
-            "--suppress=uninitMemberVarPrivate" # false positives
             PARENT_SCOPE)
         # cppcheck is too buggy...
         #if (NOT ${ALLOW_WARNINGS})
@@ -223,10 +228,16 @@ function(andromeda_bin bin_name sources)
     andromeda_link_opts(${bin_name})
 endfunction()
 
+# if a unit test binary runs and fails, it will be deleted
+# turn this option off to keep it around for debugging!
+option(TESTS_CATCH2_RUN "Run built unit tests" ON)
+
 function (andromeda_test test_name)
-    target_link_libraries(${test_name} PRIVATE Catch2::Catch2WithMain)
-    target_compile_options(Catch2 PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
-    target_compile_options(Catch2WithMain PRIVATE ${ANDROMEDA_CXX_OPTS}) # hardening
-    # Run the test - if it fails and you don't want it deleted, comment this line
-    add_custom_command(TARGET ${test_name} POST_BUILD COMMAND ${test_name})
+    target_link_libraries(${test_name} PRIVATE 
+        Catch2::Catch2WithMain trompeloeil::trompeloeil)
+    target_compile_options(Catch2 PRIVATE ${ANDROMEDA_CXX_OPTS})
+    target_compile_options(Catch2WithMain PRIVATE ${ANDROMEDA_CXX_OPTS})
+    if (${TESTS_CATCH2_RUN})
+        add_custom_command(TARGET ${test_name} POST_BUILD COMMAND ${test_name})
+    endif()
 endfunction()

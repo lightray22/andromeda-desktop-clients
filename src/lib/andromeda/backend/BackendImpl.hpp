@@ -7,14 +7,14 @@
 #include <map>
 #include <string>
 
-#include <nlohmann/json_fwd.hpp>
+#include "nlohmann/json_fwd.hpp"
 
 #include "Config.hpp"
 #include "RunnerInput.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 
@@ -22,6 +22,7 @@ namespace Filesystem { namespace Filedata { class CacheManager; class CachingAll
 
 namespace Backend {
 class RunnerPool;
+class SessionStore;
 
 /** 
  * Manages communication with the backend API 
@@ -134,22 +135,40 @@ public:
      */
     [[nodiscard]] std::string GetName(bool human) const;
 
+    /** Registers a pre-existing SessionStore for use */
+    void PreAuthenticate(const SessionStore& sessionObj);
+
     /** Registers a pre-existing session ID/key for use */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
 
-    /** Creates a new backend session and registers for use */
+    /** 
+     * Creates a new backend session and registers for use 
+     * The session will be DELETED on destruct or if this is called again, UNLESS StoreSession is called
+     * @param username username for authentication (required)
+     * @param password password for authentication (required)
+     * @param twofactor two factor code for authentication (optional)
+     * @throws TwoFactorRequiredException if twofactor is required
+     */
     void Authenticate(const std::string& username, const std::string& password, const std::string& twofactor = "");
 
     /** 
-     * Creates a new backend session if needed, interactively prompting for input as required 
-     * @param username username for authentication
-     * @param password optional password for authentication, prompt user if blank
-     * @param forceSession if true, force creating a session even if not needed
+     * Registers the username for use, and possibly creates a backend session, interactively prompting for input as required
+     * The session will be DELETED on destruct or if this is called again, UNLESS StoreSession is called
+     * A session will be created IF the runner requires it, or the given password is not blank
+     * @param username username for authentication (required)
+     * @param password password for authentication, prompt user if blank and the runner requires a session (HTTP)
+     * @param forceSession if true, force creating a session regardless of the above rules
      */
     void AuthInteractive(const std::string& username, std::string password = "", bool forceSession = false);
 
+    /** Returns the ID of the authenticated account (if in use) */
+    inline const std::string& GetAccountID() const { return mAccountID; }
+
     /** Closes the existing session */
     void CloseSession();
+
+    /** Store the current session in the SessionStore */
+    void StoreSession(SessionStore& sessionObj);
 
     /** 
      * Throws if a session is not in use 
@@ -356,8 +375,8 @@ private:
      */
     nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, uint64_t offset, const UploadInput& getUpload, bool oneshot);
 
-    /** True if we created the session in use */
-    bool mCreatedSession { false };
+    /** True if the session in use should be deleted when done */
+    bool mDeleteSession { false };
 
     std::string mUsername;
     std::string mAccountID;

@@ -2,6 +2,7 @@
 #ifndef LIBA2_ORDEREDMAP_H_
 #define LIBA2_ORDEREDMAP_H_
 
+#include <cassert>
 #include <initializer_list>
 #include <iterator>
 #include <list>
@@ -35,40 +36,40 @@ public:
     using const_lookup_iterator = typename ValueLookup::const_iterator;
 
     /** Returns the map key from the given value_type */
-    inline Key get_key(const value_type& e) noexcept {
+    [[nodiscard]] inline Key get_key(const value_type& e) noexcept {
         return static_cast<Impl*>(this)->get_key(e);
     }
     /** Returns the map value from the given value_type */
-    inline Value get_value(const value_type& e) noexcept {
+    [[nodiscard]] inline Value get_value(const value_type& e) noexcept {
         return static_cast<Impl*>(this)->get_value(e);
     }
 
     /** Returns an iterator pointing to the first element in the list */
-    inline iterator begin() noexcept { return mQueue.begin(); }
+    [[nodiscard]] inline iterator begin() noexcept { return mQueue.begin(); }
     /** Returns an iterator pointing to the past-the-end element in the list */
-    inline iterator end() noexcept { return mQueue.end(); }
+    [[nodiscard]] inline iterator end() noexcept { return mQueue.end(); }
     /** Returns a const iterator pointing to the first element in the list */
-    inline const_iterator cbegin() const noexcept { return mQueue.cbegin(); }
+    [[nodiscard]] inline const_iterator cbegin() const noexcept { return mQueue.cbegin(); }
     /** Returns a const iterator pointing to the past-the-end element in the list */
-    inline const_iterator cend() const noexcept { return mQueue.cend(); }
+    [[nodiscard]] inline const_iterator cend() const noexcept { return mQueue.cend(); }
     /** Returns a reverse iterator pointing to the last element in the list */
-    inline reverse_iterator rbegin() noexcept { return mQueue.rbegin(); }
+    [[nodiscard]] inline reverse_iterator rbegin() noexcept { return mQueue.rbegin(); }
     /** Returns a reverse iterator pointing to the before-the-start element in the list */
-    inline reverse_iterator rend() noexcept { return mQueue.rend(); }
+    [[nodiscard]] inline reverse_iterator rend() noexcept { return mQueue.rend(); }
     /** Returns a const reverse iterator pointing to the last element in the list */
-    inline const_reverse_iterator crbegin() const noexcept { return mQueue.crbegin(); }
+    [[nodiscard]] inline const_reverse_iterator crbegin() const noexcept { return mQueue.crbegin(); }
     /** Returns a const reverse iterator pointing to the before-the-start element in the list */
-    inline const_reverse_iterator crend() const noexcept { return mQueue.crend(); }
+    [[nodiscard]] inline const_reverse_iterator crend() const noexcept { return mQueue.crend(); }
 
     /** Returns an end iterator for the lookup table (use with lookup) */
-    inline lookup_iterator lend() noexcept { return mLookup.end(); }
+    [[nodiscard]] inline lookup_iterator lend() noexcept { return mLookup.end(); }
     /** Returns a const end iterator for the lookup table (use with lookup) */
-    inline const_lookup_iterator lcend() noexcept { return mLookup.cend(); };
+    [[nodiscard]] inline const_lookup_iterator lcend() noexcept { return mLookup.cend(); };
 
     /** Returns a reference to the first element in the list (MUST NOT BE EMPTY) (O(1)) */
-    inline value_type& front() noexcept { return mQueue.front(); }
+    [[nodiscard]] inline value_type& front() noexcept { return mQueue.front(); }
     /** Returns a reference to the last element in the list (MUST NOT BE EMPTY) (O(1)) */
-    inline value_type& back() noexcept { return mQueue.back(); }
+    [[nodiscard]] inline value_type& back() noexcept { return mQueue.back(); }
     /** Returns the number of elements in the list (O(1)) */
     [[nodiscard]] inline size_t size() const noexcept { return mQueue.size(); }
     /** Returns true iff the list is empty (O(1)) */
@@ -105,7 +106,7 @@ public:
     }
 
     /** Returns true if the key exists in the map */
-    bool exists(const Key& key) const noexcept
+    [[nodiscard]] bool exists(const Key& key) const noexcept
     {
         return mLookup.find(key) != mLookup.end();
     }
@@ -114,7 +115,7 @@ public:
      * Returns an iterator to the element with the given key, or end() if not found
      * Complexity: O(1) average, O(N) worst
      */
-    iterator find(const Key& key) noexcept
+    [[nodiscard]] iterator find(const Key& key) noexcept
     {
         const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return mQueue.end();
@@ -125,7 +126,7 @@ public:
      * Returns an iterator to the element with the given key, or end() if not found
      * Complexity: O(1) average, O(N) worst
      */
-    const_iterator find(const Key& key) const noexcept
+    [[nodiscard]] const_iterator find(const Key& key) const noexcept
     {
         const lookup_iterator itLookup { mLookup.find(key) }; // O(1)-O(n)
         if (itLookup == mLookup.end()) return mQueue.end();
@@ -136,7 +137,7 @@ public:
      * Returns an iterator to the element with the given key, or end() if not found
      * Complexity: O(1) average, O(N) worst
      */
-    lookup_iterator lookup(const Key& key) noexcept
+    [[nodiscard]] lookup_iterator lookup(const Key& key) noexcept
     {
         return mLookup.find(key); // O(1)-O(n)
     }
@@ -145,7 +146,7 @@ public:
      * Returns an iterator to the element with the given key, or end() if not found
      * Complexity: O(1) average, O(N) worst
      */
-    const_lookup_iterator lookup(const Key& key) const noexcept
+    [[nodiscard]] const_lookup_iterator lookup(const Key& key) const noexcept
     {
         return mLookup.find(key); // O(1)-O(n)
     }
@@ -197,7 +198,7 @@ public:
      * Erases and returns the first element in the list (MUST NOT BE EMPTY)
      * Complexity: O(1) average, O(N) worst
      */
-    value_type pop_front() noexcept
+    [[nodiscard]] value_type pop_front() noexcept
     {
         const iterator itQueue { mQueue.begin() };
         mLookup.erase(get_key(*itQueue)); // O(1)-O(n)
@@ -210,7 +211,7 @@ public:
      * Erases and returns the last element in the list (MUST NOT BE EMPTY)
      * Complexity: O(1) average, O(N) worst
      */
-    value_type pop_back() noexcept
+    [[nodiscard]] value_type pop_back() noexcept
     {
         const iterator itQueue { std::prev(mQueue.end()) };
         mLookup.erase(get_key(*itQueue)); // O(1)-O(n)
@@ -223,14 +224,34 @@ public:
      * Emplaces a new element on the front of the list (KEY MUST NOT EXIST)
      * Complexity: O(1) average, O(N) worst
      */
-    template<class... Args>
-    void enqueue_front(Args&&... args) noexcept
+    template<class... Ts>
+    void enqueue_front(Ts&&... args) noexcept
     {
     #if DEBUG // key must not exist
-        assert(!erase(get_key(value_type(std::forward<Args>(args)...))));
+        value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
+        assert(!erase(get_key(v)));
+        mQueue.emplace_front(std::move(v)); // O(1) // non-const for move
+    #else // !DEBUG
+        mQueue.emplace_front(std::forward<Ts>(args)...); // O(1)
     #endif // DEBUG
-        mQueue.emplace_front(std::forward<Args>(args)...); // O(1)
         mLookup[get_key(mQueue.front())] = mQueue.begin(); // O(1)-O(n)
+    }
+
+    /**
+     * Emplaces a new element on the end of the list (KEY MUST NOT EXIST)
+     * Complexity: O(1) average, O(N) worst
+     */
+    template<class... Ts>
+    void enqueue_back(Ts&&... args) noexcept
+    {
+    #if DEBUG // key must not exist
+        value_type v(std::forward<Ts>(args)...); // NOLINT(misc-const-correctness)
+        assert(!erase(get_key(v)));
+        mQueue.emplace_back(std::move(v)); // O(1) // non-const for move
+    #else // !DEBUG
+        mQueue.emplace_back(std::forward<Ts>(args)...); // O(1)
+    #endif // DEBUG
+        mLookup[get_key(mQueue.back())] = std::prev(mQueue.end()); // O(1)-O(n)
     }
 
 private:
@@ -238,19 +259,19 @@ private:
     ValueLookup mLookup;
 };
 
-/** A std::unordered_map that also acts as an ordered queue (keeps insertion order) */
+/** A std::unordered_map (fast lookup) that also acts as an ordered queue (keeps insertion order) */
 template<typename Key, typename Value>
 class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>
 {
 public:
     using value_type = std::pair<const Key, Value>;
-    inline Key get_key(const value_type& e) noexcept { return e.first; }
-    inline Value get_value(const value_type& e) noexcept { return e.second; }
+    [[nodiscard]] inline Key get_key(const value_type& e) noexcept { return e.first; }
+    [[nodiscard]] inline Value get_value(const value_type& e) noexcept { return e.second; }
     using OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>::OrderedMapAnyEntry;
 };
 
 /** 
- * A std::list that provides fast lookup using a hash map (must be unique values)
+ * A std::list (ordered) that provides fast lookup using a hash map (must be unique values)
  * This is an OrderedMap but with Values as Keys, and the value_type is just the Value not a pair
  */
 template<typename Value>
@@ -258,8 +279,8 @@ class HashedQueue : public OrderedMapAnyEntry<Value, Value, Value, HashedQueue<V
 {
 public:
     using value_type = Value;
-    inline Value get_key(const value_type& e) noexcept { return e; }
-    inline Value get_value(const value_type& e) noexcept { return e; }
+    [[nodiscard]] inline Value get_key(const value_type& e) noexcept { return e; }
+    [[nodiscard]] inline Value get_value(const value_type& e) noexcept { return e; }
     using OrderedMapAnyEntry<Value, Value, Value, HashedQueue<Value>>::OrderedMapAnyEntry;
 };
 

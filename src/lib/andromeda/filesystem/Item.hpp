@@ -4,13 +4,13 @@
 #include <shared_mutex>
 #include <string>
 
-#include <nlohmann/json_fwd.hpp>
+#include "nlohmann/json_fwd.hpp"
 
 #include "andromeda/BaseException.hpp"
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
-#include "andromeda/Utilities.hpp"
 
 namespace Andromeda {
 
@@ -139,7 +139,7 @@ public:
      * The delete will be done by unlocking self then calling parent->DeleteItem()
      * @param scopeLock reference to scopeLock which will be unlocked
      * @param thisLock temporary lock for self which will be unlocked
-     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws Folder::NotFoundException if the item is concurrently changed after unlock
      */
     virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock);
 
@@ -150,7 +150,7 @@ public:
      * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
      * The rename will be done by unlocking self then calling parent->RenameItem() then re-locking
      * @param thisLock temporary lock for self which will be temporarily unlocked
-     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws Folder::NotFoundException if the item is concurrently changed after unlock
      */
     virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false);
 
@@ -162,7 +162,7 @@ public:
      * The move will be done by unlocking self then calling parent->MoveItem() then re-locking
      * This will also temporarily get a W lock on the newParent (deadlock-safe)
      * @param thisLock temporary lock for self which will be temporarily unlocked
-     * @throw Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws Folder::NotFoundException if the item is concurrently changed after unlock
      */
     virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false);
 

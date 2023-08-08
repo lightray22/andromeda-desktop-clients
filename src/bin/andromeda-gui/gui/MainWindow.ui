@@ -25,6 +25,10 @@
   <property name="windowTitle">
    <string>Andromeda</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/andromeda.png</normaloff>:/andromeda.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tabAccounts">
     <property name="geometry">
@@ -158,7 +162,9 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resource.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>actionExit</sender>

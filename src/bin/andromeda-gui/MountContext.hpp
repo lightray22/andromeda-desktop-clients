@@ -5,9 +5,9 @@
 #include <memory>
 #include <string>
 
+#include "andromeda/common.hpp"
 #include "andromeda/BaseException.hpp"
 #include "andromeda/Debug.hpp"
-#include "andromeda/Utilities.hpp"
 #include "andromeda-fuse/FuseAdapter.hpp"
 
 namespace Andromeda { 
@@ -28,10 +28,6 @@ public:
         explicit Exception(const std::string& message) :
             Andromeda::BaseException("Mount Error: "+message) {}; };
 
-    /** Exception indicating that no home directory was found */
-    class UnknownHomeException : public Exception { public:
-        UnknownHomeException() : Exception("Unknown Home Directory") {}; };
-
     /** Exception indicating the desired mount directory is not empty */
     class NonEmptyMountException : public Exception { public:
         explicit NonEmptyMountException(const std::string& path) : 
@@ -45,12 +41,12 @@ public:
     /**
      * Create a new MountContext
      * @param backend the backend resource to use
-     * @param homeRel if true, mountPath is $HOME-relative
+     * @param homeRelative if true, mountPath is $HOME-relative
      * @param mountPath filesystem path to mount - must already exist if not homeRel
      * @param options FUSE adapter options
      */
     MountContext(Andromeda::Backend::BackendImpl& backend,
-        bool homeRel, std::string mountPath, 
+        bool homeRelative, std::string mountPath, 
         AndromedaFuse::FuseOptions& options);
 
     virtual ~MountContext();
@@ -62,8 +58,8 @@ public:
 
 private:
 
-    /** True if the mount point is home-relative */
-    bool mHomeRelative { false };
+    /** True if the mount point is auto created */
+    bool mCreateMount { false };
 
     std::unique_ptr<Andromeda::Filesystem::Folder> mRootFolder;
     std::unique_ptr<AndromedaFuse::FuseAdapter> mFuseAdapter;

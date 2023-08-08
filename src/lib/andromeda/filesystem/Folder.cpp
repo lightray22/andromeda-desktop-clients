@@ -1,9 +1,9 @@
 #include <utility>
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "Folder.hpp"
 #include "andromeda/ConfigOptions.hpp"
-#include "andromeda/Utilities.hpp"
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 
@@ -39,14 +39,14 @@ Item::ScopeLocked Folder::GetItemByPath(std::string path)
         return Item::TryLockScope();
     }
 
-    Utilities::StringList parts { Utilities::explode(path,"/") };
+    StringUtil::StringList parts { StringUtil::explode(path,"/") };
 
     // iteratively find the correct parent/subitem
     Folder::ScopeLocked parent { TryLockScope() };
     if (!parent) { ITDBG_INFO("... self deleted(2)"); 
         throw NotFoundException(); }
 
-    for (Utilities::StringList::iterator pIt { parts.begin() }; 
+    for (StringUtil::StringList::iterator pIt { parts.begin() }; 
         pIt != parts.end(); ++pIt )
     {
         const SharedLockW parentLock { parent->GetWriteLock() };

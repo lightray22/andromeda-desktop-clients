@@ -10,7 +10,7 @@ namespace Gui {
 
 /*****************************************************/
 SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
-    QSystemTrayIcon(QIcon(QPixmap(32,32))),
+    QSystemTrayIcon(QIcon(":/andromeda.png")),
     mActionShow("Show"),
     mActionExit("Exit"),
     mApplication(application),

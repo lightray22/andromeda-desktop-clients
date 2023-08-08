@@ -2,7 +2,7 @@
 #ifndef LIBA2_PAGE_H_
 #define LIBA2_PAGE_H_
 
-#include "andromeda/Utilities.hpp"
+#include "andromeda/common.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -19,8 +19,8 @@ public:
     explicit Page(size_t pageSize, CachingAllocator& memAlloc);
 
     virtual ~Page();
-    Page(Page&& page) noexcept;
-    Page& operator=(Page&&) = delete;
+    Page(Page&& page) noexcept; // move
+    Page& operator=(Page&&) = delete; // move
     DELETE_COPY(Page)
 
     /** Return a pointer to the data buffer */

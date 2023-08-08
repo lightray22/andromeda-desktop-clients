@@ -1,64 +1,63 @@
 #include "catch2/catch_test_macros.hpp"
 
-#include "HTTPRunner.hpp"
-#include "HTTPOptions.hpp"
+#include "andromeda/backend/HTTPRunner.hpp"
+#include "andromeda/backend/HTTPOptions.hpp"
+#include "andromeda/backend/RunnerOptions.hpp"
 
 namespace Andromeda {
+namespace Backend {
 
-class HTTPRunnerFriend
-{
-public:
-    HTTPRunnerFriend(HTTPRunner& runner) : mRunner(runner) { }
-
-    virtual ~HTTPRunnerFriend() = default;
-
-    virtual void HandleRedirect(const std::string& location) { mRunner.HandleRedirect(location); }
-
-    HTTPRunner& mRunner;
+class HTTPRunnerTest : public HTTPRunner
+{ 
+public:    
+    using HTTPRunner::HostUrlPair;
+    using HTTPRunner::HTTPRunner;
+    using HTTPRunner::ParseURL;
+    using HTTPRunner::RegisterRedirect;
 };
 
 /*****************************************************/
 TEST_CASE("ParseURL", "[HTTPRunner]")
 {
-    HTTPRunner::HostUrlPair result;
+    HTTPRunnerTest::HostUrlPair result {};
 
-    result = HTTPRunner::ParseURL("myhost");
-    REQUIRE(result.first == "myhost"); 
+    result = HTTPRunnerTest::ParseURL("myhost");
+    REQUIRE(result.first == "http://myhost"); 
     REQUIRE(result.second == "/");
     
-    result = HTTPRunner::ParseURL("myhost/");
-    REQUIRE(result.first == "myhost"); 
+    result = HTTPRunnerTest::ParseURL("myhost/");
+    REQUIRE(result.first == "http://myhost"); 
     REQUIRE(result.second == "/");
     
-    result = HTTPRunner::ParseURL("myhost/test");
-    REQUIRE(result.first == "myhost"); 
-    REQUIRE(result.second == "/test");
-    
-    result = HTTPRunner::ParseURL("myhost/test/");
-    REQUIRE(result.first == "myhost"); 
-    REQUIRE(result.second == "/test/");
-    
-    result = HTTPRunner::ParseURL("myhost/test/index.php");
-    REQUIRE(result.first == "myhost"); 
-    REQUIRE(result.second == "/test/index.php");
-    
-    result = HTTPRunner::ParseURL("https://myhost");
-    REQUIRE(result.first == "https://myhost"); 
-    REQUIRE(result.second == "/");
-    
-    result = HTTPRunner::ParseURL("https://myhost/");
-    REQUIRE(result.first == "https://myhost"); 
-    REQUIRE(result.second == "/");
-    
-    result = HTTPRunner::ParseURL("http://myhost/test");
+    result = HTTPRunnerTest::ParseURL("myhost/test");
     REQUIRE(result.first == "http://myhost"); 
     REQUIRE(result.second == "/test");
     
-    result = HTTPRunner::ParseURL("https://myhost/test/");
+    result = HTTPRunnerTest::ParseURL("myhost/test/");
+    REQUIRE(result.first == "http://myhost"); 
+    REQUIRE(result.second == "/test/");
+    
+    result = HTTPRunnerTest::ParseURL("myhost/test/index.php");
+    REQUIRE(result.first == "http://myhost"); 
+    REQUIRE(result.second == "/test/index.php");
+    
+    result = HTTPRunnerTest::ParseURL("https://myhost");
+    REQUIRE(result.first == "https://myhost"); 
+    REQUIRE(result.second == "/");
+    
+    result = HTTPRunnerTest::ParseURL("https://myhost/");
+    REQUIRE(result.first == "https://myhost"); 
+    REQUIRE(result.second == "/");
+    
+    result = HTTPRunnerTest::ParseURL("http://myhost/test");
+    REQUIRE(result.first == "http://myhost"); 
+    REQUIRE(result.second == "/test");
+    
+    result = HTTPRunnerTest::ParseURL("https://myhost/test/");
     REQUIRE(result.first == "https://myhost"); 
     REQUIRE(result.second == "/test/");
     
-    result = HTTPRunner::ParseURL("https://myhost/test/index.php");
+    result = HTTPRunnerTest::ParseURL("https://myhost/test/index.php");
     REQUIRE(result.first == "https://myhost"); 
     REQUIRE(result.second == "/test/index.php");
 }
@@ -66,40 +65,32 @@ TEST_CASE("ParseURL", "[HTTPRunner]")
 /*****************************************************/
 TEST_CASE("GetHostname", "[HTTPRunner]")
 {
-    const HTTPOptions options;
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
 
-    REQUIRE(HTTPRunner("myhost","",options).GetHostname() == "myhost");
-    REQUIRE(HTTPRunner("http://myhost","",options).GetHostname() == "myhost");
-    REQUIRE(HTTPRunner("https://myhost","",options).GetHostname() == "myhost");
-}
+    {
+        const HTTPRunner runner("myhost/?test","",ropts,hopts);
+        REQUIRE(runner.GetHostname() == "myhost");
+        REQUIRE(runner.GetProtoHost() == "http://myhost");
+        REQUIRE(runner.GetBaseURL() == "/?test");
+        REQUIRE(runner.GetFullURL() == "http://myhost/?test");
+    }
 
-/*****************************************************/
-TEST_CASE("GetProtoHost", "[HTTPRunner]")
-{
-    const HTTPOptions options;
-
-    REQUIRE(HTTPRunner("myhost","",options).GetProtoHost() == "http://myhost");
-    REQUIRE(HTTPRunner("http://myhost","",options).GetProtoHost() == "http://myhost");
-    REQUIRE(HTTPRunner("https://myhost","",options).GetProtoHost() == "https://myhost");
-}
-
-/*****************************************************/
-TEST_CASE("GetBaseURL", "[HTTPRunner]")
-{
-    const HTTPOptions options;
-
-    REQUIRE(HTTPRunner("","",options).GetBaseURL() == "/");
-    REQUIRE(HTTPRunner("","/",options).GetBaseURL() == "/");
-    REQUIRE(HTTPRunner("","test",options).GetBaseURL() == "/test");
-    REQUIRE(HTTPRunner("","/test",options).GetBaseURL() == "/test");
-    REQUIRE(HTTPRunner("","/?test",options).GetBaseURL() == "/?test");
+    {
+        const HTTPRunner runner("http://myhost","",ropts,hopts);
+        REQUIRE(runner.GetHostname() == "myhost");
+        REQUIRE(runner.GetProtoHost() == "http://myhost");
+        REQUIRE(runner.GetBaseURL() == "/");
+        REQUIRE(runner.GetFullURL() == "http://myhost/");
+    }
 }
 
 /*****************************************************/
 TEST_CASE("EnableRetry", "[HTTPRunner]")
 {
-    const HTTPOptions options;
-    HTTPRunner runner("", "", options);
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
+    HTTPRunner runner("","",ropts,hopts);
 
     REQUIRE(runner.GetCanRetry() == false); // default
     runner.EnableRetry(); REQUIRE(runner.GetCanRetry());
@@ -107,16 +98,20 @@ TEST_CASE("EnableRetry", "[HTTPRunner]")
 }
 
 /*****************************************************/
-TEST_CASE("HandleRedirect", "[HTTPRunner]")
+TEST_CASE("RegisterRedirect", "[HTTPRunner]")
 {
-    const HTTPOptions options;
-    HTTPRunner runner("myhost", "/page", options);
-    HTTPRunnerFriend runnerFriend(runner);
+    const HTTPOptions hopts {};
+    const RunnerOptions ropts {};
+    HTTPRunnerTest runner("myhost/page","",ropts,hopts);
 
-    runnerFriend.HandleRedirect("http://mytest/page2");
+    REQUIRE(runner.GetProtoHost() == "http://myhost");
+    REQUIRE(runner.GetBaseURL() == "/page");
+
+    runner.RegisterRedirect("http://mytest/page2");
 
     REQUIRE(runner.GetProtoHost() == "http://mytest");
     REQUIRE(runner.GetBaseURL() == "/page2");
 }
 
+} // namespace Backend
 } // namespace Andromeda

@@ -53,14 +53,14 @@ public:
     }
 
     /** Returns the current # of locks */
-    size_t get_avail() noexcept
+    inline size_t get_avail() noexcept
     {
         const std::lock_guard<std::mutex> llock(mMutex);
         return mAvailable;
     }
 
     /** Returns the max semaphor count */
-    size_t get_max() noexcept
+    inline size_t get_max() noexcept
     {
         const std::lock_guard<std::mutex> llock(mMutex);
         return mMaxCount;

@@ -22,13 +22,13 @@ public:
     /** @param[out] cacheOptions CacheManager options ref to fill */
     explicit Options(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
-    virtual bool AddFlag(const std::string& flag) override;
+    bool AddFlag(const std::string& flag) override;
 
-    virtual bool AddOption(const std::string& option, const std::string& value) override;
+    bool AddOption(const std::string& option, const std::string& value) override;
 
 private:
 
-    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions;
+    Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions; // cppcheck-suppress uninitMemberVarPrivate
 };
 
 } // namespace AndromedaGui

@@ -25,7 +25,7 @@ MemoryAllocator::MemoryAllocator() :
     MDBG_INFO("... mPageSize:" << mPageSize);
 }
 
-#if DEBUG
+#if DEBUG // sanity checks
 /*****************************************************/
 MemoryAllocator::~MemoryAllocator(){ assert(mAllocMap.empty()); }
 #endif // DEBUG
@@ -56,7 +56,7 @@ void* MemoryAllocator::alloc(size_t pages)
 #endif // WIN32
     MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
 
-#if DEBUG
+#if DEBUG // sanity checks
 { // lock scope
     const LockGuard lock(mMutex);
     mAllocMap.emplace(ptr, pages);
@@ -74,7 +74,7 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     MDBG_INFO("(ptr:" << ptr << " pages:" << pages << " bytes:" << pages*mPageSize << ")");
     if (ptr == nullptr) return;
 
-#if DEBUG
+#if DEBUG // sanity checks
 { // lock scope
     const LockGuard lock(mMutex);
     // lower_bound with map<greater> means first ptr <= our ptr
@@ -136,7 +136,7 @@ void MemoryAllocator::stats(const std::string& fname, const size_t pages, bool a
             else       { ++mFrees; mTotalPages -= pages; mTotalBytes -= pages*mPageSize; }
 
             str << fname << "... mTotalPages:" << mTotalPages << " mTotalBytes:" << mTotalBytes
-        #if DEBUG
+        #if DEBUG // sanity checks
             << " mAllocMap:" << mAllocMap.size()
         #endif // DEBUG
             << " mAllocs:" << mAllocs << " mFrees:" << mFrees; 

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <memory>
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 
 #include "CommandLine.hpp"
 using AndromedaCli::CommandLine;
@@ -67,13 +67,10 @@ int main(int argc, char** argv)
 
     DDBG_INFO("()");
 
-    const HTTPRunner::HostUrlPair urlPair {
-        HTTPRunner::ParseURL(options.GetApiUrl()) };
-
     const std::string userAgent(std::string("andromeda-cli/")
         +ANDROMEDA_VERSION+"/"+SYSTEM_NAME);
 
-    HTTPRunner runner(urlPair.first, urlPair.second, 
+    HTTPRunner runner(options.GetApiUrl(),
         userAgent, runnerOptions, httpOptions);
 
     try

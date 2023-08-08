@@ -12,8 +12,10 @@
 
 #include "andromeda/BaseOptions.hpp"
 using Andromeda::BaseOptions;
-#include "andromeda/Utilities.hpp"
-using Andromeda::Utilities;
+#include "andromeda/PlatformUtil.hpp"
+using Andromeda::PlatformUtil;
+#include "andromeda/StringUtil.hpp"
+using Andromeda::StringUtil;
 #include "andromeda/backend/HTTPRunner.hpp"
 using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/RunnerInput.hpp"
@@ -68,17 +70,17 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
     const bool outStream { mOptions.isStreamOut() };
 
     { // environment params
-        Utilities::StringList args;
-        for (const Utilities::StringMap::value_type& pair : Utilities::GetEnvironment("andromeda_"))
+        StringUtil::StringList args;
+        for (const PlatformUtil::StringMap::value_type& pair : PlatformUtil::GetEnvironment("andromeda_"))
         {
-            const std::string key { Utilities::split(pair.first,"_").second };
+            const std::string key { StringUtil::split(pair.first,"_").second };
             if (!key.empty()) { args.push_back("--"+key); args.push_back(pair.second); }
         }
         ProcessArgList(args, true, plainParams, dataParams, inStreams);
     }
 
     { // command line params
-        Utilities::StringList args;
+        StringUtil::StringList args;
         for (size_t i = 2; i < argc; i++)
             args.emplace_back(argv[i]);
 
@@ -103,13 +105,13 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
 }
 
 /*****************************************************/
-std::string CommandLine::getNextValue(const Utilities::StringList& argv, size_t& i)
+std::string CommandLine::getNextValue(const StringUtil::StringList& argv, size_t& i)
 {
     return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
 }
 
 /*****************************************************/
-void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
+void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv,
     RunnerInput::Params& plainParams, RunnerInput::Params& dataParams, 
     RunnerInput_StreamIn::FileStreams& inStreams)
 {
@@ -117,7 +119,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
     for (size_t i = 0; i < args.size(); i++)
     {
         std::string param { args[i] };
-        if (param.size() < 2 || !Utilities::startsWith(param,"--"))
+        if (param.size() < 2 || !StringUtil::startsWith(param,"--"))
             throw BaseOptions::BadUsageException(
                 "expected key at action arg "+std::to_string(i));
         else if (param.size() < 3 || std::isspace(param[2]))
@@ -147,6 +149,7 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 fdat.append(buf.data(), static_cast<std::size_t>(file.gcount()));
             }
 
+            // want to overwrite, not emplace
             dataParams[param] = fdat;
         }
         else if (special == '!')
@@ -157,7 +160,9 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
             std::cout << "enter " << param << "..." << std::endl;
             std::string val; std::getline(std::cin, val);
 
-            dataParams[param] = Utilities::trim(val);
+            StringUtil::trim_void(val);
+            // want to overwrite, not emplace
+            dataParams[param] = val;
         }
         else if (special == '%')
         {
@@ -196,9 +201,10 @@ void CommandLine::ProcessArgList(const Utilities::StringList& args, bool isPriv,
                 (param.find("password") != std::string::npos || param.find("auth_") != std::string::npos))
                 throw PrivateDataException(param); // hardcoded sanity check for now...
 
-            const std::string next { getNextValue(args, i) };
-            if (isPriv) dataParams[param] = next;
-            else plainParams[param] = next;
+            std::string next { getNextValue(args, i) }; // non-const for move
+            // want to overwrite, not emplace
+            if (isPriv) dataParams[param] = std::move(next);
+            else plainParams[param] = std::move(next);
         }
     }
 }

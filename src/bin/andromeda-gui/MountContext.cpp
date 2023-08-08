@@ -6,8 +6,6 @@
 
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
-#include "andromeda/filesystem/Folder.hpp"
-using Andromeda::Filesystem::Folder;
 #include "andromeda/filesystem/folders/SuperRoot.hpp"
 using Andromeda::Filesystem::Folders::SuperRoot;
 #include "andromeda-fuse/FuseAdapter.hpp"
@@ -20,17 +18,15 @@ namespace fs = std::filesystem;
 namespace AndromedaGui {
 
 /*****************************************************/
-MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mountPath, FuseOptions& options) : 
-    mHomeRelative(homeRel), mDebug(__func__,this) 
+MountContext::MountContext(BackendImpl& backend, bool homeRelative, std::string mountPath, FuseOptions& options) : 
+    mCreateMount(homeRelative), mDebug(__func__,this) 
 {
     MDBG_INFO("(mountPath:" << mountPath << ")");
 
-    if (mHomeRelative)
+    if (homeRelative)
     {
         const QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
-        if (locations.empty()) throw UnknownHomeException();
-
-        mountPath = locations.at(0).toStdString()+"/"+mountPath;
+        mountPath = locations[0].toStdString()+"/"+mountPath; // Qt guarantees [0] never empty
         MDBG_INFO("... mountPath:" << mountPath);
     }
 
@@ -46,7 +42,7 @@ MountContext::MountContext(BackendImpl& backend, bool homeRel, std::string mount
         #endif // WIN32
         }
     #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (mHomeRelative)
+        else if (mCreateMount)
             fs::create_directory(mountPath);
     #endif // !WIN32
     }
@@ -74,7 +70,7 @@ MountContext::~MountContext()
 
     try
     {
-        if (mHomeRelative && fs::is_directory(mountPath) && fs::is_empty(mountPath))
+        if (mCreateMount && fs::is_directory(mountPath))
         {
             MDBG_INFO("... remove mountPath");
             fs::remove(mountPath);

@@ -3,7 +3,7 @@
 
 #include "ConfigOptions.hpp"
 #include "BaseOptions.hpp"
-#include "Utilities.hpp"
+#include "StringUtil.hpp"
 
 namespace Andromeda {
 
@@ -19,7 +19,7 @@ std::string ConfigOptions::HelpText()
 
     using std::endl; output 
         << "Advanced:        [-q|--quiet] [-r|--read-only] [--dir-refresh secs(" << defRefresh << ")] [--cachemode none|memory|normal] [--backend-runners uint"<<stBits<<"(" << optDefault.runnerPoolSize << ")]" << endl
-        << "Data Advanced:   [--pagesize bytes"<<stBits<<"(" << Utilities::bytesToString(optDefault.pageSize) << ")] [--read-ahead ms(" << defReadAhead << ")]"
+        << "Data Advanced:   [--pagesize bytes"<<stBits<<"(" << StringUtil::bytesToString(optDefault.pageSize) << ")] [--read-ahead ms(" << defReadAhead << ")]"
             << " [--read-max-cache-frac uint32(" << optDefault.readMaxCacheFrac << ")] [--read-ahead-buffer pages(" << optDefault.readAheadBuffer << ")]";
 
     return output.str();
@@ -63,7 +63,7 @@ bool ConfigOptions::AddOption(const std::string& option, const std::string& valu
     }
     else if (option == "pagesize")
     {
-        try { pageSize = static_cast<decltype(pageSize)>(Utilities::stringToBytes(value)); }
+        try { pageSize = static_cast<decltype(pageSize)>(StringUtil::stringToBytes(value)); }
         catch (const std::logic_error& e) { 
             throw BaseOptions::BadValueException(option); }
 

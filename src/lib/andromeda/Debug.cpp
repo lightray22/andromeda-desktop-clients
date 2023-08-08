@@ -73,10 +73,10 @@ Debug::StreamFunc Debug::DumpBytes(const void* ptr, size_t bytes, size_t width)
             // need to cast to a 16-bit integer so it gets printed as a number not a character
             str << std::setw(2) << std::setfill('0') << static_cast<uint16_t>(*byte) << " ";
 
-            if ((i % width) + 1 == width) str << std::endl;
+            if (i+1 < bytes && (i % width) + 1 == width) str << std::endl;
         }
 
-        str << std::endl; str.flags(sflags); // restore flags
+        str.flags(sflags); // restore flags
     };
 }
 

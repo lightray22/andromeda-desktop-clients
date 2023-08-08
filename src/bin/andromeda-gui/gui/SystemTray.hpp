@@ -11,6 +11,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QSystemTrayIcon>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace AndromedaGui {
@@ -28,10 +29,8 @@ public:
     SystemTray(QApplication& application, MainWindow& mainWindow);
 
     ~SystemTray() override;
-    SystemTray(const SystemTray&) = delete; // no copy
-    SystemTray& operator=(const SystemTray&) = delete;
-    SystemTray(SystemTray&&) = delete; // no move
-    SystemTray& operator=(SystemTray&&) = delete;
+    DELETE_COPY(SystemTray)
+    DELETE_MOVE(SystemTray)
 
 private:
 

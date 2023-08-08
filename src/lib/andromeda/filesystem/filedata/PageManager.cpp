@@ -313,14 +313,12 @@ size_t PageManager::GetFetchSize(const uint64_t index, const SharedLock& thisLoc
 
     const uint64_t backendSize { mPageBackend.GetBackendSize(thisLock) };
 
-    if (!backendSize) return 0;
+    if (!backendSize) { MDBG_INFO("... return 0(a)"); return 0; } // nothing to read
     const uint64_t lastPage { (backendSize-1)/mPageSize }; // last valid page index
-    if (index > lastPage) return 0; // can't read beyond the backend
+    if (index > lastPage) { MDBG_INFO("... return 0(b)"); return 0; } // can't read beyond the backend
 
     const UniqueLock llock(mFetchSizeMutex);
     const size_t maxReadCount { min64st(lastPage-index+1, mFetchSize) };
-
-    MDBG_INFO("(index:" << index << ") backendSize:" << backendSize << " maxReadCount:" << maxReadCount);
 
     if (mPages.find(index) != mPages.end()) return 0; // page exists
 
@@ -346,7 +344,6 @@ size_t PageManager::GetFetchSize(const uint64_t index, const SharedLock& thisLoc
         }
     }
 
-    MDBG_INFO("... return:"  << readCount);
     return readCount;
 }
 
@@ -361,7 +358,7 @@ void PageManager::DoAdvanceRead(const uint64_t index, const SharedLock& thisLock
         const size_t fetchSize { GetFetchSize(nextIdx, thisLock, pagesLock) };
         if (fetchSize)
         {
-            MDBG_INFO("... read-ahead nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
+            MDBG_INFO("... advance read nextIdx:" << nextIdx << " fetchSize:" << fetchSize);
             StartFetch(nextIdx, fetchSize, pagesLock);
             break; // exit loop
         }

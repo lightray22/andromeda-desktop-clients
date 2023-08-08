@@ -3,6 +3,8 @@
 
 #include <QtWidgets/QDialog>
 
+#include "andromeda/common.hpp"
+
 namespace AndromedaGui {
 namespace Gui {
 
@@ -16,10 +18,8 @@ public:
     explicit MountsDialog(QWidget *parent = nullptr);
     
     ~MountsDialog() override;
-    MountsDialog(const MountsDialog&) = delete; // no copy
-    MountsDialog& operator=(const MountsDialog&) = delete;
-    MountsDialog(MountsDialog&&) = delete; // no move
-    MountsDialog& operator=(MountsDialog&&) = delete;
+    DELETE_COPY(MountsDialog)
+    DELETE_MOVE(MountsDialog)
 
 private:
     Ui::MountsDialog *ui;

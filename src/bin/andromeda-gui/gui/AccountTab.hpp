@@ -4,6 +4,7 @@
 #include <memory>
 #include <QtWidgets/QWidget>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace AndromedaGui {
@@ -29,13 +30,14 @@ public:
     explicit AccountTab(QWidget& parent, std::unique_ptr<BackendContext> backendContext);
     
     ~AccountTab() override;
-    AccountTab(const AccountTab&) = delete; // no copy
-    AccountTab& operator=(const AccountTab&) = delete;
-    AccountTab(AccountTab&&) = delete; // no move
-    AccountTab& operator=(AccountTab&&) = delete;
+    DELETE_COPY(AccountTab)
+    DELETE_MOVE(AccountTab)
 
     /** Returns the string to be used for this tab's title */
     std::string GetTabName() const;
+
+    /** Returns a reference to the BackendContext in use */
+    inline BackendContext& GetBackendContext() const { return *mBackendContext; }
 
 public slots:
 

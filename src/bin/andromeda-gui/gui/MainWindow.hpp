@@ -5,16 +5,20 @@
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QMainWindow>
 
+#include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 
 namespace Andromeda { 
+    namespace Backend { class SessionStore; }
+    namespace Database { class SqliteDatabase; class ObjectDatabase; }
     namespace Filesystem { namespace Filedata { struct CacheOptions; } }
 }
 
 namespace AndromedaGui {
-namespace Gui {
+class BackendContext;
 
+namespace Gui {
 class AccountTab;
 
 namespace Ui { class MainWindow; }
@@ -26,15 +30,17 @@ class MainWindow : public QMainWindow
 
 public:
 
+    /** Instantiates the main window UI, initializes the database */
     explicit MainWindow(Andromeda::Filesystem::Filedata::CacheOptions& cacheOptions);
 
     ~MainWindow() override;
-    MainWindow(const MainWindow&) = delete; // no copy
-    MainWindow& operator=(const MainWindow&) = delete;
-    MainWindow(MainWindow&&) = delete; // no move
-    MainWindow& operator=(MainWindow&&) = delete;
+    DELETE_COPY(MainWindow)
+    DELETE_MOVE(MainWindow)
 
     void closeEvent(QCloseEvent* event) override;
+
+    /** Add an account tab for an existing session, shows an error box on failure */
+    void TryLoadAccount(Andromeda::Backend::SessionStore& session);
 
 public slots:
 
@@ -63,12 +69,20 @@ private:
     /** Returns the current AccountTab or nullptr if none */
     AccountTab* GetCurrentTab();
 
-    std::unique_ptr<Ui::MainWindow> mQtUi;
+    /** Adds a new account tab for a created backend context */
+    void AddAccountTab(std::unique_ptr<BackendContext> backendCtx);
+
+    mutable Andromeda::Debug mDebug;
+
+    /** SqliteDatabase instance for the ObjectDatabase (maybe null!) */
+    std::unique_ptr<Andromeda::Database::SqliteDatabase> mSqlDatabase;
+    /** ObjectDatabase instance for object storage (maybe null!) */
+    std::unique_ptr<Andromeda::Database::ObjectDatabase> mObjDatabase;
 
     /** Global cache manager to apply to all mounts */
     Andromeda::Filesystem::Filedata::CacheManager mCacheManager;
 
-    mutable Andromeda::Debug mDebug;
+    std::unique_ptr<Ui::MainWindow> mQtUi;
 };
 
 } // namespace Gui
