@@ -4,13 +4,16 @@
 #include <memory>
 #include <sstream>
 
+#include <QtCore/QLockFile>
 #include <QtCore/QStandardPaths>
+#include <QtNetwork/QLocalServer>
+#include <QtNetwork/QLocalSocket>
 #include <QtWidgets/QApplication>
 
 #include "Options.hpp"
 using AndromedaGui::Options;
-#include "qtgui/ExceptionBox.hpp"
-using AndromedaGui::QtGui::ExceptionBox;
+#include "qtgui/Utilities.hpp"
+using AndromedaGui::QtGui::Utilities;
 #include "qtgui/MainWindow.hpp"
 using AndromedaGui::QtGui::MainWindow;
 #include "qtgui/SystemTray.hpp"
@@ -36,7 +39,9 @@ using Andromeda::Filesystem::Filedata::CacheManager;
 enum class ExitCode
 {
     SUCCESS,
-    BAD_USAGE
+    BAD_USAGE,
+    APPDATA,
+    INSTANCE
 };
 
 /*****************************************************/
@@ -78,19 +83,45 @@ int main(int argc, char** argv)
         QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
 
     DDBG_INFO("... init dataPath:" << dataPath);
-
     try { std::filesystem::create_directories(dataPath); }
     catch (const std::filesystem::filesystem_error& ex)
     {
         DDBG_ERROR("... " << ex.what());
         const std::string msg { "Failed to create appdata directory." };
-        ExceptionBox::critical(nullptr, "Initialize Error", msg.c_str(), ex);
-        application.exit(); // fatal
+        Utilities::criticalBox(nullptr, "Initialize Error", msg.c_str(), ex);
+        return static_cast<int>(ExitCode::APPDATA);
     }
     
     const std::string dbPath { dataPath+"/database.s3db" };
-    DDBG_INFO("... init dbPath:" << dbPath);
+    const std::string lockPath { dbPath+".qtlock" };
 
+    // start a socket to coordinate SingleInstance
+    const QString serverName { Utilities::hash16(lockPath.c_str()).toHex() };
+
+    QLocalServer instanceServer;
+    QLockFile dbLock(lockPath.c_str());
+    if (dbLock.tryLock())
+    { 
+        DDBG_INFO("... starting single-instance server: " << serverName.toStdString());
+        instanceServer.setSocketOptions(QLocalServer::UserAccessOption);
+        instanceServer.removeServer(serverName); // in case of a previous crash
+        if (!instanceServer.listen(serverName))
+            { DDBG_ERROR("... failed to start server"); }
+    }
+    else 
+    { 
+        DDBG_INFO("... single-instance lock failed! already running?");
+        QLocalSocket sock; sock.connectToServer(serverName);
+        if (!sock.waitForConnected()) // must be busy?
+        {
+            DDBG_INFO("... didn't connect to socket, show message box");
+            QMessageBox::critical(nullptr, "Initialize Error", "Andromeda is already running!");
+        }
+        else { DDBG_INFO("... notified existing instance! returning"); }
+        return static_cast<int>(ExitCode::INSTANCE);
+    }
+
+    DDBG_INFO("... init dbPath:" << dbPath);
     std::unique_ptr<SqliteDatabase> sqlDatabase;
     std::unique_ptr<ObjectDatabase> objDatabase;
     try
@@ -98,7 +129,7 @@ int main(int argc, char** argv)
         sqlDatabase = std::make_unique<SqliteDatabase>(dbPath);
         objDatabase = std::make_unique<ObjectDatabase>(*sqlDatabase);
 
-        DDBG_INFO("... installing database tables");
+        DDBG_INFO("... checking database tables");
         TableInstaller tableInst(*objDatabase);
         tableInst.InstallTable<SessionStore>();
     }
@@ -108,13 +139,22 @@ int main(int argc, char** argv)
         std::stringstream str;
         str << "Failed to initialize the database. This is probably a bug, please report." << std::endl;
         str << "Previously saved accounts are unavailable, and new ones will not be saved.";
-        ExceptionBox::warning(nullptr, "Database Error", str.str(), ex);
+        Utilities::warningBox(nullptr, "Database Error", str.str(), ex);
     }
 
     CacheManager cacheManager(cacheOptions);
 
     MainWindow mainWindow(cacheManager, objDatabase.get()); 
     SystemTray systemTray(application, mainWindow);
+
+    // if we get a connection to the single-instance server, show the window
+    QObject::connect(&instanceServer, &QLocalServer::newConnection, [&]()
+    {
+        DDBG_INFO("... new single-instance socket connection");
+        QLocalSocket& clientSocket = *instanceServer.nextPendingConnection();
+        mainWindow.fullShow();
+        clientSocket.abort();
+    });
 
     systemTray.show();
     mainWindow.show();

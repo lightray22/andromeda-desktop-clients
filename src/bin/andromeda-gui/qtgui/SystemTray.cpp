@@ -22,11 +22,11 @@ SystemTray::SystemTray(QApplication& application, MainWindow& mainWindow) :
     mContextMenu.addAction(&mActionShow);
     mContextMenu.addAction(&mActionExit);
 
-    QObject::connect(&mActionShow, &QAction::triggered, &mMainWindow, &MainWindow::show);
+    QObject::connect(&mActionShow, &QAction::triggered, &mMainWindow, &MainWindow::fullShow);
     QObject::connect(&mActionExit, &QAction::triggered, &mApplication, &QApplication::quit);
 
     QObject::connect(this, &SystemTray::activated, [&](QSystemTrayIcon::ActivationReason reason){
-        if (reason == QSystemTrayIcon::DoubleClick) mMainWindow.show();
+        if (reason == QSystemTrayIcon::DoubleClick) mMainWindow.fullShow();
     });
 
     setContextMenu(&mContextMenu);

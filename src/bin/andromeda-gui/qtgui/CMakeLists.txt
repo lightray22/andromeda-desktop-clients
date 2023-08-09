@@ -14,6 +14,7 @@ set(SOURCE_FILES
     MountsDialog.ui
     SystemTray.hpp
     SystemTray.cpp
+    Utilities.cpp
     )
 
 target_sources(andromeda-gui PRIVATE ${SOURCE_FILES})

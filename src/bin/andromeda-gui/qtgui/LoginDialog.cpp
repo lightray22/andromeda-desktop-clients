@@ -1,6 +1,6 @@
 #include <QtWidgets/QMessageBox>
 
-#include "ExceptionBox.hpp"
+#include "Utilities.hpp"
 #include "LoginDialog.hpp"
 #include "ui_LoginDialog.h"
 
@@ -47,7 +47,7 @@ void LoginDialog::accept()
     catch (const BaseException& ex)
     {
         MDBG_ERROR("... " << ex.what());
-        ExceptionBox::critical(this, "Login Error", "Failed to login to the server.", ex);
+        Utilities::criticalBox(this, "Login Error", "Failed to login to the server.", ex);
         return; // no accept()
     }
 

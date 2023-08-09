@@ -45,7 +45,8 @@ public:
 
 public slots:
 
-    void show(); // override
+    /** Calls fullShow() on this window */
+    void fullShow();
 
     /** GUI action to add a new account */
     void AddAccount();

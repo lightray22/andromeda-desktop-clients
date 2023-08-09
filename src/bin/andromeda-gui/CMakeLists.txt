@@ -6,7 +6,7 @@ include(../../andromeda.cmake)
 # set up required Qt packages
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Widgets)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Gui Network Widgets)
 
 if (WIN32) # QT >= 6.3
     qt_standard_project_setup()
@@ -110,4 +110,5 @@ target_link_libraries(andromeda-gui PRIVATE libandromeda-fuse)
 target_link_libraries(andromeda-gui PRIVATE
     Qt${QT_VERSION_MAJOR}::Core 
     Qt${QT_VERSION_MAJOR}::Gui 
+    Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Widgets)

@@ -5,7 +5,7 @@
 #include <QtWidgets/QMessageBox>
 
 #include "AccountTab.hpp"
-#include "ExceptionBox.hpp"
+#include "Utilities.hpp"
 #include "ui_AccountTab.h"
 
 #include "andromeda/BaseException.hpp"
@@ -63,7 +63,7 @@ void AccountTab::Mount(bool autoMount)
     catch (const BaseException& ex)
     {
         MDBG_ERROR("... " << ex.what());
-        ExceptionBox::critical(this, "Mount Error", "Failed to create filesystem mount.", ex);
+        Utilities::criticalBox(this, "Mount Error", "Failed to create filesystem mount.", ex);
         return; // do not continue
     }
     

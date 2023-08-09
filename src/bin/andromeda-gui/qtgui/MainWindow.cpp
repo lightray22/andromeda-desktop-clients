@@ -7,7 +7,7 @@
 #include "ui_MainWindow.h"
 
 #include "AccountTab.hpp"
-#include "ExceptionBox.hpp"
+#include "Utilities.hpp"
 #include "LoginDialog.hpp"
 
 #include "andromeda/BaseException.hpp"
@@ -44,6 +44,8 @@ MainWindow::MainWindow(CacheManager& cacheManager, ObjectDatabase* objDatabase) 
         for (SessionStore* session : SessionStore::LoadAll(*mObjDatabase))
             TryLoadAccount(*session);
     }
+
+    if (GetCurrentTab() == nullptr) AddAccount();
 }
 
 /*****************************************************/
@@ -60,14 +62,9 @@ MainWindow::~MainWindow()
 }
 
 /*****************************************************/
-void MainWindow::show()
+void MainWindow::fullShow()
 {
-    MDBG_INFO("()");
-
-    QMainWindow::show(); // base class
-    activateWindow(); // bring to front
-
-    if (GetCurrentTab() == nullptr) AddAccount();
+    Utilities::fullShow(*this);
 }
 
 /*****************************************************/
@@ -104,7 +101,7 @@ void MainWindow::TryLoadAccount(SessionStore& session)
     {
         MDBG_ERROR("... " << ex.what());
         const std::string msg("Failed to connect login to the server at ");
-        ExceptionBox::warning(this, "Connection Error", msg+session.GetServerUrl(), ex);
+        Utilities::warningBox(this, "Connection Error", msg+session.GetServerUrl(), ex);
     }
 }
 
@@ -122,7 +119,7 @@ void MainWindow::AddAccount()
         {
             MDBG_ERROR("... " << ex.what());
             const std::string msg { "Failed to add the account to the database. This is probably a bug, please report." };
-            ExceptionBox::warning(this, "Database Error", msg.c_str(), ex);
+            Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
         }
 
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
@@ -163,7 +160,7 @@ void MainWindow::RemoveAccount()
         {
             MDBG_ERROR("... " << ex.what());
             const std::string msg { "Failed to remove the account from the database. This is probably a bug, please report." };
-            ExceptionBox::warning(this, "Database Error", msg.c_str(), ex);
+            Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
         }
 
         const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
