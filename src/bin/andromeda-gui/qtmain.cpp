@@ -4,20 +4,19 @@
 #include <memory>
 #include <sstream>
 
-#include <QtCore/QLockFile>
 #include <QtCore/QStandardPaths>
-#include <QtNetwork/QLocalServer>
-#include <QtNetwork/QLocalSocket>
 #include <QtWidgets/QApplication>
 
 #include "Options.hpp"
 using AndromedaGui::Options;
-#include "qtgui/Utilities.hpp"
-using AndromedaGui::QtGui::Utilities;
 #include "qtgui/MainWindow.hpp"
 using AndromedaGui::QtGui::MainWindow;
+#include "qtgui/SingleInstance.hpp"
+using AndromedaGui::QtGui::SingleInstance;
 #include "qtgui/SystemTray.hpp"
 using AndromedaGui::QtGui::SystemTray;
+#include "qtgui/Utilities.hpp"
+using AndromedaGui::QtGui::Utilities;
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
@@ -95,29 +94,11 @@ int main(int argc, char** argv)
     const std::string dbPath { dataPath+"/database.s3db" };
     const std::string lockPath { dbPath+".qtlock" };
 
-    // start a socket to coordinate SingleInstance
-    const QString serverName { Utilities::hash16(lockPath.c_str()).toHex() };
-
-    QLocalServer instanceServer;
-    QLockFile dbLock(lockPath.c_str());
-    if (dbLock.tryLock())
-    { 
-        DDBG_INFO("... starting single-instance server: " << serverName.toStdString());
-        instanceServer.setSocketOptions(QLocalServer::UserAccessOption);
-        instanceServer.removeServer(serverName); // in case of a previous crash
-        if (!instanceServer.listen(serverName))
-            { DDBG_ERROR("... failed to start server"); }
-    }
-    else 
-    { 
-        DDBG_INFO("... single-instance lock failed! already running?");
-        QLocalSocket sock; sock.connectToServer(serverName);
-        if (!sock.waitForConnected()) // must be busy?
-        {
-            DDBG_INFO("... didn't connect to socket, show message box");
+    SingleInstance instanceMgr(lockPath);
+    if (instanceMgr.isDuplicate())
+    {
+        if (instanceMgr.notifyFailed())
             QMessageBox::critical(nullptr, "Initialize Error", "Andromeda is already running!");
-        }
-        else { DDBG_INFO("... notified existing instance! returning"); }
         return static_cast<int>(ExitCode::INSTANCE);
     }
 
@@ -147,14 +128,7 @@ int main(int argc, char** argv)
     MainWindow mainWindow(cacheManager, objDatabase.get()); 
     SystemTray systemTray(application, mainWindow);
 
-    // if we get a connection to the single-instance server, show the window
-    QObject::connect(&instanceServer, &QLocalServer::newConnection, [&]()
-    {
-        DDBG_INFO("... new single-instance socket connection");
-        QLocalSocket& clientSocket = *instanceServer.nextPendingConnection();
-        mainWindow.fullShow();
-        clientSocket.abort();
-    });
+    instanceMgr.ShowOnDuplicate(mainWindow);
 
     systemTray.show();
     mainWindow.show();
