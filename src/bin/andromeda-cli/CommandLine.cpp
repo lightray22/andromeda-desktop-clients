@@ -140,17 +140,11 @@ void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv
             if (!std::filesystem::exists(val) || std::filesystem::is_directory(val))
                 throw BaseOptions::Exception("Inaccessible file: "+val);
 
-            std::ifstream file(val, std::ios::binary); // read file to string
-            static constexpr size_t bufSize { 4096 };
-            std::string fdat; std::array<char, bufSize> buf{};
-            while (!file.fail())
-            {
-                file.read(buf.data(), static_cast<std::streamsize>(buf.size()));
-                fdat.append(buf.data(), static_cast<std::size_t>(file.gcount()));
-            }
+            const std::ifstream file(val, std::ios::binary);
+            std::ostringstream fileS; fileS << file.rdbuf(); // read file to string
 
             // want to overwrite, not emplace
-            dataParams[param] = fdat;
+            dataParams[param] = fileS.str();
         }
         else if (special == '!')
         {

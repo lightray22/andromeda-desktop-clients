@@ -1,4 +1,6 @@
 
+#include <cstdio>
+
 #include "RunnerInput.hpp"
 
 namespace Andromeda {
@@ -11,7 +13,7 @@ size_t RunnerInput_StreamIn::StreamSize(const WriteFunc& func)
     bool moreData { true }; while (moreData)
     {
         size_t sread { 0 };
-        char buf[1024*1024]; // NOLINT(*-avoid-c-arrays)
+        char buf[BUFSIZ]; // NOLINT(*-avoid-c-arrays)
         moreData = func(retval, buf, sizeof(buf), sread);
         retval += sread;
     }

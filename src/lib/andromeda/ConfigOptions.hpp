@@ -56,7 +56,7 @@ struct ConfigOptions
      * The target transfer time for each read-ahead page fetch 
      * Uses bandwidth measuring to convert this time target to an actual page count
      */
-    std::chrono::milliseconds readAheadTime { 1000 };
+    std::chrono::milliseconds readAheadTime { 2000 };
 
     /** 
      * The maximum fraction of the cache that a read-ahead can consume (1/x)

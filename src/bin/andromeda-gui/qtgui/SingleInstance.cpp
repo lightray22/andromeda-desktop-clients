@@ -13,7 +13,8 @@ SingleInstance::SingleInstance(const std::string& lockPath) :
     mServerName(Utilities::hash16(lockPath.c_str()).toHex()),
     mLockFile(lockPath.c_str())
 {
-    MDBG_INFO("() mServerName:" << mServerName.toStdString());
+    MDBG_INFO("(lockPath:" << lockPath << ")"
+        << " mServerName:" << mServerName.toStdString());
     mLockFile.setStaleLockTime(0);
 
     if (mLockFile.tryLock())

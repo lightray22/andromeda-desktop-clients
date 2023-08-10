@@ -91,9 +91,7 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::APPDATA);
     }
     
-    const std::string dbPath { dataPath+"/database.s3db" };
-    const std::string lockPath { dbPath+".qtlock" };
-
+    const std::string lockPath { dataPath+"/database.qtlock" };
     SingleInstance instanceMgr(lockPath);
     if (instanceMgr.isDuplicate())
     {
@@ -102,6 +100,7 @@ int main(int argc, char** argv)
         return static_cast<int>(ExitCode::INSTANCE);
     }
 
+    const std::string dbPath { dataPath+"/database.s3db" };
     DDBG_INFO("... init dbPath:" << dbPath);
     std::unique_ptr<SqliteDatabase> sqlDatabase;
     std::unique_ptr<ObjectDatabase> objDatabase;

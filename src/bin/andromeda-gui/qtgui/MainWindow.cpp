@@ -130,11 +130,16 @@ void MainWindow::AddAccount()
 /*****************************************************/
 void MainWindow::AddAccountTab(std::unique_ptr<BackendContext> backendCtx)
 {
+    MDBG_INFO("()");
+
     AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
-    mQtUi->tabAccounts->setCurrentIndex(
-        mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str()));
+    auto idx = mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str());
+    MDBG_INFO("... idx:" << idx << " accountTab:" << accountTab);
+    mQtUi->tabAccounts->setCurrentIndex(idx);
 
+    MDBG_INFO("... size:" << mQtUi->tabAccounts->count() << " curIdx:" << mQtUi->tabAccounts->currentIndex() << " curWdgt:" << mQtUi->tabAccounts->currentWidget());
+    
     mQtUi->actionMount_Storage->setEnabled(true);
     mQtUi->actionUnmount_Storage->setEnabled(true);
     mQtUi->actionBrowse_Storage->setEnabled(true);
