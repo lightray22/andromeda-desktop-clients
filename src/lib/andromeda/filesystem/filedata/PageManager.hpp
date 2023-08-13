@@ -84,23 +84,37 @@ public:
      */
     ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
-    /** Reads data from the given page index into buffer */
+    /** 
+     * Reads data from the given page index into buffer
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
+     */
     void ReadPage(char* buffer, uint64_t index, size_t offset, size_t length, const SharedLock& thisLock);
 
-    /** Writes data to the given page index from buffer */
+    /** Writes data to the given page index from buffer
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
+     */
     void WritePage(const char* buffer, uint64_t index, size_t offset, size_t length, const SharedLockW& thisLock);
 
-    /** Removes the given page, writing it if dirty */
+    /** 
+     * Removes the given page, writing it if dirty
+     * @throws BackendException for backend issues
+     */
     void EvictPage(uint64_t index, const SharedLockW& thisLock);
 
     /** 
      * Flushes the given page if dirty, creating the file on the backend if necessary
      * Will also flush any dirty pages sequentially after this one
      * @return the total number of bytes written to the backend
+     * @throws BackendException for backend issues
      */
     size_t FlushPage(uint64_t index, const SharedLockW& thisLock);
 
-    /** Writes back all dirty pages, creating the file on the backend if necessary */
+    /** 
+     * Writes back all dirty pages, creating the file on the backend if necessary
+     * @throws BackendException for backend issues
+     */
     void FlushPages(const SharedLockW& thisLock);
 
     /**
@@ -109,39 +123,60 @@ public:
      */
     void RemoteChanged(uint64_t backendSize, const SharedLockW& thisLock);
 
-    /** Truncate pages according to the given size and inform the backend */
+    /** 
+     * Truncate pages according to the given size and inform the backend
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
+     */
     void Truncate(uint64_t newSize, const SharedLockW& thisLock);
 
 private:
 
     using UniqueLock = std::unique_lock<std::mutex>;
 
-    /** Returns the page at the given index and informs cacheMgr - use GetReadLock() first! */
+    /** 
+     * Returns the page at the given index and informs cacheMgr - use GetReadLock() first!
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
+     */
     const Page& GetPageRead(uint64_t index, const SharedLock& thisLock);
 
     /** 
      * Returns the page at the given index and marks dirty/informs cacheMgr - use GetWriteLock() first! 
      * @param pageSize the desired size of the page for writing
      * @param partial if true, pre-populate the page with backend data
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
      */
     Page& GetPageWrite(uint64_t index, size_t pageSize, bool partial, const SharedLockW& thisLock);
 
     /** 
      * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails, does not wait for cache space
      * @param canWait if true, maybe wait for cache space (never synchronously)
+     * @throws CacheManager::MemoryException if canWait
      */
-    void InformNewPage(uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock);
+    void InformNewPageRead(uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock);
 
-    /** Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails
-     * maybe waits for cache space synchronously, for immediate error-catching */
-    void InformNewPageSync(uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock);
+    /** 
+     * Calls mCacheMgr->InformPage() on the given page and removes it from mPages if it fails
+     * maybe waits for cache space synchronously, for immediate error-catching
+     * @throws CacheManager::MemoryException
+     * @throws BackendException for synchronous MemoryException
+     */
+    void InformNewPageWrite(uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock);
 
-    /** Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails */
+    /** 
+     * Resizes then calls mCacheMgr->InformPage() on the given page and restores size if it fails
+     * maybe waits for cache space synchronously, for immediate error-catching
+     * @throws CacheManager::MemoryException
+     * @throws BackendException for synchronous MemoryException
+     */
     void InformResizePage(uint64_t index, Page& page, bool dirty, size_t pageSize, const SharedLockW& thisLock);
 
     /** 
      * Resizes an existing page to the given size, telling the CacheManager if cacheMgr
      * CALLER MUST LOCK the DataLockW if operating on an existing page!
+     * @throws CacheManager::MemoryException if cacheMgr
      */
     void ResizePage(Page& page, size_t pageSize, bool cacheMgr, const SharedLockW* thisLock = nullptr);
 
@@ -172,8 +207,9 @@ private:
     /** 
      * Reads count# pages from the backend at the given index, adding to the page map
      * Gets its own R thisLock and informs the cacheManager of all new pages
+     * Sets mFailedPages[idx] to any BackendException
      */
-    void FetchPages(uint64_t index, size_t count);
+    void FetchPages(uint64_t index, size_t count) noexcept;
 
     /** 
      * Removes the given start index from the pending-read list and notifies waiters
@@ -201,11 +237,15 @@ private:
      * @param index the starting index of the page list
      * @param pages list of pages to flush - may be empty
      * @return the total number of bytes written to the backend
+     * @throws BackendException for backend issues
      */
     size_t FlushPageList(uint64_t index, const PageBackend::PagePtrList& pages, const SharedLockW& thisLock);
 
-    /** Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
-     * the file on the backend in case we did a truncate before it existed */
+    /** 
+     * Does FlushCreate() in case the file doesn't exist on the backend, then maybe truncates
+     *    the file on the backend in case we did a truncate before it existed
+     * @throws BackendException for backend issues
+     */
     void FlushCreate(const SharedLockW& thisLock);
 
     mutable Debug mDebug;
@@ -243,6 +283,9 @@ private:
     FailureMap mFailedPages;
     /** Condition variable for waiting for pages */
     std::condition_variable mPagesCV;
+
+    /** Lock for fetch threads to acquire (so destructor can wait) */
+    std::shared_mutex mFetchMutex;
 
     /** List of pages we didn't evict due to sequential writing */
     std::list<uint64_t> mDeferredEvicts;

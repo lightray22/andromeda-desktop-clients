@@ -9,9 +9,9 @@
 
 #include "nlohmann/json_fwd.hpp"
 
+#include "BackendException.hpp"
 #include "Config.hpp"
 #include "RunnerInput.hpp"
-#include "andromeda/BaseException.hpp"
 #include "andromeda/common.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/Debug.hpp"
@@ -32,42 +32,32 @@ class BackendImpl
 {
 public:
 
-    /** Base Exception for all backend issues */
-    class Exception : public BaseException { public:
-        /** @param message API error message */
-        explicit Exception(const std::string& message) :
-            BaseException("Backend Error: "+message) {}; };
-
-    /** Exception indicating that authentication is required */
-    class AuthRequiredException : public Exception { public:
-        AuthRequiredException() : Exception("Authentication Required") {}; };
-
     /** Exception indicating there was a JSON format error */
-    class JSONErrorException : public Exception { public:
+    class JSONErrorException : public BackendException { public:
         /** @param error the JSON error message */
         explicit JSONErrorException(const std::string& error) : 
-            Exception("JSON Error: "+error) {}; };
+            BackendException("JSON Error: "+error) {}; };
 
     /** Exception indicating that the backend did not return the correct # of bytes */
-    class ReadSizeException : public Exception { public:
+    class ReadSizeException : public BackendException { public:
         /** @param wanted number of bytes expected
          * @param got number of bytes received */
-        explicit ReadSizeException(size_t wanted, size_t got) : Exception(
+        explicit ReadSizeException(size_t wanted, size_t got) : BackendException(
             "Wanted "+std::to_string(wanted)+" bytes, got "+std::to_string(got)) {}; };
 
     /** Exception indicating we set the backend as read-only */
-    class ReadOnlyException : public Exception { public:
-        explicit ReadOnlyException() : Exception("Read Only Backend") {}; };
+    class ReadOnlyException : public BackendException { public:
+        explicit ReadOnlyException() : BackendException("Read Only Backend") {}; };
 
     /** Exception indicating the requested write is too large to send */
-    class WriteSizeException : public Exception { public:
-        explicit WriteSizeException() : Exception("Write Size Too Large") {}; };
+    class WriteSizeException : public BackendException { public:
+        explicit WriteSizeException() : BackendException("Write Size Too Large") {}; };
 
     /** Base exception for Andromeda-returned errors */
-    class APIException : public Exception { public:
-        using Exception::Exception; // string constructor
+    class APIException : public BackendException { public:
+        using BackendException::BackendException; // string constructor
         APIException(int code, const std::string& message) : 
-            Exception("API code:"+std::to_string(code)+" message:"+message) {}; };
+            BackendException("API code:"+std::to_string(code)+" message:"+message) {}; };
 
     /** Andromeda exception indicating the requested operation is invalid */
     class UnsupportedException : public APIException { public:
@@ -101,6 +91,7 @@ public:
     /**
      * @param options configuration options
      * @param runners the RunnerPool to use for requests
+     * @throws BackendException for backend issues
      */
     BackendImpl(const Andromeda::ConfigOptions& options, RunnerPool& runners);
 
@@ -135,10 +126,16 @@ public:
      */
     [[nodiscard]] std::string GetName(bool human) const;
 
-    /** Registers a pre-existing SessionStore for use */
+    /** 
+     * Registers a pre-existing SessionStore for use
+     * @throws BackendException for backend issues
+     */
     void PreAuthenticate(const SessionStore& sessionObj);
 
-    /** Registers a pre-existing session ID/key for use */
+    /** 
+     * Registers a pre-existing session ID/key for use
+     * @throws BackendException for backend issues
+     */
     void PreAuthenticate(const std::string& sessionID, const std::string& sessionKey);
 
     /** 
@@ -148,6 +145,7 @@ public:
      * @param password password for authentication (required)
      * @param twofactor two factor code for authentication (optional)
      * @throws TwoFactorRequiredException if twofactor is required
+     * @throws BackendException for backend issues
      */
     void Authenticate(const std::string& username, const std::string& password, const std::string& twofactor = "");
 
@@ -158,64 +156,84 @@ public:
      * @param username username for authentication (required)
      * @param password password for authentication, prompt user if blank and the runner requires a session (HTTP)
      * @param forceSession if true, force creating a session regardless of the above rules
+     * @throws AuthenticationFailedException if a password is required, none is given, and options.mQuiet is true
+     * @throws BackendException for backend issues
      */
     void AuthInteractive(const std::string& username, std::string password = "", bool forceSession = false);
 
     /** Returns the ID of the authenticated account (if in use) */
     inline const std::string& GetAccountID() const { return mAccountID; }
 
-    /** Closes the existing session */
+    /** 
+     * Closes the existing session
+     * @throws BackendException for backend issues
+     */
     void CloseSession();
 
     /** Store the current session in the SessionStore */
     void StoreSession(SessionStore& sessionObj);
 
-    /** 
-     * Throws if a session is not in use 
-     * @throws AuthRequiredException if no session
-     */
-    void RequireAuthentication() const;
-
     /*****************************************************/
     // ---- Actual backend functions below here ---- //
 
     /**
-     * Loads server config
-     * @return loaded config as JSON with "core" and "files" keys
+     * Loads server core config
+     * @return loaded config as JSON
+     * @throws BackendException for backend issues
      */
-    nlohmann::json GetConfigJ();
+    nlohmann::json GetCoreConfigJ();
 
-    /** Load limits for the current account */
+    /**
+     * Loads server files config
+     * @return loaded config as JSON
+     * @throws BackendException for backend issues
+     */
+    nlohmann::json GetFilesConfigJ();
+
+    /** 
+     * Load limits for the current account
+     * @throws BackendException for backend issues
+     */
     nlohmann::json GetAccountLimits();
 
     /**
      * Load folder metadata (with subitems)
      * @param id folder ID (or blank for default)
+     * @throws BackendException for backend issues
      */
     nlohmann::json GetFolder(const std::string& id = "");
 
     /**
      * Load root folder metadata (no subitems)
      * @param id filesystem ID (or blank for default)
+     * @throws BackendException for backend issues
      */
     nlohmann::json GetFSRoot(const std::string& id = "");
 
     /**
      * Load filesystem metadata
      * @param id filesystem ID (or blank for default)
+     * @throws BackendException for backend issues
      */
     nlohmann::json GetFilesystem(const std::string& id = "");
 
     /**
      * Load limits for a filesystem
      * @param id filesystem ID
+     * @throws BackendException for backend issues
      */
     nlohmann::json GetFSLimits(const std::string& id);
 
-    /** Loads filesystem list metadata */
+    /** 
+     * Loads filesystem list metadata
+     * @throws BackendException for backend issues
+     */
     nlohmann::json GetFilesystems();
 
-    /** Loads items owned but in another user's parent */
+    /** 
+     * Loads items owned but in another user's parent
+     * @throws BackendException for backend issues 
+     */
     nlohmann::json GetAdopted();
     
     /**
@@ -223,6 +241,7 @@ public:
      * @param parent parent folder ID
      * @param name name of new file
      * @param overwrite whether to overwrite existing
+     * @throws BackendException for backend issues
      */
     nlohmann::json CreateFile(const std::string& parent, const std::string& name, bool overwrite = false);
 
@@ -230,13 +249,20 @@ public:
      * Creates a new folder
      * @param parent parent folder ID
      * @param name name of new folder
+     * @throws BackendException for backend issues
      */
     nlohmann::json CreateFolder(const std::string& parent, const std::string& name);
 
-    /** Deletes a file by ID */
+    /**
+     * Deletes a file by ID
+     * @throws BackendException for backend issues
+     */
     void DeleteFile(const std::string& id);
 
-    /** Deletes a folder by ID */
+    /** 
+     * Deletes a folder by ID
+     * @throws BackendException for backend issues
+     */
     void DeleteFolder(const std::string& id);
 
     /** 
@@ -244,6 +270,7 @@ public:
      * @param id file ID
      * @param name new name
      * @param overwrite whether to overwrite existing
+     * @throws BackendException for backend issues
      */
     nlohmann::json RenameFile(const std::string& id, const std::string& name, bool overwrite = false);
 
@@ -252,6 +279,7 @@ public:
      * @param id folder ID
      * @param name new name
      * @param overwrite whether to overwrite existing
+     * @throws BackendException for backend issues
      */
     nlohmann::json RenameFolder(const std::string& id, const std::string& name, bool overwrite = false);
 
@@ -260,6 +288,7 @@ public:
      * @param id file ID
      * @param parent new parent ID
      * @param overwrite whether to overwrite existing
+     * @throws BackendException for backend issues
      */
     nlohmann::json MoveFile(const std::string& id, const std::string& parent, bool overwrite = false);
 
@@ -268,6 +297,7 @@ public:
      * @param id file ID
      * @param parent new parent ID
      * @param overwrite whether to overwrite existing
+     * @throws BackendException for backend issues
      */
     nlohmann::json MoveFolder(const std::string& id, const std::string& parent, bool overwrite = false);
 
@@ -276,6 +306,7 @@ public:
      * @param id file ID
      * @param offset offset to read from
      * @param length number of bytes to read
+     * @throws BackendException for backend issues
      */
     std::string ReadFile(const std::string& id, uint64_t offset, size_t length);
 
@@ -285,6 +316,7 @@ public:
      * @param offset offset to read from
      * @param length number of bytes to read
      * @param userFunc data handler function
+     * @throws BackendException for backend issues
      */
     void ReadFile(const std::string& id, uint64_t offset, size_t length, const ReadFunc& userFunc);
 
@@ -293,6 +325,7 @@ public:
      * @param id file ID
      * @param offset offset to write to
      * @param data file data to write
+     * @throws BackendException for backend issues
      */
     nlohmann::json WriteFile(const std::string& id, uint64_t offset, const std::string& data);
     
@@ -301,6 +334,7 @@ public:
      * @param id file ID
      * @param offset offset to write to
      * @param userFunc function to stream data
+     * @throws BackendException for backend issues
      */
     nlohmann::json WriteFile(const std::string& id, uint64_t offset, const WriteFunc& userFunc);
     
@@ -311,6 +345,8 @@ public:
      * @param data file data to write
      * @param oneshot if true, can't split into multiple writes
      * @param overwrite whether to overwrite existing
+     * @throws WriteSizeException if oneshot is true and too big for one upload
+     * @throws BackendException for backend issues
      */
     nlohmann::json UploadFile(const std::string& parent, const std::string& name, const std::string& data, 
         bool oneshot = false, bool overwrite = false);
@@ -322,6 +358,8 @@ public:
      * @param userFunc function to stream data
      * @param oneshot if true, can't split into multiple writes
      * @param overwrite whether to overwrite existing
+     * @throws WriteSizeException if oneshot is true and too big for one upload
+     * @throws BackendException for backend issues
      */
     nlohmann::json UploadFile(const std::string& parent, const std::string& name, const WriteFunc& userFunc, 
         bool oneshot = false, bool overwrite = false);
@@ -330,6 +368,7 @@ public:
      * Truncates a file
      * @param id file ID
      * @param size new file size
+     * @throws BackendException for backend issues
      */
     nlohmann::json TruncateFile(const std::string& id, uint64_t size);
 
@@ -372,6 +411,7 @@ private:
      * @param offset offset of the file to write to if already created (getUpload=nullptr)
      * @param getUpload function to get an input for the initial upload if NOT already created (ignore id,offset)
      * @param oneshot if true, can't split into multiple writes
+     * @throws WriteSizeException if oneshot is true and too big for one upload
      */
     nlohmann::json SendFile(const WriteFunc& userFunc, std::string id, uint64_t offset, const UploadInput& getUpload, bool oneshot);
 

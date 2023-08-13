@@ -109,9 +109,9 @@ public:
     }
 
     /** Sets the field to the given value */
-    inline NullScalarType& operator=(const T& value) { SetValue(value); return *this; }
+    inline NullScalarType& operator=(const T& value) noexcept { SetValue(value); return *this; }
     /** Sets the field to NULL */
-    inline NullScalarType& operator=(std::nullptr_t) { SetValue(nullptr); return *this; }
+    inline NullScalarType& operator=(std::nullptr_t) noexcept { SetValue(nullptr); return *this; }
 
 protected:
     bool mTempNull { true };
@@ -202,7 +202,7 @@ public:
     }
 
     /** Sets the field to the given value */
-    inline ScalarType& operator=(const T& value) { SetValue(value); return *this; }
+    inline ScalarType& operator=(const T& value) noexcept { SetValue(value); return *this; }
 
 protected:
     bool mTempInitd { false };

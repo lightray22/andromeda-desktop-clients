@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 
-#include "andromeda/BaseException.hpp"
+#include "BackendException.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -14,13 +14,14 @@ namespace Backend {
 /** API app-action call parameters */
 struct RunnerInput
 {
-    /** Indicates an inability to seek the stream offset */
-    class StreamSeekException : public BaseException { public:
-        explicit StreamSeekException() : BaseException("Stream Seek Failure") {}; };
-
     /** Indicates that the stream was marked as failed */
-    class StreamFailException : public BaseException { public:
-        explicit StreamFailException() : BaseException("Stream Failure") {}; };
+    class StreamFailException : public BackendException { public:
+        explicit StreamFailException() : BackendException("Stream Failure") {};
+        explicit StreamFailException(const std::string& msg) : BackendException("Stream Failure: "+msg) {}; };
+
+    /** Indicates an inability to seek the stream offset */
+    class StreamSeekException : public StreamFailException { public:
+        explicit StreamSeekException() : StreamFailException("Seek") {}; };
 
     /** A map of input parameter key to string value */
     using Params = std::map<std::string, std::string>;
@@ -79,9 +80,12 @@ struct RunnerInput_StreamIn : RunnerInput_FilesIn
 
     /** Returns a Func that reads from the input string */
     static WriteFunc FromString(const std::string& data);
-    /** Returns a Func that reads from the data stream */
+    /** 
+     * Returns a Func that reads from the data stream 
+    * @throws StreamFailException (the returned func)
+     */
     static WriteFunc FromStream(std::istream& data);
-    /** Reads through a stream to find its size (ugly) */
+    /** Reads through a stream to find its size (must be seekable) */
     static size_t StreamSize(const WriteFunc& func);
 };
 
@@ -100,7 +104,10 @@ struct RunnerInput_StreamOut : RunnerInput
     /** The single output handler for the request */
     ReadFunc streamer;
 
-    /** Returns a Func that writes to the data stream */
+    /** 
+     * Returns a Func that writes to the data stream
+     * @throws StreamFailException (the returned func)
+     */
     static ReadFunc ToStream(std::ostream& data);
 };
 

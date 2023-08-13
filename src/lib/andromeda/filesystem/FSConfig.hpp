@@ -25,6 +25,7 @@ public:
      * Load from the backend with the given ID
      * @param backend reference to backend
      * @param id ID of filesystem to load
+     * @throws BackendException on any backend error
      */
     static const FSConfig& LoadByID(Backend::BackendImpl& backend, const std::string& id);
 
@@ -32,6 +33,7 @@ public:
      * Construct with JSON data
      * @param data json data from backend
      * @param lims json limit data from backend
+     * @throws BackendImpl::JSONErrorException on JSON errors
      */
     FSConfig(const nlohmann::json& data, const nlohmann::json& lims);
 

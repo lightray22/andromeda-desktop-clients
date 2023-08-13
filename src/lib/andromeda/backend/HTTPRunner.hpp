@@ -8,6 +8,7 @@
 
 // TODO should not include this here - use PRIVATE cmake link
 // probably need just an interface here then a separate HTTPRunnerImpl
+// propagating windows.h is not desirable
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
 
@@ -139,6 +140,7 @@ private:
      * @param[in] getResult Function that provides an httplib result
      * @param[out] canRetry ref set to where retry is allowed
      * @param[in] doRetry ref to bool set by manual call of HandleResponse
+     * @throws EndpointException on any failure
      */
     void DoRequests(const std::function<httplib::Result()>& getResult, bool& canRetry, const bool& doRetry);
 
@@ -147,6 +149,7 @@ private:
      * @param[in] getResult Function that provides an httplib result
      * @param[out] isJson ref set to whether response is json
      * @return std::string the body of the response
+     * @throws EndpointException on any failure
      */
     std::string DoRequestsFull(const std::function<httplib::Result()>& getResult, bool& isJson);
 

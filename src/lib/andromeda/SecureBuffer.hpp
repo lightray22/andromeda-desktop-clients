@@ -47,7 +47,7 @@ public:
 
     inline virtual ~SecureBuffer() noexcept { free(mBuf); }
 
-    inline SecureBuffer(const SecureBuffer& src) : // copy
+    inline SecureBuffer(const SecureBuffer& src) noexcept : // copy
         mSize(src.mSize), mBuf(alloc(mSize))
     {
         memcpy(mBuf, src.mBuf, mSize);

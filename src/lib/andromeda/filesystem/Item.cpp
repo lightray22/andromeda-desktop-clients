@@ -28,7 +28,6 @@ Item::Item(BackendImpl& backend, const nlohmann::json& data) :
     {
         data.at("id").get_to(mId);
         data.at("name").get_to(mName);
-        ValidateName(mName);
 
         if (data.contains("dates"))
         {
@@ -57,7 +56,7 @@ void Item::Refresh(const nlohmann::json& data, const SharedLockW& thisLock)
         if (newName != mName)
         {
             ITDBG_INFO("... newName:" << newName);
-            ValidateName(newName); // FIRST
+            ValidateName(newName, true); // throw if bad
             mName = newName;
         }
         
@@ -126,10 +125,13 @@ bool Item::isReadOnlyFS() const
 }
 
 /*****************************************************/
-void Item::ValidateName(const std::string& name)
+void Item::ValidateName(const std::string& name, bool backend)
 {
     if (name == "." || name == ".." || name.find('/') != std::string::npos)
-        throw InvalidNameException();
+    {
+        if (!backend) throw InvalidNameException();
+        else throw BackendImpl::JSONErrorException("invalid item name"); 
+    }
 }
 
 /*****************************************************/
@@ -177,7 +179,7 @@ void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, b
 void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
-    ValidateName(newName);
+    ValidateName(newName); // throw if bad
 
     // The rename must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be renamed elsewhere - will cause NotFoundException

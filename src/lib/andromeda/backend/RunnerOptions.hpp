@@ -17,7 +17,10 @@ struct RunnerOptions
     /** Adds the given argument, returning true iff it was used */
     bool AddFlag(const std::string& flag){ return false; }
 
-    /** Adds the given option/value, returning true iff it was used */
+    /** 
+     * Adds the given option/value, returning true iff it was used
+     * @throws BaseOptions::Exception if invalid arguments
+     */
     bool AddOption(const std::string& option, const std::string& value);
 
     using seconds = std::chrono::seconds;

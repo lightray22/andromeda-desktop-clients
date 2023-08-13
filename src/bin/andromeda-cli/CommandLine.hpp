@@ -35,9 +35,7 @@ public:
     /** 
      * Parses command line arguments from main (skips argv[0]!)
      * and the environment vars into Options and a RunnerInput 
-     * @throws BadUsageException if invalid arguments
-     * @throws BadFlagException if a invalid flag is used
-     * @throws BadOptionException if an invalid option is used
+     * @throws BaseOptions::Exception if invalid arguments
      */
     explicit CommandLine(Options& options, size_t argc, const char* const* argv);
 
@@ -46,6 +44,7 @@ public:
      * @param[in] runner reference to the HTTP runner to use
      * @param[out] isJson set to whether the return value is JSON or not
      * @param[in] streamOut function to use for output streaming
+     * @throws BackendException on any runner failure
      */
     std::string RunInputAction(Andromeda::Backend::HTTPRunner& runner, bool& isJson, 
         const Andromeda::Backend::ReadFunc& streamOut);

@@ -18,10 +18,16 @@ struct FuseOptions
     static void ShowFuseHelpText();
 #endif // !LIBFUSE2
 
-    /** Adds the given argument, returning true iff it was used */
+    /** 
+     * Adds the given argument, returning true iff it was used
+     * @throws BaseOptions::ShowVersionException if version is requested
+     */
     bool AddFlag(const std::string& flag);
 
-    /** Adds the given option/value, returning true iff it was used */
+    /** 
+     * Adds the given option/value, returning true iff it was used
+     * @throws BaseOptions::Exception if invalid arguments
+     */
     bool AddOption(const std::string& option, const std::string& value);
 
     /** List of FUSE library options */

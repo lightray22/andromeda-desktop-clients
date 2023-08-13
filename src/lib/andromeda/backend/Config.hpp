@@ -5,7 +5,7 @@
 #include <chrono>
 #include "nlohmann/json_fwd.hpp"
 
-#include "andromeda/BaseException.hpp"
+#include "BackendException.hpp"
 #include "andromeda/Debug.hpp"
 
 namespace Andromeda {
@@ -20,16 +20,21 @@ class BackendImpl;
 class Config
 {
 public:
+
+    /**
+     * Loads config from the backend
+     * @throws BackendException for backend issues
+     */
     explicit Config(BackendImpl& backend);
     
     /** The Major API version this client works with */
     static constexpr int API_VERSION { 2 };
 
     /** Base exception for Config exceptions */
-    class Exception : public BaseException { public:
+    class Exception : public BackendException { public:
         /** @param message error message string */
         explicit Exception(const std::string& message) :
-            BaseException("Config Error: "+message){}; };
+            BackendException("Config Error: "+message){}; };
 
     /** Exception indicating the API version is not supported */
     class APIVersionException : public Exception { public:
@@ -44,7 +49,10 @@ public:
         explicit AppMissingException(const std::string& appname) :
             Exception("Missing app: "+appname){}; };
 
-    /** Adds account-specific limits */
+    /** 
+     * Adds account-specific limits
+     * @throws BackendException for backend issues
+     */
     void LoadAccountLimits(BackendImpl& backend);
 
     /** Returns true if the backend is read-only */

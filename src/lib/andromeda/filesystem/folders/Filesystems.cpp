@@ -16,8 +16,6 @@ Filesystems::Filesystems(BackendImpl& backend, Folder& parent) :
 {
     MDBG_INFO("()");
 
-    backend.RequireAuthentication();
-
     mName = "Filesystems";
     mParent = &parent;
 }

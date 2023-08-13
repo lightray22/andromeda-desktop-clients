@@ -16,8 +16,6 @@ SuperRoot::SuperRoot(BackendImpl& backend) :
 {
     MDBG_INFO("()");
 
-    backend.RequireAuthentication();
-
     mName = "SuperRoot";
 }
 

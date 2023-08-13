@@ -18,15 +18,13 @@ namespace Folders {
 /*****************************************************/
 std::unique_ptr<PlainFolder> PlainFolder::LoadByID(BackendImpl& backend, const std::string& id)
 {
-    backend.RequireAuthentication();
-
     const nlohmann::json data(backend.GetFolder(id));
 
     return std::make_unique<PlainFolder>(backend, data, true, nullptr);
 }
 
 /*****************************************************/
-PlainFolder::PlainFolder(BackendImpl& backend, Folder* parent) : 
+PlainFolder::PlainFolder(BackendImpl& backend, Folder* parent) : // for child classes
     Folder(backend), mDebug(__func__,this)
 {
     MDBG_INFO("(2)");
@@ -34,7 +32,7 @@ PlainFolder::PlainFolder(BackendImpl& backend, Folder* parent) :
 }
 
 /*****************************************************/
-PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, Folder* parent) :
+PlainFolder::PlainFolder(BackendImpl& backend, const nlohmann::json& data, Folder* parent) : // for child classes
     Folder(backend, data), mDebug(__func__,this)
 {
     MDBG_INFO("(3)");

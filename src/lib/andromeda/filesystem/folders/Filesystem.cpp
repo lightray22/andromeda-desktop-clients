@@ -12,8 +12,6 @@ namespace Folders {
 /*****************************************************/
 std::unique_ptr<Filesystem> Filesystem::LoadByID(BackendImpl& backend, const std::string& fsid)
 {
-    backend.RequireAuthentication();
-
     const nlohmann::json data(backend.GetFilesystem(fsid));
 
     return std::make_unique<Filesystem>(backend, data, nullptr);
@@ -35,7 +33,7 @@ Filesystem::Filesystem(BackendImpl& backend, const nlohmann::json& data, Folder*
 /*****************************************************/
 const std::string& Filesystem::GetID()
 {
-    const UniqueLock idLock(mIdMutex);
+    const UniqueLock idLock(mIdMutex); // lazy-load the folder ID
     if (mId.empty()) LoadID(mBackend.GetFSRoot(mFsid), idLock);
 
     return mId;

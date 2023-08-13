@@ -150,6 +150,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
     {
         const std::string& name(newIt.first);
         const nlohmann::json& data(newIt.second.first);
+        ValidateName(name, true); // throw if bad
 
         const ItemMap::const_iterator existIt(mItemMap.find(name));
 
@@ -190,6 +191,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
 void Folder::CreateFile(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
+    ValidateName(name); // throw if bad
 
     LoadItems(thisLock); // populate items
 
@@ -203,6 +205,7 @@ void Folder::CreateFile(const std::string& name, const SharedLockW& thisLock)
 void Folder::CreateFolder(const std::string& name, const SharedLockW& thisLock)
 {
     ITDBG_INFO("(name:" << name << ")");
+    ValidateName(name); // throw if bad
 
     LoadItems(thisLock); // populate items
 
