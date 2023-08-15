@@ -10,6 +10,10 @@
 #include "andromeda/base64.hpp"
 #include "andromeda/StringUtil.hpp"
 
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using std::chrono::steady_clock;
+
 namespace Andromeda {
 namespace Backend {
 
@@ -132,15 +136,19 @@ void HTTPRunner::AddFileParams(const RunnerInput_FilesIn& input, httplib::Multip
 // get a response but it's a HTTP 503.  Other responses (404 etc.) don't get retried.
 
 /*****************************************************/
-void HTTPRunner::DoRequests(const std::function<httplib::Result()>& getResult, bool& canRetry, const bool& doRetry)
+void HTTPRunner::DoRequestsSelf(const std::function<httplib::Result()>& getResult, HandleResponseData& respData)
 {
     // do the request some number of times until success
-    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
+    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; ++attempt)
     {
-        canRetry = (GetCanRetry() && attempt <= mBaseOptions.maxRetries);
-        httplib::Result result { getResult() }; // sets doRetry
-        if (result != nullptr && !doRetry) return; // break
-        else HandleNonResponse(result, canRetry, attempt);
+        if (attempt == mBaseOptions.maxRetries) mFailureState = true;
+        respData.canRetry = (GetCanRetry() && !mFailureState);
+
+        const steady_clock::time_point timeStart { steady_clock::now() };
+        httplib::Result result { getResult() }; // calls HandleResponse(respData)
+
+        if (result != nullptr && !respData.doRetry) return; // break
+        else HandleNonResponse(result, respData.canRetry, attempt, steady_clock::now()-timeStart);
     }
 }
 
@@ -148,41 +156,53 @@ void HTTPRunner::DoRequests(const std::function<httplib::Result()>& getResult, b
 std::string HTTPRunner::DoRequestsFull(const std::function<httplib::Result()>& getResult, bool& isJson)
 {
     // do the request some number of times until success
-    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; attempt++)
+    for (decltype(mBaseOptions.maxRetries) attempt { 0 }; ; ++attempt)
     {
-        const bool canRetry = (GetCanRetry() && attempt <= mBaseOptions.maxRetries);
+        if (attempt == mBaseOptions.maxRetries) mFailureState = true;
+        const bool canRetry = (GetCanRetry() && !mFailureState);
+
+        const steady_clock::time_point timeStart { steady_clock::now() };
         httplib::Result result { getResult() };
+
         if (result != nullptr)
         {
-            bool doRetry = false; std::string retval { 
-                HandleResponse(*result, isJson, canRetry, doRetry) };
-            if (!doRetry) return retval; // break
+            HandleResponseData respData;
+            std::string retval { HandleResponse(*result, isJson, respData) };
+            if (!respData.doRetry) return retval; // break
         }
         // if doRetry is set by HandleResponse, continue here
-        HandleNonResponse(result, canRetry, attempt);
+        HandleNonResponse(result, canRetry, attempt, steady_clock::now()-timeStart);
     }
 }
 
 /*****************************************************/
-void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt)
+void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, const size_t attempt, const steady_clock::duration& elapsed)
 {
     MDBG_INFO("(retry:" << retry << ")");
 
+    static const std::string fname(__func__);
+    mDebug.Error([&](std::ostream& str)
+    {
+        str << fname << "... ";
+
+        if (result != nullptr) str << "HTTP " << result->status;
+        else str << httplib::to_string(result.error());
+
+        str << " error, attempt " << attempt+1 << " of " 
+            << (mFailureState ? 1 : mBaseOptions.maxRetries+1);
+    });
+
     if (retry)
     {
-        static const std::string fname(__func__);
-        mDebug.Error([&](std::ostream& str)
-        { 
-            str << fname << "... ";
-            
-            if (result != nullptr) str << "HTTP " << result->status;
-            else str << httplib::to_string(result.error());
-
-            str << " error, attempt " << attempt+1 << " of " << mBaseOptions.maxRetries+1;
-        });
-
         if (attempt != 0) // retry immediately after 1st failure
-            std::this_thread::sleep_for(mBaseOptions.retryTime);
+        {
+            const steady_clock::duration sleepTime { mBaseOptions.retryTime-elapsed };
+            MDBG_INFO("... elapsed(ms):" << duration_cast<milliseconds>(elapsed).count()
+                    << " = sleepTime(ms):" << duration_cast<milliseconds>(sleepTime).count());
+
+            if (sleepTime > steady_clock::duration::zero()) 
+                std::this_thread::sleep_for(sleepTime);
+        }
     }
     else if (result.error() == httplib::Error::Connection)
             throw ConnectionException();
@@ -190,12 +210,15 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
 }
 
 /*****************************************************/
-std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& isJson, const bool& canRetry, bool& doRetry)
+std::string HTTPRunner::HandleResponse(const httplib::Response& response, bool& isJson, HandleResponseData& respData)
 {
     MDBG_INFO("() HTTP:" << response.status);
 
-    doRetry = (canRetry && (response.status == 500 || response.status == 503)); // TODO remove me (don't retry on 500)
-    if (doRetry) return ""; // early return
+    const bool wantRetry { response.status == 500 || response.status == 503 }; // TODO remove me (don't retry on 500)
+    respData.doRetry = (respData.canRetry && wantRetry);
+    if (respData.doRetry) return ""; // early return
+
+    if (!wantRetry) mFailureState = false; // reset on success
 
     // if redirected, should remember it for next time
     if (mHttpOptions.followRedirects && !response.location.empty()) 
@@ -306,13 +329,12 @@ void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& i
     httplib::Headers headers; 
     std::string url(SetupRequest(input, headers));
 
-    // these bools are set by the handlers but we'll give defaults anyway
-    bool canRetry = true, doRetry = false;
+    HandleResponseData respData;
     size_t offset = 0;
 
     // Separate ResponseHandler callback as we need to check the response before streaming
     httplib::ResponseHandler respFunc { [&](const httplib::Response& response)->bool {
-        HandleResponse(response, isJson, canRetry, doRetry); 
+        HandleResponse(response, isJson, respData); 
         offset = 0; return true; // reset offset in case of retry
     }};
 
@@ -325,7 +347,7 @@ void HTTPRunner::RunAction_StreamOut(const RunnerInput_StreamOut& input, bool& i
     // httplib then calls our ResponseHandler, which checks the response and canRetry, then sets doRetry if needed.  
     // httplib then returns to DoRequests which checks the doRetry and starts over if set.
 
-    DoRequests([&](){ return mHttpClient->Get(url, headers, respFunc, recvFunc); }, canRetry, doRetry);
+    DoRequestsSelf([&](){ return mHttpClient->Get(url, headers, respFunc, recvFunc); }, respData);
 }
 
 /*****************************************************/

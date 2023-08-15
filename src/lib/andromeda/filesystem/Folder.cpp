@@ -152,6 +152,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
         const nlohmann::json& data(newIt.second.first);
         ValidateName(name, true); // throw if bad
 
+        // TODO this could go based on ID, would avoid dumping a file's cache when renamed
         const ItemMap::const_iterator existIt(mItemMap.find(name));
 
         if (existIt == mItemMap.end()) // insert new item

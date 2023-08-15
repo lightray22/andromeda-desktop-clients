@@ -26,9 +26,9 @@ struct RunnerOptions
     using seconds = std::chrono::seconds;
 
     /** maximum retries before throwing */
-    uint32_t maxRetries { 3 };
+    uint32_t maxRetries { 4 };
     /** The time to wait between each retry */
-    seconds retryTime { 5 };
+    seconds retryTime { 3 };
     /** The connection read/write timeout */
     seconds timeout { 60 };
     /** Buffer/chunk size when reading file streams */
