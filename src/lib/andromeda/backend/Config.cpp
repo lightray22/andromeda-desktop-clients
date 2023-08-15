@@ -14,16 +14,17 @@ Config::Config(BackendImpl& backend) :
 {
     MDBG_INFO("()");
 
-    nlohmann::json config(mBackend.GetConfigJ());
+    nlohmann::json coreConfig(mBackend.GetCoreConfigJ());
+    nlohmann::json filesConfig(mBackend.GetFilesConfigJ());
 
     try
     {
-        const int api { config.at("core").at("api").get<int>() };
+        const int api { coreConfig.at("api").get<int>() };
 
         if (API_VERSION != api) 
             throw APIVersionException(api);
 
-        const nlohmann::json& appsHave { config.at("core").at("apps") };
+        const nlohmann::json& appsHave { coreConfig.at("apps") };
         static const std::vector<const char*> appsReq { "core", "accounts", "files" };
 
         for (const std::string appReq : appsReq) // NOT string&
@@ -31,9 +32,9 @@ Config::Config(BackendImpl& backend) :
                 throw AppMissingException(appReq);
 
         // can't get_to() with std::atomic
-        mReadOnly = config.at("core").at("features").at("read_only").get<bool>();
+        mReadOnly = coreConfig.at("features").at("read_only").get<bool>();
 
-        const nlohmann::json& maxbytes { config.at("files").at("upload_maxbytes") };
+        const nlohmann::json& maxbytes { filesConfig.at("upload_maxbytes") };
         if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>();
 
         // TODO the server also has upload_maxsize... what is that?

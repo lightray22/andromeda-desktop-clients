@@ -103,6 +103,10 @@ int CatchAsErrno(const std::string& fname, const std::function<int()>& func, con
     {
         SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
+    catch (const CacheManager::MemoryException& e)
+    {
+        SDBG_ERROR_EXC(e); return -ENOMEM;
+    }
 
     // Backend exceptions
     catch (const BackendImpl::UnsupportedException& e)
@@ -125,19 +129,12 @@ int CatchAsErrno(const std::string& fname, const std::function<int()>& func, con
     {
         SDBG_ERROR_EXC(e); return -ENOTSUP;
     }
-    catch (const CacheManager::MemoryException& e)
-    {
-        SDBG_ERROR_EXC(e); return -ENOMEM;
-    }
-
-    // Error exceptions
     catch (const HTTPRunner::ConnectionException& e)
     {
         SDBG_ERROR_EXC(e); return -EHOSTDOWN;
     }
-    catch (const BaseException& e) 
-    // BaseRunner::EndpointException (HTTP endpoint errors)
-    // BackendImpl::Exception (others should not happen)
+
+    catch (const BaseException& e) // anything else
     {
         SDBG_ERROR_EXC(e); return -EIO;
     }

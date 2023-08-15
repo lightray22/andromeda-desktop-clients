@@ -101,7 +101,10 @@ public:
     /** Returns true if this item has a parent */
     virtual bool HasParent(const SharedLock& thisLock) const { return mParent != nullptr; }
 
-    /** Returns the parent folder */
+    /** 
+     * Returns the parent folder
+     * @throws NullParentException
+     */
     virtual Folder& GetParent(const SharedLock& thisLock) const;
 
     /** Returns the parent folder or null if not set */
@@ -110,7 +113,10 @@ public:
     /** Returns true if this item has FSconfig */
     virtual bool HasFSConfig() const { return mFsConfig != nullptr; }
 
-    /** Returns the filesystem config */
+    /** 
+     * Returns the filesystem config
+     * @throws NullFSConfigException
+     */
     virtual const FSConfig& GetFSConfig() const;
 
     /** Returns the item's name */
@@ -128,10 +134,17 @@ public:
     /** Returns true if the item is read-only */
     virtual bool isReadOnlyFS() const;
 
-    /** Refresh the item given updated server JSON data */
+    /** 
+     * Refresh the item given updated server JSON data
+     * @throws BackendImpl::JSONErrorException on JSON errors
+     */
     virtual void Refresh(const nlohmann::json& data, const SharedLockW& thisLock);
 
-    /** Deletes this item (and its contents if a folder) - MUST NOT have an existing parent! */
+    /** 
+     * Deletes this item (and its contents if a folder) - MUST NOT have an existing parent!
+     * @throws BackendException for backend issues
+     * @throws HasParentException if it has a parent
+    */
     virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock);
 
     /** 
@@ -140,10 +153,17 @@ public:
      * @param scopeLock reference to scopeLock which will be unlocked
      * @param thisLock temporary lock for self which will be unlocked
      * @throws Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws ReadOnlyFSException if read-only item/filesystem
+     * @throws NullParentException if parent is not set
+     * @throws BackendException for backend issues
      */
     virtual void Delete(ScopeLocked& scopeLock, SharedLockW& thisLock);
 
-    /** Set this item's name to the given name, optionally overwrite existing - MUST NOT have an existing parent! */
+    /** 
+     * Set this item's name to the given name, optionally overwrite existing - MUST NOT have an existing parent!
+     * @throws BackendException for backend issues
+     * @throws HasParentException if it has a parent
+     */
     virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false);
 
     /** 
@@ -151,6 +171,11 @@ public:
      * The rename will be done by unlocking self then calling parent->RenameItem() then re-locking
      * @param thisLock temporary lock for self which will be temporarily unlocked
      * @throws Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws Folder::DuplicateItemException if name already exists in newParent
+     * @throws ReadOnlyFSException if read-only item/filesystem
+     * @throws NullParentException if parent is not set
+     * @throws InvalidNameException if the name is invalid
+     * @throws BackendException for backend issues
      */
     virtual void Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite = false);
 
@@ -163,12 +188,19 @@ public:
      * This will also temporarily get a W lock on the newParent (deadlock-safe)
      * @param thisLock temporary lock for self which will be temporarily unlocked
      * @throws Folder::NotFoundException if the item is concurrently changed after unlock
+     * @throws Folder::DuplicateItemException if name already exists in newParent
+     * @throws Folder::ModifyException if newParent is a virtual folder
+     * @throws ReadOnlyFSException if read-only item/filesystem
+     * @throws NullParentException if parent is not set
+     * @throws BackendException for backend issues
      */
     virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false);
 
     /** 
      * Flushes all dirty pages and metadata to the backend
+     * NOTE this does NOT happen automatically at destruct!
      * @param nothrow if true, no exceptions are thrown
+     * @throws BackendException for backend issues if not nothrow
      */
     virtual void FlushCache(const SharedLockW& thisLock, bool nothrow = false) = 0;
 
@@ -180,7 +212,10 @@ protected:
      */
     explicit Item(Backend::BackendImpl& backend);
 
-    /** Initialize from the given JSON data */
+    /** 
+     * Initialize from the given JSON data
+     * @throws BackendImpl::JSONErrorException on JSON errors
+     */
     Item(Backend::BackendImpl& backend, const nlohmann::json& data);
 
     friend class Folder; // calls SubDelete(), SubRename(), SubMove(), GetDeleteLock()
@@ -190,17 +225,30 @@ protected:
 
     /**
      * Validates the item's name (no / and not . or ..)
-     * @throws InvalidNameException if the name is invalid
+     * @throws InvalidNameException if the name is invalid and not backend
+     * @throws BackendImpl::JSONErrorException if the name is invalid and backend
      */
-    static void ValidateName(const std::string& name);
+    static void ValidateName(const std::string& name, bool backend = false);
 
-    /** Item type-specific delete */
+    /** 
+     * Item type-specific delete
+     * @throws ReadOnlyFSException if read only
+     * @throws BackendException for backend issues
+     */
     virtual void SubDelete(const DeleteLock& deleteLock) = 0;
 
-    /** Item type-specific rename */
+    /** 
+     * Item type-specific rename
+     * @throws ReadOnlyFSException if read only
+     * @throws BackendException for backend issues
+     */
     virtual void SubRename(const std::string& newName, const SharedLockW& thisLock, bool overwrite) = 0;
 
-    /** Item type-specific move */
+    /** 
+     * Item type-specific move
+     * @throws ReadOnlyFSException if read only
+     * @throws BackendException for backend issues
+     */
     virtual void SubMove(const std::string& parentID, const SharedLockW& thisLock, bool overwrite) = 0;
 
     /** Reference to the API backend */

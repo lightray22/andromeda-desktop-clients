@@ -65,9 +65,7 @@ public:
 
     /** 
      * Parses command line arguments from main (skips argv[0]!) 
-     * @throws BadUsageException if invalid arguments
-     * @throws BadFlagException if a invalid flag is used
-     * @throws BadOptionException if an invalid option is used
+     * @throws Exception if invalid arguments
      * @param stopmm if true, stop processing when "--" is encountered
      * @return number of arguments consumed (matches argc if stopmm is false)
      */
@@ -75,40 +73,54 @@ public:
 
     /** 
      * Parses arguments from a config file 
-     * @throws BadFlagException if a invalid flag is used
-     * @throws BadOptionException if an invalid option is used
+     * @throws Exception if invalid arguments
      */
     void ParseFile(const std::filesystem::path& path);
 
     /**
      * Finds and parses arguments from a config file
      * @param prefix the name of the config file to find
+     * @throws Exception if invalid arguments
      */
     void ParseConfig(const std::string& prefix);
 
-    /** Parses optional arguments from URL variables */
+    /** 
+     * Parses optional arguments from URL variables
+     * @throws Exception if invalid arguments
+     */
     void ParseUrl(const std::string& url);
 
-    /** Adds the given argument, returning true iff it was used */
+    /** 
+     * Adds the given argument, returning true iff it was used
+     * @throws Exception if invalid arguments
+     * @throws ShowHelpException if help text is requested
+     * @throws ShowVersionException if version text is requested
+     */
     virtual bool AddFlag(const std::string& flag);
 
     /** 
      * Adds the given option/value, returning true iff it was used 
-     * @throws BadValueException if a bad option value is used
+     * @throws Exception if invalid arguments
      */
     virtual bool AddOption(const std::string& option, const std::string& value);
 
-    /** Adds the given URL argument if applicable */
+    /** 
+     * Adds the given URL argument if applicable
+     * @throws Exception if invalid arguments
+     */
     virtual void TryAddUrlFlag(const std::string& flag) { };
 
-    /** Adds the given URL option/value if applicable */
+    /** 
+     * Adds the given URL option/value if applicable
+     * @throws Exception if invalid arguments
+     */
     virtual void TryAddUrlOption(const std::string& option, const std::string& value) { };
 
     /** 
      * Makes sure all required options were provided 
      * @throws MissingOptionException if a required option is missing
      */
-    virtual void Validate() { };
+    virtual void Validate() = 0;
 
 protected:
 

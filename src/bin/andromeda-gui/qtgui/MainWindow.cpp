@@ -10,8 +10,8 @@
 #include "Utilities.hpp"
 #include "LoginDialog.hpp"
 
-#include "andromeda/BaseException.hpp"
-using Andromeda::BaseException;
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/backend/SessionStore.hpp"
@@ -97,7 +97,7 @@ void MainWindow::TryLoadAccount(SessionStore& session)
         backendCtx->GetBackend().SetCacheManager(&mCacheManager);
         AddAccountTab(std::move(backendCtx));
     }
-    catch (const BaseException& ex)
+    catch (const BackendException& ex)
     {
         MDBG_ERROR("... " << ex.what());
         const std::string msg("Failed to connect login to the server at ");

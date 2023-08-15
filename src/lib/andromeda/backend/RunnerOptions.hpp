@@ -17,15 +17,18 @@ struct RunnerOptions
     /** Adds the given argument, returning true iff it was used */
     bool AddFlag(const std::string& flag){ return false; }
 
-    /** Adds the given option/value, returning true iff it was used */
+    /** 
+     * Adds the given option/value, returning true iff it was used
+     * @throws BaseOptions::Exception if invalid arguments
+     */
     bool AddOption(const std::string& option, const std::string& value);
 
     using seconds = std::chrono::seconds;
 
     /** maximum retries before throwing */
-    uint32_t maxRetries { 3 };
+    uint32_t maxRetries { 4 };
     /** The time to wait between each retry */
-    seconds retryTime { 5 };
+    seconds retryTime { 3 };
     /** The connection read/write timeout */
     seconds timeout { 60 };
     /** Buffer/chunk size when reading file streams */

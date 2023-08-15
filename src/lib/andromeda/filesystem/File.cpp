@@ -7,6 +7,8 @@
 #include "FSConfig.hpp"
 #include "andromeda/ConfigOptions.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 #include "andromeda/backend/BackendImpl.hpp"
 using Andromeda::Backend::BackendImpl;
 #include "andromeda/filesystem/filedata/PageBackend.hpp"
@@ -53,9 +55,7 @@ File::File(BackendImpl& backend, Folder& parent, const std::string& name, const 
 
     mFsConfig = &fsConfig;
     mParent = &parent;
-
     mName = name;
-    ValidateName(mName);
 
     mCreated = static_cast<decltype(mCreated)>(std::time(nullptr)); // now
 
@@ -173,7 +173,7 @@ void File::FlushCache(const SharedLockW& thisLock, bool nothrow)
     ITDBG_INFO("()");
 
     if (!nothrow) mPageManager->FlushPages(thisLock);
-    else try { mPageManager->FlushPages(thisLock); } catch (BaseException& e){ 
+    else try { mPageManager->FlushPages(thisLock); } catch (const BackendException& e){
         ITDBG_ERROR("... ignoring error: " << e.what()); }
 }
 
@@ -255,7 +255,7 @@ void File::WriteBytes(const char* buffer, uint64_t offset, size_t length, const 
         if (uploadMax && offset+length > uploadMax)
         {
             ITDBG_INFO("write exceeds upload max:" << uploadMax);
-            throw BackendImpl::WriteSizeException();
+            throw BackendImpl::WriteSizeException(); // fail now rather than later
         }
     }
     else if (writeMode == FSConfig::WriteMode::APPEND)

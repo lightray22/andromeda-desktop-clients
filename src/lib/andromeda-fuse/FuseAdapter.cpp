@@ -317,7 +317,7 @@ void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::For
 }
 
 /*****************************************************/
-void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc)
+void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::ForkFunc& forkFunc) noexcept // thread cannot throw
 {
     MDBG_INFO("()");
 
@@ -415,6 +415,7 @@ FuseAdapter::~FuseAdapter()
     }
 
     const SharedLockW rootLock { mRootFolder->GetWriteLock() };
+    // can't throw in destructor, use nothrow=true
     mRootFolder->FlushCache(rootLock, true); // dump caches
 
     MDBG_INFO("... return!");

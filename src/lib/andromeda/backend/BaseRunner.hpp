@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "andromeda/BaseException.hpp"
+#include "BackendException.hpp"
 #include "andromeda/common.hpp"
 
 namespace Andromeda {
@@ -25,13 +25,13 @@ class BaseRunner
 {
 public:
     /** Indicates an inability to reach the API endpoint */
-    class EndpointException : public BaseException { public:
+    class EndpointException : public BackendException { public:
         /** @param code HTTP code returned by the server */
         explicit EndpointException(int code) : 
-            BaseException("Endpoint Error: Code "+std::to_string(code)) {};
+            BackendException("Endpoint Error: Code "+std::to_string(code)) {};
         /** @param message formatted error message if known */
         explicit EndpointException(const std::string& message) :
-            BaseException("Endpoint Error: "+message) {}; };
+            BackendException("Endpoint Error: "+message) {}; };
 
     BaseRunner() = default;
     virtual ~BaseRunner() = default;
@@ -54,6 +54,7 @@ public:
      * Runs an API call and returns the result
      * @param input input params struct
      * @return result string from API
+     * @throws EndpointException on any failure
      */
     virtual std::string RunAction_Read(const RunnerInput& input) = 0;
 
@@ -61,6 +62,7 @@ public:
      * Runs an API call and returns the result
      * @param input input params struct
      * @return result string from API
+     * @throws EndpointException on any failure
      */
     virtual std::string RunAction_Write(const RunnerInput& input) = 0;
 
@@ -68,6 +70,7 @@ public:
      * Runs an API call and returns the result
      * @param input input params struct with files
      * @return result string from API
+     * @throws EndpointException on any failure
      */
     virtual std::string RunAction_FilesIn(const RunnerInput_FilesIn& input) = 0;
     
@@ -76,6 +79,7 @@ public:
      * MUST NOT call another action within the callback!
      * @param input input params struct with file streams
      * @return result string from API
+     * @throws EndpointException on any failure
      */
     virtual std::string RunAction_StreamIn(const RunnerInput_StreamIn& input) = 0;
     
@@ -83,6 +87,7 @@ public:
      * Runs an API call and streams the result
      * MUST NOT call another action within the callback!
      * @param input input params struct with streamer
+     * @throws EndpointException on any failure
      */
     virtual void RunAction_StreamOut(const RunnerInput_StreamOut& input) = 0;
 

@@ -80,6 +80,7 @@ public:
      * Mounts and starts the FUSE loop, blocks if there is an existing thread
      * @param runMode RunMode enum specifying threading mode
      * @param forkFunc function to run after daemonizing, if runMode is DAEMON
+     * @throws Exception for any FUSE issues
     */
     void StartFuse(RunMode runMode, const ForkFunc& forkFunc = {});
 
@@ -101,11 +102,12 @@ private:
 
     /** 
      * Runs/mounts libfuse (blocking) 
+     * Sets mInitError on any Exception
      * @param regSignals if true, register FUSE signal handlers
      * @param daemonize if true, fork to a detached process
      * @param forkFunc function to run after daemonizing if applicable
      */
-    void FuseMain(bool regSignals, bool daemonize, const ForkFunc& forkFunc);
+    void FuseMain(bool regSignals, bool daemonize, const ForkFunc& forkFunc) noexcept;
 
     /** Signals initialization complete */
     void SignalInit();

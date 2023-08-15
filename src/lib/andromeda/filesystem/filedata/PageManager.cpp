@@ -9,6 +9,8 @@
 #include "Page.hpp"
 #include "PageManager.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 #include "andromeda/backend/BackendImpl.hpp"
 #include "andromeda/filesystem/File.hpp"
 #include "andromeda/filesystem/Folder.hpp"
@@ -38,6 +40,9 @@ PageManager::~PageManager()
     MDBG_INFO("() waiting for lock");
 
     const Item::DeleteLock deleteLock(mScopeMutex); // exclusive
+
+    // once we have the deleteLock, no NEW fetch threads can start, wait for existing
+    const std::unique_lock<std::shared_mutex> fetchLock(mFetchMutex);
 
     if (mCacheMgr != nullptr)
     {
@@ -114,8 +119,8 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
             
             ResizePage(newPage, mPageSize, false); // zeroize
             // hold pagesLock because if inform fails, we will remove this page
-            // use non-synchronous InformNewPage() so holding pagesLock is okay
-            InformNewPage(index, newPage, false, true, pagesLock);
+            // use non-synchronous InformNewPageRead() so holding pagesLock is okay
+            InformNewPageRead(index, newPage, false, true, pagesLock);
             return newPage;
         }
         else StartFetch(index, fetchSize, pagesLock);
@@ -175,7 +180,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
         Page& newPage { mPages.emplace(std::piecewise_construct, std::forward_as_tuple(index), 
                 std::forward_as_tuple(0, mBackend.GetPageAllocator())).first->second };
         ResizePage(newPage, pageSize, false); // zeroize
-        InformNewPageSync(index, newPage, true, thisLock);
+        InformNewPageWrite(index, newPage, true, thisLock);
         return newPage;
     }
 
@@ -187,17 +192,17 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
     }, thisLock);
 
     ResizePage(*newPage, pageSize, false);
-    InformNewPageSync(index, *newPage, true, thisLock);
+    InformNewPageWrite(index, *newPage, true, thisLock);
     MDBG_INFO("... returning pended page " << index);
     return *newPage;
 }
 
 /*****************************************************/
-void PageManager::InformNewPage(const uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock)
+void PageManager::InformNewPageRead(const uint64_t index, const Page& page, bool dirty, bool canWait, const UniqueLock& pagesLock)
 {
     if (mCacheMgr && !mBackend.isMemory())
         try { mCacheMgr->InformPage(*this, index, page, dirty, canWait); }
-    catch (BaseException& ex)
+    catch (const CacheManager::MemoryException& ex)
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
@@ -206,11 +211,11 @@ void PageManager::InformNewPage(const uint64_t index, const Page& page, bool dir
 }
 
 /*****************************************************/
-void PageManager::InformNewPageSync(const uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock)
+void PageManager::InformNewPageWrite(const uint64_t index, const Page& page, bool dirty, const SharedLockW& thisLock)
 {
     if (mCacheMgr && !mBackend.isMemory())
         try { mCacheMgr->InformPage(*this, index, page, dirty, true, &thisLock); }
-    catch (BaseException& ex)
+    catch (const BaseException& ex) // MemoryException or BackendException
     {
         mCacheMgr->RemovePage(page);
         mPages.erase(index); // undo memory usage
@@ -226,7 +231,7 @@ void PageManager::InformResizePage(const uint64_t index, Page& page, bool dirty,
 
     if (mCacheMgr && !mBackend.isMemory())
         try { mCacheMgr->InformPage(*this, index, page, dirty, true, &thisLock); }
-    catch (BaseException& ex)
+    catch (const BaseException& ex) // MemoryException or BackendException
     {
         ResizePage(page, oldSize, false); // undo memory usage
         mCacheMgr->ResizePage(*this, page, &thisLock);
@@ -248,7 +253,7 @@ void PageManager::ResizePage(Page& page, const size_t pageSize, bool cacheMgr, c
 
     if (cacheMgr && mCacheMgr) 
         try { mCacheMgr->ResizePage(*this, page, thisLock); }
-    catch (BaseException& ex)
+    catch (const BaseException& ex) // MemoryException or BackendException
     {
         page.resize(oldSize);
         mCacheMgr->ResizePage(*this, page, thisLock);
@@ -384,14 +389,15 @@ void PageManager::StartFetch(const uint64_t index, const size_t readCount, const
 }
 
 /*****************************************************/
-void PageManager::FetchPages(const uint64_t index, const size_t count)
+void PageManager::FetchPages(const uint64_t index, const size_t count) noexcept // thread cannot throw
 {
-    const ScopeLocked scopeLock { TryLockScope() };
-    if (!scopeLock) throw Folder::NotFoundException();
-
     // use a read-priority lock since the caller is waiting on us, 
     // if another write happens in the middle we would deadlock
     const SharedLockRP thisLock { GetReadPriLock() };
+
+    // lock fetch mutex so the destructor has to wait for us to finish
+    // can't acquire the scope lock here because the destructor could already be waiting!
+    const std::shared_lock<std::shared_mutex> fetchLock(mFetchMutex);
 
     uint64_t curIndex { index }; try
     {
@@ -409,7 +415,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
             // hold pagesLock because if inform fails, we will remove this page
             const PageMap::iterator newIt { mPages.emplace(pageIndex, std::move(page)).first };
 
-            InformNewPage(pageIndex, newIt->second, false, false, pagesLock);
+            InformNewPageRead(pageIndex, newIt->second, false, false, pagesLock);
             // pass false to not wait - not allowed to call the backend for evict/flush within this callback
             // even if canWait was true, the CacheManager could have us skip the wait to get our W lock for evict
             RemovePendingFetch(pageIndex, true, pagesLock); 
@@ -420,7 +426,7 @@ void PageManager::FetchPages(const uint64_t index, const size_t count)
         if (readSize >= mPageSize) // don't consider small reads
             UpdateBandwidth(readSize, std::chrono::steady_clock::now()-timeStart);
     }
-    catch (const BaseException& ex)
+    catch (const BackendException& ex)
     {
         MDBG_ERROR("... " << ex.what());
         const UniqueLock pagesLock(mPagesMutex);

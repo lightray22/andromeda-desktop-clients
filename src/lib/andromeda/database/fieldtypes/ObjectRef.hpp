@@ -103,9 +103,9 @@ public:
     }
 
     /** Sets the field to the given object */
-    inline NullObjectRef& operator=(T& object) { SetObject(object); return *this; }
+    inline NullObjectRef& operator=(T& object) noexcept { SetObject(object); return *this; }
     /** Sets the field to NULL */
-    inline NullObjectRef& operator=(std::nullptr_t) { SetObject(nullptr); return *this; }
+    inline NullObjectRef& operator=(std::nullptr_t) noexcept { SetObject(nullptr); return *this; }
 
 protected:
     std::string mObjId;
@@ -188,7 +188,7 @@ public:
     }
 
     /** Sets the field to the given object */
-    inline ObjectRef& operator=(T& object) { SetObject(object); return *this; }
+    inline ObjectRef& operator=(T& object) noexcept { SetObject(object); return *this; }
 
 protected:
     std::string mObjId;

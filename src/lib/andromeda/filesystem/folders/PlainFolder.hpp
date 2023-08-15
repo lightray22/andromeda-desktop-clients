@@ -26,6 +26,7 @@ public:
      * Load from the backend with the given ID
      * @param backend reference to backend
      * @param id ID of folder to load
+     * @throws BackendException on backend errors
      */
     static std::unique_ptr<PlainFolder> LoadByID(Backend::BackendImpl& backend, const std::string& id);
     
@@ -35,6 +36,7 @@ public:
      * @param data json data from backend
      * @param haveItems true if JSON has subitems
      * @param parent pointer to parent
+     * @throws BackendException on backend errors
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, bool haveItems, Folder* parent);
 
@@ -52,12 +54,17 @@ protected:
      * @param backend reference to backend
      * @param data json data from backend
      * @param parent pointer to parent
+     * @throws BackendImpl::JSONErrorException on JSON errors
      */
     PlainFolder(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
     void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;
 
-    /** Populates the item list with items using the given files/folders JSON */
+    /** 
+     * Populates the item list with items using the given files/folders JSON, calling SyncContents
+     * @throws BackendImpl::JSONErrorException on JSON errors
+     * @throws BackendException on backend errors
+     */
     void LoadItemsFrom(const nlohmann::json& data, ItemLockMap& itemsLocks, const SharedLockW& thisLock);
 
     void SubCreateFile(const std::string& name, const SharedLockW& thisLock) override;

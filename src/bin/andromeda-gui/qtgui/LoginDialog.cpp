@@ -4,8 +4,8 @@
 #include "LoginDialog.hpp"
 #include "ui_LoginDialog.h"
 
-#include "andromeda/BaseException.hpp"
-using Andromeda::BaseException;
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 #include "andromeda-gui/BackendContext.hpp"
 
 namespace AndromedaGui {
@@ -44,7 +44,7 @@ void LoginDialog::accept()
         
         mBackendContext = std::make_unique<BackendContext>(apiurl, username, password, twofactor);
     }
-    catch (const BaseException& ex)
+    catch (const BackendException& ex)
     {
         MDBG_ERROR("... " << ex.what());
         Utilities::criticalBox(this, "Login Error", "Failed to login to the server.", ex);

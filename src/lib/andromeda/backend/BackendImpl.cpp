@@ -39,7 +39,7 @@ BackendImpl::~BackendImpl()
     MDBG_INFO("()");
 
     try { CloseSession(); }
-    catch(const BaseException& ex) 
+    catch (const BackendException& ex) 
     { 
         MDBG_ERROR("... " << ex.what());
     }
@@ -155,9 +155,9 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             if      (code == HTTP_ERROR && message == "FILESYSTEM_MISMATCH")         throw UnsupportedException();
             else if (code == HTTP_ERROR && message == "STORAGE_FOLDERS_UNSUPPORTED") throw UnsupportedException();
                 // TODO better exception? - should not happen if Authenticated? maybe for bad shares
-            else if (code == HTTP_ERROR && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message); 
-            else if (code == HTTP_ERROR && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException();
-            
+            else if (code == HTTP_ERROR && message == "ACCOUNT_CRYPTO_NOT_UNLOCKED") throw DeniedException(message);
+            else if (code == HTTP_ERROR && message == "INPUT_FILE_MISSING")          throw HTTPRunner::InputSizeException(); // PHP silently discards too-large files
+
             else if (code == HTTP_DENIED && message == "AUTHENTICATION_FAILED") throw AuthenticationFailedException();
             else if (code == HTTP_DENIED && message == "TWOFACTOR_REQUIRED")    throw TwoFactorRequiredException();
             else if (code == HTTP_DENIED && message == "READ_ONLY_DATABASE")    throw ReadOnlyFSException("Database");
@@ -358,44 +358,28 @@ void BackendImpl::StoreSession(SessionStore& sessionObj)
 }
 
 /*****************************************************/
-void BackendImpl::RequireAuthentication() const
-{
-    if (mRunners.GetFirst().RequiresSession())
-    {
-        if (mSessionID.empty())
-            throw AuthRequiredException();
-    }
-    else
-    {
-        if (mSessionID.empty() && mUsername.empty())
-            throw AuthRequiredException();
-    }
-}
-
-/*****************************************************/
 bool BackendImpl::isMemory() const
 {
     return mOptions.cacheType == ConfigOptions::CacheType::MEMORY;
 }
 
 /*****************************************************/
-nlohmann::json BackendImpl::GetConfigJ()
+nlohmann::json BackendImpl::GetCoreConfigJ()
 {
     MDBG_INFO("()");
 
-    nlohmann::json configJ;
 
-    {
-        RunnerInput input {"core", "getconfig"}; MDBG_BACKEND(input);
-        configJ["core"] = RunAction_Read(input);
-    }
+    RunnerInput input {"core", "getconfig"}; MDBG_BACKEND(input);
+    return RunAction_Read(input);
+}
 
-    {
-        RunnerInput input {"files", "getconfig"}; MDBG_BACKEND(input);
-        configJ["files"] = RunAction_Read(input);
-    }
+/*****************************************************/
+nlohmann::json BackendImpl::GetFilesConfigJ()
+{
+    MDBG_INFO("()");
 
-    return configJ;
+    RunnerInput input {"files", "getconfig"}; MDBG_BACKEND(input);
+    return RunAction_Read(input);
 }
 
 /*****************************************************/

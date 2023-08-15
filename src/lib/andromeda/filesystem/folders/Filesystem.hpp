@@ -28,6 +28,7 @@ public:
      * Load a filesystem from the backend with the given ID
      * @param backend reference to backend
      * @param fsid ID of filesystem to load
+     * @throws BackendException on backend errors
      */
     static std::unique_ptr<Filesystem> LoadByID(Backend::BackendImpl& backend, const std::string& fsid);
 
@@ -36,6 +37,7 @@ public:
      * @param backend reference to backend
      * @param data pre-loaded JSON data
      * @param parent optional pointer to parent
+     * @throws BackendException on backend errors
      */
     Filesystem(Backend::BackendImpl& backend, const nlohmann::json& data, Folder* parent);
 
@@ -43,10 +45,13 @@ public:
 
 protected:
 
-    const std::string& GetID() override;
+    const std::string& GetID() override; // throws BackendException!
 
     using UniqueLock = std::unique_lock<std::mutex>;
-    /** Sets the folder ID from the given backend data */
+    /** 
+     * Sets the folder ID from the given backend data
+     * @throws BackendImpl::JSONErrorException on JSON errors
+     */
     virtual void LoadID(const nlohmann::json& data, const UniqueLock& idLock);
 
     void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override;

@@ -28,26 +28,26 @@ namespace Andromeda {
 /*****************************************************/
 void PlatformUtil::SilentReadConsole(std::string& retval)
 {
-    #if WIN32
-        HANDLE hStdin { GetStdHandle(STD_INPUT_HANDLE) }; 
-        DWORD mode { 0 }; GetConsoleMode(hStdin, &mode);
-        SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
-    #else // !WIN32
-        struct termios oflags { };
-        tcgetattr(fileno(stdin), &oflags);
+#if WIN32
+    HANDLE hStdin { GetStdHandle(STD_INPUT_HANDLE) }; 
+    DWORD mode { 0 }; GetConsoleMode(hStdin, &mode);
+    SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
+#else // !WIN32
+    struct termios oflags { };
+    tcgetattr(fileno(stdin), &oflags);
 
-        struct termios nflags { oflags };
-        nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
-        tcsetattr(fileno(stdin), TCSANOW, &nflags);
-    #endif // WIN32
+    struct termios nflags { oflags };
+    nflags.c_lflag &= ~static_cast<decltype(nflags.c_lflag)>(ECHO); // -Wsign-conversion
+    tcsetattr(fileno(stdin), TCSANOW, &nflags);
+#endif // WIN32
 
     std::getline(std::cin, retval);
-    
-    #if WIN32
-        SetConsoleMode(hStdin, mode);
-    #else // !WIN32
-        tcsetattr(fileno(stdin), TCSANOW, &oflags);
-    #endif // WIN32
+
+#if WIN32
+    SetConsoleMode(hStdin, mode);
+#else // !WIN32
+    tcsetattr(fileno(stdin), TCSANOW, &oflags);
+#endif // WIN32
 
     std::cout << std::endl;
 }

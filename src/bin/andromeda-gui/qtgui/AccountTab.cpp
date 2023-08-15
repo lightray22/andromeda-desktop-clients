@@ -60,7 +60,7 @@ void AccountTab::Mount(bool autoMount)
         mMountContext = std::make_unique<MountContext>(
             backend, true, mountPath, fuseOptions);
     }
-    catch (const BaseException& ex)
+    catch (const BaseException& ex) // MountContext::Exception or FuseAdapter::Exception
     {
         MDBG_ERROR("... " << ex.what());
         Utilities::criticalBox(this, "Mount Error", "Failed to create filesystem mount.", ex);

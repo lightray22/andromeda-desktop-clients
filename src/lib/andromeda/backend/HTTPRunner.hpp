@@ -8,6 +8,7 @@
 
 // TODO should not include this here - use PRIVATE cmake link
 // probably need just an interface here then a separate HTTPRunnerImpl
+// propagating windows.h is not desirable
 #define CPPHTTPLIB_OPENSSL_SUPPORT 1
 #include "httplib.h"
 
@@ -29,7 +30,10 @@ namespace Backend {
 class HTTPRunnerTest;
 struct RunnerInput;
 
-/** Runs the API remotely over HTTP */
+/** 
+ * Runs the API remotely over HTTP 
+ * NOT THREAD SAFE (use a RunnerPool)
+ */
 class HTTPRunner : public BaseRunner
 {
 public:
@@ -134,19 +138,29 @@ private:
     /** Add filesIn params from the given input to a post body */
     void AddFileParams(const RunnerInput_FilesIn& input, httplib::MultipartFormDataItems& params);
 
+    /** Private data shared by DoRequestsSelf and HandleResponse */
+    struct HandleResponseData
+    {
+        /** Set by DoRequestsSelf(), true if retry is allowed in HandleResponse() */
+        bool canRetry { true };
+        /** Set by HandleResponse(), true if it wants a retry in DoRequestsSelf() */
+        bool doRetry { false };
+    };
+
     /**
      * Performs a series of HTTP request attempts, caller must call HandleResponse in getResult
      * @param[in] getResult Function that provides an httplib result
-     * @param[out] canRetry ref set to where retry is allowed
-     * @param[in] doRetry ref to bool set by manual call of HandleResponse
+     * @param[inout] respData ref to data to be passed to manual call of HandleResponse()
+     * @throws EndpointException on any failure
      */
-    void DoRequests(const std::function<httplib::Result()>& getResult, bool& canRetry, const bool& doRetry);
+    void DoRequestsSelf(const std::function<httplib::Result()>& getResult, HandleResponseData& respData);
 
     /**
      * Performs a series of HTTP request attempts, calling HandleResponse
      * @param[in] getResult Function that provides an httplib result
      * @param[out] isJson ref set to whether response is json
      * @return std::string the body of the response
+     * @throws EndpointException on any failure
      */
     std::string DoRequestsFull(const std::function<httplib::Result()>& getResult, bool& isJson);
 
@@ -155,20 +169,21 @@ private:
      * @param result httplib result object
      * @param retry true if retry is allowed (wait), else throw
      * @param attempt current attempt # (for debug print)
+     * @param elapsed time elapsed during the request
      * @throws LibraryException if not retry
      */
-    void HandleNonResponse(httplib::Result& result, bool retry, size_t attempt);
+    void HandleNonResponse(httplib::Result& result, bool retry, size_t attempt, 
+        const std::chrono::steady_clock::duration& elapsed);
 
     /**
      * Handles an httplib response
      * @param[in] response httplib response object
      * @param[out] isJson ref set to whether response is json
-     * @param[in] canRetry true if a retry is allowed (else fail)
-     * @param[out] doRetry ref set to whether the request needs retry
+     * @param[inout] respData ref to data passed to DoRequestsSelf()
      * @return std::string the body if not doRetry
      * @throws EndpointException if a non-retry error
      */
-    std::string HandleResponse(const httplib::Response& response, bool& isJson, const bool& canRetry, bool& doRetry);
+    std::string HandleResponse(const httplib::Response& response, bool& isJson, HandleResponseData& respData);
 
     /** Handles an HTTP redirect to a new location */
     void RegisterRedirect(const std::string& location);
@@ -181,6 +196,12 @@ private:
     std::string mProtoHost;
     std::string mBaseURL;
     std::string mUserAgent;
+
+    /** 
+     * True if the last request used all of its attempts before failing
+     * When this is true, we will only give each request a single try
+     */
+    bool mFailureState { false };
 
     const RunnerOptions mBaseOptions;
     const HTTPOptions mHttpOptions;

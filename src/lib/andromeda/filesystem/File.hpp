@@ -67,6 +67,7 @@ public:
      * @param backend backend reference
      * @param data JSON data from backend
      * @param parent reference to parent folder
+     * @throws BackendException on backend errors
      */
     File(Backend::BackendImpl& backend, const nlohmann::json& data, Folder& parent);
 
@@ -97,6 +98,8 @@ public:
      * @param offset byte offset in file to read
      * @param length max number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
      */
     virtual size_t ReadBytesMax(char* buffer, uint64_t offset, size_t maxLength, const SharedLock& thisLock) final;
 
@@ -106,6 +109,9 @@ public:
      * @param offset byte offset in file to read
      * @param length exact number of bytes to read
      * @return the number of bytes read (may be < length if EOF)
+     * @throws ReadBoundsException if invalid offset/length
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
      */
     virtual void ReadBytes(char* buffer, uint64_t offset, size_t length, const SharedLock& thisLock) final;
 
@@ -114,10 +120,20 @@ public:
      * @param buffer buffer with data to write
      * @param offset byte offset in file to write
      * @param length number of bytes to write
+     * @throws WriteTypeException if ExistsOnBackend() and writing UPLOAD only files or non-appending write to APPEND only files 
+     * @throws ReadOnlyFSException if read-only item/filesystem
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
      */
     virtual void WriteBytes(const char* buffer, uint64_t offset, size_t length, const SharedLockW& thisLock) final;
 
-    /** Set the file size to the given value */
+    /** 
+     * Set the file size to the given value
+     * @throws WriteTypeException if write mode is UPLOAD, or write mode is APPEND and newSize != 0 
+     * @throws ReadOnlyFSException if read-only item/filesystem
+     * @throws BackendException for backend issues
+     * @throws CacheManager::MemoryException
+     */
     virtual void Truncate(uint64_t newSize, const SharedLockW& thisLock) final;
 
     void FlushCache(const SharedLockW& thisLock, bool nothrow = false) override;
@@ -141,6 +157,7 @@ private:
      * @param offset byte offset of the data buffer
      * @param length number of bytes in the buffer
      * @return size_t number of bytes consumed from buffer
+     * @throws BackendException for backend issues
      */
     size_t FixPageAlignment(const char* buffer, uint64_t offset, size_t length, const SharedLockW& thisLock);
 

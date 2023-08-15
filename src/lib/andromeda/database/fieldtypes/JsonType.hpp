@@ -54,9 +54,9 @@ public:
     void SetJson(std::nullptr_t);
 
     /** Sets the field to the given value */
-    inline JsonType& operator=(const nlohmann::json& value) { SetJson(value); return *this; }
+    inline JsonType& operator=(const nlohmann::json& value) noexcept { SetJson(value); return *this; }
     /** Sets the field to NULL */
-    inline JsonType& operator=(std::nullptr_t) { SetJson(nullptr); return *this; }
+    inline JsonType& operator=(std::nullptr_t) noexcept { SetJson(nullptr); return *this; }
 
 protected:
     std::unique_ptr<nlohmann::json> mJsonPtr;

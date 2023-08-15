@@ -33,6 +33,8 @@ public:
         options.emplace(option, value);
     }
 
+    void Validate() override { }
+
     BaseOptions::Flags flags;
     BaseOptions::Options options;
 };

@@ -7,7 +7,9 @@
 #include "CachingAllocator.hpp"
 #include "Page.hpp"
 #include "PageManager.hpp"
-#include "andromeda/BaseException.hpp"
+
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 
 namespace Andromeda {
 namespace Filesystem {
@@ -381,7 +383,7 @@ void CacheManager::FlushThread()
 }
 
 /*****************************************************/
-void CacheManager::DoPageEvictions()
+void CacheManager::DoPageEvictions() noexcept // thread cannot throw
 {
     MDBG_INFO("()");
 
@@ -390,6 +392,7 @@ void CacheManager::DoPageEvictions()
     typedef std::pair<PageManager::ScopeLocked, EvictList> EvictSet;
     std::map<PageManager*, EvictSet> currentEvicts;
 
+    // FIRST build a list of pages to evict
     { // lock scope
         const UniqueLock lock(mMutex);
 
@@ -418,12 +421,13 @@ void CacheManager::DoPageEvictions()
         }
     }
 
+    // THEN evict all the pages in the set
     for (decltype(currentEvicts)::iterator evictIt { currentEvicts.begin() }; evictIt != currentEvicts.end(); )
     {
         EvictSet& evictSet { evictIt->second };
         MDBG_INFO("... evicting pages:" << evictSet.second.size() << " pageMgr:" << evictIt->first);
         
-        { // let waiters on this file continue so we can lock
+        { // let waiters on this file continue so we can lock it
             const UniqueLock lock(mMutex);
             mSkipEvictWait = evictIt->first;
             mEvictWaitCV.notify_all();
@@ -442,7 +446,7 @@ void CacheManager::DoPageEvictions()
             const PageInfo& pageInfo { pagePair.second };
 
             try { pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, mgrLock); }
-            catch (BaseException& ex)
+            catch (const BackendException& ex)
             {
                 const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
@@ -466,7 +470,7 @@ void CacheManager::DoPageEvictions()
 }
 
 /*****************************************************/
-void CacheManager::DoPageFlushes()
+void CacheManager::DoPageFlushes() noexcept // thread cannot throw
 {
     MDBG_INFO("()");
 
@@ -475,6 +479,7 @@ void CacheManager::DoPageFlushes()
     typedef std::pair<PageManager::ScopeLocked, FlushList> FlushSet;
     std::map<PageManager*, FlushSet> currentFlushes;
 
+    // FIRST build a list of pages to flush
     { // lock scope
         const UniqueLock lock(mMutex);
 
@@ -502,12 +507,13 @@ void CacheManager::DoPageFlushes()
         }
     }
 
+    // THEN flush all the pages in the set
     for (decltype(currentFlushes)::iterator flushIt { currentFlushes.begin() }; flushIt != currentFlushes.end(); )
     {
         FlushSet& flushSet { flushIt->second };
         MDBG_INFO("... flushing pages:" << flushSet.second.size() << " pageMgr:" << flushIt->first);
 
-        { // let waiters on this file continue so we can lock
+        { // let waiters on this file continue so we can lock it
             const UniqueLock lock(mMutex);
             mSkipFlushWait = flushIt->first;
             mFlushWaitCV.notify_all();
@@ -525,7 +531,7 @@ void CacheManager::DoPageFlushes()
             const PageInfo& pageInfo { pagePair.second };
 
             try { FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, mgrLock); }
-            catch (BaseException& ex)
+            catch (const BackendException& ex)
             {
                 const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());

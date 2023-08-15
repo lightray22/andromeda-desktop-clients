@@ -74,6 +74,7 @@ public:
      * @param index the page index to start from
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
+     * @throws BackendException for backend issues
      */
     size_t FetchPages(uint64_t index, size_t count, const PageHandler& pageHandler, const SharedLock& thisLock);
 
@@ -86,13 +87,20 @@ public:
      * @param index the starting index of the page list
      * @param pages list of pages to flush - must NOT be empty
      * @return the total number of bytes written to the backend
+     * @throws BackendException for backend issues
      */
     size_t FlushPageList(uint64_t index, const PagePtrList& pages, const SharedLockW& thisLock);
 
-    /** Creates the file on the backend if not mBackendExists and feeds to file.Refresh() */
+    /** 
+     * Creates the file on the backend if not mBackendExists and feeds to file.Refresh()
+     * @throws BackendException for backend issues
+     */
     void FlushCreate(const SharedLockW& thisLock);
 
-    /** Tell the backend to truncate to the given size, if mBackendExists */
+    /** 
+     * Tell the backend to truncate to the given size, if mBackendExists
+     * @throws BackendException for backend issues
+     */
     void Truncate(uint64_t newSize, const SharedLockW& thisLock);
 
 private:

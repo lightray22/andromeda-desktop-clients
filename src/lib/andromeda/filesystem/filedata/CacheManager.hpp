@@ -12,11 +12,11 @@
 #include <unordered_map>
 
 #include "BandwidthMeasure.hpp"
-#include "andromeda/BaseException.hpp"
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
 #include "andromeda/SharedMutex.hpp"
+#include "andromeda/filesystem/Item.hpp"
 
 namespace Andromeda {
 namespace Filesystem {
@@ -41,10 +41,10 @@ class CacheManager
 public:
 
     /** Exception indicating memory could not be reserved due to a evict/flush failure */
-    class MemoryException : public BaseException { public:
+    class MemoryException : public Item::Exception { public:
         /** @param message API error message */
         explicit MemoryException(const std::string& type) :
-            BaseException("Failed to reserve memory: "+type+" error") {}; };
+            Item::Exception("Failed to reserve memory: "+type+" error") {}; };
 
     /** If true, start the cleanup threads immediately */
     explicit CacheManager(const CacheOptions& cacheOptions, bool startThreads = true);
@@ -72,8 +72,8 @@ public:
      * @param dirty if true, consider dirty memory also
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
-     * @throws MemoryException if canWait and evict/flush fails to free memory
-     * @throws BaseException if canWait and flush for this pageMgr fails to free memory
+     * @throws BackendException if canWait and synchronous failure to free memory
+     * @throws MemoryException if canWait and non-synchronous failure to free memory
      */
     void InformPage(PageManager& pageMgr, uint64_t index, const Page& page, bool dirty,
         bool canWait = true, const SharedLockW* mgrLock = nullptr);
@@ -85,8 +85,8 @@ public:
      * @param pageMgr the page manager that owns the page
      * @param page reference to the page with its new size set
      * @param mgrLock the W lock for the page manager if available
-     * @throws MemoryException if evict/flush fails to free memory
-     * @throws BaseException if flush for this pageMgr fails to free memory
+     * @throws BackendException if synchronous failure to free memory
+     * @throws MemoryException if non-synchronous failure to free memory
      */
     void ResizePage(const PageManager& pageMgr, const Page& page, const SharedLockW* mgrLock = nullptr);
 
@@ -100,10 +100,16 @@ private:
 
     using UniqueLock = std::unique_lock<std::mutex>;
 
-    /** Returns true if we should wait for a page eviction */
+    /** 
+     * Returns true if we should wait for a page eviction
+     * @throws MemoryException if over limit and mEvictFailure is set
+     */
     inline bool ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock);
 
-    /** Returns true if we should wait for a page flushing */
+    /** 
+     * Returns true if we should wait for a page flushing
+     * @throws MemoryException if over limit and mFlushFailure is set
+     */
     inline bool ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock& lock);
 
     /**
@@ -112,6 +118,8 @@ private:
      * @param page do not synchronously evict this page
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
+     * @throws BackendException on synchronous failure if canWait
+     * @throws MemoryException on non-synchronous failure if canWait
      */
     void HandleMemory(const PageManager& pageMgr, const Page& page, 
         bool canWait, UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
@@ -122,6 +130,8 @@ private:
      * @param page do not synchronously flush this page
      * @param canWait wait if memory is not below limits
      * @param mgrLock the W lock for the page manager if available
+     * @throws BackendException on synchronous failure if canWait
+     * @throws MemoryException on non-synchronous failure if canWait
      */
     void HandleDirtyMemory(const PageManager& pageMgr, const Page& page, 
         bool canWait, UniqueLock& lock, const SharedLockW* mgrLock = nullptr);
@@ -156,12 +166,21 @@ private:
     /** Run the page flush task in a loop while mRunCleanup */
     void FlushThread();
 
-    /** Run necessary page evictions */
-    inline void DoPageEvictions();
-    /** Run necessary page flushes */
-    inline void DoPageFlushes();
+    /** 
+     * Run necessary page evictions
+     * Sets mEvictFailure on BaseException
+     */
+    inline void DoPageEvictions() noexcept;
+    /** 
+     * Run necessary page flushes
+     * Sets mFlushFailure on BaseException
+     */
+    inline void DoPageFlushes() noexcept;
 
-    /** Calls flush on a page and updates the bandwidth measurement */
+    /** 
+     * Calls flush on a page and updates the bandwidth measurement
+     * @throws BackendException for backend issues
+     */
     template<class T>
     void FlushPage(PageManager& pageMgr, uint64_t index, const T& mgrLock);
 

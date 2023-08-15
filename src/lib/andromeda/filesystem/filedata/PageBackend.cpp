@@ -7,7 +7,6 @@
 #include "Page.hpp"
 #include "PageBackend.hpp"
 
-#include "andromeda/Semaphor.hpp"
 #include "andromeda/backend/BackendImpl.hpp"
 #include "andromeda/backend/RunnerInput.hpp"
 using Andromeda::Backend::WriteFunc;

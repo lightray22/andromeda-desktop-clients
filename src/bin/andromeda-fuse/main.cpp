@@ -13,12 +13,12 @@ using AndromedaFuse::FuseAdapter;
 #include "andromeda-fuse/FuseOptions.hpp"
 using AndromedaFuse::FuseOptions;
 
-#include "andromeda/BaseException.hpp"
-using Andromeda::BaseException;
 #include "andromeda/ConfigOptions.hpp"
 using Andromeda::ConfigOptions;
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/backend/BackendException.hpp"
+using Andromeda::Backend::BackendException;
 #include "andromeda/backend/BaseRunner.hpp"
 using Andromeda::Backend::BaseRunner;
 #include "andromeda/backend/BackendImpl.hpp"
@@ -140,7 +140,7 @@ int main(int argc, char** argv)
                 folder = PlainFolder::LoadByID(*backend, options.GetMountItemID()); break;
         }
     }
-    catch (const BaseException& ex)
+    catch (const BackendException& ex)
     {
         std::cout << ex.what() << std::endl;
         return static_cast<int>(ExitCode::BACKEND_INIT);

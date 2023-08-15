@@ -21,11 +21,17 @@ class BackendContext
 {
 public:
 
-    /** Create a new BackendContext from user input (sessionstore is nullptr) */
+    /** 
+     * Create a new BackendContext from user input (sessionstore is nullptr)
+     * @throws BackendException for backend issues
+     */
     BackendContext(const std::string& url, const std::string& username, 
         const std::string& password, const std::string& twofactor);
 
-    /** Create a new BackendContext from a known session and store ref */
+    /** 
+     * Create a new BackendContext from a known session and store ref
+     * @throws BackendException for backend issues
+     */
     explicit BackendContext(Andromeda::Backend::SessionStore& session);
 
     virtual ~BackendContext();

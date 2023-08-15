@@ -10,9 +10,9 @@ set(SOURCE_FILES
     StringUtilTest.cpp
     )
 
-option(MUTEX_TESTS "Build mutex tests" OFF)
+option(TESTS_MUTEX "Build mutex tests" OFF)
 # These have timing assumptions, not reliable
-if (MUTEX_TESTS)
+if (TESTS_MUTEX)
     list(APPEND SOURCE_FILES
         SemaphorTest.cpp
         SharedMutexTest.cpp
