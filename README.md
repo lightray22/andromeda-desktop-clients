@@ -68,7 +68,7 @@ Some other dependencies will be fetched by cmake and built in-tree.
 
 The following platforms (GCC 9.4+, Clang 10+) are targeted for support and should work:
 
-- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download)), [SQLite3](https://www.sqlite.org/download.html), [Sodium](https://download.libsodium.org/libsodium/releases/)
+- Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download), [SQLite3](https://www.sqlite.org/download.html), [Sodium](https://download.libsodium.org/libsodium/releases/))
   - You may need to add `OPENSSL_ROOT_DIR` to your system environment
   - You may need to add `SQLITE3_ROOT_DIR` to your system environment
     - To build sqlite3.lib, follow [this gist](https://gist.github.com/zeljic/d8b542788b225b1bcb5fce169ee28c55)
@@ -126,9 +126,7 @@ flag rather than an option will attempt to use $PATH to find the server.
 
 When running via CLI by default it will just use the `auth_sudouser` option with the server
 rather than creating and using a session.  This will make storages with encrypted credentials
-inaccessible.  You can force the use of a session with `--force-session`.  This option has the
-downside of potentially exposing authentication details to other processes as they are placed
-on the command line in cleartext.
+inaccessible.  You can force the use of a session with `--force-session`.
 
 There is also a `mount.andromeda` wrapper for mounting via posix `mount` or `fstab`.
 The mount wrapper uses the `dev path [-o opt1,opt2]` format and cannot prompt interactively.

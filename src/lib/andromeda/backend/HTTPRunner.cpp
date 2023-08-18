@@ -189,7 +189,7 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
         else str << httplib::to_string(result.error());
 
         str << " error, attempt " << attempt+1 << " of " 
-            << (mFailureState ? 1 : mBaseOptions.maxRetries+1);
+            << ((mFailureState && attempt==0) ? 1 : mBaseOptions.maxRetries+1);
     });
 
     if (retry)

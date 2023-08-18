@@ -1,8 +1,10 @@
 #ifndef LIBA2_DEBUG_H_
 #define LIBA2_DEBUG_H_
 
+#include <fstream>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <string>
 #include <unordered_set>
 
@@ -29,8 +31,14 @@ public:
     /** Sets the configured global debug level */
     static void SetLevel(Level level){ sLevel = level; }
 
-    /** Adds the given component name to the filter set */
+    /** Adds the given component name to the filter set - NOT thread safe */
     static void AddFilter(const std::string& name){ sPrefixes.emplace(name); }
+
+    /** Adds an output stream reference to send output to - NOT thread safe */
+    static void AddStream(std::ostream& stream){ sStreams.emplace_back(&stream); }
+
+    /** Adds a file output stream to send output to - NOT thread safe */
+    static void AddStream(const std::string& path);
 
     /**
      * @param prefix to use for all prints
@@ -103,6 +111,11 @@ private:
 
     /** Set of prefixes to filter printing */
     static std::unordered_set<std::string> sPrefixes;
+
+    /** List of streams to output to */
+    static std::list<std::ostream*> sStreams;
+    /** Subset list of streams that we own */
+    static std::list<std::ofstream> sFileStreams;
 };
 
 } // namespace Andromeda

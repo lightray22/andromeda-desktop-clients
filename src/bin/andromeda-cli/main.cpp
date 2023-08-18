@@ -31,6 +31,7 @@ enum class ExitCode
 
 int main(int argc, char** argv)
 {
+    Debug::AddStream(std::cerr);
     Debug debug("main",nullptr);
     
     HTTPOptions httpOptions;

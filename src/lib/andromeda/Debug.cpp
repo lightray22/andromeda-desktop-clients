@@ -3,7 +3,6 @@
 
 #include <chrono>
 #include <iomanip>
-#include <fstream>
 #include <mutex>
 #include <thread>
 
@@ -22,8 +21,15 @@ steady_clock::time_point sStart { steady_clock::now() };
 Debug::Level Debug::sLevel { Debug::Level::ERRORS };
 std::unordered_set<std::string> Debug::sPrefixes;
 
-#define sOutstr std::cerr
-//static std::ofstream sOutstr("/tmp/debug.log", std::ofstream::out);
+std::list<std::ostream*> Debug::sStreams;
+std::list<std::ofstream> Debug::sFileStreams;
+
+/*****************************************************/
+void Debug::AddStream(const std::string& path)
+{ 
+    sFileStreams.emplace_back(path, std::ofstream::out);
+    sStreams.emplace_back(&sFileStreams.back());
+}
 
 /*****************************************************/
 void Debug::PrintIf(const Debug::StreamFunc& strfunc)
@@ -39,18 +45,23 @@ void Debug::Print(const Debug::StreamFunc& strfunc)
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
-    if (sLevel >= Level::DETAILS)
+    for (std::ostream* streamPtr : sStreams)
     {
-        sOutstr << "tid:" << std::this_thread::get_id() << " ";
+        std::ostream& stream { *streamPtr };
 
-        const duration<double> time { steady_clock::now() - sStart };
-        sOutstr << "time:" << time.count() << " ";
+        if (sLevel >= Level::DETAILS)
+        {
+            stream << "tid:" << std::this_thread::get_id() << " ";
 
-        if (mAddr == nullptr) { sOutstr << "static "; }
-        else { sOutstr << "obj:" << mAddr << " "; }
+            const duration<double> time { steady_clock::now() - sStart };
+            stream << "time:" << time.count() << " ";
+
+            if (mAddr == nullptr) { stream << "static "; }
+            else { stream << "obj:" << mAddr << " "; }
+        }
+
+        stream << mPrefix << ": "; strfunc(stream); stream << std::endl;
     }
-
-    sOutstr << mPrefix << ": "; strfunc(sOutstr); sOutstr << std::endl;
 }
 
 /*****************************************************/
