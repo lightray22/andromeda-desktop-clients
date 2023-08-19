@@ -73,7 +73,7 @@ void PageManager::WritePage(const char* buffer, const uint64_t index, const size
     const uint64_t pageStart { index*mPageSize }; // offset of the page start
     const uint64_t newFileSize = std::max(mFileSize, pageStart+offset+length);
 
-    const size_t pageSize { GetPageSize(index, newFileSize) };
+    const size_t pageSize { min64st(newFileSize-pageStart, mPageSize) };
     const bool partial { offset > 0 || length < pageSize };
 
     MDBG_INFO("... pageSize:" << pageSize << " newFileSize:" << newFileSize);
@@ -114,8 +114,7 @@ const Page& PageManager::GetPageRead(const uint64_t index, const SharedLock& thi
         if (!fetchSize) // must be between backend end and dirty write, create empty
         {
             MDBG_INFO("... create empty page");
-            Page& newPage { mPages.emplace(std::piecewise_construct, std::forward_as_tuple(index), 
-                std::forward_as_tuple(0, mBackend.GetPageAllocator())).first->second };
+            Page& newPage { mPages.try_emplace(index, 0, mBackend.GetPageAllocator()).first->second };
             
             ResizePage(newPage, mPageSize, false); // zeroize
             // hold pagesLock because if inform fails, we will remove this page
@@ -177,8 +176,7 @@ Page& PageManager::GetPageWrite(const uint64_t index, const size_t pageSize, con
         }
 
         MDBG_INFO("... create empty page");
-        Page& newPage { mPages.emplace(std::piecewise_construct, std::forward_as_tuple(index), 
-                std::forward_as_tuple(0, mBackend.GetPageAllocator())).first->second };
+        Page& newPage { mPages.try_emplace(index, 0, mBackend.GetPageAllocator()).first->second };
         ResizePage(newPage, pageSize, false); // zeroize
         InformNewPageWrite(index, newPage, true, thisLock);
         return newPage;
@@ -259,15 +257,6 @@ void PageManager::ResizePage(Page& page, const size_t pageSize, bool cacheMgr, c
         mCacheMgr->ResizePage(*this, page, thisLock);
         throw; // rethrow
     }
-}
-
-/*****************************************************/
-size_t PageManager::GetPageSize(const uint64_t index, const uint64_t fileSize) const
-{
-    // to prevent lots of re-allocations while writing sequentially, we will
-    // pre-allocate full pages for all pages other than the first.  Keeping the first
-    // page smaller allows caching many small files w/o wasting too much memory
-    return index ? mPageSize : min64st(fileSize, mPageSize);
 }
 
 /*****************************************************/
@@ -408,7 +397,8 @@ void PageManager::FetchPages(const uint64_t index, const size_t count) noexcept 
             [&](const uint64_t pageIndex, Page&& page)
         {
             // if we are reading a page that is smaller on the backend (dirty writes), might need to extend
-            const size_t realSize { GetPageSize(pageIndex, mFileSize) };
+            const uint64_t pageStart { index*mPageSize }; // offset of the page start
+            const size_t realSize { min64st(mFileSize-pageStart, mPageSize) };
             if (page.size() < realSize) ResizePage(page, realSize, false);
 
             const UniqueLock pagesLock(mPagesMutex);
@@ -676,7 +666,7 @@ void PageManager::RemoteChanged(const uint64_t backendSize, const SharedLockW& t
 /*****************************************************/
 void PageManager::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
 {
-    MDBG_INFO("(newSize:" << newSize << ")");
+    MDBG_INFO("(oldSize:" << mFileSize << ", newSize:" << newSize << ")");
 
     mPageBackend.Truncate(newSize, thisLock);
     mFileSize = newSize;
@@ -686,17 +676,16 @@ void PageManager::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
         if (!newSize || it->first > (newSize-1)/mPageSize) // remove past end
         {
             MDBG_INFO("... erase page:" << it->first);
-
             if (mCacheMgr) mCacheMgr->RemovePage(it->second);
             it = mPages.erase(it);
         }
-        else if (it->first == (newSize-1)/mPageSize) // resize new last page
+        else if (it->first == (newSize-1)/mPageSize) // the newly last page
         {
-            const size_t pageSize { GetPageSize(it->first, newSize) };
+            const size_t pageSize { static_cast<size_t>(newSize - it->first*mPageSize) };
             MDBG_INFO("... resize new last page:" << it->first << " size:" << pageSize);
             ResizePage(it->second, pageSize, true, &thisLock); ++it;
         }
-        else if (it->second.size() != mPageSize) // resize old last page
+        else if (it->second.size() != mPageSize) // all non-last pages should be full size
         {
             MDBG_INFO("... resize old last page:" << it->first << " size:" << mPageSize);
             ResizePage(it->second, mPageSize, true, &thisLock); ++it;

@@ -164,18 +164,20 @@ void PageBackend::FlushCreate(const SharedLockW& thisLock)
         mFile.Refresh(mCreateFunc(mFile.GetName(thisLock)),thisLock);
         mBackendExists = true;
     }
+    else { MDBG_INFO("... !mBackendExists, ignoring"); }
 }
 
 /*****************************************************/
 void PageBackend::Truncate(const uint64_t newSize, const SharedLockW& thisLock)
 {
-    MDBG_INFO("(newSize:" << newSize << ")");
+    MDBG_INFO("(oldSize:" << mBackendSize << ", newSize:" << newSize << ")");
 
-    if (mBackendExists)
+    if (mBackendExists && mBackendSize != newSize)
     {
         mBackend.TruncateFile(mFileID, newSize); 
         mBackendSize = newSize;
     }
+    else { MDBG_INFO("... !mBackendExists or unchanged, ignoring"); }
 }
 
 } // namespace Filedata

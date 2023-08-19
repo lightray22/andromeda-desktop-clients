@@ -170,7 +170,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
             PageInfo pageInfo { mPageQueue.back().second }; // copy
 
             lock.unlock(); // don't hold lock during evict
-            pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, *mgrLock);
+            pageInfo.mPageMgr.EvictPage(pageInfo.mPageIndex, *mgrLock); // throws
             lock.lock();
         }
     }
@@ -213,7 +213,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
             PageInfo pageInfo { mDirtyQueue.back().second }; // copy
 
             lock.unlock(); // don't hold lock during flush
-            FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, *mgrLock);
+            FlushPage(pageInfo.mPageMgr, pageInfo.mPageIndex, *mgrLock); // throws
             lock.lock();
         }
     }
@@ -242,7 +242,7 @@ bool CacheManager::ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock
     if (mCurrentMemory > mCacheOptions.memoryLimit && mEvictFailure != nullptr)
         throw MemoryException("evict");
 
-    // cleanup threads could be waiting on our mgrLock
+    // cleanup threads could be waiting on our mgrLock, see GetPageManagerLock
     if (mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr) return false;
 
     return (mCurrentMemory > mCacheOptions.memoryLimit);
@@ -254,7 +254,7 @@ bool CacheManager::ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock
     if (mCurrentDirty > mDirtyLimit && mFlushFailure != nullptr)
         throw MemoryException("flush");
 
-    // cleanup threads could be waiting on our mgrLock
+    // cleanup threads could be waiting on our mgrLock, see GetPageManagerLock
     if (mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr) return false;
 
     return (mCurrentDirty > mDirtyLimit);
@@ -335,6 +335,28 @@ void CacheManager::PrintDirtyStatus(const std::string& fname, const UniqueLock& 
 }
 
 /*****************************************************/
+SharedLockW CacheManager::GetPageManagerLock(PageManager& pageMgr, PageManager*& waitPtr)
+{
+    { // let waiters on this file continue so we can lock it
+        const UniqueLock lock(mMutex);
+        waitPtr = &pageMgr;
+
+        // ShouldAwait() will check both to avoid deadlock
+        mEvictWaitCV.notify_all();
+        mFlushWaitCV.notify_all();
+    }
+
+    SharedLockW mgrLock { pageMgr.GetWriteLock() };
+    
+    { // have the mgrLock now
+        const UniqueLock lock(mMutex);
+        waitPtr = nullptr;
+    }
+
+    return mgrLock;
+}
+
+/*****************************************************/
 void CacheManager::EvictThread()
 {
     MDBG_INFO("()");
@@ -387,12 +409,8 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
 {
     MDBG_INFO("()");
 
-    typedef std::list<std::pair<const Page&, PageInfo>> EvictList;
-    // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLocked, EvictList> EvictSet;
-    std::map<PageManager*, EvictSet> currentEvicts;
-
     // FIRST build a list of pages to evict
+    PageMgrPageMap currentEvicts;
     { // lock scope
         const UniqueLock lock(mMutex);
 
@@ -407,9 +425,10 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
             const Page& pageRef { *pageIt->first };
             PageInfo& pageInfo { pageIt->second };
 
-            const decltype(currentEvicts)::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
-            EvictSet& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), EvictList())).first->second };
+            const PageMgrPageMap::iterator evictIt { currentEvicts.find(&pageInfo.mPageMgr) };
+            // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
+            LockedPageList& evictSet { (evictIt != currentEvicts.end()) ? evictIt->second : currentEvicts.emplace(
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
             if (!evictSet.first) // scope lock
                 RemovePage(pageRef, lock); // being deleted
@@ -422,25 +441,13 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
     }
 
     // THEN evict all the pages in the set
-    for (decltype(currentEvicts)::iterator evictIt { currentEvicts.begin() }; evictIt != currentEvicts.end(); )
+    for (PageMgrPageMap::iterator evictIt { currentEvicts.begin() }; evictIt != currentEvicts.end(); )
     {
-        EvictSet& evictSet { evictIt->second };
+        LockedPageList& evictSet { evictIt->second };
         MDBG_INFO("... evicting pages:" << evictSet.second.size() << " pageMgr:" << evictIt->first);
-        
-        { // let waiters on this file continue so we can lock it
-            const UniqueLock lock(mMutex);
-            mSkipEvictWait = evictIt->first;
-            mEvictWaitCV.notify_all();
-        }
+        const SharedLockW mgrLock { GetPageManagerLock(*evictIt->first, mSkipEvictWait) };
 
-        const SharedLockW mgrLock { evictIt->first->GetWriteLock() };
-        
-        { // have the mgrLock now
-            const UniqueLock lock(mMutex);
-            mSkipEvictWait = nullptr;
-        }
-
-        for (const EvictList::value_type& pagePair : evictSet.second)
+        for (const PageList::value_type& pagePair : evictSet.second)
         {
             const Page& pageRef { pagePair.first };
             const PageInfo& pageInfo { pagePair.second };
@@ -451,10 +458,10 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
                 const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
                 
-                // move the failed page to the end so we try a different (maybe non-dirty) one next to prevent memory runaway
-                if (RemovePage(pageRef, lock)) // only if it's still enqueued (lock was re-acquired)
-                    EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, 
-                        pageRef, pageRef.isDirty(), lock);
+                // move the failed page to the end so we try a different (maybe non-dirty) one next
+                // evicting a non-dirty page doesn't use the backend so we can likely still evict those
+                if (RemovePage(pageRef, lock)) // only if it's still enqueued (lock was released above)
+                    EnqueuePage(pageInfo.mPageMgr, pageInfo.mPageIndex, pageRef, pageRef.isDirty(), lock);
 
                 mEvictFailure = std::current_exception();
                 mEvictWaitCV.notify_all();
@@ -474,12 +481,8 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
 {
     MDBG_INFO("()");
 
-    typedef std::list<std::pair<const Page&, PageInfo>> FlushList;
-    // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
-    typedef std::pair<PageManager::ScopeLocked, FlushList> FlushSet;
-    std::map<PageManager*, FlushSet> currentFlushes;
-
-    // FIRST build a list of pages to flush
+    // FIRST build a list of pages to evict
+    PageMgrPageMap currentFlushes;
     { // lock scope
         const UniqueLock lock(mMutex);
 
@@ -493,9 +496,10 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
             const Page& pageRef { *pageIt->first };
             PageInfo& pageInfo { pageIt->second };
 
-            const decltype(currentFlushes)::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
-            FlushSet& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
-                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), FlushList())).first->second };
+            const PageMgrPageMap::iterator flushIt { currentFlushes.find(&pageInfo.mPageMgr) };
+            // get ScopeLock to make sure pageManager stays in scope between mMutex release and getting pageMgrW lock
+            LockedPageList& flushSet { (flushIt != currentFlushes.end()) ? flushIt->second : currentFlushes.emplace(
+                &pageInfo.mPageMgr, std::make_pair(pageInfo.mPageMgr.TryLockScope(), PageList())).first->second };
 
             if (!flushSet.first) // scope lock
                 RemovePage(pageRef, lock); // being deleted
@@ -508,25 +512,13 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
     }
 
     // THEN flush all the pages in the set
-    for (decltype(currentFlushes)::iterator flushIt { currentFlushes.begin() }; flushIt != currentFlushes.end(); )
+    for (PageMgrPageMap::iterator flushIt { currentFlushes.begin() }; flushIt != currentFlushes.end(); )
     {
-        FlushSet& flushSet { flushIt->second };
+        LockedPageList& flushSet { flushIt->second };
         MDBG_INFO("... flushing pages:" << flushSet.second.size() << " pageMgr:" << flushIt->first);
+        const SharedLockW mgrLock { GetPageManagerLock(*flushIt->first, mSkipFlushWait) };
 
-        { // let waiters on this file continue so we can lock it
-            const UniqueLock lock(mMutex);
-            mSkipFlushWait = flushIt->first;
-            mFlushWaitCV.notify_all();
-        }
-
-        const SharedLockW mgrLock { flushIt->first->GetWriteLock() };
-        
-        { // have the mgrLock now
-            const UniqueLock lock(mMutex);
-            mSkipFlushWait = nullptr;
-        }
-
-        for (const FlushList::value_type& pagePair : flushSet.second)
+        for (const PageList::value_type& pagePair : flushSet.second)
         {
             const PageInfo& pageInfo { pagePair.second };
 
@@ -549,13 +541,12 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
 }
 
 /*****************************************************/
-template<class T>
-void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const T& mgrLock)
+void CacheManager::FlushPage(PageManager& pageMgr, const uint64_t index, const SharedLockW& mgrLock)
 {
     const std::chrono::steady_clock::time_point timeStart { std::chrono::steady_clock::now() };
     const size_t written { pageMgr.FlushPage(index, mgrLock) };
 
-    const UniqueLock lock(mMutex); // protect mDirtyLimit
+    const UniqueLock lock(mMutex); // protect mBandwidth/mDirtyLimit
     mDirtyLimit = mBandwidth.UpdateBandwidth(written, std::chrono::steady_clock::now()-timeStart);
 }
 

@@ -253,7 +253,7 @@ void BackendImpl::Authenticate(const std::string& username, const std::string& p
         resp.at("client").at("session").at("id").get_to(mSessionID);
         resp.at("client").at("session").at("authkey").get_to(mSessionKey);
 
-        MDBG_INFO("... accountID:" << mAccountID << " sessionID:" << mSessionID << " sessionKey:" << mSessionKey);
+        MDBG_INFO("... accountID:" << mAccountID << " sessionID:" << mSessionID);
     }
     catch (const nlohmann::json::exception& ex) {
         throw JSONErrorException(ex.what()); }

@@ -60,7 +60,7 @@ public:
     /** Returns true iff the file exists on the backend */
     [[nodiscard]] bool ExistsOnBackend(const SharedLock& thisLock) const { return mBackendExists; }
 
-    /** Returns the file size on the backend */
+    /** Returns the file size on the backend (if it exists) */
     [[nodiscard]] uint64_t GetBackendSize(const SharedLock& thisLock) const { return mBackendSize; }
 
     /** Inform us that the size on the backend has changed */
@@ -74,6 +74,7 @@ public:
      * @param index the page index to start from
      * @param count the number of pages to read
      * @param pageHandler callback for handling constructed pages
+     * @return the total number of bytes read from the backend
      * @throws BackendException for backend issues
      */
     size_t FetchPages(uint64_t index, size_t count, const PageHandler& pageHandler, const SharedLock& thisLock);
@@ -107,7 +108,7 @@ private:
 
     /** The size of each page - see description in ConfigOptions */
     const size_t mPageSize;
-    /** The file size as far as the backend knows */
+    /** The file size as far as the backend knows (0 if it doesn't exist) */
     uint64_t mBackendSize;
 
     /** true iff the file has been created on the backend (false if waiting for flush) */

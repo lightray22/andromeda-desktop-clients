@@ -7,14 +7,17 @@
 #include <cstdint>
 #include <exception>
 #include <list>
+#include <map>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 
 #include "BandwidthMeasure.hpp"
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
+#include "andromeda/ScopeLocked.hpp"
 #include "andromeda/SharedMutex.hpp"
 #include "andromeda/filesystem/Item.hpp"
 
@@ -49,6 +52,7 @@ public:
     /** If true, start the cleanup threads immediately */
     explicit CacheManager(const CacheOptions& cacheOptions, bool startThreads = true);
 
+    /** Stop cleanup threads and destruct - ALL page activity must be stopped! */
     virtual ~CacheManager();
     DELETE_COPY(CacheManager)
     DELETE_MOVE(CacheManager)
@@ -161,6 +165,12 @@ private:
     /** Send some stats about the dirty memory to debug */
     void PrintDirtyStatus(const std::string& fname, const UniqueLock& lock);
 
+    /**
+     * Returns an exclusive lock for the given page manager, with deadlock avoidance
+     * @param waitPtr ref to mSkipEvictWait or mSkipFlushWait for deadlock avoidable
+     */
+    SharedLockW GetPageManagerLock(PageManager& pageMgr, PageManager*& waitPtr);
+
     /** Run the page evict task in a loop while mRunCleanup */
     void EvictThread();
     /** Run the page flush task in a loop while mRunCleanup */
@@ -168,12 +178,12 @@ private:
 
     /** 
      * Run necessary page evictions
-     * Sets mEvictFailure on BaseException
+     * Sets mEvictFailure on BackendException
      */
     inline void DoPageEvictions() noexcept;
     /** 
      * Run necessary page flushes
-     * Sets mFlushFailure on BaseException
+     * Sets mFlushFailure on BackendException
      */
     inline void DoPageFlushes() noexcept;
 
@@ -181,8 +191,7 @@ private:
      * Calls flush on a page and updates the bandwidth measurement
      * @throws BackendException for backend issues
      */
-    template<class T>
-    void FlushPage(PageManager& pageMgr, uint64_t index, const T& mgrLock);
+    void FlushPage(PageManager& pageMgr, uint64_t index, const SharedLockW& mgrLock);
 
     mutable Debug mDebug;
 
@@ -203,6 +212,11 @@ private:
     using PageQueue = OrderedMap<const Page*, PageInfo>;
     PageQueue mPageQueue;
     PageQueue mDirtyQueue;
+
+    // structures used in Page Evict/Flush
+    using PageList = std::list<std::pair<const Page&, PageInfo>>;
+    using LockedPageList = std::pair<ScopeLocked<PageManager>, PageList>;
+    using PageMgrPageMap = std::map<PageManager*, LockedPageList>;
 
     /** Set to false to stop the cleanup threads */
     std::atomic<bool> mRunCleanup { true };

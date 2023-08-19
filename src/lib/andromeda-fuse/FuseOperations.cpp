@@ -283,6 +283,7 @@ namespace { void item_stat(const Item::ScopeLocked& item, const SharedLockR& ite
 /*****************************************************/
 int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
     static const std::string fname(__func__);
@@ -314,6 +315,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
     static const std::string fname(__func__);
@@ -339,6 +341,7 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf)
 int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -355,6 +358,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
 #endif // LIBFUSE2
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     static const std::string fname(__func__);
@@ -443,6 +447,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 /*****************************************************/
 int FuseOperations::unlink(const char* path)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -460,6 +465,7 @@ int FuseOperations::unlink(const char* path)
 /*****************************************************/
 int FuseOperations::rmdir(const char* path)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -522,6 +528,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 /*****************************************************/
 int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
@@ -538,6 +545,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 /*****************************************************/
 int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
 
     if (off < 0) return -EINVAL;
@@ -559,6 +567,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 /*****************************************************/
 int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -573,6 +582,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 /*****************************************************/
 int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -587,6 +597,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 /*****************************************************/
 int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
     return CatchAsErrno(__func__,[&]()->int
@@ -601,6 +612,7 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 /*****************************************************/
 int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ", flush:" << fi->flush << ")");
 
     // TODO this does not seem right.  At least check fi->flush? maybe lowlevel only
@@ -622,6 +634,7 @@ int FuseOperations::truncate(const char* path, off_t size)
 int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
+    if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", size:" << size << ")");
 
     if (size < 0) return -EINVAL;
@@ -642,6 +655,7 @@ int FuseOperations::chmod(const char* path, mode_t mode)
 int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
+    if (path == nullptr) return -EINVAL;
     const FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChmod) return -ENOTSUP;
 
@@ -661,6 +675,7 @@ int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
 int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
 #endif // LIBFUSE2
 {
+    if (path == nullptr) return -EINVAL;
     const FuseAdapter& fuseAdapter { GetFuseAdapter() };
     if (!fuseAdapter.GetOptions().fakeChown) return -ENOTSUP;
 

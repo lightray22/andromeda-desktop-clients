@@ -180,12 +180,6 @@ private:
      */
     void ResizePage(Page& page, size_t pageSize, bool cacheMgr, const SharedLockW* thisLock = nullptr);
 
-    /**
-     * Returns the size of the page that should be used at the given index.
-     * May be larger than the actual required size, to minimize re-allocations
-     */
-    [[nodiscard]] size_t GetPageSize(uint64_t index, uint64_t fileSize) const;
-
     /** Returns true if the page at the given index is pending download */
     bool isFetchPending(uint64_t index, const UniqueLock& pagesLock);
 
