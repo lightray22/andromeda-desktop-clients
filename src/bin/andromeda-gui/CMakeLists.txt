@@ -55,15 +55,20 @@ set_target_properties(andromeda-gui PROPERTIES
     MACOSX_BUNDLE TRUE
 )
 
+target_sources(andromeda-gui PRIVATE resources/resources.qrc)
+
 # https://doc.qt.io/qt-6/appicon.html
 if (WIN32)
-    set(app_icon_resource_windows qtgui/resources/andromeda-gui.rc)
+    set(app_icon_resource_windows resources/andromeda-gui.rc)
     target_sources(andromeda-gui PRIVATE ${app_icon_resource_windows})
 elseif (APPLE)
     set(MACOSX_BUNDLE_ICON_FILE andromeda.icns)
-    set(app_icon_macos qtgui/resources/andromeda.icns)
+    set(app_icon_macos resources/andromeda.icns)
     set_source_files_properties(${app_icon_macos} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     target_sources(andromeda-gui PRIVATE ${app_icon_macos})
+elseif (LINUX)
+    install(FILES resources/andromeda-gui.desktop DESTINATION share/applications)
+    install(FILES resources/andromeda.png DESTINATION share/icons/hicolor/128x128/apps)
 endif()
 
 if (WIN32 OR APPLE)

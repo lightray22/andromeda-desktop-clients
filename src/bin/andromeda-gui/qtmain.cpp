@@ -78,6 +78,8 @@ int main(int argc, char** argv)
     DDBG_INFO("()");
 
     QApplication application(argc, argv);
+    application.setApplicationName("andromeda-gui");
+    application.setApplicationDisplayName("Andromeda Sync");
 
     const std::string dataPath { QStandardPaths::writableLocation(
         QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty

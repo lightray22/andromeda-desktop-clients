@@ -14,5 +14,3 @@ set(SOURCE_FILES
     )
 
 target_sources(andromeda-gui PRIVATE ${SOURCE_FILES})
-
-target_sources(andromeda-gui PRIVATE resources/resources.qrc)
