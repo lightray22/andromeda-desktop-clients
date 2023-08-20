@@ -76,7 +76,7 @@ std::string BackendImpl::GetName(bool human) const
 /*****************************************************/
 void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname)
 {
-    str << ++sReqCount << " " << myfname << "()"
+    str << sReqCount << " " << myfname << "()"
         << " app:" << input.app << " action:" << input.action;
     
     for (const auto& [key,val] : input.plainParams)
@@ -105,7 +105,7 @@ void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& st
 }
 
 /** Syntactic sugar to print and input object and current function name to debug */
-#define MDBG_BACKEND(input) { static const std::string myfname(__func__); \
+#define MDBG_BACKEND(input) { ++sReqCount; static const std::string myfname(__func__); \
     mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname); }); }
 
 /*****************************************************/
@@ -623,8 +623,8 @@ std::string BackendImpl::ReadFile(const std::string& id, const uint64_t offset, 
 {
     if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return ""; }
 
-    std::string fstart(std::to_string(offset));
-    std::string flast(std::to_string(offset+length-1));
+    const std::string fstart(std::to_string(offset));
+    const std::string flast(std::to_string(offset+length-1));
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
@@ -643,8 +643,8 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
 {
     if (!length) { MDBG_ERROR("() ERROR 0 length"); assert(false); return; }
 
-    std::string fstart(std::to_string(offset));
-    std::string flast(std::to_string(offset+length-1));
+    const std::string fstart(std::to_string(offset));
+    const std::string flast(std::to_string(offset+length-1));
 
     MDBG_INFO("(id:" << id << " fstart:" << fstart << " flast:" << flast << ")");
 
@@ -654,12 +654,15 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
         {{"fstart", fstart}, {"flast", flast}}}, // dataParams
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
+        if (soffset+buflen > length) // too much data
+            throw ReadSizeException(length, offset+buflen);
+        
+        read = std::max(read, soffset+buflen);
         userFunc(soffset, buf, buflen); 
-        read += buflen;
     }}; MDBG_BACKEND(input);
 
     RunAction_StreamOut(input);
-    if (read != length) throw ReadSizeException(length, read);
+    if (read < length) throw ReadSizeException(length, read);
 }
 
 namespace { // anonymous

@@ -9,6 +9,7 @@
 #include "Page.hpp"
 #include "PageManager.hpp"
 #include "andromeda/BaseException.hpp"
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/backend/BackendException.hpp"
 using Andromeda::Backend::BackendException;
 #include "andromeda/backend/BackendImpl.hpp"
@@ -278,7 +279,7 @@ std::exception_ptr PageManager::isFetchFailed(const uint64_t index, const Unique
 /*****************************************************/
 void PageManager::RemovePendingFetch(const uint64_t index, bool idxOnly, const UniqueLock& pagesLock)
 {
-    MDBG_INFO("(index:" << index << ")");
+    MDBG_INFO("(index:" << index << " idxOnly:" << BOOLSTR(idxOnly) << ")");
 
     for (PendingMap::iterator pend { mPendingPages.begin() }; 
         pend != mPendingPages.end(); ++pend)
@@ -422,10 +423,11 @@ void PageManager::FetchPages(const uint64_t index, const size_t count) noexcept 
         const UniqueLock pagesLock(mPagesMutex);
 
         const std::exception_ptr exptr { std::current_exception() };
-        for (uint64_t eidx { curIndex }; eidx < curIndex+count; ++eidx)
+        for (uint64_t eidx { curIndex }; eidx < index+count; ++eidx)
             mFailedPages[eidx] = exptr; // shared_ptr
 
-        RemovePendingFetch(curIndex, false, pagesLock);
+        if (curIndex < index+count) // exception can happen after reading
+            RemovePendingFetch(curIndex, false, pagesLock);
     }
     
     MDBG_INFO("... thread returning!");

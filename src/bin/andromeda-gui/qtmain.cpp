@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     systemTray.show();
     mainWindow.show();
 
-    int retval = application.exec();
+    const int retval = application.exec();
     DDBG_INFO("... return " << retval);
     return retval;
 }

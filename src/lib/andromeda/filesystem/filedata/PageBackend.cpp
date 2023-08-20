@@ -81,12 +81,15 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
 
                 if (pwOffset+pwLength == curPage->size()) // page is done
                 {
+                    mDebug.Info([&](std::ostream& str){ str << fname 
+                        << "... pageHandler(curIndex:" << curIndex << ")"; });
+
                     pageHandler(curIndex, std::move(*curPage));
                     curPage.reset(); ++curIndex;
                 }
             }
-            else mDebug.Info([&](std::ostream& str){ 
-                str << fname << "... old read, ignoring"; });
+            else mDebug.Info([&](std::ostream& str){ // can happen on retries
+                str << fname << "... wrong page index, ignoring"; });
 
             rbuf += pwLength; rbyte += pwLength;
         }
