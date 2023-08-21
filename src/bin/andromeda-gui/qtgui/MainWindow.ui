@@ -22,9 +22,6 @@
     <height>300</height>
    </size>
   </property>
-  <property name="windowTitle">
-   <string>Andromeda</string>
-  </property>
   <property name="windowIcon">
    <iconset resource="resource.qrc">
     <normaloff>:/andromeda.png</normaloff>:/andromeda.png</iconset>

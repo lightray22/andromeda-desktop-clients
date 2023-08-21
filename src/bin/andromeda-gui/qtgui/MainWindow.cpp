@@ -222,7 +222,7 @@ void MainWindow::ShowAbout()
     str << "Andromeda GUI v" << ANDROMEDA_VERSION << std::endl;
     str << "License: GNU GPLv3" << std::endl;
 
-    QMessageBox::about(this, "Andromeda GUI", str.str().c_str());
+    QMessageBox::about(this, "About", str.str().c_str());
 }
 
 } // namespace QtGui
