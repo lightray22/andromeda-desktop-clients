@@ -173,7 +173,7 @@ void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv
             std::ifstream& file { mOpenFiles.emplace_back(val, std::ios::binary) };
 
             std::string filename { getNextValue(args, i) }; 
-            if (filename.empty()) filename = val;
+            if (filename.empty()) filename = StringUtil::splitPath(val).second;
 
             inStreams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
                 RunnerInput_StreamIn::FromStream(file) });

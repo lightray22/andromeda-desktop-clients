@@ -655,7 +655,7 @@ void BackendImpl::ReadFile(const std::string& id, const uint64_t offset, const s
         [&](const size_t soffset, const char* buf, const size_t buflen)->void
     {
         if (soffset+buflen > length) // too much data
-            throw ReadSizeException(length, offset+buflen);
+            throw ReadSizeException(length, soffset+buflen);
         
         read = std::max(read, soffset+buflen);
         userFunc(soffset, buf, buflen); 
