@@ -160,10 +160,10 @@ private:
     void RemoveDirty(const Page& page, const UniqueLock& lock);
 
     /** Send some stats about memory to debug */
-    void PrintStatus(const std::string& fname, const UniqueLock& lock);
+    void PrintStatus(const char* fname, const UniqueLock& lock);
 
     /** Send some stats about the dirty memory to debug */
-    void PrintDirtyStatus(const std::string& fname, const UniqueLock& lock);
+    void PrintDirtyStatus(const char* fname, const UniqueLock& lock);
 
     /**
      * Returns an exclusive lock for the given page manager, with deadlock avoidance

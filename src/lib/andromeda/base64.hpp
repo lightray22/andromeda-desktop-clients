@@ -19,8 +19,8 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 namespace base64
 {
-	inline static const char kEncodeLookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // NOLINT(*-avoid-c-arrays)
-	inline static const char kPadCharacter = '=';
+	static const char kEncodeLookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // NOLINT(*-avoid-c-arrays)
+	static const char kPadCharacter = '=';
 
 	using byte = std::uint8_t;
 

@@ -180,7 +180,7 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
 {
     MDBG_INFO("(retry:" << retry << ")");
 
-    static const std::string fname(__func__);
+    const char* const fname { __func__ };
     mDebug.Error([&](std::ostream& str)
     {
         str << fname << "... ";

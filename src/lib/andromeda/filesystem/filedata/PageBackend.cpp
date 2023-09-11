@@ -58,7 +58,7 @@ size_t PageBackend::FetchPages(const uint64_t index, const size_t count,
     uint64_t curIndex { index };
     std::unique_ptr<Page> curPage;
 
-    static const std::string fname(__func__); // for lambda
+    const char* const fname { __func__ }; // for lambda
     mBackend.ReadFile(mFileID, pageStart, readSize, 
         [&](const size_t roffset, const char* rbuf, const size_t rlength)->void
     {

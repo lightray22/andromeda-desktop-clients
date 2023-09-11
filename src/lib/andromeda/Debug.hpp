@@ -69,11 +69,11 @@ public:
     }
 
     /** Syntactic sugar to send the current function name and strcode to debug (error) */
-    #define DBG_ERROR(debug, strcode) { static const std::string myfname(__func__); \
+    #define DBG_ERROR(debug, strcode) { const char* const myfname { __func__ }; \
         debug.Error([&](std::ostream& str){ str << myfname << strcode; }); }
 
     /** Syntactic sugar to send the current function name and strcode to debug (info) */
-    #define DBG_INFO(debug, strcode) { static const std::string myfname(__func__); \
+    #define DBG_INFO(debug, strcode) { const char* const myfname { __func__ }; \
         debug.Info([&](std::ostream& str){ str << myfname << strcode; }); }
 
     #define DDBG_ERROR(strfunc) DBG_ERROR(debug, strfunc)

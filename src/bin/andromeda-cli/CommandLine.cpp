@@ -163,17 +163,17 @@ void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv
             param.pop_back(); if (param.empty()) throw BaseOptions::BadUsageException(
                 "empty % key at action arg "+std::to_string(i));
                 
-            const std::string val { getNextValue(args, i) };
-            if (val.empty()) throw BaseOptions::BadUsageException(
+            const std::string path { getNextValue(args, i) };
+            if (path.empty()) throw BaseOptions::BadUsageException(
                 "expected % value at action arg "+std::to_string(i));
 
-            if (!std::filesystem::exists(val) || std::filesystem::is_directory(val))
-                throw BaseOptions::Exception("Inaccessible file: "+val);
+            if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
+                throw BaseOptions::Exception("Inaccessible file: "+path);
 
-            std::ifstream& file { mOpenFiles.emplace_back(val, std::ios::binary) };
+            std::ifstream& file { mOpenFiles.emplace_back(path, std::ios::binary) };
 
             std::string filename { getNextValue(args, i) }; 
-            if (filename.empty()) filename = StringUtil::splitPath(val).second;
+            if (filename.empty()) filename = StringUtil::splitPath(path).second;
 
             inStreams.emplace(param, RunnerInput_StreamIn::FileStream{ filename, 
                 RunnerInput_StreamIn::FromStream(file) });

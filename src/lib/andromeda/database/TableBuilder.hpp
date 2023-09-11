@@ -74,7 +74,7 @@ public:
     }
 
     enum class OnDelete { RESTRICT, SET_NULL, CASCADE };
-    static constexpr const char* OnDeleteStrs[] { "RESTRICT", "SET NULL", "CASCADE" }; // NOLINT(*-avoid-c-arrays)
+    static constexpr std::array<const char*,3> OnDeleteStrs { "RESTRICT", "SET NULL", "CASCADE" };
 
     /**
      * Adds a foreign key constraint to the table

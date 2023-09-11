@@ -1,4 +1,4 @@
-#include <vector>
+#include <array>
 
 #include "nlohmann/json.hpp"
 
@@ -25,7 +25,7 @@ Config::Config(BackendImpl& backend) :
             throw APIVersionException(api);
 
         const nlohmann::json& appsHave { coreConfig.at("apps") };
-        static const std::vector<const char*> appsReq { "core", "accounts", "files" };
+        static constexpr std::array<const char*,3> appsReq { "core", "accounts", "files" };
 
         for (const std::string appReq : appsReq) // NOT string&
             if (appsHave.find(appReq) == appsHave.end())

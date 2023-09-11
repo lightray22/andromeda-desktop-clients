@@ -99,14 +99,13 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
     mPageQueue.enqueue_front(&page, pageInfo);
     mCurrentMemory += newSize;
 
-    static const std::string fname { __func__ };
-    PrintStatus(fname, lock);
+    PrintStatus(__func__, lock);
 
     if (dirty)
     {
         mDirtyQueue.enqueue_front(&page, pageInfo);
         mCurrentDirty += newSize;
-        PrintDirtyStatus(fname, lock);
+        PrintDirtyStatus(__func__, lock);
     }
 
     MDBG_INFO("... pageSize:" << page.size() 
@@ -121,7 +120,6 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
     MDBG_INFO("... pageSize:" << page.size() << " newSize:" << newSize);
 
     UniqueLock lock(mMutex);
-    static const std::string fname { __func__ };
 
     { const PageQueue::iterator itQueue { mPageQueue.find(&page) };
     if (itQueue != mPageQueue.end()) 
@@ -130,7 +128,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         mCurrentMemory += newSize-oldSize;
         itQueue->second.mPageSize = newSize;
 
-        PrintStatus(fname, lock);
+        PrintStatus(__func__, lock);
         
         if (newSize > oldSize)
             HandleMemory(pageMgr, page, true, lock, mgrLock);
@@ -143,7 +141,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
         mCurrentDirty += newSize-oldSize;
         itQueue->second.mPageSize = newSize;
         
-        PrintDirtyStatus(fname, lock);
+        PrintDirtyStatus(__func__, lock);
 
         if (newSize > oldSize)
             HandleDirtyMemory(pageMgr, page, true, lock, mgrLock);
@@ -165,8 +163,7 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         {
             MDBG_INFO("... memory limit! synchronous evict");
 
-            static const std::string fname { __func__ };
-            PrintStatus(fname, lock);
+            PrintStatus(__func__, lock);
             PageInfo pageInfo { mPageQueue.back().second }; // copy
 
             lock.unlock(); // don't hold lock during evict
@@ -208,8 +205,7 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         {
             MDBG_INFO("... dirty limit! synchronous flush");
 
-            static const std::string fname { __func__ };
-            PrintDirtyStatus(fname, lock);
+            PrintDirtyStatus(__func__, lock);
             PageInfo pageInfo { mDirtyQueue.back().second }; // copy
 
             lock.unlock(); // don't hold lock during flush
@@ -266,9 +262,8 @@ void CacheManager::RemovePage(const Page& page)
     const UniqueLock lock(mMutex);
     RemovePage(page, lock);
 
-    static const std::string fname { __func__ };
-    PrintStatus(fname, lock);
-    PrintDirtyStatus(fname, lock);
+    PrintStatus(__func__, lock);
+    PrintDirtyStatus(__func__, lock);
 }
 
 /*****************************************************/
@@ -277,8 +272,7 @@ void CacheManager::RemoveDirty(const Page& page)
     const UniqueLock lock(mMutex);
     RemoveDirty(page, lock);
 
-    static const std::string fname { __func__ };
-    PrintDirtyStatus(fname, lock);
+    PrintDirtyStatus(__func__, lock);
 }
 
 /*****************************************************/
@@ -311,7 +305,7 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 }
 
 /*****************************************************/
-void CacheManager::PrintStatus(const std::string& fname, const UniqueLock& lock)
+void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
 {
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " pages:" << mPageQueue.size() << ", memory:" << mCurrentMemory; });
@@ -323,7 +317,7 @@ void CacheManager::PrintStatus(const std::string& fname, const UniqueLock& lock)
 }
 
 /*****************************************************/
-void CacheManager::PrintDirtyStatus(const std::string& fname, const UniqueLock& lock)
+void CacheManager::PrintDirtyStatus(const char* const fname, const UniqueLock& lock)
 {
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
         << " dirtyPages:" << mDirtyQueue.size() << ", dirtyMemory:" << mCurrentDirty; });
@@ -414,8 +408,7 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
     { // lock scope
         const UniqueLock lock(mMutex);
 
-        static const std::string fname { __func__ };
-        PrintStatus(fname, lock);
+        PrintStatus(__func__, lock);
         size_t cleaned { 0 };
 
         PageQueue::reverse_iterator pageIt { mPageQueue.rbegin() };
@@ -486,8 +479,7 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
     { // lock scope
         const UniqueLock lock(mMutex);
 
-        static const std::string fname { __func__ };
-        PrintDirtyStatus(fname, lock);
+        PrintDirtyStatus(__func__, lock);
         size_t cleaned { 0 };
 
         PageQueue::reverse_iterator pageIt { mDirtyQueue.rbegin() };

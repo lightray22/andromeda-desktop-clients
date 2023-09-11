@@ -105,7 +105,7 @@ void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& st
 }
 
 /** Syntactic sugar to print and input object and current function name to debug */
-#define MDBG_BACKEND(input) { ++sReqCount; static const std::string myfname(__func__); \
+#define MDBG_BACKEND(input) { ++sReqCount; const char* const myfname(__func__); \
     mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname); }); }
 
 /*****************************************************/

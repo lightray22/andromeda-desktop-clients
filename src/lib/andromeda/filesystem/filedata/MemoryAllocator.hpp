@@ -65,7 +65,7 @@ private:
     [[nodiscard]] size_t calcPageSize() const;
 
     /** Updates and prints allocator statistics (debug) */
-    void stats(const std::string& fname, size_t pages, bool alloc);
+    void stats(const char* fname, size_t pages, bool alloc);
 
 #if DEBUG // sanity checks
     using AllocMap = std::map<void*, size_t, std::greater<>>;

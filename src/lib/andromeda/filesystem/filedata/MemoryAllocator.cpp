@@ -63,8 +63,7 @@ void* MemoryAllocator::alloc(size_t pages)
 }
 #endif // DEBUG
 
-    static const std::string fname { __func__ };
-    stats(fname, pages, true);
+    stats(__func__, pages, true);
     return ptr;
 }
 
@@ -120,12 +119,11 @@ void MemoryAllocator::free(void* const ptr, const size_t pages)
     munmap(ptr, pages*mPageSize);
 #endif // WIN32
 
-    static const std::string fname { __func__ };
-    stats(fname, pages, false);
+    stats(__func__, pages, false);
 }
 
 /*****************************************************/
-void MemoryAllocator::stats(const std::string& fname, const size_t pages, bool alloc) 
+void MemoryAllocator::stats(const char* const fname, const size_t pages, bool alloc) 
 {
     if (mDebug.GetLevel() >= Debug::Level::INFO)
     {

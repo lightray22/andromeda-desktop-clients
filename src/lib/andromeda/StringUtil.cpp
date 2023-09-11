@@ -11,15 +11,15 @@ namespace Andromeda {
 /*****************************************************/
 std::string StringUtil::Random(const size_t size)
 {
-    static const char chars[] = "0123456789abcdefghijkmnopqrstuvwxyz_"; // NOLINT(*-avoid-c-arrays)
+    static constexpr std::array<char,37> chars { "0123456789abcdefghijkmnopqrstuvwxyz_" }; // 36+NUL
     std::default_random_engine rng(std::random_device{}());
 
     // set the max to chars-2 as chars has a NUL term, and dist includes max
-    std::uniform_int_distribution<> dist(0, sizeof(chars)-2);
+    std::uniform_int_distribution<> dist(0, chars.size()-2);
 
     std::string retval; retval.resize(size);
     for (size_t i { 0 }; i < size; ++i)
-        retval[i] = chars[dist(rng)];
+        retval[i] = chars[static_cast<size_t>(dist(rng))];
     return retval;
 }
 
@@ -218,7 +218,7 @@ uint64_t StringUtil::stringToBytes(const std::string& stri)
 std::string StringUtil::bytesToString(uint64_t bytes)
 {
     size_t unit { 0 };
-    static const std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
+    static constexpr std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
     while (bytes >= bytesMul && !(bytes % bytesMul) && unit < units.size()-1) {
         ++unit; bytes /= bytesMul;
     }

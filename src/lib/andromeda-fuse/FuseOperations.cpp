@@ -63,7 +63,7 @@ inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-int CatchAsErrno(const std::string& fname, const std::function<int()>& func, const char* path)
+int CatchAsErrno(const char* const fname, const std::function<int()>& func, const char* path)
 {
     try { return func(); }
 
@@ -286,7 +286,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
-    static const std::string fname(__func__);
+    const char* const fname { __func__ };
     return CatchAsErrno(__func__,[&]()->int
     {
         File::ScopeLocked file { GetFileByPath(path) };
@@ -318,7 +318,7 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
 
-    static const std::string fname(__func__);
+    const char* const fname { __func__ };
     return CatchAsErrno(__func__,[&]()->int
     {
         const Folder::ScopeLocked folder { GetFolderByPath(path) };
@@ -361,7 +361,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
 
-    static const std::string fname(__func__);
+    const char* const fname { __func__ };
     return CatchAsErrno(__func__,[&]()->int
     {
         Folder::LockedItemMap items; { // lock scope
