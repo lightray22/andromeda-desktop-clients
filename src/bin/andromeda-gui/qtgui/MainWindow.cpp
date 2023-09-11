@@ -46,6 +46,7 @@ MainWindow::MainWindow(CacheManager& cacheManager, ObjectDatabase* objDatabase) 
     }
 
     if (GetCurrentTab() == nullptr) AddAccount();
+    else mQtUi->tabAccounts->setCurrentIndex(0);
 }
 
 /*****************************************************/
