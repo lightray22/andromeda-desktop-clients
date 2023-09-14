@@ -11,9 +11,15 @@ TEST_CASE("Random", "[StringUtil]")
     
     REQUIRE(StringUtil::Random(1).size() == 1);
     REQUIRE(StringUtil::Random(64).size() == 64);
-    REQUIRE(StringUtil::Random(65536).size() == 65536);
 
-    REQUIRE(StringUtil::Random(65536).find('\0') == std::string::npos);
+    const std::string rand { StringUtil::Random(65536) };
+    REQUIRE(rand.size() == 65536);
+    REQUIRE(rand.find('\0') == std::string::npos);
+    REQUIRE(rand.find('0') != std::string::npos);
+    REQUIRE(rand.find('9') != std::string::npos);
+    REQUIRE(rand.find('a') != std::string::npos);
+    REQUIRE(rand.find('z') != std::string::npos);
+    REQUIRE(rand.find('_') != std::string::npos);
 }
 
 /*****************************************************/

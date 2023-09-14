@@ -15,11 +15,11 @@ std::string StringUtil::Random(const size_t size)
     std::default_random_engine rng(std::random_device{}());
 
     // set the max to chars-2 as chars has a NUL term, and dist includes max
-    std::uniform_int_distribution<> dist(0, chars.size()-2);
+    std::uniform_int_distribution<size_t> dist(0, chars.size()-2);
 
     std::string retval; retval.resize(size);
     for (size_t i { 0 }; i < size; ++i)
-        retval[i] = chars[static_cast<size_t>(dist(rng))];
+        retval[i] = chars[dist(rng)];
     return retval;
 }
 
