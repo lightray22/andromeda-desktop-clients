@@ -8,6 +8,7 @@
 #include "Page.hpp"
 #include "PageManager.hpp"
 
+#include "andromeda/StringUtil.hpp"
 #include "andromeda/backend/BackendException.hpp"
 using Andromeda::Backend::BackendException;
 
@@ -73,7 +74,7 @@ void CacheManager::StartThreads()
 /*****************************************************/
 void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, bool canWait, const SharedLockW* mgrLock)
 {
-    MDBG_INFO("(page:" << index << " " << &page << " canWait:" << (canWait?"true":"false") << ")");
+    MDBG_INFO("(page:" << index << " " << &page << " canWait:" << BOOLSTR(canWait) << ")");
 
     UniqueLock lock(mMutex);
 
@@ -151,13 +152,13 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
 /*****************************************************/
 void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bool canWait, UniqueLock& lock, const SharedLockW* mgrLock)
 {
-    MDBG_INFO("(canWait:" << (canWait?"true":"false") << ")");
+    MDBG_INFO("(canWait:" << BOOLSTR(canWait) << ")");
 
-    if (mgrLock != nullptr)
+    if (mgrLock != nullptr && canWait)
     {
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipEvictWait)
-        while (canWait && mCurrentMemory > mCacheOptions.memoryLimit && 
+        while (ShouldEvict(lock) && 
             &mPageQueue.back().second.mPageMgr == &pageMgr &&
             mPageQueue.back().first != &page)
         {
@@ -172,20 +173,22 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
         }
     }
 
-    if (mCurrentMemory > mCacheOptions.memoryLimit)
+    if (mEvictThread.joinable())
     {
-        MDBG_INFO("... memory limit! signal");
-        mEvictThreadCV.notify_one();
-    }
-
-    if (canWait && mEvictThread.joinable()) 
-    {
-        mEvictFailure = nullptr; // reset error
-        while (ShouldAwaitEvict(pageMgr, lock))
+        if (canWait)
         {
-            MDBG_INFO("... waiting for memory");
+            mEvictFailure = nullptr; // reset error
+            while (ShouldAwaitEvict(pageMgr, lock))
+            {
+                MDBG_INFO("... waiting for memory");
+                mEvictThreadCV.notify_one();
+                mEvictWaitCV.wait(lock);
+            }
+        }
+        else if (ShouldEvict(lock))
+        {
+            MDBG_INFO("... memory limit! signal");
             mEvictThreadCV.notify_one();
-            mEvictWaitCV.wait(lock);
         }
     }
 }
@@ -193,13 +196,13 @@ void CacheManager::HandleMemory(const PageManager& pageMgr, const Page& page, bo
 /*****************************************************/
 void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& page, bool canWait, UniqueLock& lock, const SharedLockW* mgrLock)
 {
-    MDBG_INFO("(canWait:" << (canWait?"true":"false") << ")");
+    MDBG_INFO("(canWait:" << BOOLSTR(canWait) << ")");
 
-    if (mgrLock != nullptr)
+    if (mgrLock != nullptr && canWait)
     {
         // in this case we can evict synchronously rather than the background thread
         // so we can directly pick up errors (they could be missed due to mSkipFlushWait)
-        while (canWait && mCurrentDirty > mDirtyLimit && 
+        while (ShouldFlush(lock) && 
             &mDirtyQueue.back().second.mPageMgr == &pageMgr &&
             mDirtyQueue.back().first != &page)
         {
@@ -214,46 +217,46 @@ void CacheManager::HandleDirtyMemory(const PageManager& pageMgr, const Page& pag
         }
     }
 
-    if (mCurrentDirty > mDirtyLimit)
+    if (mFlushThread.joinable())
     {
-        MDBG_INFO("... dirty limit! signal");
-        mFlushThreadCV.notify_one();
-    }
-
-    if (canWait && mFlushThread.joinable())
-    {
-        mFlushFailure = nullptr; // reset error
-        while (ShouldAwaitFlush(pageMgr, lock))
+        if (canWait)
         {
-            MDBG_INFO("... waiting for dirty memory");
+            mFlushFailure = nullptr; // reset error
+            while (ShouldAwaitFlush(pageMgr, lock))
+            {
+                MDBG_INFO("... waiting for dirty memory");
+                mFlushThreadCV.notify_one();
+                mFlushWaitCV.wait(lock);
+            }
+        }
+        else if (ShouldFlush(lock))
+        {
+            MDBG_INFO("... dirty limit! signal");
             mFlushThreadCV.notify_one();
-            mFlushWaitCV.wait(lock);
         }
     }
 }
 
 /*****************************************************/
-bool CacheManager::ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock)
+bool CacheManager::ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock) const
 {
-    if (mCurrentMemory > mCacheOptions.memoryLimit && mEvictFailure != nullptr)
+    const bool shouldEvict { ShouldEvict(lock) };
+    if (shouldEvict && mEvictFailure != nullptr)
         throw MemoryException("evict");
 
     // cleanup threads could be waiting on our mgrLock, see GetPageManagerLock
-    if (mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr) return false;
-
-    return (mCurrentMemory > mCacheOptions.memoryLimit);
+    return shouldEvict && !ShouldSkipWait(pageMgr, lock);
 }
 
 /*****************************************************/
-bool CacheManager::ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock& lock)
+bool CacheManager::ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock& lock) const
 {
-    if (mCurrentDirty > mDirtyLimit && mFlushFailure != nullptr)
+    const bool shouldFlush { ShouldFlush(lock) };
+    if (shouldFlush && mFlushFailure != nullptr)
         throw MemoryException("flush");
 
     // cleanup threads could be waiting on our mgrLock, see GetPageManagerLock
-    if (mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr) return false;
-
-    return (mCurrentDirty > mDirtyLimit);
+    return shouldFlush && !ShouldSkipWait(pageMgr, lock);
 }
 
 /*****************************************************/
@@ -362,6 +365,7 @@ void CacheManager::EvictThread()
             while (mRunCleanup && (mCurrentMemory <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
+                mEvictWaitCV.notify_all();
                 mEvictThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
@@ -386,6 +390,7 @@ void CacheManager::FlushThread()
             while (mRunCleanup && (mCurrentDirty <= mDirtyLimit || mFlushFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
+                mFlushWaitCV.notify_all();
                 mFlushThreadCV.wait(lock);
             }
             if (!mRunCleanup) break; // stop loop
@@ -519,6 +524,7 @@ void CacheManager::DoPageFlushes() noexcept // thread cannot throw
             {
                 const UniqueLock lock(mMutex);
                 MDBG_ERROR("... " << ex.what());
+
                 mFlushFailure = std::current_exception();
                 mFlushWaitCV.notify_all();
                 return; // early return

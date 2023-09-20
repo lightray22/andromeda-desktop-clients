@@ -379,11 +379,11 @@ private:
     InputT& FinalizeInput(InputT& input);
 
     /** Prints a RunnerInput to the given stream */
-    static void PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname, uint64_t reqCount);
     /** Prints a RunnerInput_FilesIn to the given stream */
-    static void PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname, uint64_t reqCount);
     /** Prints a RunnerInput_StreamIn to the given stream */
-    static void PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname);
+    static void PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname, uint64_t reqCount);
 
     /** Parses and returns standard Andromeda JSON */
     nlohmann::json GetJSON(const std::string& resp);

@@ -135,14 +135,14 @@ void Item::ValidateName(const std::string& name, bool backend)
 }
 
 /*****************************************************/
-void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock)
+/*void Item::DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock)
 {
     ITDBG_INFO("()");
 
     if (HasParent(thisLock))
         throw HasParentException();
     SubDelete(deleteLock);
-}
+}*/
 
 /*****************************************************/
 void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& thisLock)
@@ -166,19 +166,21 @@ void Item::Delete(Item::ScopeLocked& scopeLock, SharedLockW& thisLock)
 }
 
 /*****************************************************/
-void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite)
+/*void Item::RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
+    if (newName == mName) return; // no-op
 
     if (HasParent(thisLock))
         throw HasParentException();
     SubRename(newName, thisLock, overwrite);
-}
+}*/
 
 /*****************************************************/
 void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwrite)
 {
     ITDBG_INFO("(newName:" << newName << ")");
+    if (newName == mName) return; // no-op
     ValidateName(newName); // throw if bad
 
     // The rename must be done through the parent.  Get the parent, unlock self, lock parent.
@@ -191,7 +193,7 @@ void Item::Rename(const std::string& newName, SharedLockW& thisLock, bool overwr
     parent.RenameItem(mName, newName, parentLock, overwrite);
     mName = newName;
 
-    thisLock.lock(); // re-lock
+    thisLock.lock();
 }
 
 /*****************************************************/
@@ -202,6 +204,7 @@ void Item::Move(Folder& newParent, SharedLockW& thisLock, bool overwrite)
     // The move must be done through the parent.  Get the parent, unlock self, lock parent.
     // This opens a window where the item could be moved elsewhere - will cause NotFoundException
     Folder& parent { GetParent(thisLock) };
+    if (&parent == &newParent) return; // no-op
     thisLock.unlock();
 
     // need a lock on the parent, not a lock on us
@@ -209,7 +212,7 @@ void Item::Move(Folder& newParent, SharedLockW& thisLock, bool overwrite)
     parent.MoveItem(mName, newParent, parentLocks, overwrite);
     mParent = &newParent;
 
-    thisLock.lock(); // re-lock
+    thisLock.lock();
 }
 
 } // namespace Filesystem

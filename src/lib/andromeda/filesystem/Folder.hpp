@@ -57,11 +57,13 @@ public:
     /** Tries to lock mScopeMutex, returns a ref that is maybe locked */
     inline ScopeLocked TryLockScope() { return ScopeLocked(*this, mScopeMutex); }
 
+    DeleteLock GetDeleteLock() override;
+
     Type GetType() const final { return Type::FOLDER; }
 
     /** 
      * Load the item with the given relative path, returning it with a pre-checked ScopeLock 
-     * Will get a write lock on this folder - DO NOT ACQUIRE FIRST!
+     * Will get a write lock on all parent folders - DO NOT ACQUIRE FIRST!
      * @throws NotFoundException if the path is not found
      * @throws BackendException on backend errors
      */
@@ -152,6 +154,7 @@ protected:
     virtual void RenameItem(const std::string& oldName, const std::string& newName, 
         const SharedLockW& thisLock, bool overwrite = false) final;
 
+
     /** 
      * Move the subitem name to parent folder, optionally overwrite
      * @param itemsLocks a lock pair for both this and the new parent
@@ -159,7 +162,7 @@ protected:
      * @throws NotFoundException if the path is not found
      * @throws DuplicateItemException if name already exists in newParent
      * @throws ModifyException if newParent is a virtual folder
-     * @throws BackendException on backend errors
+     * @throws BackendException on backend errors (e.g. if newParent is a subitem of "name") // TODO separate exception
      */
     virtual void MoveItem(const std::string& name, Folder& newParent, 
         const SharedLockW::LockPair& itemLocks, bool overwrite = false) final;
@@ -168,9 +171,10 @@ protected:
 
     /** 
      * Makes sure mItemMap is populated and refreshed
+     * @param canRefresh if true, allow refreshing
      * @throws BackendException on backend errors
      */
-    virtual void LoadItems(const SharedLockW& thisLock, bool force = false);
+    virtual void LoadItems(const SharedLockW& thisLock, bool canRefresh = true);
 
     /** Map consisting of an item name -> write lock for the item */
     using ItemLockMap = std::map<std::string, SharedLockW>;
@@ -223,6 +227,9 @@ protected:
     std::chrono::steady_clock::time_point mRefreshed;
 
 private:
+    
+    /** Returns a map with write locks for all items, deadlock-safe */
+    ItemLockMap LockItems(const SharedLockW& thisLock);
 
     mutable Debug mDebug;
 };

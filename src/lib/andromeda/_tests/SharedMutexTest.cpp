@@ -30,7 +30,7 @@ static void RunLock(SharedMutex& mut, Results& res,
     {
         case LockType::WRITE: mut.lock(); break;
         case LockType::READ: mut.lock_shared(); break;
-        case LockType::READP: mut.lock_shared_priority(); break;
+        case LockType::READP: mut.lock_shared(true); break;
     }
 
     { // lock scope
@@ -51,7 +51,7 @@ static void RunUnlock(SharedMutex& mut, Results& res,
     {
         case LockType::WRITE: mut.unlock(); break;
         case LockType::READ: mut.unlock_shared(); break;
-        case LockType::READP: mut.unlock_shared_priority(); break;
+        case LockType::READP: mut.unlock_shared(); break;
     }
 }
 
@@ -159,6 +159,24 @@ TEST_CASE("TestRPWR", "[SharedMutex]")
     t4.join();
 
     REQUIRE(res == Results{"1_lock", "2_lock", "1_unlock", "2_unlock", "3_lock", "3_unlock", "4_lock", "4_unlock"});
+}
+
+/*****************************************************/
+TEST_CASE("TestTryLock", "[SharedMutex]")
+{
+    SharedMutex mut;
+
+    mut.lock();
+    REQUIRE(mut.try_lock() == false);
+    mut.unlock();
+
+    mut.lock_shared();
+    REQUIRE(mut.try_lock() == false);
+    mut.unlock();
+
+    REQUIRE(mut.try_lock() == true);
+    REQUIRE(mut.try_lock() == false);
+    mut.unlock();
 }
 
 } // namespace Andromeda

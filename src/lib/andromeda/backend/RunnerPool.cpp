@@ -64,7 +64,7 @@ void RunnerPool::SignalWaiters()
 /*****************************************************/
 RunnerPool::LockedRunner::~LockedRunner()
 {
-    mLock.unlock();
+    mLock.unlock(); // BEFORE signal!
     mPool.SignalWaiters();
 }
 

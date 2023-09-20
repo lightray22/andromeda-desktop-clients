@@ -1,3 +1,5 @@
+
+#include <thread>
 #include <utility>
 #include "nlohmann/json.hpp"
 
@@ -22,6 +24,19 @@ Folder::Folder(BackendImpl& backend, const nlohmann::json& data) :
     Item(backend, data), mDebug(__func__,this)
 {
     MDBG_INFO("()");
+}
+
+/*****************************************************/
+Item::DeleteLock Folder::GetDeleteLock()
+{
+    Item::DeleteLock retval { Item::GetDeleteLock() };
+
+    // get exclusive locks for all children to clear out users... dropping the locks is okay
+    // because with an exclusive lock on this folder (their parent), they can't get reacquired
+    for (decltype(mItemMap)::value_type& it : mItemMap)
+        it.second->GetDeleteLock();
+
+    return retval;
 }
 
 /*****************************************************/
@@ -101,10 +116,8 @@ Folder::LockedItemMap Folder::GetItems(const SharedLockW& thisLock)
 
     Folder::LockedItemMap itemMap;
     for (decltype(mItemMap)::value_type& it : mItemMap)
-    {
         // don't check lock, can't go out of scope with map lock
         itemMap[it.first] = it.second->TryLockScope();
-    }
 
     return itemMap;
 }
@@ -117,22 +130,44 @@ size_t Folder::CountItems(const SharedLockW& thisLock)
 }
 
 /*****************************************************/
-void Folder::LoadItems(const SharedLockW& thisLock, bool force)
+Folder::ItemLockMap Folder::LockItems(const SharedLockW& thisLock)
+{
+    ITDBG_INFO("()");
+    // we need to lock all items - this could deadlock e.g. if file B is waiting on CacheManager memory 
+    // coming from evicting file A's pages... so use a std::lock-like algorithm where we try lock everything, 
+    // and if one fails we clear all locks, wait for that item to unlock, then start over.  Not suuuper pretty...
+    // This will eventually terminate because new item locks can't be acquired externally when we have thisLockW
+
+    ItemLockMap lockMap;
+    for (ItemMap::iterator it = mItemMap.begin(); it != mItemMap.end(); )
+    {
+        if (!(lockMap.emplace(it->first, it->second->TryGetWriteLock()).first->second))
+        {
+            ITDBG_INFO("... failed to lock " << it->first << ", reset and wait!");
+            
+            lockMap.clear(); // release other locks
+            it->second->GetWriteLock(); // wait for item
+            it = mItemMap.begin(); // start loop over
+        }
+        else ++it;
+    }
+    return lockMap;
+}
+
+/*****************************************************/
+void Folder::LoadItems(const SharedLockW& thisLock, bool canRefresh)
 {
     ITDBG_INFO("()");
 
     const bool expired { (std::chrono::steady_clock::now() - mRefreshed)
         > mBackend.GetOptions().refreshTime };
 
-    if (force || !mHaveItems || (expired && !mBackend.isMemory()))
+    if (!mHaveItems || (canRefresh && expired && !mBackend.isMemory()))
     {
         ITDBG_INFO("... expired!");
 
-        ItemLockMap lockMap; // get locks for all existing items now to prevent backend changes
-        for (const ItemMap::value_type& it : mItemMap)
-            lockMap.emplace(it.first, it.second->GetWriteLock());
-        // item scope lock not needed since mItemMap is locked
-
+        // item scope locks not needed since mItemMap is locked
+        ItemLockMap lockMap { LockItems(thisLock) };
         SubLoadItems(lockMap, thisLock); // populate mItemMap
         mRefreshed = std::chrono::steady_clock::now();
         mHaveItems = true;
@@ -161,7 +196,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
             mItemMap[name] = newFunc(data);
         }
         else existIt->second->Refresh(data, 
-                itemsLocks.at(existIt->first)); // update existing
+            itemsLocks.at(existIt->first)); // update existing
     }
 
     ItemMap::const_iterator oldIt { mItemMap.begin() };
@@ -175,7 +210,7 @@ void Folder::SyncContents(const NewItemMap& newItems, ItemLockMap& itemsLocks, c
                 dynamic_cast<const File&>(*oldIt->second).ExistsOnBackend(itLock))
             {
                 ITDBG_INFO("... remote deleted: " << oldIt->second->GetName(itLock));
-                itLock.unlock(); // scope locks come first
+                itemsLocks.erase(oldIt->first); // unlock, scope locks come first
 
                 oldIt->second->GetDeleteLock();
                 // lock to clear out existing users, then unlock before erasing
@@ -246,6 +281,7 @@ void Folder::RenameItem(const std::string& oldName, const std::string& newName, 
     const ItemMap::const_iterator it { mItemMap.find(oldName) };
     if (it == mItemMap.end()) throw NotFoundException();
     // item scope lock not needed since mItemMap is locked
+    if (oldName == newName) return; // no-op
 
     const ItemMap::const_iterator dup { mItemMap.find(newName) };
     if ((!overwrite && dup != mItemMap.end()) || newName.empty())
@@ -268,12 +304,16 @@ void Folder::MoveItem(const std::string& name, Folder& newParent, const SharedLo
 
     if (isReadOnlyFS()) throw ReadOnlyFSException();
 
-    LoadItems(itemLocks.first); // populate items
+    // do not allow LoadItems to refresh folder contents, because if one
+    // folder is a subfolder of the other, we could deadlock on refresh
+
+    LoadItems(itemLocks.first, false); // populate items
     const ItemMap::const_iterator it { mItemMap.find(name) };
     if (it == mItemMap.end()) throw NotFoundException();
     // item scope lock not needed since mItemMap is locked
+    // assume newParent != this since the caller got locks for both
 
-    newParent.LoadItems(itemLocks.second); // populate items
+    newParent.LoadItems(itemLocks.second, false); // populate items
     if (newParent.isReadOnlyFS()) throw ReadOnlyFSException();
     if (newParent.GetID().empty()) throw ModifyException();
 

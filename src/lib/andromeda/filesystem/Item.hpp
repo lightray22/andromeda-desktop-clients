@@ -67,7 +67,7 @@ public:
 
     using DeleteLock = std::unique_lock<std::shared_mutex>;
     /** Permanently, exclusively locks the scope lock if not acquired (use before deleting) */
-    inline DeleteLock GetDeleteLock() { return DeleteLock(mScopeMutex); }
+    virtual DeleteLock GetDeleteLock() { return DeleteLock(mScopeMutex); }
 
     /** Returns a read lock for this item */
     inline SharedLockR GetReadLock() const { return SharedLockR(mItemMutex); }
@@ -75,6 +75,9 @@ public:
     /** Returns a priority read lock for this item */
     inline SharedLockRP GetReadPriLock() const { return SharedLockRP(mItemMutex); }
     
+    /** Returns a possibly-locked write lock for this item (check operator bool) */
+    inline SharedLockW TryGetWriteLock() { return SharedLockW(mItemMutex,std::try_to_lock); }
+
     /** Returns a write lock for this item */
     inline SharedLockW GetWriteLock() { return SharedLockW(mItemMutex); }
 
@@ -145,7 +148,7 @@ public:
      * @throws BackendException for backend issues
      * @throws HasParentException if it has a parent
     */
-    virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock);
+    //virtual void DeleteSelf(DeleteLock& deleteLock, const SharedLockW& thisLock); // TODO untested, maybe not needed?
 
     /** 
      * Delete this item (and its contents if a folder) - MUST have a existing parent!
@@ -164,7 +167,7 @@ public:
      * @throws BackendException for backend issues
      * @throws HasParentException if it has a parent
      */
-    virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false);
+    //virtual void RenameSelf(const std::string& newName, const SharedLockW& thisLock, bool overwrite = false); // TODO untested, maybe not needed?
 
     /** 
      * Set this item's name to the given name, optionally overwrite existing - MUST have a existing parent!
@@ -192,7 +195,7 @@ public:
      * @throws Folder::ModifyException if newParent is a virtual folder
      * @throws ReadOnlyFSException if read-only item/filesystem
      * @throws NullParentException if parent is not set
-     * @throws BackendException for backend issues
+     * @throws BackendException for backend issues (e.g. if newParent is a subitem of this) // TODO separate exception
      */
     virtual void Move(Folder& newParent, SharedLockW& thisLock, bool overwrite = false);
 

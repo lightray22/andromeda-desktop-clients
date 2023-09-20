@@ -2,8 +2,9 @@
 #ifndef LIBA2_SEMAPHOR_H_
 #define LIBA2_SEMAPHOR_H_
 
-#include <mutex>
 #include <condition_variable>
+#include <deque>
+#include <mutex>
 
 namespace Andromeda {
 
@@ -14,25 +15,21 @@ namespace Andromeda {
 class Semaphor
 {
 public:
-
     /** @param max maximum number of concurrent lock holders */
-    explicit Semaphor(size_t max = 1) :
-        mMaxCount(max), mAvailable(max), mCurSignal(max) { }
+    explicit Semaphor(size_t max = 1):
+        mAvailable(max), mMaxCount(max) { }
 
     /** Locks the semaphor and returns true if there are NO waiters (caller is first in queue) */
     inline bool try_lock() noexcept
     {
         const std::lock_guard<std::mutex> llock(mMutex);
 
-        const size_t waitIndex { ++mCurWait };
-        if (must_wait(waitIndex))
+        if (mAvailable && mQueue.empty())
         {
-            --mCurWait; // restore
-            return false;
+            --mAvailable;
+            return true;
         }
-        if (--mAvailable)
-            mWaitCV.notify_all();
-        return true;
+        else return false;
     }
 
     /** Locks the semaphor (in queue order!) */
@@ -40,10 +37,16 @@ public:
     {
         std::unique_lock<std::mutex> llock(mMutex);
 
-        const size_t waitIndex { ++mCurWait };
-        while (must_wait(waitIndex))
+        const size_t waitIdx { mIndex++ };
+        mQueue.emplace_back(waitIdx);
+
+        while (!mAvailable || mQueue.front() != waitIdx)
             mWaitCV.wait(llock);
-        if (--mAvailable)
+
+        mQueue.pop_front();
+        --mAvailable;
+
+        if (mAvailable && !mQueue.empty())
             mWaitCV.notify_all();
     }
 
@@ -53,8 +56,8 @@ public:
         const std::lock_guard<std::mutex> llock(mMutex);
 
         ++mAvailable;
-        ++mCurSignal;
-        mWaitCV.notify_all();
+        if (!mQueue.empty())
+            mWaitCV.notify_all();
     }
 
     /** Returns the max semaphor count */
@@ -64,49 +67,21 @@ public:
         return mMaxCount;
     }
 
-    /** Changes the max semaphor count (blocking) */
-    inline void set_max(size_t max) noexcept
-    {
-        std::unique_lock<std::mutex> llock(mMutex);
-
-        if (max > mMaxCount)
-        {
-            // unlock N times
-            mAvailable += max-mMaxCount;
-            mCurSignal += max-mMaxCount;
-            mMaxCount = max;
-            mWaitCV.notify_all();
-        }
-        else while (max < mMaxCount)
-        {
-            // Un-unlock N times, waiting for each
-            while (!mAvailable)
-                mWaitCV.wait(llock);
-            --mAvailable;
-            --mCurSignal;
-            --mMaxCount;
-        }
-    }
-
 private:
 
-    // overflow-safe returns true if this waitIndex must wait - MUST BE LOCKED
-    [[nodiscard]] inline bool must_wait(const size_t waitIndex) const
-    {
-        return !mAvailable || waitIndex + mAvailable-1 != mCurSignal;
-    }
-
-    /** original max count */
-    size_t mMaxCount;
-    /** current available locks */
-    size_t mAvailable;
-    /** next index of waiter - overflow safe */
-    size_t mCurWait { 0 };
-    /** index of current signal - overflow safe */
-    size_t mCurSignal;
-
+    /** Mutex to protect member vars */
     std::mutex mMutex;
+    /** CV used to sleep/wake waiters */
     std::condition_variable mWaitCV;
+    /** Queue used to order locks */
+    std::deque<size_t> mQueue;
+    /** Next thread ID to use */
+    size_t mIndex { 0 };
+
+    /** Current number of locks free */
+    size_t mAvailable;
+    /** Max count of the semaphor */
+    size_t mMaxCount;
 };
 
 using SemaphorLock = std::unique_lock<Semaphor>;

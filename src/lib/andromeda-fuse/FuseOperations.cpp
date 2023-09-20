@@ -490,34 +490,41 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 #endif // LIBFUSE2
 {
     const StringUtil::StringPair pair0(StringUtil::splitPath(oldpath));
-    const std::string& oldPath { pair0.first };  
+    const std::string& oldParent { pair0.first };
     const std::string& oldName { pair0.second };
 
     const StringUtil::StringPair pair1(StringUtil::splitPath(newpath));
-    const std::string& newPath { pair1.first };  
+    const std::string& newParent { pair1.first };
     const std::string& newName { pair1.second };
 
-    SDBG_INFO("... oldPath:" << oldPath << ", oldName:" << oldName);
-    SDBG_INFO("... newPath:" << newPath << ", newName:" << newName);
+    SDBG_INFO("... oldParent:" << oldParent << ", oldName:" << oldName);
+    SDBG_INFO("... newParent:" << newParent << ", newName:" << newName);
 
     return CatchAsErrno(__func__,[&]()->int
     {
-        Item::ScopeLocked item { GetItemByPath(oldpath) };
-        SharedLockW itemLock { item->GetWriteLock() };
-
-        if (oldPath != newPath && oldName != newName)
+        if (oldParent != newParent && oldName != newName)
         {
-            //Folder::ScopeLocked parent { GetFolderByPath(newPath) };
             SDBG_ERROR("NOT SUPPORTED YET!"); // NOLINT(bugprone-lambda-function-name)
-            return -EIO; // TODO implement me
+            return -EIO; // TODO implement me (must be a single step)
         }
-        else if (oldPath != newPath)
+        else if (oldParent != newParent)
         {
-            Folder::ScopeLocked newParent { GetFolderByPath(newPath) };
-            item->Move(*newParent, itemLock, true);
+            // FUSE seems to check this for us, but just in case...
+            if (StringUtil::startsWith(newParent, oldParent+"/"+oldName+"/")) // oldpath might not end with /
+                return -EINVAL; // can't move directory into itself, could deadlock here too due to lock order
+
+            // TODO could still deadlock here if "item" causes a refresh in a farther up parent that wants to delete newParent
+
+            // lock ordering is important here! parent first
+            Folder::ScopeLocked parent { GetFolderByPath(newParent) };
+            Item::ScopeLocked item { GetItemByPath(oldpath) };
+            SharedLockW itemLock { item->GetWriteLock() };
+            item->Move(*parent, itemLock, true);
         }
         else if (oldName != newName) 
         {
+            Item::ScopeLocked item { GetItemByPath(oldpath) };
+            SharedLockW itemLock { item->GetWriteLock() };
             item->Rename(newName, itemLock, true);
         }
 

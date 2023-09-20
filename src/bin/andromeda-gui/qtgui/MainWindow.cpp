@@ -135,7 +135,7 @@ void MainWindow::AddAccountTab(std::unique_ptr<BackendContext> backendCtx)
 
     AccountTab* accountTab { new AccountTab(*this, std::move(backendCtx)) };
 
-    auto idx = mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str());
+    const int idx = mQtUi->tabAccounts->addTab(accountTab, accountTab->GetTabName().c_str());
     MDBG_INFO("... idx:" << idx << " accountTab:" << accountTab);
     mQtUi->tabAccounts->setCurrentIndex(idx);
 

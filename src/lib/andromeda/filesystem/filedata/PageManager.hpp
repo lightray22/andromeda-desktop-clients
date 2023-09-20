@@ -99,7 +99,7 @@ public:
 
     /** 
      * Removes the given page, writing it if dirty
-     * @throws BackendException for backend issues
+     * @throws BackendException for backend issues (only if dirty)
      */
     void EvictPage(uint64_t index, const SharedLockW& thisLock);
 
@@ -281,7 +281,7 @@ private:
     /** Lock for fetch threads to acquire (so destructor can wait) */
     std::shared_mutex mFetchMutex;
 
-    /** List of pages we didn't evict due to sequential writing */
+    /** List of pages we didn't evict due to requiring sequential writing */
     std::list<uint64_t> mDeferredEvicts;
 
     /** Shared mutex that is grabbed exclusively when this class is destructed */

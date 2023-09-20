@@ -123,7 +123,7 @@ TEST_CASE("Test8.3", "[Semaphor]")
 }
 
 /*****************************************************/
-TEST_CASE("SetMax", "[Semaphor]")
+/*TEST_CASE("SetMax", "[Semaphor]")
 {
     Semaphor sem(2); Results res; std::mutex resMutex;
 
@@ -151,7 +151,7 @@ TEST_CASE("SetMax", "[Semaphor]")
         "after set_max(4)",
         "1_unlock", "2_unlock", "3_unlock", 
         "after set_max(1)", "4_unlock" });
-}
+}*/ // TODO FUTURE implement set_max again if needed
 
 /*****************************************************/
 TEST_CASE("TryLock", "[Semaphor]")
@@ -167,12 +167,12 @@ TEST_CASE("TryLock", "[Semaphor]")
     sem.unlock();
     sem.unlock();
 
-    sem.set_max(0);
+    /*sem.set_max(0);
     REQUIRE(sem.try_lock() == false);
     sem.set_max(1);
     REQUIRE(sem.try_lock() == true);
     REQUIRE(sem.try_lock() == false);
-    sem.unlock();
+    sem.unlock();*/
 }
 
 } // namespace Andromeda

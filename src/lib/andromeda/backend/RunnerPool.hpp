@@ -30,7 +30,7 @@ public:
     class LockedRunner
     {
     public:
-        explicit LockedRunner(RunnerPool& pool, BaseRunner& runner, UniqueLock lock) : 
+        explicit LockedRunner(RunnerPool& pool, BaseRunner& runner, UniqueLock&& lock) : 
             mPool(pool), mRunner(runner), mLock(std::move(lock)) { }
 
         ~LockedRunner();

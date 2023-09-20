@@ -21,7 +21,7 @@ public:
 
 protected:
 
-    void LoadItems(const SharedLockW& thisLock, bool force = false) override;
+    void LoadItems(const SharedLockW& thisLock, bool canRefresh = true) override;
 
     void SubLoadItems(ItemLockMap& itemsLocks, const SharedLockW& thisLock) override { }; // unused
 

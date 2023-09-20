@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "BandwidthMeasure.hpp"
+#include "CacheOptions.hpp"
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 #include "andromeda/OrderedMap.hpp"
@@ -28,7 +29,6 @@ namespace Filedata {
 class Page;
 class PageManager;
 class CachingAllocator;
-struct CacheOptions;
 
 /** 
  * Manages pages as an LRU cache to limit memory usage, by calling EvictPage()
@@ -108,13 +108,25 @@ private:
      * Returns true if we should wait for a page eviction
      * @throws MemoryException if over limit and mEvictFailure is set
      */
-    inline bool ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock);
+    inline bool ShouldAwaitEvict(const PageManager& pageMgr, const UniqueLock& lock) const;
 
     /** 
      * Returns true if we should wait for a page flushing
      * @throws MemoryException if over limit and mFlushFailure is set
      */
-    inline bool ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock& lock);
+    inline bool ShouldAwaitFlush(const PageManager& pageMgr, const UniqueLock& lock) const;
+
+    /** Returns true if evict should run (memory is over the limit) */
+    inline bool ShouldEvict(const UniqueLock& lock) const { return mCurrentMemory > mCacheOptions.memoryLimit; }
+
+    /** Returns true if flush should run (dirty memory is over the limit) */
+    inline bool ShouldFlush(const UniqueLock& lock) const { return mCurrentDirty > mDirtyLimit; }
+
+    /** Returns true if evict/flush waiting should be skipped for the given page manager */
+    inline bool ShouldSkipWait(const PageManager& pageMgr, const UniqueLock& lock) const
+    {
+        return mSkipEvictWait == &pageMgr || mSkipFlushWait == &pageMgr;
+    }
 
     /**
      * Signals the evict thread and checks memory

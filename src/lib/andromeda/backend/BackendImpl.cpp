@@ -23,7 +23,7 @@ using Andromeda::Filesystem::Filedata::CachingAllocator;
 namespace Andromeda {
 namespace Backend {
 
-std::atomic<uint64_t> BackendImpl::sReqCount { 0 };
+std::atomic<uint64_t> BackendImpl::sReqCount { 1 };
 
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, RunnerPool& runners) : 
@@ -74,9 +74,9 @@ std::string BackendImpl::GetName(bool human) const
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const std::string& myfname, const uint64_t reqCount)
 {
-    str << sReqCount << " " << myfname << "()"
+    str << reqCount << " " << myfname << "()"
         << " app:" << input.app << " action:" << input.action;
     
     for (const auto& [key,val] : input.plainParams)
@@ -87,26 +87,28 @@ void BackendImpl::PrintInput(const RunnerInput& input, std::ostream& str, const 
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput_FilesIn& input, std::ostream& str, const std::string& myfname, const uint64_t reqCount)
 {
-    PrintInput(static_cast<const RunnerInput&>(input), str, myfname);
+    PrintInput(static_cast<const RunnerInput&>(input), str, myfname, reqCount);
 
     for (const auto& [key,file] : input.files)
         str << " " << key << ":" << file.name << ":" << file.data.size();
 }
 
 /*****************************************************/
-void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname)
+void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& str, const std::string& myfname, const uint64_t reqCount)
 {
-    PrintInput(static_cast<const RunnerInput_FilesIn&>(input), str, myfname);
+    PrintInput(static_cast<const RunnerInput_FilesIn&>(input), str, myfname, reqCount);
 
     for (const auto& [key,fstr] : input.fstreams)
         str << " " << key << ":" << fstr.name << ":" << "(stream)";
 }
 
-/** Syntactic sugar to print and input object and current function name to debug */
-#define MDBG_BACKEND(input) { ++sReqCount; const char* const myfname(__func__); \
-    mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname); }); }
+/** Print an input object and current function name to debug */
+#define MDBG_BACKEND(input) { \
+    const uint64_t reqCount { sReqCount++ }; const char* const myfname(__func__); \
+    mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname, reqCount); }); }
+    // note std::atomic only allows postfix not prefix operators!
 
 /*****************************************************/
 template <class InputT>
