@@ -53,13 +53,6 @@ MainWindow::MainWindow(CacheManager& cacheManager, ObjectDatabase* objDatabase) 
 MainWindow::~MainWindow()
 {
     MDBG_INFO("()");
-
-    // need to make sure AccountTab/BackendContexts are deleted before CacheManager
-    while (mQtUi->tabAccounts->count() != 0)
-    {
-        QWidget* accountTab { mQtUi->tabAccounts->widget(0) };
-        mQtUi->tabAccounts->removeTab(0); delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
-    }
 }
 
 /*****************************************************/
@@ -76,6 +69,11 @@ void MainWindow::closeEvent(QCloseEvent* event)
     if (!event->spontaneous() || GetCurrentTab() == nullptr)
     {
         MDBG_INFO("... closing");
+
+        // destruct tabs now before the window disappears
+        while (mQtUi->tabAccounts->count() != 0)
+            RemoveAccountTab(0);
+
         QMainWindow::closeEvent(event);
     }
     else
@@ -148,6 +146,26 @@ void MainWindow::AddAccountTab(std::unique_ptr<BackendContext> backendCtx)
 }
 
 /*****************************************************/
+void MainWindow::RemoveAccountTab(const int tabIndex)
+{
+    MDBG_INFO("(tabIndex:" << tabIndex << ")");
+
+    QWidget* const accountTab { mQtUi->tabAccounts->widget(tabIndex) };
+    mQtUi->tabAccounts->removeTab(tabIndex);
+    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+}
+
+/*****************************************************/
+void MainWindow::RemoveAccountTab(AccountTab* const accountTab)
+{
+    MDBG_INFO("(accountTab:" << accountTab << ")");
+
+    const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
+    mQtUi->tabAccounts->removeTab(tabIndex);
+    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+}
+
+/*****************************************************/
 void MainWindow::RemoveAccount()
 {
     MDBG_INFO("()");
@@ -169,8 +187,7 @@ void MainWindow::RemoveAccount()
             Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
         }
 
-        const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
-        mQtUi->tabAccounts->removeTab(tabIndex); delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+        RemoveAccountTab(accountTab);
     }
 
     if (GetCurrentTab() == nullptr) // no accounts left

@@ -139,7 +139,7 @@ struct FuseContext
         MDBG_INFO("() fuse_exit()");
         fuse_exit(mFuse); // flag loop to stop
 
-        // fuse_exit does not interrupt the loop, so to prevent it hanging until the next FS operation
+        // fuse_exit does not interrupt the loop, so to prevent fuse hanging until the next FS operation
         // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
         // ... doing this as a command rather than C call so we get the setuid elevation of umount
@@ -220,7 +220,7 @@ struct FuseMount
         MDBG_INFO("() fuse_exit()");
         fuse_exit(mContext.mFuse);// flag loop to stop
 
-        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent it hanging until the next FS operation
+        // fuse_exit does not interrupt the loop (except WinFSP), so to prevent fuse hanging until the next FS operation
         // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
         // ... doing this as a command rather than C call so we get the setuid elevation of umount

@@ -74,6 +74,12 @@ private:
     /** Adds a new account tab for a created backend context */
     void AddAccountTab(std::unique_ptr<BackendContext> backendCtx);
 
+    /** Removes the account tab at the given index */
+    void RemoveAccountTab(int tabIndex);
+
+    /** Removes the account tab at the given pointer */
+    void RemoveAccountTab(AccountTab* accountTab);
+
     mutable Andromeda::Debug mDebug;
 
     /** Global cache manager to apply to all mounts */
