@@ -14,10 +14,10 @@
 
 #include "andromeda/Debug.hpp"
 using Andromeda::Debug;
+#include "andromeda/PlatformUtil.hpp"
+using Andromeda::PlatformUtil;
 #include "andromeda/SharedMutex.hpp"
 using Andromeda::SharedLockW;
-#include "andromeda/backend/CLIRunner.hpp"
-using Andromeda::Backend::CLIRunner;
 #include "andromeda/filesystem/Folder.hpp"
 using Andromeda::Filesystem::Folder;
 
@@ -428,11 +428,11 @@ void FuseAdapter::TrySystemUnmount(const std::string& path)
      // failure is okay, just an optimization for fuse_exit
     try {
         MDBG_INFO("(path:" << path << ")");
-        CLIRunner::ArgList args { "umount", path };
-        int retval { CLIRunner::RunPosixCommand(args) };
+        PlatformUtil::ArgList args { "umount", path };
+        int retval { PlatformUtil::RunPosixCommand(args) };
         if (retval != 0) MDBG_ERROR("... system umount returned:" << retval);
     }
-    catch (const CLIRunner::CmdException& ex) {
+    catch (const PlatformUtil::CmdException& ex) {
         MDBG_ERROR("... system umount threw: " << ex.what());
     }
 }

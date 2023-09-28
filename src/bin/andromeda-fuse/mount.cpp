@@ -7,10 +7,10 @@
 #include <iostream>
 #include <string>
 
+#include "andromeda/PlatformUtil.hpp"
+using Andromeda::PlatformUtil;
 #include "andromeda/StringUtil.hpp"
 using Andromeda::StringUtil;
-#include "andromeda/backend/CLIRunner.hpp"
-using Andromeda::Backend::CLIRunner;
 
 /** Print help text to std::cout */
 void PrintHelp()
@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     if (argc < 3) { 
         PrintHelp(); return 1; }
 
-    CLIRunner::ArgList args { "andromeda-fuse", "-q" }; // quiet
+    PlatformUtil::ArgList args { "andromeda-fuse", "-q" }; // quiet
     
     if (!strcmp(argv[1],"none"))
         { args.emplace_back("-a"); args.emplace_back(argv[1]); } // apiurl
@@ -52,7 +52,7 @@ int main(int argc, char** argv)
         }
     }
 
-    try { return CLIRunner::RunPosixCommand(args); }
-    catch (const CLIRunner::CmdException& ex){ 
+    try { return PlatformUtil::RunPosixCommand(args); }
+    catch (const PlatformUtil::CmdException& ex){ 
         std::cerr << ex.what() << std::endl; return 2; }
 }

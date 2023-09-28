@@ -1,5 +1,4 @@
 
-#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <list>
@@ -10,13 +9,6 @@
 #include "reproc++/reproc.hpp"
 #include "reproc++/drain.hpp"
 #include "reproc++/fill.hpp"
-
-#if !WIN32
-#include <string.h> // // NOLINT(*-deprecated-headers)
-#include <unistd.h> // execvp
-#include <sys/types.h> // pid_t
-#include <sys/wait.h> // waitpid
-#endif // !WIN32
 
 #include "CLIRunner.hpp"
 #include "RunnerInput.hpp"
@@ -130,47 +122,6 @@ int CLIRunner::FinishProc(reproc::process& process, const std::chrono::milliseco
     StartProc(process, args, env);
     return FinishProc(process, reproc::infinite);
 }*/
-
-#if !WIN32
-/*****************************************************/
-int CLIRunner::RunPosixCommand(ArgList& args)
-{
-    if (args.empty()) throw CmdException("empty argument list");
-
-    std::vector<char*> argv(args.size());
-    std::transform(args.begin(),args.end(),argv.begin(),
-        [](std::string& arg)->char*{ return arg.data(); });
-    argv.emplace_back(nullptr); // argv is null-terminated
-
-    const pid_t pid { fork() };
-    if (pid < 0) throw CmdException(
-        std::string("fork: ")+strerror(errno)); // NOLINT(concurrency-mt-unsafe)
-
-    if (pid == 0) // child
-    {
-        execvp(argv[0], argv.data()); // only returns on error
-        _exit(errno < 128 ? 128+errno : 128);
-    }
-
-    int status = -1;
-    waitpid(pid, &status, 0);
-
-    if (WIFEXITED(status))
-    {
-        const int code { WEXITSTATUS(status) };
-        if (code >= 128) throw CmdException(std::string("exec: ")
-            +std::to_string(code-128)+" "+strerror(code-128)); // NOLINT(concurrency-mt-unsafe)
-        else return code;
-    }
-    else if (WIFSIGNALED(status))
-    {
-        const int sig { WTERMSIG(status) };
-        throw CmdException(std::string("signal: ")
-            +std::to_string(sig)+" "+strsignal(sig)); // NOLINT(concurrency-mt-unsafe)
-    }
-    else throw CmdException("unknown status");
-}
-#endif // !WIN32
 
 /*****************************************************/
 std::string CLIRunner::RunAction_Write(const RunnerInput& input)

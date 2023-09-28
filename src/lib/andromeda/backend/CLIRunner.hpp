@@ -4,7 +4,6 @@
 #include <chrono>
 #include <list>
 #include <string>
-#include <system_error>
 
 #include "BaseRunner.hpp"
 #include "RunnerOptions.hpp"
@@ -30,11 +29,6 @@ public:
             EndpointException("Subprocess Error: "+msg) {} 
     };
 
-    /** A exception occurred running the posix command */
-    class CmdException : public BaseException { public:
-        explicit CmdException(const std::string& msg) : 
-            BaseException("Command Error: "+msg) {} };
-
     /** 
      * @param apiPath path to the API index.php 
      * @param timeout the timeout for each CLI call
@@ -51,13 +45,6 @@ public:
      * @throws CmdException if there an error running the command
      */
     //static int RunCommand(const ArgList& args);
-#if !WIN32
-    /** 
-     * Runs a system command with the given args, returns the exit code
-     * @throws CmdException if there an error running the command
-     */
-    static int RunPosixCommand(ArgList& args);
-#endif // WIN32
 
     std::string RunAction_Read(const RunnerInput& input) override { return RunAction_Write(input); }
 
