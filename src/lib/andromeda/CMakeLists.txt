@@ -19,6 +19,10 @@ andromeda_lib(libandromeda "${SOURCE_FILES}")
 target_include_directories(libandromeda
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux") # needed for armv6
+    target_link_libraries(libandromeda PUBLIC atomic)
+endif()
+
 install(TARGETS libandromeda
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
