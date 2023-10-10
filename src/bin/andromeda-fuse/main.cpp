@@ -115,16 +115,20 @@ int main(int argc, char** argv)
         }; break;
     }
 
-    // DESTRUCTOR ORDER MATTERS HERE due to dependencies!
-    CacheManager cacheMgr(cacheOptions, false); // don't start thread yet
     RunnerPool runners(*runner, configOptions);
+    
+    std::unique_ptr<CacheManager> cacheMgr;
+    if (!cacheOptions.disable) cacheMgr = 
+        std::make_unique<CacheManager>(cacheOptions, false); // don't start thread yet
+
+    // these must be after cacheMgr/runners!
     std::unique_ptr<BackendImpl> backend;
     std::unique_ptr<Folder> folder;
     
     try
     {
         backend = std::make_unique<BackendImpl>(configOptions, runners);
-        backend->SetCacheManager(&cacheMgr);
+        backend->SetCacheManager(cacheMgr.get());
 
         if (options.HasSession())
             backend->PreAuthenticate(options.GetSessionID(), options.GetSessionKey());
@@ -156,7 +160,7 @@ int main(int argc, char** argv)
         // In either case, StartFuse() will block until unmounted
         if (options.isForeground())
         {
-            cacheMgr.StartThreads();
+            if (cacheMgr) cacheMgr->StartThreads();
             fuseAdapter.StartFuse(
                 FuseAdapter::RunMode::FOREGROUND);
         }
@@ -164,7 +168,7 @@ int main(int argc, char** argv)
         { // daemonize kills threads, start cacheMgr in the callback
             fuseAdapter.StartFuse(
                 FuseAdapter::RunMode::DAEMON,
-                [&](){ cacheMgr.StartThreads(); });
+                [&](){ if (cacheMgr) cacheMgr->StartThreads(); });
         }
     }
     catch (const FuseAdapter::Exception& ex)

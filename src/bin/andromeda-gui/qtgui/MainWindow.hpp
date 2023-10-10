@@ -29,9 +29,9 @@ class MainWindow : public QMainWindow
 
 public:
 
-    /** Instantiates the main window UI */
+    /** Instantiates the main window UI with resources */
     explicit MainWindow(
-        Andromeda::Filesystem::Filedata::CacheManager& cacheManager,
+        Andromeda::Filesystem::Filedata::CacheManager* cacheManager,
         Andromeda::Database::ObjectDatabase* objDatabase);
 
     ~MainWindow() override;
@@ -82,8 +82,8 @@ private:
 
     mutable Andromeda::Debug mDebug;
 
-    /** Global cache manager to apply to all mounts */
-    Andromeda::Filesystem::Filedata::CacheManager& mCacheManager;
+    /** Global cache manager to apply to all mounts (maybe null!) */
+    Andromeda::Filesystem::Filedata::CacheManager* mCacheManager;
 
     /** ObjectDatabase instance for object storage (maybe null!) */
     Andromeda::Database::ObjectDatabase* mObjDatabase;

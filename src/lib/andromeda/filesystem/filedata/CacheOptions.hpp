@@ -16,7 +16,7 @@ struct CacheOptions
     static std::string HelpText();
 
     /** Adds the given argument, returning true iff it was used */
-    bool AddFlag(const std::string& flag){ return false; }
+    bool AddFlag(const std::string& flag);
 
     /** 
      * Adds the given option/value, returning true iff it was used
@@ -48,6 +48,9 @@ struct CacheOptions
      * Larger values may improve performance but increase memory usage and risk losing more data if we crash or the server goes down, etc.
      */
     milliseconds maxDirtyTime { 1000 };
+
+    /** True to disable the CacheManager */
+    bool disable { false };
 };
 
 } // namespace Filedata

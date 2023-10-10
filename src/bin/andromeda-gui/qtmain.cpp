@@ -125,9 +125,11 @@ int main(int argc, char** argv)
         Utilities::warningBox(nullptr, "Database Error", str.str(), ex);
     }
 
-    CacheManager cacheManager(cacheOptions);
+    std::unique_ptr<CacheManager> cacheMgr;
+    if (!cacheOptions.disable) cacheMgr = 
+        std::make_unique<CacheManager>(cacheOptions);
 
-    MainWindow mainWindow(cacheManager, objDatabase.get()); 
+    MainWindow mainWindow(cacheMgr.get(), objDatabase.get()); 
     SystemTray systemTray(application, mainWindow);
 
     instanceMgr.ShowOnDuplicate(mainWindow);

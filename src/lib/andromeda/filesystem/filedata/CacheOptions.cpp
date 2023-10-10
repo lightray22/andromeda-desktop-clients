@@ -18,11 +18,21 @@ std::string CacheOptions::HelpText()
     const auto defDirty(milliseconds(optDefault.maxDirtyTime).count());
     const size_t stBits { sizeof(size_t)*8 };
 
-    output << "Cache Advanced:  [--max-dirty ms(" << defDirty << ")]"
+    output << "Cache Advanced:  [--no-cachemgr] [--max-dirty ms(" << defDirty << ")]"
         << " [--memory-limit bytes"<<stBits<<"(" << StringUtil::bytesToString(optDefault.memoryLimit) << ")]"
         << " [--evict-frac uint32(" << optDefault.evictSizeFrac << ")]";
 
     return output.str();
+}
+
+/*****************************************************/
+bool CacheOptions::AddFlag(const std::string& flag)
+{
+    if (flag == "no-cachemgr")
+        disable = true;
+    else return false; // not used
+
+    return true;
 }
 
 /*****************************************************/

@@ -80,6 +80,7 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
   - Ubuntu 23.04 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
   - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base sqlite libsodium`
+- Void Linux amd64: `xbps-install gcc python3 cmake make openssl-devel fuse3-devel qt6-base-devel sqlite-devel libsodium-devel`
 - macOS amd64: `brew install make cmake openssl macfuse qt sqlite libsodium`
 
 The following platforms are supported minus the Qt GUI (it may work, just not tested):

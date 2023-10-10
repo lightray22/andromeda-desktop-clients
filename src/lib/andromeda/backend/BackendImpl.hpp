@@ -108,7 +108,7 @@ public:
     /** Returns the cache manager to use for file data */
     [[nodiscard]] inline Filesystem::Filedata::CacheManager* GetCacheManager() const { return mCacheMgr; }
 
-    /** Sets the cache manager to use (or nullptr) */
+    /** Sets the cache manager to use (or nullptr to disable) */
     inline void SetCacheManager(Filesystem::Filedata::CacheManager* cacheMgr) { mCacheMgr = cacheMgr; }
 
     /** Returns the CachingAllocator to use for file data */

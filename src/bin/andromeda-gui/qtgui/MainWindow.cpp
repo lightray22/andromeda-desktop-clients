@@ -28,7 +28,7 @@ namespace AndromedaGui {
 namespace QtGui {
 
 /*****************************************************/
-MainWindow::MainWindow(CacheManager& cacheManager, ObjectDatabase* objDatabase) : 
+MainWindow::MainWindow(CacheManager* cacheManager, ObjectDatabase* objDatabase) : 
     mDebug(__func__,this),
     mCacheManager(cacheManager),
     mObjDatabase(objDatabase),
@@ -93,7 +93,7 @@ void MainWindow::TryLoadAccount(SessionStore& session)
         std::unique_ptr<BackendContext> backendCtx {
             std::make_unique<BackendContext>(session) };
 
-        backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+        backendCtx->GetBackend().SetCacheManager(mCacheManager);
         AddAccountTab(std::move(backendCtx));
     }
     catch (const BackendException& ex)
@@ -121,7 +121,7 @@ void MainWindow::AddAccount()
             Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
         }
 
-        backendCtx->GetBackend().SetCacheManager(&mCacheManager);
+        backendCtx->GetBackend().SetCacheManager(mCacheManager);
         AddAccountTab(std::move(backendCtx));
     }
 }
