@@ -7,8 +7,9 @@
 #include "ui_MainWindow.h"
 
 #include "AccountTab.hpp"
-#include "Utilities.hpp"
+#include "DebugWindow.hpp"
 #include "LoginDialog.hpp"
+#include "Utilities.hpp"
 
 #include "andromeda/backend/BackendException.hpp"
 using Andromeda::Backend::BackendException;
@@ -73,6 +74,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
         // destruct tabs now before the window disappears
         while (mQtUi->tabAccounts->count() != 0)
             RemoveAccountTab(0);
+
+        if (mDebugWindow)
+            mDebugWindow->close();
 
         QMainWindow::closeEvent(event);
     }
@@ -236,11 +240,25 @@ void MainWindow::BrowseCurrent()
 /*****************************************************/
 void MainWindow::ShowAbout()
 {
+    MDBG_INFO("()");
+
     std::stringstream str;
     str << "Andromeda GUI v" << ANDROMEDA_VERSION << std::endl;
     str << "License: GNU GPLv3" << std::endl;
 
     QMessageBox::about(this, "About", str.str().c_str());
+}
+
+/*****************************************************/
+void MainWindow::ShowDebug()
+{
+    MDBG_INFO("()");
+
+    if (!mDebugWindow)
+        mDebugWindow = std::make_unique<DebugWindow>();
+    mDebugWindow->show();
+
+    // TODO !! how to erase ptr after closing window?
 }
 
 } // namespace QtGui

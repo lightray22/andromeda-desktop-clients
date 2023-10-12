@@ -8,12 +8,12 @@
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
+namespace Ui { class LoginDialog; }
+
 namespace AndromedaGui {
 class BackendContext;
 
 namespace QtGui {
-
-namespace Ui { class LoginDialog; }
 
 /** The window for logging in (creating backend resources) */
 class LoginDialog : public QDialog

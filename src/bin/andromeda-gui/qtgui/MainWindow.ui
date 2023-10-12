@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>AndromedaGui::QtGui::MainWindow</class>
+ <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowIcon">
-   <iconset resource="resource.qrc">
+   <iconset resource="../resources/resources.qrc">
     <normaloff>:/andromeda.png</normaloff>:/andromeda.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -82,6 +82,7 @@
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="actionDebug_Log"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -158,9 +159,17 @@
     <string>Shift+F1</string>
    </property>
   </action>
+  <action name="actionDebug_Log">
+   <property name="text">
+    <string>Debug Log</string>
+   </property>
+   <property name="shortcut">
+    <string>Shift+F2</string>
+   </property>
+  </action>
  </widget>
  <resources>
-  <include location="resource.qrc"/>
+  <include location="../resources/resources.qrc"/>
  </resources>
  <connections>
   <connection>
@@ -275,6 +284,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionDebug_Log</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ShowDebug()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>199</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>AddAccount()</slot>
@@ -283,5 +308,6 @@
   <slot>UnmountCurrent()</slot>
   <slot>BrowseCurrent()</slot>
   <slot>ShowAbout()</slot>
+  <slot>ShowDebug()</slot>
  </slots>
 </ui>

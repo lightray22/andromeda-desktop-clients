@@ -2,6 +2,8 @@
 set(SOURCE_FILES 
     AccountTab.cpp
     AccountTab.ui
+    DebugWindow.cpp
+    DebugWindow.ui
     LoginDialog.cpp
     LoginDialog.ui
     MainWindow.cpp

@@ -8,6 +8,8 @@
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
+namespace Ui { class MainWindow; }
+
 namespace Andromeda { 
     namespace Backend { class SessionStore; }
     namespace Database { class ObjectDatabase; }
@@ -19,8 +21,7 @@ class BackendContext;
 
 namespace QtGui {
 class AccountTab;
-
-namespace Ui { class MainWindow; }
+class DebugWindow;
 
 /** The main Andromeda GUI window */
 class MainWindow : public QMainWindow
@@ -66,6 +67,9 @@ public slots:
     /** Show the About popup window */
     void ShowAbout();
 
+    /** Show the Debug Log window */
+    void ShowDebug();
+
 private:
 
     /** Returns the current AccountTab or nullptr if none */
@@ -89,6 +93,7 @@ private:
     Andromeda::Database::ObjectDatabase* mObjDatabase;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
+    std::unique_ptr<DebugWindow> mDebugWindow;
 };
 
 } // namespace QtGui

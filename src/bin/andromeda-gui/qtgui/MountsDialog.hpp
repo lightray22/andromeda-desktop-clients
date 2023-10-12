@@ -5,10 +5,10 @@
 
 #include "andromeda/common.hpp"
 
+namespace Ui { class MountsDialog; }
+
 namespace AndromedaGui {
 namespace QtGui {
-
-namespace Ui { class MountsDialog; }
 
 class MountsDialog : public QDialog
 {
