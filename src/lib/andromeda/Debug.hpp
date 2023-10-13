@@ -52,8 +52,9 @@ public:
     /** 
      * Adds a file output stream to send output to - THREAD SAFE 
      * copies level/filters from the first existing stream
+     * @return a reference to the created stream for SetLevel/Filters
     */
-    static void AddLogFile(const std::string& path);
+    static std::ostream& AddLogFile(const std::string& path);
 
     /**
      * Construct a new debug module (simple and static safe!)

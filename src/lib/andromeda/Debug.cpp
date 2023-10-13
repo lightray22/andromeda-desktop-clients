@@ -99,7 +99,7 @@ void Debug::RemoveStream(std::ostream& stream)
 }
 
 /*****************************************************/
-void Debug::AddLogFile(const std::string& path)
+std::ostream& Debug::AddLogFile(const std::string& path)
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
@@ -115,6 +115,7 @@ void Debug::AddLogFile(const std::string& path)
     }
     else sContexts.emplace_back(stream); // default level, filters
     sMaxLevel = GetMaxLevel();
+    return stream;
 }
 
 /*****************************************************/
