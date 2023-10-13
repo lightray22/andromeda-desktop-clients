@@ -102,6 +102,12 @@ public:
      * stopping at the biggest possible unit (whole numbers only)
      */
     [[nodiscard]] static std::string bytesToString(uint64_t bytes);
+
+    /**
+     * Converts # of bytes to a string like "256K" or "4.32M"
+     * stopping at the biggest possible unit (under 1024, up to 2 decimals)
+     */
+    [[nodiscard]] static std::string bytesToStringF(uint64_t bytes);
 };
 
 } // namespace Andromeda

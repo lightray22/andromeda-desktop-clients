@@ -1,8 +1,10 @@
 
 #include <algorithm>
 #include <array>
+#include <iomanip>
 #include <locale>
 #include <random>
+#include <sstream>
 
 #include "StringUtil.hpp"
 
@@ -217,12 +219,32 @@ uint64_t StringUtil::stringToBytes(const std::string& stri)
 /*****************************************************/
 std::string StringUtil::bytesToString(uint64_t bytes)
 {
-    size_t unit { 0 };
+    size_t unitIdx { 0 };
     static constexpr std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
-    while (bytes >= bytesMul && !(bytes % bytesMul) && unit < units.size()-1) {
-        ++unit; bytes /= bytesMul;
+    while (bytes >= bytesMul && !(bytes % bytesMul) && unitIdx < units.size()-1) {
+        ++unitIdx; bytes /= bytesMul;
     }
-    return std::to_string(bytes)+units[unit];
+    return std::to_string(bytes)+units[unitIdx];
+}
+
+/*****************************************************/
+std::string StringUtil::bytesToStringF(const uint64_t bytes)
+{
+    size_t unitIdx { 0 };
+    double bytesF { static_cast<double>(bytes) };
+
+    static constexpr std::array<const char*,6> units { "", "K", "M", "G", "T", "P" };
+    while (bytesF >= bytesMul && unitIdx < units.size()-1) {
+        ++unitIdx; bytesF /= bytesMul;
+    }
+
+    std::stringstream bstr; // trim trailing zeroes
+    bstr << std::fixed << std::setprecision(2) << bytesF;
+    std::string bstrng { bstr.str() };
+    while (bstrng.back() == '0') bstrng.pop_back();
+    if (bstrng.back() == '.') bstrng.pop_back();
+
+    return bstrng+units[unitIdx];
 }
 
 } // namespace Andromeda

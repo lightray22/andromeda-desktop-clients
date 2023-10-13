@@ -224,7 +224,7 @@
    <sender>actionMount_Storage</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>MountCurrent()</slot>
+   <slot>MountCurrentTab()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -240,7 +240,7 @@
    <sender>actionUnmount_Storage</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>UnmountCurrent()</slot>
+   <slot>UnmountCurrentTab()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -256,7 +256,7 @@
    <sender>actionBrowse_Storage</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>BrowseCurrent()</slot>
+   <slot>BrowseCurrentTab()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -272,7 +272,7 @@
    <sender>actionAbout</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>ShowAbout()</slot>
+   <slot>ShowAboutWindow()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -288,7 +288,7 @@
    <sender>actionDebug_Log</sender>
    <signal>triggered()</signal>
    <receiver>MainWindow</receiver>
-   <slot>ShowDebug()</slot>
+   <slot>CreateDebugWindow()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -304,10 +304,11 @@
  <slots>
   <slot>AddAccount()</slot>
   <slot>RemoveAccount()</slot>
-  <slot>MountCurrent()</slot>
-  <slot>UnmountCurrent()</slot>
-  <slot>BrowseCurrent()</slot>
-  <slot>ShowAbout()</slot>
-  <slot>ShowDebug()</slot>
+  <slot>MountCurrentTab()</slot>
+  <slot>UnmountCurrentTab()</slot>
+  <slot>BrowseCurrentTab()</slot>
+  <slot>ShowAboutWindow()</slot>
+  <slot>CreateDebugWindow()</slot>
+  <slot>CloseDebug()</slot>
  </slots>
 </ui>

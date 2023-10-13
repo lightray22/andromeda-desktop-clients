@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <QtGui/QCloseEvent>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
 #include "andromeda/common.hpp"
@@ -21,7 +22,6 @@ class BackendContext;
 
 namespace QtGui {
 class AccountTab;
-class DebugWindow;
 
 /** The main Andromeda GUI window */
 class MainWindow : public QMainWindow
@@ -31,7 +31,7 @@ class MainWindow : public QMainWindow
 public:
 
     /** Instantiates the main window UI with resources */
-    explicit MainWindow(
+    explicit MainWindow(QApplication& application,
         Andromeda::Filesystem::Filedata::CacheManager* cacheManager,
         Andromeda::Database::ObjectDatabase* objDatabase);
 
@@ -56,19 +56,19 @@ public slots:
     void RemoveAccount();
 
     /** GUI action to mount the current account's files */
-    void MountCurrent();
+    void MountCurrentTab();
 
     /** GUI action to unmount the current account's files */
-    void UnmountCurrent();
+    void UnmountCurrentTab();
 
     /** GUI action to browse the current account's files */
-    void BrowseCurrent();
+    void BrowseCurrentTab();
 
     /** Show the About popup window */
-    void ShowAbout();
+    void ShowAboutWindow();
 
     /** Show the Debug Log window */
-    void ShowDebug();
+    void CreateDebugWindow();
 
 private:
 
@@ -86,6 +86,8 @@ private:
 
     mutable Andromeda::Debug mDebug;
 
+    QApplication& mApplication;
+
     /** Global cache manager to apply to all mounts (maybe null!) */
     Andromeda::Filesystem::Filedata::CacheManager* mCacheManager;
 
@@ -93,7 +95,6 @@ private:
     Andromeda::Database::ObjectDatabase* mObjDatabase;
 
     std::unique_ptr<Ui::MainWindow> mQtUi;
-    std::unique_ptr<DebugWindow> mDebugWindow;
 };
 
 } // namespace QtGui

@@ -29,8 +29,9 @@ namespace AndromedaGui {
 namespace QtGui {
 
 /*****************************************************/
-MainWindow::MainWindow(CacheManager* cacheManager, ObjectDatabase* objDatabase) : 
+MainWindow::MainWindow(QApplication& application, CacheManager* cacheManager, ObjectDatabase* objDatabase) : 
     mDebug(__func__,this),
+    mApplication(application),
     mCacheManager(cacheManager),
     mObjDatabase(objDatabase),
     mQtUi(std::make_unique<Ui::MainWindow>())
@@ -75,10 +76,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
         while (mQtUi->tabAccounts->count() != 0)
             RemoveAccountTab(0);
 
-        if (mDebugWindow)
-            mDebugWindow->close();
-
         QMainWindow::closeEvent(event);
+        mApplication.quit(); // close all
     }
     else
     {
@@ -156,7 +155,7 @@ void MainWindow::RemoveAccountTab(const int tabIndex)
 
     QWidget* const accountTab { mQtUi->tabAccounts->widget(tabIndex) };
     mQtUi->tabAccounts->removeTab(tabIndex);
-    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+    accountTab->deleteLater();
 }
 
 /*****************************************************/
@@ -166,7 +165,7 @@ void MainWindow::RemoveAccountTab(AccountTab* const accountTab)
 
     const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
     mQtUi->tabAccounts->removeTab(tabIndex);
-    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+    accountTab->deleteLater();
 }
 
 /*****************************************************/
@@ -211,7 +210,7 @@ AccountTab* MainWindow::GetCurrentTab()
 }
 
 /*****************************************************/
-void MainWindow::MountCurrent()
+void MainWindow::MountCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -220,7 +219,7 @@ void MainWindow::MountCurrent()
 }
 
 /*****************************************************/
-void MainWindow::UnmountCurrent()
+void MainWindow::UnmountCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -229,7 +228,7 @@ void MainWindow::UnmountCurrent()
 }
 
 /*****************************************************/
-void MainWindow::BrowseCurrent()
+void MainWindow::BrowseCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -238,7 +237,7 @@ void MainWindow::BrowseCurrent()
 }
 
 /*****************************************************/
-void MainWindow::ShowAbout()
+void MainWindow::ShowAboutWindow()
 {
     MDBG_INFO("()");
 
@@ -250,15 +249,13 @@ void MainWindow::ShowAbout()
 }
 
 /*****************************************************/
-void MainWindow::ShowDebug()
+void MainWindow::CreateDebugWindow()
 {
     MDBG_INFO("()");
 
-    if (!mDebugWindow)
-        mDebugWindow = std::make_unique<DebugWindow>();
-    mDebugWindow->show();
-
-    // TODO !! how to erase ptr after closing window?
+    DebugWindow* debugWindow = new DebugWindow(mCacheManager);
+    debugWindow->setAttribute(Qt::WA_DeleteOnClose,true);
+    Utilities::fullShow(*debugWindow);
 }
 
 } // namespace QtGui

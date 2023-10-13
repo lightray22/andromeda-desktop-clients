@@ -181,12 +181,11 @@ bool BaseOptions::AddOption(const std::string& option, const std::string& value)
     }
     else if (option == "debug-filter")
     {
-        for (const std::string& name : StringUtil::explode(value,","))
-            Debug::AddFilter(name);
+        Debug::SetFilters(value);
     }
     else if (option == "debug-log")
     {
-        Debug::AddStream(value); // path
+        Debug::AddLogFile(value); // path
     }
     else return false; // not used
 

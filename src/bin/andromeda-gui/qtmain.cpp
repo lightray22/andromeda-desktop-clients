@@ -129,7 +129,7 @@ int main(int argc, char** argv)
     if (!cacheOptions.disable) cacheMgr = 
         std::make_unique<CacheManager>(cacheOptions);
 
-    MainWindow mainWindow(cacheMgr.get(), objDatabase.get()); 
+    MainWindow mainWindow(application, cacheMgr.get(), objDatabase.get()); 
     SystemTray systemTray(application, mainWindow);
 
     instanceMgr.ShowOnDuplicate(mainWindow);
