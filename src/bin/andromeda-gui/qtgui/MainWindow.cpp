@@ -7,8 +7,9 @@
 #include "ui_MainWindow.h"
 
 #include "AccountTab.hpp"
-#include "Utilities.hpp"
+#include "DebugWindow.hpp"
 #include "LoginDialog.hpp"
+#include "Utilities.hpp"
 
 #include "andromeda/backend/BackendException.hpp"
 using Andromeda::Backend::BackendException;
@@ -28,8 +29,9 @@ namespace AndromedaGui {
 namespace QtGui {
 
 /*****************************************************/
-MainWindow::MainWindow(CacheManager* cacheManager, ObjectDatabase* objDatabase) : 
+MainWindow::MainWindow(QApplication& application, CacheManager* cacheManager, ObjectDatabase* objDatabase) : 
     mDebug(__func__,this),
+    mApplication(application),
     mCacheManager(cacheManager),
     mObjDatabase(objDatabase),
     mQtUi(std::make_unique<Ui::MainWindow>())
@@ -75,6 +77,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
             RemoveAccountTab(0);
 
         QMainWindow::closeEvent(event);
+        mApplication.quit(); // close all
     }
     else
     {
@@ -152,7 +155,7 @@ void MainWindow::RemoveAccountTab(const int tabIndex)
 
     QWidget* const accountTab { mQtUi->tabAccounts->widget(tabIndex) };
     mQtUi->tabAccounts->removeTab(tabIndex);
-    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+    accountTab->deleteLater();
 }
 
 /*****************************************************/
@@ -162,7 +165,7 @@ void MainWindow::RemoveAccountTab(AccountTab* const accountTab)
 
     const int tabIndex { mQtUi->tabAccounts->indexOf(accountTab) };
     mQtUi->tabAccounts->removeTab(tabIndex);
-    delete accountTab; // NOLINT(cppcoreguidelines-owning-memory)
+    accountTab->deleteLater();
 }
 
 /*****************************************************/
@@ -207,7 +210,7 @@ AccountTab* MainWindow::GetCurrentTab()
 }
 
 /*****************************************************/
-void MainWindow::MountCurrent()
+void MainWindow::MountCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -216,7 +219,7 @@ void MainWindow::MountCurrent()
 }
 
 /*****************************************************/
-void MainWindow::UnmountCurrent()
+void MainWindow::UnmountCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -225,7 +228,7 @@ void MainWindow::UnmountCurrent()
 }
 
 /*****************************************************/
-void MainWindow::BrowseCurrent()
+void MainWindow::BrowseCurrentTab()
 {
     MDBG_INFO("()");
 
@@ -234,13 +237,25 @@ void MainWindow::BrowseCurrent()
 }
 
 /*****************************************************/
-void MainWindow::ShowAbout()
+void MainWindow::ShowAboutWindow()
 {
+    MDBG_INFO("()");
+
     std::stringstream str;
     str << "Andromeda GUI v" << ANDROMEDA_VERSION << std::endl;
     str << "License: GNU GPLv3" << std::endl;
 
     QMessageBox::about(this, "About", str.str().c_str());
+}
+
+/*****************************************************/
+void MainWindow::CreateDebugWindow()
+{
+    MDBG_INFO("()");
+
+    DebugWindow* debugWindow = new DebugWindow(mCacheManager);
+    debugWindow->setAttribute(Qt::WA_DeleteOnClose,true);
+    Utilities::fullShow(*debugWindow);
 }
 
 } // namespace QtGui

@@ -289,18 +289,28 @@ TEST_CASE("stringToBytes", "[StringUtil]")
 TEST_CASE("bytesToString", "[StringUtil]")
 {
     REQUIRE(StringUtil::bytesToString(0) == "0");
+    REQUIRE(StringUtil::bytesToStringF(0) == "0");
     REQUIRE(StringUtil::bytesToString(123) == "123");
+    REQUIRE(StringUtil::bytesToStringF(123) == "123");
 
     REQUIRE(StringUtil::bytesToString(1024) == "1K");
+    REQUIRE(StringUtil::bytesToStringF(1024) == "1K");
     REQUIRE(StringUtil::bytesToString(4096) == "4K");
+    REQUIRE(StringUtil::bytesToStringF(4096) == "4K");
     
     REQUIRE(StringUtil::bytesToString(1048576) == "1M");
-    REQUIRE(StringUtil::bytesToString(1048577) == "1048577");
-    REQUIRE(StringUtil::bytesToString(1536000) == "1500K");
+    REQUIRE(StringUtil::bytesToStringF(1048576) == "1M");
+    REQUIRE(StringUtil::bytesToString(1048577) == "1048577"); // whole numbers only
+    REQUIRE(StringUtil::bytesToStringF(1048577) == "1M"); // decimals but no trailing zeroes
+    REQUIRE(StringUtil::bytesToString(1536000) == "1500K"); // whole numbers only
+    REQUIRE(StringUtil::bytesToStringF(1536000) == "1.46M"); // up to 2 decimals
     
     REQUIRE(StringUtil::bytesToString(45ULL*1024*1024*1024) == "45G");
+    REQUIRE(StringUtil::bytesToStringF(45ULL*1024*1024*1024) == "45G");
     REQUIRE(StringUtil::bytesToString(27ULL*1024*1024*1024*1024) == "27T");
+    REQUIRE(StringUtil::bytesToStringF(27ULL*1024*1024*1024*1024) == "27T");
     REQUIRE(StringUtil::bytesToString(69ULL*1024*1024*1024*1024*1024) == "69P");
+    REQUIRE(StringUtil::bytesToStringF(69ULL*1024*1024*1024*1024*1024) == "69P");
 }
 
 } // namespace Andromeda

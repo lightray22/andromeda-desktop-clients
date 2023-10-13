@@ -1,12 +1,15 @@
 #ifndef LIBA2_DEBUG_H_
 #define LIBA2_DEBUG_H_
 
+#include <chrono>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <list>
+#include <mutex>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 namespace Andromeda {
 
@@ -25,23 +28,37 @@ public:
         LAST = DETAILS
     };
 
-    /** Returns the configured global debug level */
-    static Level GetLevel(){ return sLevel; }
+    /** Returns the highest level of all configured streams */
+    static Level GetLevel(){ return sMaxLevel; }
 
-    /** Sets the configured global debug level */
-    static void SetLevel(Level level){ sLevel = level; }
+    /** Sets the configured log level for all streams - THREAD SAFE */
+    static void SetLevel(Level level);
 
-    /** Adds the given component name to the filter set - NOT thread safe */
-    static void AddFilter(const std::string& name){ sPrefixes.emplace(name); }
+    /** Sets the configured log level for the given stream - THREAD SAFE */
+    static void SetLevel(Level level, const std::ostream& stream);
 
-    /** Adds an output stream reference to send output to - NOT thread safe */
-    static void AddStream(std::ostream& stream){ sStreams.emplace_back(&stream); }
+    /** Sets the list of comma-separated filters for all streams - THREAD SAFE */
+    static void SetFilters(const std::string& filters);
 
-    /** Adds a file output stream to send output to - NOT thread safe */
-    static void AddStream(const std::string& path);
+    /** Sets the list of comma-separated filters for the given stream - THREAD SAFE */
+    static void SetFilters(const std::string& filters, const std::ostream& stream);
+
+    /** Adds an output stream reference to send output to - THREAD SAFE */
+    static void AddStream(std::ostream& stream);
+
+    /** Removes an output stream reference added earlier - THREAD SAFE */
+    static void RemoveStream(std::ostream& stream);
+
+    /** 
+     * Adds a file output stream to send output to - THREAD SAFE 
+     * copies level/filters from the first existing stream
+     * @return a reference to the created stream for SetLevel/Filters
+    */
+    static std::ostream& AddLogFile(const std::string& path);
 
     /**
-     * @param prefix to use for all prints
+     * Construct a new debug module (simple and static safe!)
+     * @param prefix name to use for all prints
      * @param addr address to print with details
      */
     explicit Debug(const std::string& prefix, void* addr) noexcept : 
@@ -53,19 +70,20 @@ public:
     /** Prints func to cerr if the level is >= ERRORS */
     inline void Error(const StreamFunc& strfunc)
     {
-        if (sLevel >= Level::ERRORS) Print(strfunc);
+        if (sMaxLevel >= Level::ERRORS) Print(strfunc,Level::ERRORS);
     }
 
     /** Prints func to cerr if the level is >= BACKEND */
     inline void Backend(const StreamFunc& strfunc)
     {
-        if (sLevel >= Level::BACKEND) PrintIf(strfunc);
+        if (sMaxLevel >= Level::BACKEND) Print(strfunc,Level::BACKEND);
     }
 
     /** Prints func to cerr if the level is >= INFO */
     inline void Info(const StreamFunc& strfunc)
     {
-        if (sLevel >= Level::INFO) PrintIf(strfunc);
+        // caching sMaxLevel lets us do this very quick check here
+        if (sMaxLevel >= Level::INFO) Print(strfunc,Level::INFO);
     }
 
     /** Syntactic sugar to send the current function name and strcode to debug (error) */
@@ -94,27 +112,46 @@ public:
 
 private:
 
-    /** Prints func to cerr with other info IF the prefix is enabled - THREAD SAFE */
-    void PrintIf(const StreamFunc& strfunc);
-
-    /** Prints func to cerr with other info - THREAD SAFE */
-    void Print(const StreamFunc& strfunc);
+    /** 
+     * Prints func to all registered streams with other info - THREAD SAFE
+     * @param level level of the calling function, will not use filters if ERRORS
+     */
+    void Print(const StreamFunc& strfunc, Level level);
 
     /** The address this debug instance belongs to */
-    void* mAddr { nullptr };
-    
+    void* const mAddr { nullptr };
     /** The module name this debug instance belongs to */
     std::string mPrefix;
 
-    /** Global debug level */
-    static Level sLevel;
+    static std::mutex sMutex;
+    /** timestamp when the program started */
+    static std::chrono::steady_clock::time_point sStart;
 
-    /** Set of prefixes to filter printing */
-    static std::unordered_set<std::string> sPrefixes;
+    /** A sink for debug output */
+    struct Context
+    {
+        std::ostream* stream;
+        Level level { Debug::Level::ERRORS };
+        std::unordered_set<std::string> filters;
 
-    /** List of streams to output to */
-    static std::list<std::ostream*> sStreams;
-    /** Subset list of streams that we own */
+        explicit Context(std::ostream& s) : stream(&s){ }
+    };
+
+    /** Converts a comma-separated string of filters to a filter set */
+    static decltype(Context::filters) GetFilterSet(const std::string& filters);
+
+    /** Get the max level of all contexts */
+    static Level GetMaxLevel();
+
+    /** Global set of debug output sinks - using a vector instead of map for maximum 
+     * iteration performance - adding/modifying streams is not performance-sensitive! */
+    static std::vector<Context> sContexts;
+
+    /** The maximum level of all contexts, for minimum overhead
+     * for debug calls in the usual case when debug is off */
+    static Level sMaxLevel;
+
+    /** Subset list of file streams that we own */
     static std::list<std::ofstream> sFileStreams;
 };
 

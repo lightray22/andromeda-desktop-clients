@@ -98,7 +98,7 @@ size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, con
     const PageInfo pageInfo { pageMgr, index, newSize };
 
     mPageQueue.enqueue_front(&page, pageInfo);
-    mCurrentMemory += newSize;
+    mCurrentTotal += newSize;
 
     PrintStatus(__func__, lock);
 
@@ -126,7 +126,7 @@ void CacheManager::ResizePage(const PageManager& pageMgr, const Page& page, cons
     if (itQueue != mPageQueue.end()) 
     {
         const size_t oldSize { itQueue->second.mPageSize };
-        mCurrentMemory += newSize-oldSize;
+        mCurrentTotal += newSize-oldSize;
         itQueue->second.mPageSize = newSize;
 
         PrintStatus(__func__, lock);
@@ -287,7 +287,7 @@ size_t CacheManager::RemovePage(const Page& page, const UniqueLock& lock)
     {
         MDBG_INFO("(page:" << &page << ")");
         pageSize = itLookup->second->second.mPageSize;
-        mCurrentMemory -= pageSize;
+        mCurrentTotal -= pageSize;
         mPageQueue.erase(itLookup);
     }
 
@@ -311,11 +311,11 @@ void CacheManager::RemoveDirty(const Page& page, const UniqueLock& lock)
 void CacheManager::PrintStatus(const char* const fname, const UniqueLock& lock)
 {
     mDebug.Info([&](std::ostream& str){ str << fname << "..."
-        << " pages:" << mPageQueue.size() << ", memory:" << mCurrentMemory; });
+        << " pages:" << mPageQueue.size() << ", memory:" << mCurrentTotal; });
 
 #if DEBUG // this will kill performance
     size_t total = 0; for (const PageQueue::value_type& pageInfo : mPageQueue) total += pageInfo.second.mPageSize;
-    if (total != mCurrentMemory){ MDBG_ERROR(": BAD MEMORY TRACKING! " << total << " != " << mCurrentMemory); assert(false); }
+    if (total != mCurrentTotal){ MDBG_ERROR(": BAD MEMORY TRACKING! " << total << " != " << mCurrentTotal); assert(false); }
 #endif // DEBUG
 }
 
@@ -362,7 +362,7 @@ void CacheManager::EvictThread()
     {
         { // lock scope
             UniqueLock lock(mMutex);
-            while (mRunCleanup && (mCurrentMemory <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
+            while (mRunCleanup && (mCurrentTotal <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
                 mEvictWaitCV.notify_all();
@@ -418,7 +418,7 @@ void CacheManager::DoPageEvictions() noexcept // thread cannot throw
 
         PageQueue::reverse_iterator pageIt { mPageQueue.rbegin() };
         const size_t margin { mCacheOptions.memoryLimit/mCacheOptions.evictSizeFrac };
-        for (; mCurrentMemory + margin > mCacheOptions.memoryLimit + cleaned; ++pageIt)
+        for (; mCurrentTotal + margin > mCacheOptions.memoryLimit + cleaned; ++pageIt)
         {
             const Page& pageRef { *pageIt->first };
             PageInfo& pageInfo { pageIt->second };

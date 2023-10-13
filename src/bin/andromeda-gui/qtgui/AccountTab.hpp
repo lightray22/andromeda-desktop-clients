@@ -7,14 +7,14 @@
 #include "andromeda/common.hpp"
 #include "andromeda/Debug.hpp"
 
+namespace Ui { class AccountTab; }
+
 namespace AndromedaGui {
 
 class BackendContext;
 class MountContext;
 
 namespace QtGui {
-
-namespace Ui { class AccountTab; }
 
 /** The main tab widget for an account/backend instance */
 class AccountTab : public QWidget

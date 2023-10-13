@@ -51,6 +51,15 @@ public:
      */
     void free(void* ptr, size_t pages) override;
 
+    struct Stats { 
+        size_t curAlloc; size_t maxAlloc; size_t curFree; 
+        size_t recycles; size_t allocs; };
+    /** Returns a copy of some member variables for debugging */
+    inline Stats GetStats() const { 
+        const LockGuard lock(mMutex); return { 
+            mCurAlloc, mMaxAlloc, mCurFree,
+            mRecycles, mAllocs }; }
+
 private:
 
     using LockGuard = std::lock_guard<std::mutex>;
@@ -65,7 +74,7 @@ private:
     void clean_entry(const LockGuard& lock);
 
     mutable Debug mDebug;
-    std::mutex mMutex;
+    mutable std::mutex mMutex;
 
     // the maximum size of the free pool is (mMaxAlloc-mBaseline)
     // ... the idea is that the Managers allocate new pages (reading, writing) BEFORE doing evictions,

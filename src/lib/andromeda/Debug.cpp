@@ -1,9 +1,9 @@
 
 #include "Debug.hpp"
+#include "StringUtil.hpp"
 
-#include <chrono>
+#include <algorithm>
 #include <iomanip>
-#include <mutex>
 #include <thread>
 
 using std::chrono::steady_clock;
@@ -11,45 +11,127 @@ using std::chrono::duration;
 
 namespace Andromeda {
 
-namespace { // anonymous
-/** Global output lock */
-std::mutex sMutex;
-/** timestamp when the program started */
-steady_clock::time_point sStart { steady_clock::now() };
-} // namespace
-
-Debug::Level Debug::sLevel { Debug::Level::ERRORS };
-std::unordered_set<std::string> Debug::sPrefixes;
-
-std::list<std::ostream*> Debug::sStreams;
+std::mutex Debug::sMutex;
+steady_clock::time_point Debug::sStart { steady_clock::now() };
+std::vector<Debug::Context> Debug::sContexts;
+Debug::Level Debug::sMaxLevel { Debug::Level::ERRORS };
 std::list<std::ofstream> Debug::sFileStreams;
 
 /*****************************************************/
-void Debug::AddStream(const std::string& path)
-{ 
-    sFileStreams.emplace_back(path, std::ofstream::out);
-    sStreams.emplace_back(&sFileStreams.back());
-}
-
-/*****************************************************/
-void Debug::PrintIf(const Debug::StreamFunc& strfunc)
+Debug::Level Debug::GetMaxLevel()
 {
-    if (sPrefixes.empty() || sPrefixes.find(mPrefix) != sPrefixes.end())
-    {
-        Print(strfunc);
-    }
+    const decltype(sContexts)::const_iterator it { 
+        std::max_element(sContexts.cbegin(), sContexts.cend(),
+            [](const Context& ctx1, const Context& ctx2){ return ctx1.level < ctx2.level; }) };
+    return (it != sContexts.cend()) ? it->level : Level::ERRORS;
 }
 
 /*****************************************************/
-void Debug::Print(const Debug::StreamFunc& strfunc)
+void Debug::SetLevel(Level level) // set all
 {
     const std::lock_guard<decltype(sMutex)> lock(sMutex);
 
-    for (std::ostream* streamPtr : sStreams)
-    {
-        std::ostream& stream { *streamPtr };
+    for (Context& ctx : sContexts)
+        ctx.level = level;
+    sMaxLevel = level;
+}
 
-        if (sLevel >= Level::DETAILS)
+/*****************************************************/
+void Debug::SetLevel(Level level, const std::ostream& stream)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    for (Context& ctx : sContexts)
+        if (&stream == ctx.stream)
+            ctx.level = level;
+    sMaxLevel = GetMaxLevel();
+}
+
+/*****************************************************/
+decltype(Debug::Context::filters) Debug::GetFilterSet(const std::string& filters)
+{
+    decltype(Context::filters) filterSet;
+    for (const std::string& prefix : StringUtil::explode(filters,","))
+        filterSet.emplace(StringUtil::trim(prefix));
+    return filterSet;
+}
+
+/*****************************************************/
+void Debug::SetFilters(const std::string& filters) // set all
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    const decltype(Context::filters) filterSet { GetFilterSet(filters) };
+    for (Context& ctx : sContexts)
+        ctx.filters = filterSet; // copy
+}
+
+/*****************************************************/
+void Debug::SetFilters(const std::string& filters, const std::ostream& stream)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    const decltype(Context::filters) filterSet { GetFilterSet(filters) };
+    for (Context& ctx : sContexts)
+        if (&stream == ctx.stream)
+            ctx.filters = filterSet; // copy
+}
+
+/*****************************************************/
+void Debug::AddStream(std::ostream& stream)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    sContexts.emplace_back(stream); // default level, filters
+    sMaxLevel = GetMaxLevel();
+}
+
+/*****************************************************/
+void Debug::RemoveStream(std::ostream& stream)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    const decltype(sContexts)::const_iterator it {
+        std::find_if(sContexts.cbegin(), sContexts.cend(),
+            [&](const Context& ctx){ return &stream == ctx.stream; }) };
+    if (it != sContexts.cend()) sContexts.erase(it);
+    sMaxLevel = GetMaxLevel();
+}
+
+/*****************************************************/
+std::ostream& Debug::AddLogFile(const std::string& path)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    sFileStreams.emplace_back(path, std::ofstream::out);
+    std::ostream& stream { sFileStreams.back() };
+
+    // copy config from the first existing stream, else use defaults
+    if (!sContexts.empty())
+    {
+        Context context { sContexts.front() }; // copy
+        context.stream = &stream;
+        sContexts.emplace_back(context);
+    }
+    else sContexts.emplace_back(stream); // default level, filters
+    sMaxLevel = GetMaxLevel();
+    return stream;
+}
+
+/*****************************************************/
+void Debug::Print(const Debug::StreamFunc& strfunc, Level level)
+{
+    const std::lock_guard<decltype(sMutex)> lock(sMutex);
+
+    for (const Context& ctx : sContexts)
+    {
+        if (level > ctx.level) continue;
+        if (level > Level::ERRORS && (!ctx.filters.empty() && ctx.filters.find(mPrefix) == ctx.filters.cend()))
+            continue; // filtered out, do nothing
+
+        std::ostream& stream { *ctx.stream };
+
+        if (ctx.level >= Level::DETAILS)
         {
             stream << "tid:" << std::this_thread::get_id() << " ";
 
