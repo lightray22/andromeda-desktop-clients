@@ -80,6 +80,7 @@ int main(int argc, char** argv)
     QApplication application(argc, argv);
     application.setApplicationName("andromeda-gui");
     application.setApplicationDisplayName("Andromeda Sync");
+    application.setQuitOnLastWindowClosed(false); // handle manually
 
     const std::string dataPath { QStandardPaths::writableLocation(
         QStandardPaths::AppDataLocation).toStdString() }; // Qt guarantees never empty
