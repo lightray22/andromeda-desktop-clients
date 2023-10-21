@@ -28,6 +28,11 @@ public:
         explicit Exception(const std::string& message) :
             Andromeda::BaseException("Mount Error: "+message) {}; };
 
+    /** Exception indicating the desired mount directory is not found */
+    class MountNotFoundException : public Exception { public:
+        explicit MountNotFoundException(const std::string& path) : 
+            Exception("Mount Directory not found:\n\n"+path) {}; };
+
     /** Exception indicating the desired mount directory is not empty */
     class NonEmptyMountException : public Exception { public:
         explicit NonEmptyMountException(const std::string& path) : 
@@ -41,14 +46,14 @@ public:
     /**
      * Create a new MountContext
      * @param backend the backend resource to use
-     * @param homeRelative if true, mountPath is $HOME-relative
-     * @param mountPath filesystem path to mount - must already exist if not homeRel
+     * @param autoHome if true, mountPath is $HOME-relative and will be created, else path is absolute
+     * @param mountPath filesystem path to mount - must already exist if not autoHome
      * @param options FUSE adapter options
      * @throws Exception if there is an error creating the mountpoint
      * @throws FuseAdapter::Exception if there is a FUSE error
      */
     MountContext(Andromeda::Backend::BackendImpl& backend,
-        bool homeRelative, std::string mountPath, 
+        bool autoHome, std::string mountPath, 
         AndromedaFuse::FuseOptions& options);
 
     virtual ~MountContext();

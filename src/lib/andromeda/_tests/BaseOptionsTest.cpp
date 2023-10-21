@@ -9,6 +9,7 @@
 #include "TempPath.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 class TestOptions : public BaseOptions
 {
@@ -140,4 +141,5 @@ TEST_CASE("ParseUrl", "[BaseOptions]")
     }
 }
 
+} // namespace
 } // namespace Andromeda

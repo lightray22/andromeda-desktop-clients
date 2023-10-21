@@ -4,6 +4,7 @@
 #include "base64.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("Encode", "base64")
@@ -21,4 +22,5 @@ TEST_CASE("Encode", "base64")
     REQUIRE(base64::encode(str) == "EAAh0Jxh/0Y=");
 }
 
+} // namespace
 } // namespace Andromeda

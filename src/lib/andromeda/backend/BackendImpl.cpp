@@ -29,6 +29,8 @@ std::atomic<uint64_t> BackendImpl::sReqCount { 1 };
 BackendImpl::BackendImpl(const ConfigOptions& options, RunnerPool& runners) : 
     mOptions(options), mRunners(runners),
     mDebug("Backend",this) , mConfig(*this)
+    // loading mConfig now has the nice side effect of making sure any potential
+    // HTTP->HTTPS redirect is out of the way before trying other actions!
 { 
     MDBG_INFO("()");
 }

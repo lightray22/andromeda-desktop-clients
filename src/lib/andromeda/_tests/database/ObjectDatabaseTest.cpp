@@ -8,6 +8,7 @@
 
 namespace Andromeda {
 namespace Database {
+namespace { // anonymous
 
 using trompeloeil::_;
 using Row = SqliteDatabase::Row;
@@ -246,5 +247,6 @@ TEST_CASE("DeleteUnique", "[ObjectDatabase]")
     REQUIRE(objdb.TryDeleteUniqueByQuery<EasyObject>(q) == true);
 }
 
+} // namespace
 } // namespace Database
 } // namespace Andromeda

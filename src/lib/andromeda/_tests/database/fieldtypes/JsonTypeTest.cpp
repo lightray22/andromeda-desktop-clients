@@ -11,6 +11,7 @@
 namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
+namespace { // anonymous
 
 using trompeloeil::_;
 
@@ -62,6 +63,7 @@ TEST_CASE("DefaultJson", "[JsonType]")
     REQUIRE(*field.TryGetJson() == testJ);
 }
 
+} // namespace
 } // namespace FieldTypes
 } // namespace Database
 } // namespace Andromeda

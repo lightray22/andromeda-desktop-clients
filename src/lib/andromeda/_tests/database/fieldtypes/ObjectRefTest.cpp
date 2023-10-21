@@ -11,6 +11,7 @@
 namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
+namespace { // anonymous
 
 using trompeloeil::_;
 using Row = SqliteDatabase::Row;
@@ -128,6 +129,7 @@ TEST_CASE("NonNullObjectSet", "[ObjectRef]")
     objdb.unsetModified(parent);
 }
 
+} // namespace
 } // namespace FieldTypes
 } // namespace Database
 } // namespace Andromeda

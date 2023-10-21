@@ -12,7 +12,7 @@ namespace Andromeda {
 namespace AndromedaGui {
 
 /** Manages command line options and config */
-class Options : public Andromeda::BaseOptions
+class Options : public Andromeda::BaseOptions // cppcheck-suppress noConstructor
 {
 public:
 

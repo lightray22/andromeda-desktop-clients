@@ -7,6 +7,7 @@
 #include "OrderedMap.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 using TestM = OrderedMap<int, std::string>;
 using TestMV = TestM::value_type;
@@ -103,4 +104,5 @@ TEST_CASE("TestPop", "[OrderedMap]")
     REQUIRE(testM == TestM{{9,"myval3"}}); REQUIRE(testQ == TestQ{9});
 }
 
+} // namespace
 } // namespace Andromeda

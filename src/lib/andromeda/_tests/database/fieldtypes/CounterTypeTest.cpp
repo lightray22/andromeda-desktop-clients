@@ -10,6 +10,7 @@
 namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
+namespace { // anonymous
 
 using trompeloeil::_;
 
@@ -46,6 +47,7 @@ TEST_CASE("BasicCounter", "[CounterType]")
     REQUIRE(static_cast<int>(field) == 19);
 }
 
+} // namespace
 } // namespace FieldTypes
 } // namespace Database
 } // namespace Andromeda

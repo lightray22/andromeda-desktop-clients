@@ -6,6 +6,7 @@
 #include "SecureBuffer.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("GenerateSalt", "[Crypto]")
@@ -111,4 +112,5 @@ TEST_CASE("CryptoAuth", "[Crypto]")
     REQUIRE_THROWS_AS(Crypto::CheckAuthCode(badmac, msg, key), Crypto::DecryptFailedException);
 }
 
+} // namespace
 } // namespace Andromeda

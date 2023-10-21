@@ -121,7 +121,7 @@ void MainWindow::AddAccount()
         {
             MDBG_ERROR("... " << ex.what());
             const std::string msg { "Failed to add the account to the database. This is probably a bug, please report." };
-            Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
+            Utilities::warningBox(this, "Database Error", msg, ex);
         }
 
         backendCtx->GetBackend().SetCacheManager(mCacheManager);
@@ -187,7 +187,7 @@ void MainWindow::RemoveAccount()
         {
             MDBG_ERROR("... " << ex.what());
             const std::string msg { "Failed to remove the account from the database. This is probably a bug, please report." };
-            Utilities::warningBox(this, "Database Error", msg.c_str(), ex);
+            Utilities::warningBox(this, "Database Error", msg, ex);
         }
 
         RemoveAccountTab(accountTab);
@@ -253,8 +253,8 @@ void MainWindow::CreateDebugWindow()
 {
     MDBG_INFO("()");
 
-    DebugWindow* debugWindow = new DebugWindow(mCacheManager);
-    debugWindow->setAttribute(Qt::WA_DeleteOnClose,true);
+    DebugWindow* debugWindow = new DebugWindow(mCacheManager); // NOLINT(cppcoreguidelines-owning-memory)
+    debugWindow->setAttribute(Qt::WA_DeleteOnClose,true); // window deletes itself
     Utilities::fullShow(*debugWindow);
 }
 

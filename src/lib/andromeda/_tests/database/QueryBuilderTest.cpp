@@ -8,6 +8,7 @@
 
 namespace Andromeda {
 namespace Database {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("Compares", "[QueryBuilder]")
@@ -158,5 +159,6 @@ TEST_CASE("Special", "[QueryBuilder]")
     REQUIRE(q.GetText().empty());
 }
 
+} // namespace
 } // namespace Database
 } // namespace Andromeda

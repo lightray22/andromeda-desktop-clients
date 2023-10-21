@@ -51,7 +51,7 @@ SessionStore& SessionStore::Create(ObjectDatabase& db, const std::string& server
 }
 
 /*****************************************************/
-std::list<SessionStore*> SessionStore::LoadAll(ObjectDatabase& db) // cppcheck-suppress constParameter
+std::list<SessionStore*> SessionStore::LoadAll(ObjectDatabase& db) // cppcheck-suppress constParameterReference
 {
     return db.LoadObjectsByQuery<SessionStore>({}); // empty WHERE
 }

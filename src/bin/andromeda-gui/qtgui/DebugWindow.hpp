@@ -30,10 +30,10 @@ class DebugWindow;
 class DebugBuffer : public std::stringbuf
 {
 public:
-    DebugBuffer(DebugWindow& window);
+    explicit DebugBuffer(DebugWindow& window);
 
 protected:
-    virtual int sync();
+    int sync() override;
 
 private:
     DebugWindow& mWindow;

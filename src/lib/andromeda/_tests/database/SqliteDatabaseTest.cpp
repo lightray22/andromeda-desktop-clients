@@ -12,8 +12,8 @@
 
 namespace Andromeda {
 namespace Database {
-
 namespace { // anonymous
+
 using RowVector = std::vector<SqliteDatabase::Row*>; // can't be &
 void ToVector(SqliteDatabase::RowList& in, RowVector& out)
 {
@@ -21,7 +21,6 @@ void ToVector(SqliteDatabase::RowList& in, RowVector& out)
     for (SqliteDatabase::RowList::value_type& val : in)
         out[i++] = &val;
 }
-} // anonymous namespace
 
 /*****************************************************/
 TEST_CASE("Query", "[SqliteDatabase]")
@@ -170,5 +169,6 @@ TEST_CASE("AutoTransaction", "[SqliteDatabase]")
     REQUIRE(rows.size() == 1); REQUIRE(rows.front().at("id") == 5);
 }
 
+} // namespace
 } // namespace Database
 } // namespace Andromeda

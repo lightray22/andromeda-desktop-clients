@@ -5,6 +5,7 @@
 #include "SecureBuffer.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("SecureMemory","[SecureBuffer]")
@@ -47,4 +48,5 @@ TEST_CASE("SecureBuffer","[SecureBuffer]")
     REQUIRE(s4 == s4b);
 }
 
+} // namespace
 } // namespace Andromeda

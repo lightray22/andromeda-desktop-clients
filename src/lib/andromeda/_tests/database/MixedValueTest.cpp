@@ -7,6 +7,7 @@
 
 namespace Andromeda {
 namespace Database {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("MixedValue", "[MixedValue]")
@@ -46,5 +47,6 @@ TEST_CASE("MixedValue", "[MixedValue]")
     REQUIRE(ma != md);
 }
 
+} // namespace
 } // namespace Database
 } // namespace Andromeda

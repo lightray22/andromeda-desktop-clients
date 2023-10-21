@@ -63,7 +63,7 @@ inline Folder::ScopeLocked GetFolderByPath(const std::string& path)
 }
 
 /*****************************************************/
-int CatchAsErrno(const char* const fname, const std::function<int()>& func, const char* path)
+int CatchAsErrno(const char* const fname, const std::function<int()>& func, const char* const path)
 {
     try { return func(); }
 
@@ -281,7 +281,7 @@ namespace { void item_stat(const Item::ScopeLocked& item, const SharedLockR& ite
 } } // anonymous namespace
 
 /*****************************************************/
-int FuseOperations::open(const char* path, struct fuse_file_info* fi)
+int FuseOperations::open(const char* const path, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
@@ -313,7 +313,7 @@ int FuseOperations::open(const char* path, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
+int FuseOperations::opendir(const char* const path, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ")");
@@ -336,9 +336,9 @@ int FuseOperations::opendir(const char* path, struct fuse_file_info* fi)
 
 /*****************************************************/
 #if LIBFUSE2
-int FuseOperations::getattr(const char* path, struct stat* stbuf)
+int FuseOperations::getattr(const char* const path, struct stat* stbuf)
 #else
-int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi)
+int FuseOperations::getattr(const char* const path, struct stat* stbuf, struct fuse_file_info* const fi)
 #endif // LIBFUSE2
 {
     if (path == nullptr) return -EINVAL;
@@ -353,9 +353,9 @@ int FuseOperations::getattr(const char* path, struct stat* stbuf, struct fuse_fi
 
 /*****************************************************/
 #if LIBFUSE2
-int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+int FuseOperations::readdir(const char* const path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* const fi)
 #else
-int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi, enum fuse_readdir_flags flags)
+int FuseOperations::readdir(const char* const path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* const fi, enum fuse_readdir_flags flags)
 #endif // LIBFUSE2
 {
     if (path == nullptr) return -EINVAL;
@@ -409,7 +409,7 @@ int FuseOperations::readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 }
 
 /*****************************************************/
-int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_info* fi)
+int FuseOperations::create(const char* fullpath, mode_t mode, struct fuse_file_info* const fi)
 {
     const StringUtil::StringPair pair(StringUtil::splitPath(fullpath));
     const std::string& path { pair.first }; 
@@ -445,7 +445,7 @@ int FuseOperations::mkdir(const char* fullpath, mode_t mode)
 }
 
 /*****************************************************/
-int FuseOperations::unlink(const char* path)
+int FuseOperations::unlink(const char* const path)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
@@ -463,7 +463,7 @@ int FuseOperations::unlink(const char* path)
 }
 
 /*****************************************************/
-int FuseOperations::rmdir(const char* path)
+int FuseOperations::rmdir(const char* const path)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
@@ -533,7 +533,7 @@ int FuseOperations::rename(const char* oldpath, const char* newpath, unsigned in
 }
 
 /*****************************************************/
-int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int FuseOperations::read(const char* const path, char* buf, size_t size, off_t off, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
@@ -550,7 +550,7 @@ int FuseOperations::read(const char* path, char* buf, size_t size, off_t off, st
 }
 
 /*****************************************************/
-int FuseOperations::write(const char* path, const char* buf, size_t size, off_t off, struct fuse_file_info* fi)
+int FuseOperations::write(const char* const path, const char* buf, size_t size, off_t off, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", offset:" << off << ", size:" << size << ")");
@@ -572,7 +572,7 @@ int FuseOperations::write(const char* path, const char* buf, size_t size, off_t 
 // is only for applications->OS and has nothing to do with the storage "media"
 
 /*****************************************************/
-int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
+int FuseOperations::flush(const char* const path, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
@@ -587,7 +587,7 @@ int FuseOperations::flush(const char* path, struct fuse_file_info* fi)
 }
 
 /*****************************************************/
-int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info* fi)
+int FuseOperations::fsync(const char* const path, int datasync, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
@@ -602,7 +602,7 @@ int FuseOperations::fsync(const char* path, int datasync, struct fuse_file_info*
 }
 
 /*****************************************************/
-int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_info* fi)
+int FuseOperations::fsyncdir(const char* const path, int datasync, struct fuse_file_info* const fi)
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ")");
@@ -617,7 +617,7 @@ int FuseOperations::fsyncdir(const char* path, int datasync, struct fuse_file_in
 }
 
 /*****************************************************/
-int FuseOperations::release(const char* path, struct fuse_file_info* fi)
+int FuseOperations::release(const char* const path, struct fuse_file_info* const fi) // cppcheck-suppress constParameterCallback
 {
     if (path == nullptr) return -EINVAL;
     SDBG_INFO("(path:" << path << ", flags:" << fi->flags << ", flush:" << fi->flush << ")");
@@ -636,9 +636,9 @@ int FuseOperations::release(const char* path, struct fuse_file_info* fi)
 
 /*****************************************************/
 #if LIBFUSE2
-int FuseOperations::truncate(const char* path, off_t size)
+int FuseOperations::truncate(const char* const path, off_t size)
 #else
-int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info* fi)
+int FuseOperations::truncate(const char* const path, off_t size, struct fuse_file_info* const fi)
 #endif // LIBFUSE2
 {
     if (path == nullptr) return -EINVAL;
@@ -657,9 +657,9 @@ int FuseOperations::truncate(const char* path, off_t size, struct fuse_file_info
 
 /*****************************************************/
 #if LIBFUSE2
-int FuseOperations::chmod(const char* path, mode_t mode)
+int FuseOperations::chmod(const char* const path, mode_t mode)
 #else
-int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+int FuseOperations::chmod(const char* const path, mode_t mode, struct fuse_file_info* const fi)
 #endif // LIBFUSE2
 {
     if (path == nullptr) return -EINVAL;
@@ -677,9 +677,9 @@ int FuseOperations::chmod(const char* path, mode_t mode, struct fuse_file_info* 
 
 /*****************************************************/
 #if LIBFUSE2
-int FuseOperations::chown(const char* path, uid_t uid, gid_t gid)
+int FuseOperations::chown(const char* const path, uid_t uid, gid_t gid)
 #else
-int FuseOperations::chown(const char* path, uid_t uid, gid_t gid, struct fuse_file_info* fi)
+int FuseOperations::chown(const char* const path, uid_t uid, gid_t gid, struct fuse_file_info* const fi)
 #endif // LIBFUSE2
 {
     if (path == nullptr) return -EINVAL;

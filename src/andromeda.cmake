@@ -190,6 +190,7 @@ function (andromeda_analyze)
             "--suppress=*:*_deps/*"
             "--suppress=*:*_autogen/*" # qt
             "--suppress=unmatchedSuppression"
+            "--suppress=unknownMacro" # qt
             "--suppress=missingInclude"
             "--suppress=missingIncludeSystem"
             "--suppress=useStlAlgorithm" # annoying

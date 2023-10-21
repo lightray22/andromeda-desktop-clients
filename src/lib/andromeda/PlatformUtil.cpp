@@ -137,7 +137,7 @@ int PlatformUtil::RunPosixCommand(ArgList& args)
 
     std::vector<char*> argv(args.size());
     std::transform(args.begin(),args.end(),argv.begin(),
-        [](std::string& arg)->char*{ return arg.data(); });
+        [](std::string& arg)->char*{ return arg.data(); }); // cppcheck-suppress constParameterReference
     argv.emplace_back(nullptr); // argv is null-terminated
 
     const pid_t pid { fork() };

@@ -10,7 +10,7 @@ namespace QtGui {
 /*****************************************************/
 SingleInstance::SingleInstance(const std::string& lockPath) :
     mDebug(__func__, this),
-    mServerName(Utilities::hash16(lockPath.c_str()).toHex()),
+    mServerName(Utilities::hash16(lockPath).toHex()),
     mLockFile(lockPath.c_str())
 {
     MDBG_INFO("(lockPath:" << lockPath << ")"
@@ -45,7 +45,7 @@ void SingleInstance::ShowOnDuplicate(QWidget& window)
     // if we get a connection to the single-instance server, show the window
     QObject::connect(&mServer, &QLocalServer::newConnection, [&]()
     {
-        MDBG_INFO("... new single-instance socket connection");
+        MDBG_INFO("... new single-instance socket connection"); // NOLINT(bugprone-lambda-function-name)
         QLocalSocket& clientSocket = *mServer.nextPendingConnection();
         Utilities::fullShow(window);
         clientSocket.abort();

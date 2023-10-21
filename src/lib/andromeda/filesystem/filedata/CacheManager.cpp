@@ -90,7 +90,7 @@ void CacheManager::InformPage(PageManager& pageMgr, const uint64_t index, const 
 }
 
 /*****************************************************/
-size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock) // cppcheck-suppress constParameter
+size_t CacheManager::EnqueuePage(PageManager& pageMgr, const uint64_t index, const Page& page, bool dirty, const UniqueLock& lock) // cppcheck-suppress constParameterReference
 {
     const size_t oldSize { RemovePage(page, lock) };
     const size_t newSize { page.capacity() }; // real memory usage

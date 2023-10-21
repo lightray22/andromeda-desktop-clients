@@ -9,19 +9,20 @@
 #include "Semaphor.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 // Yes obviously these tests are full of race conditions and timing assumptions
 // ... don't run these regularly unless doing development on this class
 
 using Results = std::list<std::string>;
 
-static void wait(const size_t mstime) 
+void wait(const size_t mstime) 
 { 
     std::this_thread::sleep_for(
         std::chrono::milliseconds(mstime)); 
 }
 
-static void RunLock(Semaphor& sem, Results& res, 
+void RunLock(Semaphor& sem, Results& res, 
     std::mutex& resMutex, const std::string& name)
 {
     sem.lock();
@@ -32,7 +33,7 @@ static void RunLock(Semaphor& sem, Results& res,
     }
 }
 
-static void RunUnlock(Semaphor& sem, Results& res, 
+void RunUnlock(Semaphor& sem, Results& res, 
     std::mutex& resMutex, const std::string& name)
 {
     { // lock scope
@@ -43,7 +44,7 @@ static void RunUnlock(Semaphor& sem, Results& res,
     sem.unlock();
 }
 
-static void RunTimed(Semaphor& sem, Results& res, std::mutex& resMutex, 
+void RunTimed(Semaphor& sem, Results& res, std::mutex& resMutex, 
     const char* const name, const size_t mstime)
     // name is not a string ref because it would go out of scope (thread)
 {
@@ -175,4 +176,5 @@ TEST_CASE("TryLock", "[Semaphor]")
     sem.unlock();*/
 }
 
+} // namespace
 } // namespace Andromeda

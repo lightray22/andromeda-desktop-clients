@@ -11,4 +11,4 @@ tools/Doxyfile.bak
 combined.txt
 errors.txt
 
-CMakeLists.txt.user
+CMakeLists.txt.user*

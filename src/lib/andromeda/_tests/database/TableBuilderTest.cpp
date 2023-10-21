@@ -8,6 +8,7 @@
 
 namespace Andromeda {
 namespace Database {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("GetQueries", "[TableBuilder]")
@@ -36,5 +37,6 @@ TEST_CASE("GetQueries", "[TableBuilder]")
     });
 }
 
+} // namespace
 } // namespace Database
 } // namespace Andromeda

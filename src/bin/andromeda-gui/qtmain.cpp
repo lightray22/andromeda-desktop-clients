@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     {
         DDBG_ERROR("... " << ex.what());
         const std::string msg { "Failed to create appdata directory." };
-        Utilities::criticalBox(nullptr, "Initialize Error", msg.c_str(), ex);
+        Utilities::criticalBox(nullptr, "Initialize Error", msg, ex);
         return static_cast<int>(ExitCode::APPDATA);
     }
     

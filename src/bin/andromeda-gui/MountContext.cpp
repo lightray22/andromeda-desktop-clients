@@ -18,32 +18,33 @@ namespace fs = std::filesystem;
 namespace AndromedaGui {
 
 /*****************************************************/
-MountContext::MountContext(BackendImpl& backend, bool homeRelative, std::string mountPath, FuseOptions& options) : 
-    mCreateMount(homeRelative), mDebug(__func__,this) 
+MountContext::MountContext(BackendImpl& backend, bool autoHome, std::string mountPath, FuseOptions& options) : 
+    mCreateMount(autoHome), mDebug(__func__,this) 
 {
     MDBG_INFO("(mountPath:" << mountPath << ")");
 
-    if (homeRelative)
+    if (autoHome) // $HOME-relative
     {
         const QStringList locations { QStandardPaths::standardLocations(QStandardPaths::HomeLocation) };
         mountPath = locations[0].toStdString()+"/"+mountPath; // Qt guarantees [0] never empty
         MDBG_INFO("... mountPath:" << mountPath);
     }
 
-    try
+    try // if mCreateMount, create directory if needed, else must already exist
     {
         if (fs::exists(mountPath))
         {
             if (!fs::is_directory(mountPath) || !fs::is_empty(mountPath))
                 throw NonEmptyMountException(mountPath);
         #if WIN32
-            // Windows auto-creates the directory and fails if it already exists
+            // WinFSP mount auto-creates the directory and fails if it already exists
             fs::remove(mountPath);
         #endif // WIN32
         }
-    #if !WIN32 // Linux complains if the directory doesn't exist before mounting
-        else if (mCreateMount)
-            fs::create_directory(mountPath);
+        else if (!mCreateMount)
+            throw MountNotFoundException(mountPath);
+    #if !WIN32 // FUSE mount complains if the directory doesn't exist before mounting
+        else fs::create_directory(mountPath);
     #endif // !WIN32
     }
     catch (const fs::filesystem_error& err)

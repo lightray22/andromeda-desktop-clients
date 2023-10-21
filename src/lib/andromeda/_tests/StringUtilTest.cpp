@@ -3,6 +3,7 @@
 #include "StringUtil.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("Random", "[StringUtil]")
@@ -313,4 +314,5 @@ TEST_CASE("bytesToString", "[StringUtil]")
     REQUIRE(StringUtil::bytesToStringF(69ULL*1024*1024*1024*1024*1024) == "69P");
 }
 
+} // namespace
 } // namespace Andromeda

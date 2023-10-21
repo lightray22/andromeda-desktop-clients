@@ -16,6 +16,8 @@ public:
     using HTTPRunner::RegisterRedirect;
 };
 
+namespace { // anonymous
+
 /*****************************************************/
 TEST_CASE("ParseURL", "[HTTPRunner]")
 {
@@ -113,5 +115,6 @@ TEST_CASE("RegisterRedirect", "[HTTPRunner]")
     REQUIRE(runner.GetBaseURL() == "/page2");
 }
 
+} // namespace
 } // namespace Backend
 } // namespace Andromeda

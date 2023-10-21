@@ -77,7 +77,7 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
   - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev`
-  - Ubuntu 23.04 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+  - Ubuntu 23.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
   - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base sqlite libsodium`
 - Void Linux amd64: `xbps-install gcc python3 cmake make openssl-devel fuse3-devel qt6-base-devel sqlite-devel libsodium-devel`

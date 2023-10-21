@@ -12,18 +12,19 @@
 // ... don't run these regularly unless doing development on this class
 
 namespace Andromeda {
+namespace { // anonymous
 
 using Results = std::list<std::string>;
 
 enum class LockType { WRITE, READ, READP };
 
-static void wait(const size_t mstime) 
+void wait(const size_t mstime) 
 { 
     std::this_thread::sleep_for(
         std::chrono::milliseconds(mstime)); 
 }
 
-static void RunLock(SharedMutex& mut, Results& res, 
+void RunLock(SharedMutex& mut, Results& res, 
     std::mutex& resMutex, const std::string& name, LockType type)
 {
     switch (type)
@@ -39,7 +40,7 @@ static void RunLock(SharedMutex& mut, Results& res,
     }
 }
 
-static void RunUnlock(SharedMutex& mut, Results& res, 
+void RunUnlock(SharedMutex& mut, Results& res, 
     std::mutex& resMutex, const std::string& name, LockType type)
 {
     { // lock scope
@@ -55,7 +56,7 @@ static void RunUnlock(SharedMutex& mut, Results& res,
     }
 }
 
-static void RunTimed(SharedMutex& mut, Results& res, std::mutex& resMutex, 
+void RunTimed(SharedMutex& mut, Results& res, std::mutex& resMutex, 
     const char* const name, const size_t mstime, LockType type)
     // name is not a string ref because it would go out of scope (thread)
 {
@@ -179,4 +180,5 @@ TEST_CASE("TestTryLock", "[SharedMutex]")
     mut.unlock();
 }
 
+} // namespace
 } // namespace Andromeda

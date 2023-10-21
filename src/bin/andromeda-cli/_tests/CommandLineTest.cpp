@@ -7,6 +7,7 @@
 #include "CommandLine.hpp"
 
 namespace Andromeda {
+namespace { // anonymous
 
 /*****************************************************/
 TEST_CASE("ParseFullArgs", "[CommandLine]")
@@ -21,4 +22,5 @@ TEST_CASE("ParseFullArgs", "[CommandLine]")
     }*/
 }
 
+} // namespace
 } // namespace Andromeda

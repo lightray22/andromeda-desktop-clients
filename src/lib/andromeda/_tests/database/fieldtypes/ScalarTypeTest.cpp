@@ -10,6 +10,7 @@
 namespace Andromeda {
 namespace Database {
 namespace FieldTypes {
+namespace { // anonymous
 
 using trompeloeil::_;
 
@@ -234,6 +235,7 @@ TEST_CASE("StringDefault", "[ScalarType]")
     REQUIRE(field.GetDelta() == 2); // default adds 1
 }
 
+} // namespace
 } // namespace FieldTypes
 } // namespace Database
 } // namespace Andromeda

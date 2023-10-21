@@ -23,13 +23,13 @@ class SingleInstance
 public:
 
     /** Tries to lock the lock file, starts the single-instance server on success and notifies the existing server on failure */
-    SingleInstance(const std::string& lockPath);
+    explicit SingleInstance(const std::string& lockPath);
 
     /** Returns true if the lock file failed to lock (there is an existing instance) */
-    inline bool isDuplicate() const { return !mLockFile.isLocked(); }
+    [[nodiscard]] inline bool isDuplicate() const { return !mLockFile.isLocked(); }
 
     /** Returns true if notifying the existing server seemed to fail */
-    inline bool notifyFailed() const { return mNotifyFailed; }
+    [[nodiscard]] inline bool notifyFailed() const { return mNotifyFailed; }
 
     /** Registers a window to be shown when notified of a duplicate instance running */
     void ShowOnDuplicate(QWidget& window);
