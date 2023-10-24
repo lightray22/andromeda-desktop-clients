@@ -107,7 +107,15 @@ CommandLine::CommandLine(Options& options, size_t argc, const char* const* argv)
 /*****************************************************/
 std::string CommandLine::getNextValue(const StringUtil::StringList& argv, size_t& i)
 {
-    return (argv.size() > i+1 && argv[i+1][0] != '-') ? argv[++i] : "";
+    if (StringUtil::startsWith(argv[i],"--") && 
+        argv[i].find('=') != std::string::npos) // --key=val
+    {
+        return StringUtil::split(argv[i],"=").second;
+    }
+    
+    if (argv.size() > i+1 && !StringUtil::startsWith(argv[i+1],"--")) // --key val
+        return argv[++i];
+    return ""; // no value
 }
 
 /*****************************************************/
@@ -126,7 +134,9 @@ void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv
             throw BaseOptions::BadUsageException(
                 "empty key at action arg "+std::to_string(i));
 
-        param.erase(0,2); const char special { param.back() };
+        param.erase(0,2); // remove --
+        param = StringUtil::split(param,"=").first;
+        const char special { param.back() };
 
         if (special == '@')
         {

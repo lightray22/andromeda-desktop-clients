@@ -51,7 +51,7 @@ public:
 
     using StringPair = std::pair<std::string, std::string>;
     /** 
-     * Special case of explode with max=1,skip=0 and returns a pair 
+     * Special case of explode with max=2,skip=0 and returns a pair 
      * @param str string to split
      * @param delim string separating pieces
      * @param skip the number of delims to skip

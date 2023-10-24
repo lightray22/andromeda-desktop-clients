@@ -52,9 +52,9 @@ public:
 private:
 
     /**
-     * Returns the next non-key value after i if it exists
+     * Returns the next value (if one exists) at or after i (MUST EXIST)
      * @param argv command line argument list
-     * @param i current index to check after
+     * @param i current index to check at or after, incremented if the value was i+1
      */
     std::string getNextValue(const Andromeda::StringUtil::StringList& argv, size_t& i);
 
