@@ -423,8 +423,8 @@ private:
     std::string mSessionID;
     std::string mSessionKey;
     
-    // global backend request counter
-    static std::atomic<uint64_t> sReqCount;
+    // global backend request counter for debug
+    static std::atomic<uint64_t> sReqNext;
 
     ConfigOptions mOptions;
     RunnerPool& mRunners;

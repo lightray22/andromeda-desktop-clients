@@ -45,10 +45,10 @@ public:
     [[nodiscard]] virtual std::string GetHostname() const = 0;
 
     /** Allows automatic retry on request failure */
-    inline void EnableRetry(bool enable = true) { mCanRetry = enable; }
+    inline void EnableRetry(bool enable = true) { mCanRetry.store(enable); }
 
     /** Returns whether retry is enabled or disabled */
-    [[nodiscard]] inline bool GetCanRetry() const { return mCanRetry; }
+    [[nodiscard]] inline bool GetCanRetry() const { return mCanRetry.load(); }
 
     /**
      * Runs an API call and returns the result

@@ -23,7 +23,7 @@ using Andromeda::Filesystem::Filedata::CachingAllocator;
 namespace Andromeda {
 namespace Backend {
 
-std::atomic<uint64_t> BackendImpl::sReqCount { 1 };
+std::atomic<uint64_t> BackendImpl::sReqNext { 1 };
 
 /*****************************************************/
 BackendImpl::BackendImpl(const ConfigOptions& options, RunnerPool& runners) : 
@@ -108,7 +108,7 @@ void BackendImpl::PrintInput(const RunnerInput_StreamIn& input, std::ostream& st
 
 /** Print an input object and current function name to debug */
 #define MDBG_BACKEND(input) { \
-    const uint64_t reqCount { sReqCount++ }; const char* const myfname(__func__); \
+    const uint64_t reqCount { sReqNext.fetch_add(1) }; const char* const myfname(__func__); \
     mDebug.Backend([&](std::ostream& str){ PrintInput(input, str, myfname, reqCount); }); }
     // note std::atomic only allows postfix not prefix operators!
 

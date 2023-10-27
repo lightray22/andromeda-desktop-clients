@@ -56,16 +56,16 @@ public:
     void LoadAccountLimits(BackendImpl& backend);
 
     /** Returns true if the backend is read-only */
-    [[nodiscard]] bool isReadOnly() const { return mReadOnly; }
+    [[nodiscard]] bool isReadOnly() const { return mReadOnly.load(); }
 
     /** Returns true if random write is allowed */
-    [[nodiscard]] bool canRandWrite() const { return mRandWrite; }
+    [[nodiscard]] bool canRandWrite() const { return mRandWrite.load(); }
 
     /** Returns the max # of bytes allowed in an upload or 0 for no limit */
-    [[nodiscard]] size_t GetUploadMaxBytes() const { return mUploadMaxBytes; }
+    [[nodiscard]] size_t GetUploadMaxBytes() const { return mUploadMaxBytes.load(); }
 
     /** Sets the max upload bytes in case we discover it is lower than thought */
-    void SetUploadMaxBytes(const size_t newMax) { mUploadMaxBytes = newMax; };
+    void SetUploadMaxBytes(const size_t newMax) { mUploadMaxBytes.store(newMax); };
 
 private:
     mutable Debug mDebug;
