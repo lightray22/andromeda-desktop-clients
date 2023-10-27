@@ -42,7 +42,7 @@ CacheManager::~CacheManager()
 {
     MDBG_INFO("()");
 
-    mRunCleanup = false;
+    mRunCleanup.store(false);
 
     if (mEvictThread.joinable())
     {
@@ -362,13 +362,13 @@ void CacheManager::EvictThread()
     {
         { // lock scope
             UniqueLock lock(mMutex);
-            while (mRunCleanup && (mCurrentTotal <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
+            while (mRunCleanup.load() && (mCurrentTotal <= mCacheOptions.memoryLimit || mEvictFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
                 mEvictWaitCV.notify_all();
                 mEvictThreadCV.wait(lock);
             }
-            if (!mRunCleanup) break; // stop loop
+            if (!mRunCleanup.load()) break; // stop loop
             MDBG_INFO("... DOING EVICTS!");
         }
 
@@ -387,13 +387,13 @@ void CacheManager::FlushThread()
     {
         { // lock scope
             UniqueLock lock(mMutex);
-            while (mRunCleanup && (mCurrentDirty <= mDirtyLimit || mFlushFailure != nullptr))
+            while (mRunCleanup.load() && (mCurrentDirty <= mDirtyLimit || mFlushFailure != nullptr))
             {
                 MDBG_INFO("... waiting");
                 mFlushWaitCV.notify_all();
                 mFlushThreadCV.wait(lock);
             }
-            if (!mRunCleanup) break; // stop loop
+            if (!mRunCleanup.load()) break; // stop loop
             MDBG_INFO("... DOING FLUSHES!");
         }
 

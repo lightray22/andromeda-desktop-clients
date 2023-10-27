@@ -32,10 +32,10 @@ Config::Config(BackendImpl& backend) :
                 throw AppMissingException(appReq);
 
         // can't get_to() with std::atomic
-        mReadOnly = coreConfig.at("features").at("read_only").get<bool>();
+        mReadOnly.store(coreConfig.at("features").at("read_only").get<bool>());
 
         const nlohmann::json& maxbytes { filesConfig.at("upload_maxbytes") };
-        if (!maxbytes.is_null()) mUploadMaxBytes = maxbytes.get<size_t>();
+        if (!maxbytes.is_null()) mUploadMaxBytes.store(maxbytes.get<size_t>());
 
         // TODO the server also has upload_maxsize... what is that?
         // TODO the server also has crchunksize... what is that?
@@ -55,7 +55,7 @@ void Config::LoadAccountLimits(BackendImpl& backend)
     {
         if (limits != nullptr)
         {
-            mRandWrite = limits.at("features").at("randomwrite").get<bool>();
+            mRandWrite.store(limits.at("features").at("randomwrite").get<bool>());
         }
     }
     catch (const nlohmann::json::exception& ex) {
