@@ -19,7 +19,7 @@ public:
 
     // BaseObject functions
     BASEOBJECT_NAME(SessionStore, "Andromeda\\Database\\SessionStore")
-    SessionStore(Database::ObjectDatabase& database, const Database::MixedParams& data);
+    SessionStore(Database::ObjectDatabase& database, const Database::MixedParams& data, bool created);
 
     // TableInstaller functions
     [[nodiscard]] inline static int GetTableVersion() { return 1; }

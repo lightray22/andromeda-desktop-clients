@@ -32,14 +32,14 @@ class EasyObject : public BaseObject
 public:
     BASEOBJECT_NAME(EasyObject, "Andromeda\\Database\\EasyObject")
 
-    EasyObject(ObjectDatabase& database, const MixedParams& data):
+    EasyObject(ObjectDatabase& database, const MixedParams& data, bool created=false):
         BaseObject(database),
         mMyStr("mystr",*this),
         mMyInt("myint",*this),
         mCounter("myctr",*this)
     {
         RegisterFields({&mMyStr, &mMyInt, &mCounter});
-        InitializeFields(data);
+        InitializeFields(data, created);
     }
 
     static EasyObject& Create(ObjectDatabase& db, int myInt)
@@ -69,7 +69,7 @@ public:
         mOnDelete = func;
     }
 
-    void NotifyDeleted() override
+    void NotifyPostDeleted() override
     {
         if (mOnDelete) mOnDelete();
     }
@@ -88,12 +88,12 @@ class EasyObject2 : public BaseObject
 public:
     BASEOBJECT_NAME(EasyObject2, "Andromeda\\Database\\EasyObject2")
 
-    EasyObject2(ObjectDatabase& database, const MixedParams& data):
+    EasyObject2(ObjectDatabase& database, const MixedParams& data, bool created=false):
         BaseObject(database),
         mMyInt("myint",*this)
     {
         RegisterFields({&mMyInt});
-        InitializeFields(data);
+        InitializeFields(data, created);
     }
 
 private:

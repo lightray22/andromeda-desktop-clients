@@ -6,13 +6,13 @@ namespace Andromeda {
 namespace Database {
 
 /*****************************************************/
-VersionEntry::VersionEntry(ObjectDatabase& database, const MixedParams& data) :
+VersionEntry::VersionEntry(ObjectDatabase& database, const MixedParams& data, bool created) :
     BaseObject(database),
     mTable("tableName",*this),
     mVersion("version",*this)
 {
     RegisterFields({&mTable, &mVersion});
-    InitializeFields(data);
+    InitializeFields(data, created);
 }
 
 /*****************************************************/

@@ -135,7 +135,7 @@ public:
 
     /**
      * Immediately delete objects matching the given query
-     * The objects will be loaded and have their NotifyDeleted() run
+     * The objects will be loaded and have their NotifyPostDeleted() run
      * @tparam T type of object
      * @param query query used to match objects
      * @return size_t number of deleted objects
@@ -146,7 +146,7 @@ public:
         MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
         
         // no RETURNING, just load the objects and delete individually
-        // TODO FUTURE will be supported in sqlite 3.35
+        // TODO FUTURE will be supported in sqlite 3.35 - use separate NotifyPreDeleted!
 
         const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
         for (T* obj : objs) DeleteObject(*obj);
@@ -195,9 +195,8 @@ public:
     {
         const UniqueLock lock(mMutex);
 
-        std::unique_ptr<T> objptr { std::make_unique<T>(*this, MixedParams()) };
+        std::unique_ptr<T> objptr { std::make_unique<T>(*this, MixedParams(), true) };
         T& retobj { *objptr.get() };
-        retobj.InitializeID();
 
         MDBG_INFO("(T:" << T::GetClassNameS() << " id:" << retobj.ID() << ")");
 
@@ -269,7 +268,7 @@ private:
             return *dynamic_cast<T*>(it->second.get());
         else
         {
-            std::unique_ptr<T> objptr { std::make_unique<T>(*this, row) };
+            std::unique_ptr<T> objptr { std::make_unique<T>(*this, row, false) };
             T& retobj { *objptr.get() };
 
             mObjects.emplace(key, std::move(objptr));

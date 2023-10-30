@@ -67,14 +67,22 @@ protected:
     /** 
      * Construct an object from a database reference
      * @param database associated database
+     * @param created true if the object is newly created
     */
     explicit BaseObject(ObjectDatabase& database);
+
+    /**
+     * Notifies this object that the DB is about to delete it - INTERNAL ONLY
+     * This is ONLY run when deleting a single object directly, not deleting by query!
+     * Child classes can extend this if they need extra on-delete logic
+     */
+    virtual void NotifyPreDeleted() { }
 
     /**
      * Notifies this object that the DB has deleted it - INTERNAL ONLY
      * Child classes can extend this if they need extra on-delete logic
      */
-    virtual void NotifyDeleted() { }
+    virtual void NotifyPostDeleted() { }
 
     /**
      * Registers fields for the object so the DB can save/load objects
@@ -86,11 +94,9 @@ protected:
     /**
      * Initialize all fields from database data
      * @param data map of fields from the database
+     * @param created true if the object is newly created
      */
-    void InitializeFields(const MixedParams& data);
-
-    /** Sets the ID field on a newly created object */
-    void InitializeID(size_t len = 12);
+    void InitializeFields(const MixedParams& data, bool created);
 
     /** Returns true if this object has a modified field */
     bool isModified() const;
