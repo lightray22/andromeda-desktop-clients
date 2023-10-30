@@ -12,7 +12,7 @@ namespace Andromeda {
 namespace Backend {
 
 /*****************************************************/
-SessionStore::SessionStore(ObjectDatabase& database, const MixedParams& data) :
+SessionStore::SessionStore(ObjectDatabase& database, const MixedParams& data, bool created) :
     BaseObject(database),
     mServerUrl("serverUrl",*this),
     mAccountID("accountID",*this),
@@ -20,7 +20,7 @@ SessionStore::SessionStore(ObjectDatabase& database, const MixedParams& data) :
     mSessionKey("sessionKey",*this)
 {
     RegisterFields({&mServerUrl, &mAccountID, &mSessionID, &mSessionKey});
-    InitializeFields(data);
+    InitializeFields(data, created);
 }
 
 /*****************************************************/

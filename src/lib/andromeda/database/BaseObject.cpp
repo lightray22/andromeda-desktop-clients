@@ -24,20 +24,15 @@ void BaseObject::RegisterFields(const FieldList& list)
 }
 
 /*****************************************************/
-void BaseObject::InitializeFields(const MixedParams& data)
+void BaseObject::InitializeFields(const MixedParams& data, bool created)
 {
     for (const MixedParams::value_type& pair : data)
     {
         //MDBG_INFO("... " << pair.first << ":" << pair.second.ToString());
         mFields.at(pair.first).InitDBValue(pair.second);
     }
-}
 
-/*****************************************************/
-void BaseObject::InitializeID(size_t len)
-{
-    mIdField.SetValue(StringUtil::Random(len));
-    OBJDBG_INFO("()"); // AFTER ID is set
+    if (created) mIdField.SetValue(StringUtil::Random(12)); // TODO GenerateID
 }
 
 /*****************************************************/

@@ -19,7 +19,7 @@ class VersionEntry : public BaseObject
 public:
     // BaseObject functions
     BASEOBJECT_NAME(VersionEntry, "Andromeda\\Database\\VersionEntry")
-    VersionEntry(ObjectDatabase& database, const MixedParams& data);
+    VersionEntry(ObjectDatabase& database, const MixedParams& data, bool created);
 
     // TableInstaller functions
     [[nodiscard]] inline static int GetTableVersion() { return 1; }

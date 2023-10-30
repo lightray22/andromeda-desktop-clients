@@ -69,10 +69,11 @@ void ObjectDatabase::DeleteObject(BaseObject& object)
     const UniqueLock lock(mMutex);
     MDBG_INFO("(object:" << static_cast<std::string>(object) << ")");
 
+    object.NotifyPreDeleted();
     if (mCreated.exists(&object))
     {
         MDBG_INFO("... deleting created!");
-        object.NotifyDeleted();
+        object.NotifyPostDeleted();
         mModified.erase(&object);
         mCreated.erase(&object);
     }
@@ -86,7 +87,7 @@ void ObjectDatabase::DeleteObject(BaseObject& object)
         if (mDb.query(qstr, {{":id",object.ID()}}) != 1)
             throw DeleteFailedException(object.GetClassName());
         
-        object.NotifyDeleted();
+        object.NotifyPostDeleted();
         mModified.erase(&object);
 
         const std::string objkey { object.ID()+":"+object.GetClassName() };
