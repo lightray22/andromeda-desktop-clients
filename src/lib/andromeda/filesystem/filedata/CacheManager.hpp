@@ -63,14 +63,22 @@ public:
     /** Returns the maximum cache memory size */
     size_t GetMemoryLimit() const;
 
-    struct Stats { 
-        size_t currentTotal; size_t totalPages; 
-        size_t currentDirty; size_t dirtyLimit; size_t dirtyPages; };
+    /** A copy of some member variables for debugging */
+    struct Stats 
+    { 
+        size_t currentTotal; 
+        size_t totalPages; 
+        size_t currentDirty; 
+        size_t dirtyLimit; 
+        size_t dirtyPages; 
+    };
     /** Returns a copy of some member variables for debugging */
-    inline Stats GetStats() const { 
-        const UniqueLock lock(mMutex); return { 
-            mCurrentTotal, mPageQueue.size(), 
-            mCurrentDirty, mDirtyLimit, mDirtyQueue.size() }; }
+    inline Stats GetStats() const 
+    { 
+        const UniqueLock lock(mMutex); 
+        return { mCurrentTotal, mPageQueue.size(), 
+            mCurrentDirty, mDirtyLimit, mDirtyQueue.size() }; 
+    }
 
     /** Returns the allocator to use for all file data */
     inline CachingAllocator& GetPageAllocator(){ return *mPageAllocator; }
