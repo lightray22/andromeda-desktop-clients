@@ -173,7 +173,7 @@ bool BaseOptions::AddOption(const std::string& option, const std::string& value)
             ParseFile(value);
         else throw BadValueException(option);
     }
-    if (option == "d" || option == "debug")
+    else if (option == "d" || option == "debug")
     {
         try { Debug::SetLevel(static_cast<Debug::Level>(stoul(value))); }
         catch (const std::logic_error& e) { 

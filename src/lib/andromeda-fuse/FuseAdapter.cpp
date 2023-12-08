@@ -4,7 +4,7 @@
 #include <memory>
 #include <sstream>
 
-#ifdef APPLE
+#if defined(APPLE) || defined(OPENBSD)
 #include <sys/mount.h> // unmount
 #endif
 
@@ -136,19 +136,26 @@ struct FuseContext
     /** Exit and unmount the FUSE session */
     void TriggerUnmount()
     {
+    #ifndef OPENBSD
         MDBG_INFO("() fuse_exit()");
         fuse_exit(mFuse); // flag loop to stop
+    #endif // !OPENBSD
 
         // fuse_exit does not interrupt the loop, so to prevent fuse hanging until the next FS operation
         // we will send off a umount command... ugly, but see https://github.com/winfsp/cgofuse/issues/6#issuecomment-298185815
         // fuse_unmount() is not valid on this thread, and can't use unmount() library call as that requires superuser
         // ... doing this as a command rather than C call so we get the setuid elevation of umount
         
-        #if APPLE
+        #ifdef APPLE
             // OSX hangs our whole process (not just this thread) 60 seconds if we start a
             // background process but fortunately it allows unmount() without being a superuser
             MDBG_INFO("... calling unmount(2)");
             unmount(mMount.mPath, MNT_FORCE);
+            MDBG_INFO("... unmount returned");
+        #elifdef OPENBSD
+            // OpenBSD only lets the super user use fuse anyway
+            MDBG_INFO("... calling unmount(2)");
+            unmount(mMount.mPath, 0);
             MDBG_INFO("... unmount returned");
         #else
             mAdapter.TrySystemUnmount(mMount.mPath);
@@ -353,13 +360,13 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
         
         const std::unique_ptr<FuseSignals> signalsPtr {
             regSignals ? std::make_unique<FuseSignals>(context) : nullptr };
-        
-        MDBG_INFO("() fuse_loop()");
 
         { // retval scope
             int retval = -1;
+        #ifndef OPENBSD
             if (mOptions.enableThreading)
             {
+                MDBG_INFO("() fuse_loop_mt()");
             #if LIBFUSE2
                 retval = fuse_loop_mt(context.mFuse);
             #else // !LIBFUSE2
@@ -367,14 +374,19 @@ void FuseAdapter::FuseMain(bool regSignals, bool daemonize, const FuseAdapter::F
                 loop_config.max_idle_threads = mOptions.maxIdleThreads;
                 retval = fuse_loop_mt(context.mFuse, &loop_config);
             #endif // LIBFUSE2
+                MDBG_INFO("() fuse_loop_mt() returned!");
             }
-            else retval = fuse_loop(context.mFuse);
+            else
+        #endif // !OPENBSD
+            {
+                MDBG_INFO("() fuse_loop()");
+                retval = fuse_loop(context.mFuse);
+                MDBG_INFO("() fuse_loop() returned!");
+            }
 
             if (retval < 0)
                 throw FuseAdapter::Exception("fuse_loop() failed",retval); 
         }
-
-        MDBG_INFO("() fuse_loop() returned!");
     }
     catch (const Exception& ex)
     {
