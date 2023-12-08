@@ -165,7 +165,7 @@ else() # NOT MSVC
     ### ADD SANITIZERS ###
     if (APPLE)
         set(SANITIZE_DEFAULT "address,undefined")
-    elseif (OPENBSD)
+    elseif (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
         set(SANITIZE_DEFAULT "undefined")
     else()
         set(SANITIZE_DEFAULT "address,leak,undefined")

@@ -7,12 +7,13 @@
     #pragma warning(disable:4232)
         #include <fuse3/fuse.h>
     #pragma warning(pop)
-#elif LIBFUSE2
+#elif OPENBSD
     #define FUSE_USE_VERSION 26
     #include <fuse.h>
-#ifndef OPENBSD
-    #include <fuse_lowlevel.h>
-#endif // !OPENBSD
+#elif LIBFUSE2
+    #define FUSE_USE_VERSION 26
+    #include <fuse/fuse.h>
+    #include <fuse/fuse_lowlevel.h>
 #else
     #define FUSE_USE_VERSION 35
     #include <fuse3/fuse.h>
