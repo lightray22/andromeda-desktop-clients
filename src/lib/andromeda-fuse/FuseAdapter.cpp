@@ -152,7 +152,7 @@ struct FuseContext
             MDBG_INFO("... calling unmount(2)");
             unmount(mMount.mPath, MNT_FORCE);
             MDBG_INFO("... unmount returned");
-        #elifdef OPENBSD
+        #elif defined(OPENBSD)
             // OpenBSD only lets the super user use fuse anyway
             MDBG_INFO("... calling unmount(2)");
             unmount(mMount.mPath, 0);
