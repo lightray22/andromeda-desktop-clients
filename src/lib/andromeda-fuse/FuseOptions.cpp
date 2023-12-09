@@ -18,7 +18,10 @@ std::string FuseOptions::HelpText()
 
     using std::endl;
 
-    output << "FUSE Advanced:    [--no-chmod] [--no-chown] [--no-fuse-threading]"
+    output << "FUSE Advanced:    [--no-chmod] [--no-chown]"
+    #ifndef OPENBSD
+        << " [--no-fuse-threading]"
+    #endif // !OPENBSD
     #if !LIBFUSE2
         << " [--fuse-max-idle-threads uint32(" << optDefault.maxIdleThreads << ")]"
     #endif // !LIBFUSE2
@@ -52,8 +55,10 @@ bool FuseOptions::AddFlag(const std::string& flag)
         fakeChmod = false;
     else if (flag == "no-chown")
         fakeChown = false;
+#ifndef OPENBSD
     else if (flag == "no-fuse-threading")
         enableThreading = false;
+#endif // !OPENBSD
 #if !LIBFUSE2
     else if (flag == "dump-fuse-options")
     {

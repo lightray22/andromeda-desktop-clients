@@ -45,8 +45,10 @@ struct FuseOptions
     /** Whether fake chown (no-op) is allowed */
     bool fakeChown { true };
 
+#ifndef OPENBSD
     /** True if multi-threading is enabled */
     bool enableThreading { true };
+#endif // !OPENBSD
     
 #if !LIBFUSE2
     /** Maximum number of FUSE idle threads */

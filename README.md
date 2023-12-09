@@ -87,9 +87,12 @@ The following platforms are supported minus the Qt GUI (it may work, just not te
 
 - Alpine Linux amd64: `apk add make cmake g++ python3 openssl-dev fuse3-dev sqlite-dev libsodium-dev`
 - FreeBSD 12.4/13.2 amd64: `pkg install cmake python fusefs-libs3 sqlite3 libsodium`
+- OpenBSD 6.7 amd64: `pkg_add cmake libsodium`
 
-Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().
+Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().  OpenBSD only allows FUSE mount/unmount by the super user.
 
+FUTURE - libandromeda on NetBSD 9.3 does not compile with the default GCC 7 or with librefuse - you must install the GCC 9 and fuse packages.  andromeda-fuse does not currently work at runtime: `fuse: writing device: Message too long`.
+- NetBSD 9.3 amd64: `pkgin install gcc9 gcc9-libs cmake python311 fuse sqlite3 libsodium`
 
 # CLI Client
 
