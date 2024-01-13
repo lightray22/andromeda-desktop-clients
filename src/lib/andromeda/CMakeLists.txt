@@ -82,7 +82,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 FetchContent_Declare(nlohmann_json
     GIT_REPOSITORY  ${DEPS_BASEURL}/nlohmann/json.git
-    GIT_TAG         bc889af # v3.11.2
+    GIT_TAG         9cca280 # v3.11.3
     GIT_PROGRESS    true)
 FetchContent_MakeAvailable(nlohmann_json)
 

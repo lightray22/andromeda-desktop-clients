@@ -51,14 +51,21 @@ public:
      */
     void free(void* ptr, size_t pages) override;
 
-    struct Stats { 
-        size_t curAlloc; size_t maxAlloc; size_t curFree; 
-        size_t recycles; size_t allocs; };
+    /** A copy of some member variables for debugging */
+    struct Stats
+    { 
+        size_t curAlloc; 
+        size_t maxAlloc; 
+        size_t curFree; 
+        uint64_t recycles; 
+        uint64_t allocs;
+    };
     /** Returns a copy of some member variables for debugging */
-    inline Stats GetStats() const { 
-        const LockGuard lock(mMutex); return { 
-            mCurAlloc, mMaxAlloc, mCurFree,
-            mRecycles, mAllocs }; }
+    inline Stats GetStats() const
+    { 
+        const LockGuard lock(mMutex); 
+        return { mCurAlloc, mMaxAlloc, mCurFree, mRecycles, mAllocs }; 
+    }
 
 private:
 

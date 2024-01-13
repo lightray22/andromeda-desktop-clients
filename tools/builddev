@@ -14,4 +14,15 @@ cd build-$BUILD_TYPE
 cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
     -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1 "$@"
 
-cmake --build . -j$(nproc)
+if [ "`which nproc`" != "" ]; then
+   THREADS=`nproc`
+elif [ "`sysctl -n hw.ncpu`" != "" ]; then
+   THREADS=`sysctl -n hw.ncpu`
+fi
+
+if [ "$THREADS" != "" ]; then
+   cmake --build . -j$THREADS
+else
+   cmake --build .
+fi
+

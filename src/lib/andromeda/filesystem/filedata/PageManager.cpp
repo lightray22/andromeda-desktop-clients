@@ -345,8 +345,10 @@ size_t PageManager::GetFetchSize(const uint64_t index, const SharedLock& thisLoc
 /*****************************************************/
 void PageManager::DoAdvanceRead(const uint64_t index, const SharedLock& thisLock, const UniqueLock& pagesLock)
 {
+    // TODO this probably doesn't play well with really small cache sizes
     // always pre-populate mReadAheadPages ahead (except index 0)
-    if (index > 0) for (uint64_t nextIdx { index+1 }; 
+    if (!index) return;
+    for (uint64_t nextIdx { index+1 }; 
         nextIdx <= index + mBackend.GetOptions().readAheadBuffer; ++nextIdx)
     {
         if (nextIdx*mPageSize >= mFileSize) break; // exit loop
