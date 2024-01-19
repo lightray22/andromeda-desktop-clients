@@ -104,7 +104,7 @@ Any features that rely on the higher privileges of the real CLI interface are no
 * Changing debug/metrics output
 * Doing a request dry-run
 
-The general usage is the same as the real CLI interface, but with different global options, and with -- before the server command.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage)). Batching is not yet supported.
+The general usage is the same as the real CLI interface, but with different global options, and with -- before the server command.  Parameter syntax, attaching/uploading files and using environment variables is the same ([syntax reference](https://github.com/irondrive/andromeda-server#general-usage)).
 
 Note that non-file and non-environment action params will be sent as URL variables.  Use stdin (opt@ or opt!) or environment variables for private data, as they will be sent in the POST body instead.  
 
@@ -196,12 +196,12 @@ Use the `tools/mkdocs` script from the repo root to generate documentation using
 
 Unit testing is done with catch2 and trompeloeil, which are built in-tree.  Configure cmake with `-DTESTS_CATCH2=1` to build and run tests.
 
-Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.  cppcheck is somewhat buggy and can be ignored with careful analysis.
+Static analysis is done with clang-tidy and cppcheck.  These must be installed on the system.  Configure cmake with `-DTESTS_CLANGTIDY=1` to run clang-tidy.  Configure cmake with `-DTESTS_CPPCHECK=1` to run cppcheck.  Use `-DALLOW_WARNINGS=1` to allow the build to pass with warnings.  cppcheck is somewhat buggy and warnings can be ignored after careful analysis.
 
 Unit tests and static analysis are both enabled in the `tools/builddev` script.
 
 ## Sanitizers
 
-`-DSANITIZE` allows building with sanitizers with GCC and Clang.  The default is `address,leak,undefined` (AddressSanitizer, LeakSanitizer, UndefinedBehaviorSanitizer).  Other (mutually-exclusive) options include `memory` (MemorySanitizer) (Clang only), and `thread` (ThreadSanitizer).  See [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) and [Google Sanitizers](https://github.com/google/sanitizers).  
+`-DSANITIZE` allows building with sanitizers with GCC and Clang (debug builds only).  The default is `address,leak,undefined` (AddressSanitizer, LeakSanitizer, UndefinedBehaviorSanitizer).  Other (mutually-exclusive) options include `memory` (MemorySanitizer) (Clang only), and `thread` (ThreadSanitizer).  See [GCC Instrumentation Options](https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html) and [Google Sanitizers](https://github.com/google/sanitizers).  
 
 These must be disabled (use `none`) to use Valgrind tools.  LeakSanitizer does not work on AppleClang (macOS).  No sanitizers work on musl libc (Alpine Linux).
