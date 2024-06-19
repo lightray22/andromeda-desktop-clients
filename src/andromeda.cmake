@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
+include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
+
 # this common file is to be included for each lib or bin target
 
 set(CMAKE_CXX_STANDARD 17)
@@ -26,8 +29,6 @@ elseif (APPLE)
     list(APPEND ANDROMEDA_CXX_DEFS APPLE)
 endif()
 
-include(GNUInstallDirs)
-
 # include and setup FetchContent
 
 include(FetchContent)
@@ -40,14 +41,14 @@ option(TESTS_CPPCHECK  "Use cppcheck static analysis"   OFF)
 if (TESTS_CATCH2)
     FetchContent_Declare(Catch2
         GIT_REPOSITORY  https://github.com/catchorg/Catch2.git
-        GIT_TAG         v3.3.2
+        GIT_TAG         v3.6.0
         GIT_PROGRESS    true)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras) # Catch2WithMain
 
     FetchContent_Declare(trompeloeil # header-only
         GIT_REPOSITORY  https://github.com/rollbear/trompeloeil.git
-        GIT_TAG         v44
+        GIT_TAG         v47
         GIT_PROGRESS    true)
     FetchContent_MakeAvailable(trompeloeil)
     
@@ -155,11 +156,19 @@ else() # NOT MSVC
     endif()
 
     ### ADD PIC/PIE ###
-
     option(WITHOUT_PIE "Disable position independent executable" OFF)
     if (NOT ${WITHOUT_PIE})
         list(APPEND ANDROMEDA_CXX_OPTS -fPIE)
         list(APPEND ANDROMEDA_LINK_OPTS -Wl,-pie -pie)
+    endif()
+
+    check_cxx_compiler_flag("-fhardened" COMPILER_SUPPORTS_HARDENED)
+    if (COMPILER_SUPPORTS_HARDENED)
+        if (${WITHOUT_PIE})
+            message(WARNING "Disabling -fhardened due to WITHOUT_PIE")
+        else()
+            list(APPEND ANDROMEDA_CXX_OPTS "-fhardened")
+        endif()
     endif()
 
     ### ADD SANITIZERS ###
@@ -190,6 +199,9 @@ function (andromeda_analyze)
         set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
     endif()
 
+    #set(CMAKE_C_INCLUDE_WHAT_YOU_USE include-what-you-use)
+    #set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE include-what-you-use)
+
     if (${TESTS_CPPCHECK})
         set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
             "--enable=style,performance,portability,information"
@@ -202,6 +214,7 @@ function (andromeda_analyze)
             "--suppress=useStlAlgorithm" # annoying
             "--suppress=comparisonOfFuncReturningBoolError" # catch2
             "--suppress=assertWithSideEffecs" # annoying
+            "--suppress=checkersReport"
             PARENT_SCOPE)
         # cppcheck is too buggy...
         #if (NOT ${ALLOW_WARNINGS})

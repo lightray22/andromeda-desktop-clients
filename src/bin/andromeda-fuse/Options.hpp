@@ -110,7 +110,7 @@ private:
     Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions; // cppcheck-suppress uninitMemberVarPrivate
     AndromedaFuse::FuseOptions& mFuseOptions; // cppcheck-suppress uninitMemberVarPrivate
 
-    ApiType mApiType { static_cast<ApiType>(-1) };
+    ApiType mApiType { static_cast<ApiType>(-1) }; // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
     std::string mApiPath;
     std::string mMountPath;
 

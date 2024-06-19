@@ -37,11 +37,11 @@ public:
 
     /** Returns the map key from the given value_type */
     [[nodiscard]] inline Key get_key(const value_type& e) noexcept {
-        return static_cast<Impl*>(this)->get_key(e);
+        return static_cast<Impl*>(this)->impl_get_key(e);
     }
     /** Returns the map value from the given value_type */
     [[nodiscard]] inline Value get_value(const value_type& e) noexcept {
-        return static_cast<Impl*>(this)->get_value(e);
+        return static_cast<Impl*>(this)->impl_get_value(e);
     }
 
     /** Returns an iterator pointing to the first element in the list */
@@ -265,8 +265,8 @@ class OrderedMap : public OrderedMapAnyEntry<Key, Value, std::pair<const Key, Va
 {
 public:
     using value_type = std::pair<const Key, Value>;
-    [[nodiscard]] inline Key get_key(const value_type& e) noexcept { return e.first; }
-    [[nodiscard]] inline Value get_value(const value_type& e) noexcept { return e.second; }
+    [[nodiscard]] inline Key impl_get_key(const value_type& e) noexcept { return e.first; }
+    [[nodiscard]] inline Value impl_get_value(const value_type& e) noexcept { return e.second; }
     using OrderedMapAnyEntry<Key, Value, std::pair<const Key, Value>, OrderedMap<Key, Value>>::OrderedMapAnyEntry;
 };
 
@@ -279,8 +279,8 @@ class HashedQueue : public OrderedMapAnyEntry<Value, Value, Value, HashedQueue<V
 {
 public:
     using value_type = Value;
-    [[nodiscard]] inline Value get_key(const value_type& e) noexcept { return e; }
-    [[nodiscard]] inline Value get_value(const value_type& e) noexcept { return e; }
+    [[nodiscard]] inline Value impl_get_key(const value_type& e) noexcept { return e; }
+    [[nodiscard]] inline Value impl_get_value(const value_type& e) noexcept { return e; }
     using OrderedMapAnyEntry<Value, Value, Value, HashedQueue<Value>>::OrderedMapAnyEntry;
 };
 

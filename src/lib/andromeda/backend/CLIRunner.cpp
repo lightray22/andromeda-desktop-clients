@@ -45,7 +45,7 @@ std::string CLIRunner::FixApiPath(std::string apiPath)
 void CLIRunner::CheckError(reproc::process& process, const std::error_code& error)
 {
     if (error) {
-        process.terminate();
+        process.terminate(); // NOLINT(bugprone-unused-return-value,cert-err33-c)
         throw Exception(error.message()); 
     }
 }
@@ -170,7 +170,7 @@ std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
     {
         reproc::filler::string filler(*inputPtr);
         fillErr = reproc::fill(process, filler, mOptions.streamBufferSize);
-        process.close(reproc::stream::in);
+        process.close(reproc::stream::in); // NOLINT(bugprone-unused-return-value,cert-err33-c)
     }
 
     std::string output;
@@ -218,7 +218,7 @@ std::string CLIRunner::RunAction_StreamIn(const RunnerInput_StreamIn& input)
             more = (*streamerPtr)(offset, reinterpret_cast<char*>(buffer), bufSize, written);
             offset += written; return std::error_code(); // success
         }, mOptions.streamBufferSize);
-        process.close(reproc::stream::in);
+        process.close(reproc::stream::in); // NOLINT(bugprone-unused-return-value,cert-err33-c)
     }
 
     std::string output;
