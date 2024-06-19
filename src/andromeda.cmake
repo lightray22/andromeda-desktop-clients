@@ -214,6 +214,7 @@ function (andromeda_analyze)
             "--suppress=useStlAlgorithm" # annoying
             "--suppress=comparisonOfFuncReturningBoolError" # catch2
             "--suppress=assertWithSideEffecs" # annoying
+            "--suppress=checkersReport"
             PARENT_SCOPE)
         # cppcheck is too buggy...
         #if (NOT ${ALLOW_WARNINGS})
