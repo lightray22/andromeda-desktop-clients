@@ -66,7 +66,9 @@ namespace base64
 			encoded.append(2, kPadCharacter);
 			break;
 		}
-		case 0: break; // do nothing
+		case 0: 
+		default:
+			break; // do nothing
 		}
 
 		return encoded;

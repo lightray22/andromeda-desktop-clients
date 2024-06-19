@@ -157,7 +157,7 @@ void Options::TryAddUrlOption(const std::string& option, const std::string& valu
 /*****************************************************/
 void Options::Validate()
 {
-    if (mApiType == static_cast<ApiType>(-1))
+    if (mApiType == static_cast<ApiType>(-1)) // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
         throw MissingOptionException("apiurl/apipath");
     if (mMountPath.empty())
         throw MissingOptionException("mountpath");

@@ -12,7 +12,7 @@ rm build || true; ln -s build-$BUILD_TYPE build || true
 
 cd build-$BUILD_TYPE
 
-cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE "$@"
+cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DALLOW_WARNINGS=1 "$@"
 
 if [ "`which nproc`" != "" ]; then
    THREADS=`nproc`
