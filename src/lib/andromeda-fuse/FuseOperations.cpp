@@ -387,7 +387,8 @@ int FuseOperations::readdir(const char* const path, void* buf, fuse_fill_dir_t f
 
                 retval = filler(buf, item->GetName(itemLock).c_str(), &stbuf, 0, FUSE_FILL_DIR_PLUS);
             }
-            else retval = filler(buf, item->GetName(itemLock).c_str(), nullptr, 0, static_cast<fuse_fill_dir_flags>(0));
+            else retval = filler(buf, item->GetName(itemLock).c_str(), nullptr, 0, 
+                static_cast<fuse_fill_dir_flags>(0)); // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed: " << retval; }); return -EIO; }
@@ -398,7 +399,8 @@ int FuseOperations::readdir(const char* const path, void* buf, fuse_fill_dir_t f
 #if LIBFUSE2
             int retval { filler(buf, name, NULL, 0) };
 #else
-            int retval { filler(buf, name, nullptr, 0, static_cast<fuse_fill_dir_flags>(0)) };
+            int retval { filler(buf, name, nullptr, 0, 
+                static_cast<fuse_fill_dir_flags>(0)) }; // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 #endif // LIBFUSE2
             if (retval != FUSE_SUCCESS) { sDebug.Error([&](std::ostream& str){ 
                 str << fname << "... filler() failed: " << retval; }); return -EIO; }
