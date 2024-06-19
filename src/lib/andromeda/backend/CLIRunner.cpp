@@ -153,6 +153,7 @@ std::string CLIRunner::RunAction_FilesIn(const RunnerInput_FilesIn& input)
     if (!input.files.empty())
     {
         if (input.files.size() > 1) throw Exception("Multiple Files");
+        // TODO FUTURE this could work - just input one file after the next - but how is order determined?
         const decltype(input.files)::value_type& infile(*(input.files.begin()));
 
         arguments.push_back("--"+infile.first+"-");

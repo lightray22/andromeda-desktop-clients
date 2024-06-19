@@ -42,11 +42,11 @@ std::string CommandLine::HelpText()
         << "NOTE all non-file and non-environment parameters will be sent as URL variables. Use stdin (opt@ or opt!) " << endl
         << "    or environment variables for private data, as they will be sent in the POST body instead." << endl << endl
            
-        << "action params: [--$param value] [--$param@ file] [--$param!] [--$param% file [name]] [--$param-]" << endl
+        << "action params: [--$param value] [--$param@ file] [--$param!] [--$param% file [name]] [--$param- [name]]" << endl
         << "         param@ puts the content of the file in the parameter" << endl
         << "         param! will prompt interactively or read stdin for the parameter value" << endl
         << "         param% gives the file path as a direct file input (optionally with a new name)" << endl
-        << "         param- will attach the stdin stream as a direct file input" << endl << endl
+        << "         param- will attach the stdin stream as a direct file input (default name is 'data')" << endl << endl
 
         << Options::DetailHelpText() << endl;
 

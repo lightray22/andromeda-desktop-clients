@@ -145,8 +145,8 @@ public:
     {
         MDBG_INFO("(T:" << T::GetClassNameS() << ")"); // no locking required
         
-        // no RETURNING, just load the objects and delete individually
-        // TODO FUTURE will be supported in sqlite 3.35 - use separate NotifyPreDeleted!
+        // TODO DB just load, then delete like the PHP now does
+        // that way you can always notify preDeleted
 
         const std::list<T*> objs { LoadObjectsByQuery<T>(query) };
         for (T* obj : objs) DeleteObject(*obj);
