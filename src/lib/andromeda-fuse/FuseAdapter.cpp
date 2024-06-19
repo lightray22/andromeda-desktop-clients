@@ -303,7 +303,7 @@ void FuseAdapter::StartFuse(FuseAdapter::RunMode runMode, const FuseAdapter::For
     {
         mFuseThread = std::thread(&FuseAdapter::FuseMain, this,
         // do not register signal handlers, do not daemonize
-            false, false, std::ref(forkFunc));
+            false, false, std::cref(forkFunc));
 
         MDBG_INFO("... waiting for init");
 
