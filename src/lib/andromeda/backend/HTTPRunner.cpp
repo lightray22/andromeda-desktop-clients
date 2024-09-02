@@ -188,8 +188,9 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
         if (result != nullptr) str << "HTTP " << result->status;
         else str << httplib::to_string(result.error());
 
+        const bool oneshot = !GetCanRetry() || (mFailureState && attempt == 0);
         str << " error, attempt " << attempt+1 << " of " 
-            << ((mFailureState && attempt==0) ? 1 : mBaseOptions.maxRetries+1);
+            << (oneshot ? 1 : mBaseOptions.maxRetries+1);
     });
 
     if (retry)
@@ -204,9 +205,15 @@ void HTTPRunner::HandleNonResponse(httplib::Result& result, const bool retry, co
                 std::this_thread::sleep_for(sleepTime);
         }
     }
-    else if (result.error() == httplib::Error::Connection)
+    else if (result.error() != httplib::Error::Success)
+    {
+        if (result.error() == httplib::Error::Connection)
             throw ConnectionException();
-    else throw LibraryException(result.error());
+        else throw LibraryException(result.error());
+    }
+    else if (result != nullptr)
+        throw EndpointException(result->status);
+    else throw LibraryException(httplib::Error::Unknown);
 }
 
 /*****************************************************/

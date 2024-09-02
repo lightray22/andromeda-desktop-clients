@@ -47,8 +47,8 @@ PageManager::~PageManager()
 
     if (mCacheMgr != nullptr)
     {
-        for (PageMap::iterator it { mPages.begin() }; it != mPages.end(); ++it)
-            mCacheMgr->RemovePage(it->second);
+        for (const PageMap::value_type& it : mPages)
+            mCacheMgr->RemovePage(it.second);
     }
 
     MDBG_INFO("... returning!");
@@ -619,11 +619,11 @@ void PageManager::FlushCreate(const SharedLockW& thisLock)
     mPageBackend.FlushCreate(thisLock); // maybe not done yet
 
     uint64_t maxDirty { 0 }; // byte after last dirty byte
-    for (PageMap::const_iterator it { mPages.begin() }; it != mPages.end(); ++it)
+    for (const PageMap::value_type& it : mPages)
     {
-        if (it->second.isDirty())
+        if (it.second.isDirty())
         {
-            const uint64_t pageMax { it->first*mPageSize + it->second.size() };
+            const uint64_t pageMax { it.first*mPageSize + it.second.size() };
             maxDirty = std::max(maxDirty, pageMax);
         }
     }
