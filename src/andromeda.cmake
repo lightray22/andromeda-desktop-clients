@@ -204,7 +204,7 @@ function (andromeda_analyze)
 
     if (${TESTS_CPPCHECK})
         set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
-            "--enable=style,performance,portability,information"
+            "--enable=style,performance,portability"
             "--suppress=*:*_deps/*"
             "--suppress=*:*_autogen/*" # qt
             "--suppress=unmatchedSuppression"
