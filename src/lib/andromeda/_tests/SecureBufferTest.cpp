@@ -32,7 +32,7 @@ TEST_CASE("SecureBuffer","[SecureBuffer]")
     const SecureBuffer s2(s); // copy
     REQUIRE(s == s2); // operator==
 
-    const SecureBuffer s3("test"); // c_str
+    const SecureBuffer s3 { SecureBuffer::Insecure_FromCstr("test") }; // c_str
     REQUIRE(s == s3);
 
     SecureBuffer s4(std::move(s)); // move
@@ -44,7 +44,7 @@ TEST_CASE("SecureBuffer","[SecureBuffer]")
     REQUIRE(s4.substr(2,2) == "st");
 
     s4.resize(3);
-    const SecureBuffer s4b("tes");
+    const SecureBuffer s4b { SecureBuffer::Insecure_FromCstr("tes") };
     REQUIRE(s4 == s4b);
 }
 

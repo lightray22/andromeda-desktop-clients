@@ -219,8 +219,8 @@ void BackendImpl::RunAction_StreamOut(RunnerInput_StreamOut& input)
 /*****************************************************/
 void BackendImpl::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
-    // TODO should be using SecureBuffer for passwords/sessionKey, etc... this is cheating
-    const SecureBuffer passwordBuf(password.data(), password.size());
+    // TODO should be using SecureBuffer for passwords/sessionKey, etc for the whole chain, this is demo only
+    const SecureBuffer passwordBuf { SecureBuffer::Insecure_FromBuf(password.data(), password.size()) };
 
     MDBG_INFO("(username:" << username << ")");
 
