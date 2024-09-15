@@ -47,7 +47,7 @@ using Andromeda::Filesystem::Filedata::CacheManager;
 #include "andromeda/filesystem/filedata/CacheOptions.hpp"
 using Andromeda::Filesystem::Filedata::CacheOptions;
 
-enum class ExitCode
+enum class ExitCode : uint8_t
 {
     SUCCESS,
     BAD_USAGE,
@@ -113,6 +113,7 @@ int main(int argc, char** argv)
             runner = std::make_unique<CLIRunner>(
                 options.GetApiPath(), runnerOptions); break;
         }; break;
+        case Options::ApiType::API_INVALID: break; // can't happen due to Validate() call
     }
 
     RunnerPool runners(*runner, configOptions);

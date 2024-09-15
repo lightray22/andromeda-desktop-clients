@@ -38,7 +38,7 @@ bool ConfigOptions::AddFlag(const std::string& flag)
 }
 
 /*****************************************************/
-bool ConfigOptions::AddOption(const std::string& option, const std::string& value)
+bool ConfigOptions::AddOption(const std::string& option, const std::string& value) // NOLINT(readability-function-cognitive-complexity)
 {
     if (option == "cachemode")
     {

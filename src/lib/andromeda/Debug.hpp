@@ -19,7 +19,7 @@ class Debug
 public:
 
     /** Debug verbosity */
-    enum class Level
+    enum class Level : uint8_t
     {
         /** Only show Error()s */ ERRORS,  
         /** Also show Backend */  BACKEND, 

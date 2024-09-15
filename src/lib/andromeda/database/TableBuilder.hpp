@@ -73,7 +73,7 @@ public:
             +"\" ON \""+table+"\" "+FormatFields(strs)); return *this;
     }
 
-    enum class OnDelete { RESTRICT, SET_NULL, CASCADE };
+    enum class OnDelete : uint8_t { RESTRICT, SET_NULL, CASCADE };
     static constexpr std::array<const char*,3> OnDeleteStrs { "RESTRICT", "SET NULL", "CASCADE" };
 
     /**

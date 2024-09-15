@@ -16,7 +16,7 @@ namespace { // anonymous
 
 using Results = std::list<std::string>;
 
-enum class LockType { WRITE, READ, READP };
+enum class LockType : uint8_t { WRITE, READ, READP };
 
 void wait(const size_t mstime) 
 { 

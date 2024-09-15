@@ -35,7 +35,7 @@ using Andromeda::Filesystem::Filedata::CacheOptions;
 #include "andromeda/filesystem/filedata/CacheManager.hpp"
 using Andromeda::Filesystem::Filedata::CacheManager;
 
-enum class ExitCode
+enum class ExitCode : uint8_t
 {
     SUCCESS,
     BAD_USAGE,

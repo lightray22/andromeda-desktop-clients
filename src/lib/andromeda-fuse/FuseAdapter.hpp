@@ -43,7 +43,7 @@ public:
     };
 
     /** Thread mode for the FUSE Adapter */
-    enum class RunMode
+    enum class RunMode : uint8_t
     {
         /** Run in the foreground (block) */
         FOREGROUND,

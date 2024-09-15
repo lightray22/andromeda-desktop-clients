@@ -44,7 +44,7 @@ public:
     [[nodiscard]] bool isReadOnly() const { return mReadOnly; }
 
     /** The modify mode supported by the filesystem */
-    enum class WriteMode { UPLOAD, APPEND, RANDOM };
+    enum class WriteMode : uint8_t { UPLOAD, APPEND, RANDOM };
 
     /** Returns whether append/random write is allowed */
     [[nodiscard]] WriteMode GetWriteMode() const { return mWriteMode; }

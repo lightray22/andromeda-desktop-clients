@@ -20,7 +20,7 @@ using Andromeda::Backend::HTTPRunner;
 #include "andromeda/backend/RunnerOptions.hpp"
 using Andromeda::Backend::RunnerOptions;
 
-enum class ExitCode
+enum class ExitCode : uint8_t
 {
     SUCCESS,
     BAD_USAGE,
