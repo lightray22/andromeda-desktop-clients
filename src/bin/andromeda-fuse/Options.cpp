@@ -157,9 +157,14 @@ void Options::TryAddUrlOption(const std::string& option, const std::string& valu
 /*****************************************************/
 void Options::Validate()
 {
-    if (mApiType == ApiType::API_INVALID)
+    if (GetApiType() == ApiType::API_INVALID)
         throw MissingOptionException("apiurl/apipath");
-    if (mMountPath.empty())
+
+    // TODO FUTURE mounting shares - check GetMountRootType() != RootType::FOLDER
+    if (!HasUsername() && !HasSession())
+        throw MissingOptionException("username/sessionid");
+
+    if (GetMountPath().empty())
         throw MissingOptionException("mountpath");
 }
 
