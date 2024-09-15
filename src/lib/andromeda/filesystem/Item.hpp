@@ -93,7 +93,7 @@ public:
     using Date = double;
 
     /** Concrete item types */
-    enum class Type { FILE, FOLDER };
+    enum class Type : uint8_t { FILE, FOLDER };
 
     /** Returns the FS type */
     virtual Type GetType() const = 0;

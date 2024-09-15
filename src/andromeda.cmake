@@ -41,7 +41,7 @@ option(TESTS_CPPCHECK  "Use cppcheck static analysis"   OFF)
 if (TESTS_CATCH2)
     FetchContent_Declare(Catch2
         GIT_REPOSITORY  https://github.com/catchorg/Catch2.git
-        GIT_TAG         v3.6.0
+        GIT_TAG         v3.7.0
         GIT_PROGRESS    true)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras) # Catch2WithMain
@@ -187,7 +187,7 @@ else() # NOT MSVC
 
 endif() # MSVC
 
-function (andromeda_analyze)
+function (andromeda_analyze target)
     if (${TESTS_CLANGTIDY})
         # clang-tidy rules are set in .clang-tidy
         # clang versions [10,16] should have no errors
@@ -195,33 +195,34 @@ function (andromeda_analyze)
         if (NOT ${ALLOW_WARNINGS})
             list(APPEND CLANG_TIDY_FLAGS "--warnings-as-errors=*")
         endif()
-        set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
-        set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_FLAGS} PARENT_SCOPE)
+        set_target_properties(${target} PROPERTIES C_CLANG_TIDY "${CLANG_TIDY_FLAGS}")
+        set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_FLAGS}")
     endif()
 
-    #set(CMAKE_C_INCLUDE_WHAT_YOU_USE include-what-you-use)
-    #set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE include-what-you-use)
-
-    if (${TESTS_CPPCHECK})
-        set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
-            "--enable=style,performance,portability,information"
-            "--suppress=*:*_deps/*"
-            "--suppress=*:*_autogen/*" # qt
-            "--suppress=unmatchedSuppression"
-            "--suppress=unknownMacro" # qt
-            "--suppress=missingInclude"
-            "--suppress=missingIncludeSystem"
-            "--suppress=useStlAlgorithm" # annoying
-            "--suppress=comparisonOfFuncReturningBoolError" # catch2
-            "--suppress=assertWithSideEffecs" # annoying
-            "--suppress=checkersReport"
-            PARENT_SCOPE)
-        # cppcheck is too buggy...
-        #if (NOT ${ALLOW_WARNINGS})
-        #    list(APPEND CMAKE_CXX_CPPCHECK "--error-exitcode=1")
-        #endif()
-    endif()
+    #set_target_properties(${target} PROPERTIES(C_INCLUDE_WHAT_YOU_USE include-what-you-use)
+    #set_target_properties(${target} PROPERTIES(CXX_INCLUDE_WHAT_YOU_USE include-what-you-use)
 endfunction()
+
+if (${TESTS_CPPCHECK})
+    # CXX_CPPCHECK ${target} does not seem to work...
+    set(CMAKE_CXX_CPPCHECK "cppcheck;--std=c++17;--quiet;--inline-suppr"
+        "--enable=style,performance,portability"
+        "--suppress=*:*_deps/*"
+        "--suppress=*:*_autogen/*" # qt
+        "--suppress=unmatchedSuppression"
+        "--suppress=unknownMacro" # qt
+        "--suppress=missingInclude"
+        "--suppress=missingIncludeSystem"
+        "--suppress=useStlAlgorithm" # annoying
+        "--suppress=comparisonOfFuncReturningBoolError" # catch2
+        "--suppress=assertWithSideEffecs" # annoying
+        "--suppress=checkersReport"
+        PARENT_SCOPE)
+    # cppcheck is too buggy...
+    #if (NOT ${ALLOW_WARNINGS})
+    #    list(APPEND CPPCHECK_FLAGS "--error-exitcode=1")
+    #endif()
+endif()
 
 function(andromeda_compile_opts myname)
     target_compile_options(${myname} PRIVATE ${ANDROMEDA_CXX_WARNS} ${ANDROMEDA_CXX_OPTS})
@@ -233,17 +234,17 @@ function(andromeda_link_opts myname)
 endfunction()
 
 function(andromeda_lib lib_name sources)
-    andromeda_analyze()
     add_library(${lib_name} STATIC)
     target_sources(${lib_name} PRIVATE ${sources})
     set_target_properties(${lib_name} PROPERTIES PREFIX "")
+    andromeda_analyze(${lib_name})
     andromeda_compile_opts(${lib_name})
 endfunction()
 
 function(andromeda_bin bin_name sources)
-    andromeda_analyze()
     add_executable(${bin_name})
     target_sources(${bin_name} PRIVATE ${sources})
+    andromeda_analyze(${bin_name})
     andromeda_compile_opts(${bin_name})
     andromeda_link_opts(${bin_name})
 endfunction()

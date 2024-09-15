@@ -119,7 +119,7 @@ std::string CommandLine::getNextValue(const StringUtil::StringList& argv, size_t
 }
 
 /*****************************************************/
-void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv,
+void CommandLine::ProcessArgList(const StringUtil::StringList& args, bool isPriv, // NOLINT(readability-function-cognitive-complexity)
     RunnerInput::Params& plainParams, RunnerInput::Params& dataParams, 
     RunnerInput_StreamIn::FileStreams& inStreams)
 {

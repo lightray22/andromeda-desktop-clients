@@ -63,32 +63,11 @@ public:
     SecureBuffer& operator=(const SecureBuffer& src) = delete; // copy
     SecureBuffer& operator=(SecureBuffer&& old) = delete; // move
 
-    /** Construct from a nul-terminated c-string (unit test only!) */
-    explicit inline SecureBuffer(const char* cstr) :
-        mSize(strlen(cstr)), mBuf(alloc(mSize))
-    {
-        memcpy(mBuf, cstr, mSize);
-    }
-
-    /** Construct from bytes from a c-string (unit test only!) */
-    explicit inline SecureBuffer(const char* cstr, size_t size) :
-        mSize(size), mBuf(alloc(mSize))
-    {
-        memcpy(mBuf, cstr, mSize);
-    }
-
     /** Compare to another SecureBuffer */
     inline bool operator==(const SecureBuffer& rhs) const
     {
         return mSize == rhs.mSize &&
             !memcmp(mBuf, rhs.mBuf, mSize);
-    }
-
-    /** Compare to another c-string (unit test only!) */
-    inline bool operator==(const char* cstr) const
-    {
-        return mSize == strlen(cstr) &&
-            !memcmp(mBuf, cstr, mSize);
     }
 
     /** Returns a pointer to the secure buffer */
@@ -117,7 +96,31 @@ public:
         return ret;
     }
 
+    /** Construct from a nul-terminated c-string (insecure - unit test only!) */
+    inline static SecureBuffer Insecure_FromCstr(const char* cstr) { return SecureBuffer(cstr); }
+
+    /** Construct from bytes from a char buf (insecure - unit test only!) */
+    inline static SecureBuffer Insecure_FromBuf(const char* buf, size_t size) { return SecureBuffer(buf, size); }
+
+    /** Compare to another c-string (unit test only!) */
+    inline bool operator==(const char* cstr) const
+    {
+        return mSize == strlen(cstr) &&
+            !memcmp(mBuf, cstr, mSize);
+    }
+
 private:
+
+    /** Construct from a nul-terminated c-string (insecure - unit test only!) */
+    explicit inline SecureBuffer(const char* cstr) :
+        SecureBuffer(cstr, strlen(cstr)) { }
+
+    /** Construct from bytes from a char buf (insecure - unit test only!) */
+    explicit inline SecureBuffer(const char* buf, size_t size) :
+        mSize(size), mBuf(alloc(mSize))
+    {
+        memcpy(mBuf, buf, mSize);
+    }
 
     [[nodiscard]] inline static T* alloc(size_t size) noexcept { 
         return SecureMemory::allocT<T>(size); }

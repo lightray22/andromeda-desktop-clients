@@ -46,10 +46,12 @@ public:
     void Validate() override;
 
     /** Backend connection type */
-    enum class ApiType
+    enum class ApiType : uint8_t
     {
         API_URL,
-        API_PATH
+        API_PATH,
+
+        API_INVALID
     };
 
     /** Returns the specified API type */
@@ -83,7 +85,7 @@ public:
     [[nodiscard]] bool GetForceSession() const { return mForceSession; }
 
     /** Folder types that can be mounted as root */
-    enum class RootType
+    enum class RootType : uint8_t
     {
         SUPERROOT,
         FILESYSTEM,
@@ -110,7 +112,7 @@ private:
     Andromeda::Filesystem::Filedata::CacheOptions& mCacheOptions; // cppcheck-suppress uninitMemberVarPrivate
     AndromedaFuse::FuseOptions& mFuseOptions; // cppcheck-suppress uninitMemberVarPrivate
 
-    ApiType mApiType { static_cast<ApiType>(-1) }; // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
+    ApiType mApiType { ApiType::API_INVALID };
     std::string mApiPath;
     std::string mMountPath;
 

@@ -49,7 +49,7 @@ public:
      * The lock moved from will still have a valid object ref but no lock
      */
     template<class Base>
-    inline static ScopeLocked<Object> FromBase(ScopeLocked<Base>&& slock)
+    inline static ScopeLocked<Object> FromBase(ScopeLocked<Base>&& slock) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
     {
         static_assert(std::is_base_of<Base, Object>());
         return ScopeLocked(dynamic_cast<Object&>(*slock.mObject), std::move(slock.mLock));
@@ -60,7 +60,7 @@ public:
      * The lock moved from will still have a valid object ref but no lock
      */
     template<class Child> // child class
-    inline static ScopeLocked<Object> FromChild(ScopeLocked<Child>&& slock)
+    inline static ScopeLocked<Object> FromChild(ScopeLocked<Child>&& slock) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
     {
         return ScopeLocked(static_cast<Object&>(*slock.mObject), std::move(slock.mLock));
     }

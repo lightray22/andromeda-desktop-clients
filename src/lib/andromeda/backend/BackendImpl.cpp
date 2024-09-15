@@ -150,7 +150,7 @@ nlohmann::json BackendImpl::GetJSON(const std::string& resp)
             mDebug.Backend([fname,message=&message](std::ostream& str){ 
                 str << fname << "... message:" << *message; });
 
-            enum {
+            enum : uint16_t {
                 HTTP_ERROR = 400,
                 HTTP_DENIED = 403,
                 HTTP_NOT_FOUND = 404
@@ -219,15 +219,15 @@ void BackendImpl::RunAction_StreamOut(RunnerInput_StreamOut& input)
 /*****************************************************/
 void BackendImpl::Authenticate(const std::string& username, const std::string& password, const std::string& twofactor)
 {
-    // TODO should be using SecureBuffer for passwords/sessionKey, etc... this is cheating
-    const SecureBuffer passwordBuf(password.data(), password.size());
-
     MDBG_INFO("(username:" << username << ")");
 
     CloseSession();
 
+    // TODO should be using SecureBuffer for passwords/sessionKey, etc for the whole chain, this is demo only
+    const SecureBuffer passwordBuf { SecureBuffer::Insecure_FromBuf(password.data(), password.size()) };
+
     const size_t keySize { Crypto::SecretKeyLength() };
-    const std::string password_fullkey_salt(Crypto::SaltLength(),'\0'); // no salt here
+    const std::string password_fullkey_salt(Crypto::SaltLength(),'\0'); // TODO get salt from server (demo only)
     const SecureBuffer password_fullkey { Crypto::DeriveKey(passwordBuf,password_fullkey_salt,keySize*2) };
 
     const SecureBuffer password_authkey { password_fullkey.substr(0,keySize) };

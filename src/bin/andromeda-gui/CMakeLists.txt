@@ -25,13 +25,6 @@ set(SOURCE_FILES
     Options.cpp
     )
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
-    # cmake < 3.27 wants to analyze Qt generated files
-    andromeda_analyze()
-elseif (${TESTS_CLANGTIDY} OR ${TESTS_CPPCHECK})
-    message(WARNING "Skipping andromeda_analyze() on andromeda-gui, cmake >= 3.27 required")
-endif()
-
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(andromeda-gui "${SOURCE_FILES}")
 else()
@@ -39,6 +32,13 @@ else()
 endif()
 andromeda_compile_opts(andromeda-gui)
 andromeda_link_opts(andromeda-gui)
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27)
+    # cmake < 3.27 wants to analyze Qt generated files
+    andromeda_analyze(andromeda-gui)
+elseif (${TESTS_CLANGTIDY} OR ${TESTS_CPPCHECK})
+    message(WARNING "Skipping andromeda_analyze() on andromeda-gui, cmake >= 3.27 required")
+endif()
 
 target_compile_definitions(andromeda-gui PRIVATE QTVER=${QT_VERSION_MAJOR})
 

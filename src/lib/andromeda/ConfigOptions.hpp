@@ -29,7 +29,7 @@ struct ConfigOptions
     bool readOnly { false };
     
     /** Client cache modes (debug) */
-    enum class CacheType
+    enum class CacheType : uint8_t
     {
         /** read/write directly to server */  NONE,
         /** never contact server (testing) */ MEMORY,
