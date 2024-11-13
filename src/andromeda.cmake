@@ -29,6 +29,9 @@ elseif (APPLE)
     list(APPEND ANDROMEDA_CXX_DEFS APPLE)
 endif()
 
+# enable LTO (link time optimization) for all compilers
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 # include and setup FetchContent
 
 include(FetchContent)
