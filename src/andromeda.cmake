@@ -101,6 +101,7 @@ else() # NOT MSVC
     set(ANDROMEDA_CXX_WARNS -Wall -Wextra
         -pedantic -Wpedantic
         -Wno-unused-parameter # NO unused parameter
+        -Wno-unused-function # NO unused function
         -Wcast-align
         -Wcast-qual 
         -Wconversion 
@@ -142,14 +143,24 @@ else() # NOT MSVC
 
     # security options
     set(ANDROMEDA_CXX_OPTS
-        # NOTE FORTIFY_SOURCE requires optimization
-        -U_FORTIFY_SOURCE # some systems pre-define it
-        $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
-
-        -D_GLIBCXX_ASSERTIONS # c++stdlib assertions
         -fstack-protector-strong # stack protection
         --param=ssp-buffer-size=4 # stack protection
+        -U_FORTIFY_SOURCE # some systems pre-define it
     )
+
+    # TODO enable -fhardened in the future when it can work w/o warnings
+    #check_cxx_compiler_flag("-fhardened" COMPILER_SUPPORTS_HARDENED)
+    #if (COMPILER_SUPPORTS_HARDENED AND NOT ${TESTS_CLANGTIDY} AND NOT ${WITHOUT_PIE})
+    #    list(APPEND ANDROMEDA_CXX_OPTS "-fhardened")
+    #else()
+        #message(NOTICE "Not using -fhardened (compiler support? PIE? clang-tidy?)")
+        list(APPEND ANDROMEDA_CXX_OPTS
+            # NOTE FORTIFY_SOURCE requires optimization
+            $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
+            -D_GLIBCXX_ASSERTIONS # c++stdlib assertions
+        )
+    #endif()
+
     if (NOT APPLE)
         set(ANDROMEDA_LINK_OPTS
             -Wl,-z,relro # relocation read-only
@@ -163,15 +174,6 @@ else() # NOT MSVC
     if (NOT ${WITHOUT_PIE})
         list(APPEND ANDROMEDA_CXX_OPTS -fPIE)
         list(APPEND ANDROMEDA_LINK_OPTS -Wl,-pie -pie)
-    endif()
-
-    check_cxx_compiler_flag("-fhardened" COMPILER_SUPPORTS_HARDENED)
-    if (COMPILER_SUPPORTS_HARDENED)
-        if (${WITHOUT_PIE})
-            message(WARNING "Disabling -fhardened due to WITHOUT_PIE")
-        else()
-            list(APPEND ANDROMEDA_CXX_OPTS "-fhardened")
-        endif()
     endif()
 
     ### ADD SANITIZERS ###

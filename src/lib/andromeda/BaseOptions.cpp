@@ -27,7 +27,7 @@ std::string BaseOptions::DetailBaseHelpText(const std::string& name)
     using std::endl;
 
     output << "Config File:     [-c|--config-file path]" << endl
-           << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST) << "] [--debug-filter str1,str2+] [--debug-log path]" << endl << endl
+           << "Debugging:       [-d|--debug 0-" << static_cast<size_t>(Debug::Level::LAST)-1 << "] [--debug-filter str1,str2+] [--debug-log path]" << endl << endl
 
            << "Any flag or option can also be listed in andromeda.conf";
     if (!name.empty()) output << " or andromeda-" << name << ".conf";

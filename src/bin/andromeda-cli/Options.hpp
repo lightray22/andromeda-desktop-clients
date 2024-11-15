@@ -40,7 +40,7 @@ public:
     void Validate() override;
 
     /** Returns the URL of the API endpoint */
-    [[nodiscard]] std::string GetApiUrl() const { return mApiUrl; }
+    [[nodiscard]] const std::string& GetApiUrl() const { return mApiUrl; }
 
     /** Returns true if output streaming is requested */
     [[nodiscard]] bool isStreamOut() const { return mStreamOut; }

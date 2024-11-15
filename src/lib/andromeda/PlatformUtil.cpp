@@ -110,7 +110,7 @@ std::string PlatformUtil::GetHomeDirectory()
 }
 
 // mutex protecting std::strerror
-std::mutex sStrerrorMutex;
+namespace { std::mutex sStrerrorMutex; } // anonymous
 
 /*****************************************************/
 std::string PlatformUtil::GetErrorString(int err)
