@@ -211,7 +211,7 @@ public:
      * Erases and returns the last element in the list (MUST NOT BE EMPTY)
      * Complexity: O(1) average, O(N) worst
      */
-    [[nodiscard]] value_type pop_back() noexcept
+    [[nodiscard]] value_type pop_back()
     {
         const iterator itQueue { std::prev(mQueue.end()) };
         mLookup.erase(get_key(*itQueue)); // O(1)-O(n)

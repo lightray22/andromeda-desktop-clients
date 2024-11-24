@@ -145,7 +145,6 @@ else() # NOT MSVC
     set(ANDROMEDA_CXX_OPTS
         -fstack-protector-strong # stack protection
         --param=ssp-buffer-size=4 # stack protection
-        -U_FORTIFY_SOURCE # some systems pre-define it
     )
 
     # TODO enable -fhardened in the future when it can work w/o warnings
@@ -156,8 +155,11 @@ else() # NOT MSVC
         #message(NOTICE "Not using -fhardened (compiler support? PIE? clang-tidy?)")
         list(APPEND ANDROMEDA_CXX_OPTS
             # NOTE FORTIFY_SOURCE requires optimization
-            $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
+            $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3>
+
+            # enable glibc debug mode and assertions
             -D_GLIBCXX_ASSERTIONS # c++stdlib assertions
+            $<$<CONFIG:Debug>:-D_GLIBCXX_DEBUG>
         )
     #endif()
 
