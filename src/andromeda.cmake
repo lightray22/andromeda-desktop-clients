@@ -159,7 +159,7 @@ else() # NOT MSVC
 
             # enable glibc debug mode and assertions
             -D_GLIBCXX_ASSERTIONS # c++stdlib assertions
-            $<$<CONFIG:Debug>:-D_GLIBCXX_DEBUG>
+            $<$<CONFIG:Debug>:-D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC>
         )
     #endif()
 
