@@ -16,13 +16,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             compiler: gcc
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             compiler: clang
-          - os: ubuntu-22.04
+          - os: ubuntu-latest
             compiler: gcc
-          - os: ubuntu-22.04
+          - os: ubuntu-latest
+            compiler: clang
+          - os: macos-13
             compiler: clang
           - os: macos-latest
             compiler: clang
@@ -39,24 +41,24 @@ jobs:
       with:
         languages: cpp
 
-    - name: Install (ubuntu-20.04)
-      if: matrix.os == 'ubuntu-20.04'
+    - name: Install (ubuntu-old)
+      if: matrix.os == 'ubuntu-22.04'
       run: |
         sudo apt update
-        sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev
+        sudo apt install -y make cmake g++ clang python3 libssl-dev libcrypt-dev libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev
         if [ "${{ matrix.compiler }}" = "clang" ]; then
           echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
         fi
-    - name: Install (ubuntu-22.04)
-      if: matrix.os == 'ubuntu-22.04'
+    - name: Install (ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
         sudo apt install -y make cmake g++ clang clang-tidy cppcheck python3 libssl-dev libcrypt-dev libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev
         if [ "${{ matrix.compiler }}" = "clang" ]; then
           echo CC=clang >> $GITHUB_ENV; echo CXX=clang++ >> $GITHUB_ENV
         fi
-    - name: Install (macos-latest)
-      if: matrix.os == 'macos-latest'
+    - name: Install (macos)
+      if: matrix.os == 'macos-13' || matrix.os == 'macos-latest'
       run: |
         brew update
         brew install bash cmake openssl macfuse qt sqlite3 libsodium
@@ -80,16 +82,16 @@ jobs:
         Invoke-WebRequest -Uri https://download.libsodium.org/libsodium/releases/libsodium-1.0.18-stable-msvc.zip -OutFile sodium.zip
         Expand-Archive sodium.zip -DestinationPath .
 
-    - name: Build and Test (ubuntu-20.04)
-      if: matrix.os == 'ubuntu-20.04'
-      run: |
-        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=0
-    - name: Build and Test (ubuntu-22.04)
+    - name: Build and Test (ubuntu-old)
       if: matrix.os == 'ubuntu-22.04'
       run: |
-        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=0 -DOPENGL_INCLUDE_DIR=/usr/include 
+        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=0 -DTESTS_CPPCHECK=0
+    - name: Build and Test (ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=1 -DTESTS_CPPCHECK=1 -DOPENGL_INCLUDE_DIR=/usr/include 
     - name: Build and Test (macos-latest)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-13' || matrix.os == 'macos-latest'
       run: |
         tools/buildrel -DTESTS_CATCH2=1 -DTESTS_CLANGTIDY=0 -DTESTS_CPPCHECK=0
     - name: Build and Test (windows)
@@ -98,19 +100,19 @@ jobs:
         mkdir build; cd build
         $env:SQLITE3_ROOT_DIR = $env:RUNNER_TEMP+"\sqlite"; Write-Output $env:SQLITE3_ROOT_DIR
         $env:sodium_DIR = $env:RUNNER_TEMP+"\libsodium"; Write-Output $env:sodium_DIR
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="../install" -DTESTS_CATCH2=0
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="../install" -DTESTS_CATCH2=1
         cmake --build . --config Release
 # TODO TESTS_CATCH2=1 -> segfault in sqlite3_open() ???
 # TODO && cmake --install . -> Could not resolve runtime dependencies: libsodium.dll sqlite3.dll
 
     - name: Execute --version (ubuntu)
-      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-latest'
       run: |
         build-Release/bin/cli/andromeda-cli --version
         build-Release/bin/fuse/andromeda-fuse --version
         build-Release/bin/gui/andromeda-gui --version
     - name: Execute --version (macos)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos-13' || matrix.os == 'macos-latest'
       run: |
         build-Release/bin/cli/andromeda-cli --version
         build-Release/bin/fuse/andromeda-fuse --version
