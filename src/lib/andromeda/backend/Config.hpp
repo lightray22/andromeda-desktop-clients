@@ -28,7 +28,7 @@ public:
     explicit Config(BackendImpl& backend);
     
     /** The Major API version this client works with */
-    static constexpr int API_VERSION { 2 };
+    static constexpr unsigned API_MAJOR_VERSION { 0 };
 
     /** Base exception for Config exceptions */
     class Exception : public BackendException { public:
@@ -38,10 +38,12 @@ public:
 
     /** Exception indicating the API version is not supported */
     class APIVersionException : public Exception { public:
-        /** @param version the backend's version */
-        explicit APIVersionException(int version) : 
-            Exception("API Version is "+std::to_string(version)+
-                    ", require "+std::to_string(API_VERSION)){}; };
+        explicit APIVersionException(const std::string& str) : 
+            Exception("Could not parse API Version ("+str+")"){};
+        /** @param version the backend's major version */
+        explicit APIVersionException(unsigned version) : 
+            Exception("API Major Version is "+std::to_string(version)+
+                    ", require "+std::to_string(API_MAJOR_VERSION)){}; };
 
     /** Exception indicating a required app is missing */
     class AppMissingException : public Exception { public:

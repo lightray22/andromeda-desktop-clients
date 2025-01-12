@@ -4,6 +4,7 @@
 
 #include "Config.hpp"
 #include "BackendImpl.hpp"
+#include "andromeda/StringUtil.hpp"
 
 namespace Andromeda {
 namespace Backend {
@@ -19,11 +20,23 @@ Config::Config(BackendImpl& backend) :
 
     try
     {
-        const int api { coreConfig.at("api").get<int>() };
+        // parse the major API version
+        const std::string apiver { coreConfig.at("apiver").get<std::string>() };
+        const StringUtil::StringList apivers { StringUtil::explode(apiver,".") };
+        if (apivers.empty()) 
+            throw APIVersionException(apiver);
 
-        if (API_VERSION != api) 
-            throw APIVersionException(api);
+        try
+        {
+            const unsigned apimaj = static_cast<unsigned>(stoul(apivers[0]));
+            if (apimaj != API_MAJOR_VERSION)
+                throw APIVersionException(apimaj);
+        }
+        catch (const std::logic_error& e) { 
+            throw APIVersionException(apiver); }
 
+
+        // check that the required apps are enabled
         const nlohmann::json& appsHave { coreConfig.at("apps") };
         static constexpr std::array<const char*,3> appsReq { "core", "accounts", "files" };
 
@@ -31,14 +44,14 @@ Config::Config(BackendImpl& backend) :
             if (appsHave.find(appReq) == appsHave.end())
                 throw AppMissingException(appReq);
 
+
         // can't get_to() with std::atomic
-        mReadOnly.store(coreConfig.at("features").at("read_only").get<bool>());
+        mReadOnly.store(coreConfig.at("read_only").get<bool>());
 
         const nlohmann::json& maxbytes { filesConfig.at("upload_maxbytes") };
         if (!maxbytes.is_null()) mUploadMaxBytes.store(maxbytes.get<size_t>());
 
-        // TODO the server also has upload_maxsize... what is that?
-        // TODO the server also has crchunksize... what is that?
+        // TODO the server also has crchunksize... what to do with that?
     }
     catch (const nlohmann::json::exception& ex) {
         throw BackendImpl::JSONErrorException(ex.what()); }

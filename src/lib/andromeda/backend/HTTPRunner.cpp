@@ -99,7 +99,7 @@ std::string HTTPRunner::SetupRequest(const RunnerInput& input, httplib::Headers&
     headers.emplace("User-Agent", mUserAgent);
 
     // set up the URL parameters and query string
-    httplib::Params urlParams {{"api",""},{"app",input.app},{"action",input.action}};
+    httplib::Params urlParams {{"api",""},{"_app",input.app},{"_act",input.action}};
 
     // set up plainParams as URL variables (for server logging)
     for (const decltype(input.plainParams)::value_type& it : input.plainParams)
