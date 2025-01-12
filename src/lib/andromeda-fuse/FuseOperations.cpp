@@ -213,6 +213,8 @@ int FuseOperations::statfs(const char *path, struct statvfs* buf)
 // TODO if Windows calls utimens then the conversion of timespec->double->timespec will not match
 // maybe the server will need to actually store timespec sec/nsec...? may be important for syncing
 
+namespace { // anonymous
+
 /*****************************************************/
 constexpr Item::Date timespec_to_date(const timespec& t)
 { 
@@ -225,6 +227,8 @@ constexpr void date_to_timespec(const Item::Date time, timespec& spec)
     spec.tv_sec = static_cast<decltype(spec.tv_sec)>(time); // truncate to int
     spec.tv_nsec = static_cast<decltype(spec.tv_nsec)>((time-static_cast<Item::Date>(spec.tv_sec))*1e9);
 }
+
+} // anonymous namespace
 
 /*****************************************************/
 namespace { void item_stat(const Item::ScopeLocked& item, const SharedLockR& itemLock, struct stat* stbuf)

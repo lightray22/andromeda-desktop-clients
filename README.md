@@ -37,8 +37,8 @@ The manual cmake steps:
 ### Build System
 
 - C++17 compiler
-- cmake (>= 3.16)
-- Python3 (>= 3.8?)
+- cmake (>= 3.22)
+- Python3 (>= 3.10 tested)
 - Bash (if running tools/)
 
 ### Build Options
@@ -49,16 +49,18 @@ The manual cmake steps:
 
 ### Prerequisite Libraries
 
+Ubuntu 22.04 is the baseline for support so all packages are assumed to be at least UB22's versions.
+
 - libandromeda
-  - OpenSSL (libssl, libcrypto) (1.1.1 or 3.0.x)
-  - sqlite3 (3.x >= 3.31)
-  - libsodium (1.0.x >= 1.0.18)
+  - OpenSSL (libssl, libcrypto) (3.x only)
+  - sqlite3
+  - libsodium
 - libandromeda-fuse
-  - libfuse (3.x >= 3.9? or 2.x >= 2.9?) https://github.com/libfuse/libfuse
+  - libfuse (2.x or 3.x) https://github.com/libfuse/libfuse
     - for macOS, use OSXFUSE https://osxfuse.github.io/
     - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
 - andromeda-gui
-  - Qt (Windows/macOS: >= 6.5, Linux: >= 5.12)
+  - Qt (5.x or 6.x)
 
 These libraries are dynamically linked and must be available at runtime.
 On Windows this means the folders containing the DLLs for each library must be in your $PATH.
@@ -66,7 +68,7 @@ Some other dependencies will be fetched by cmake and built in-tree.
 
 ### Supported Platforms
 
-The following platforms (GCC 9.4+, Clang 10+) are targeted for support and should work:
+The following platforms (GCC 11.4+, Clang 14+) are targeted for support and should work:
 
 - Windows 10 x64 ([cmake](https://github.com/Kitware/CMake/releases/), [MSVC++](https://visualstudio.microsoft.com/downloads/) 17/2022, [python](https://www.python.org/downloads/windows/), [OpenSSL](https://slproweb.com/products/Win32OpenSSL.html), [Qt Framework](https://www.qt.io/download), [SQLite3](https://www.sqlite.org/download.html), [Sodium](https://download.libsodium.org/libsodium/releases/))
   - You may need to add `OPENSSL_ROOT_DIR` to your system environment
@@ -74,14 +76,18 @@ The following platforms (GCC 9.4+, Clang 10+) are targeted for support and shoul
     - To build sqlite3.lib, follow [this gist](https://gist.github.com/zeljic/d8b542788b225b1bcb5fce169ee28c55)
   - You may need to add `sodium_DIR` to your system environment
   - `WINFSP_ROOT_DIR` can also be set but defaults to `C:/Program Files (x86)/WinFsp`
+  - Windows development typically uses the most recent QT LTS
 
 - Debian/Ubuntu: `apt install make cmake g++ python3 libssl-dev libcrypt-dev`
-  - Ubuntu 20.04 amd64 `apt install fuse libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev`
-  - Ubuntu 23.10 amd64 `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
-  - Debian 11 armhf `apt install fuse3 libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+  - Ubuntu 22.04 amd64 `apt install libfuse-dev qtbase5-dev libsqlite3-dev libsodium-dev`
+  - Ubuntu 24.10 amd64 `apt install libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+  - Debian 12 armhf `apt install libfuse3-dev qt6-base-dev libsqlite3-dev libsodium-dev`
+
+The following get tested occasionally:
+
 - Arch Linux amd64: `pacman -S make cmake gcc python openssl fuse3 qt6-base sqlite libsodium`
 - Void Linux amd64: `xbps-install gcc python3 cmake make openssl-devel fuse3-devel qt6-base-devel sqlite-devel libsodium-devel`
-- macOS amd64: `brew install make cmake openssl macfuse qt sqlite libsodium`
+- macOS Catalina (10.15) amd64: `brew install make cmake openssl macfuse qt sqlite libsodium`
 
 The following platforms are supported minus the Qt GUI (it may work, just not tested):
 
@@ -89,7 +95,9 @@ The following platforms are supported minus the Qt GUI (it may work, just not te
 - FreeBSD 13.2/14.0 amd64: `pkg install cmake python fusefs-libs3 sqlite3 libsodium`
 - OpenBSD 6.7 amd64: `pkg_add cmake libsodium`
 
-Note for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().  OpenBSD only allows FUSE mount/unmount by the super user.
+NOTE that older tools (UB22) may not be able to run development builds (tools/builddev), as clang-tidy, etc. will be too old.
+
+NOTE for FreeBSD to allow FUSE mounting by regular users, you will need to add your user to the operator group with `pw group mod operator -m $(whoami)`, and enable user mounting with `sysctl vfs.usermount=1`.  FreeBSD FUSE currently has a few issues that may result in ERR#78 (Not implemented) errors on file accessat() and close().  OpenBSD only allows FUSE mount/unmount by the super user.
 
 FUTURE - libandromeda on NetBSD 9.3 does not compile with the default GCC 7 or with librefuse - you must install the GCC 9 and fuse packages.  andromeda-fuse does not currently work at runtime: `fuse: writing device: Message too long`.
 - NetBSD 9.3 amd64: `pkgin install gcc9 gcc9-libs cmake python311 fuse sqlite3 libsodium`

@@ -25,7 +25,7 @@ public:
         /** Also show Backend */  BACKEND, 
         /** Everything else */    INFO,    
         /** Show extra details */ DETAILS,
-        LAST = DETAILS
+        LAST // invalid
     };
 
     /** Returns the highest level of all configured streams */

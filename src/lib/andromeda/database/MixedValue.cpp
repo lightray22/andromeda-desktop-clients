@@ -194,7 +194,7 @@ bool MixedValue::operator==(const MixedValue& rhs) const
 }
 
 /*****************************************************/
-MixedParams::MixedParams(const std::initializer_list<MixedValuePair>& list) noexcept
+MixedParams::MixedParams(const std::initializer_list<MixedValuePair>& list)
 {
     // this function seems like it does nothing more than the default, but...
     // it is necessary to tell the compiler that we're expecting MixedValuePairs

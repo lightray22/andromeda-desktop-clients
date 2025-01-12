@@ -12,6 +12,7 @@ using Andromeda::PlatformUtil;
 #include "andromeda/StringUtil.hpp"
 using Andromeda::StringUtil;
 
+namespace { // anonymous
 /** Print help text to std::cout */
 void PrintHelp()
 {
@@ -25,6 +26,7 @@ void PrintHelp()
         << "example (use fstab): mount /mnt -o ro,--no-chmod,-u=myuser" << endl
         << "example fstab line:  http://myserv /mnt andromeda ro,--no-chmod,-u=myuser 0 0" << endl;
 }
+} // anonymous namespace
 
 int main(int argc, char** argv)
 {

@@ -132,7 +132,7 @@ class MixedParams : public MixedParamsBase
 public:
     MixedParams() = default;
     /** Initialize the map from a list of MixedValuePairs */
-    MixedParams(const std::initializer_list<MixedValuePair>& list) noexcept;
+    MixedParams(const std::initializer_list<MixedValuePair>& list);
 };
 
 } // namespace Database

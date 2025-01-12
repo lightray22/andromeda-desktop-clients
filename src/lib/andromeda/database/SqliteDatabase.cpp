@@ -63,7 +63,7 @@ SqliteDatabase::SqliteDatabase(const std::string& path) :
 }
 
 /*****************************************************/
-SqliteDatabase::~SqliteDatabase()
+SqliteDatabase::~SqliteDatabase() // NOLINT(bugprone-exception-escape)
 {
     MDBG_INFO("()");
 
