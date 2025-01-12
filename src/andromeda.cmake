@@ -30,7 +30,9 @@ elseif (APPLE)
 endif()
 
 # enable LTO (link time optimization) for all compilers
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug") # TODO add option to disable
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # include and setup FetchContent
 

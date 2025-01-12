@@ -28,7 +28,7 @@ There are several binaries and libraries in the full suite.
 
 Run `tools/buildrel` for a release build.  To install, run `tools/buildrel inst`.  Run `tools/builddev` for a development build including unit tests and static analysis.  Use `tools/builddev rel` to build a release build with debugger info.
 
-The manual cmake steps:
+Or, use cmake manually (example):
 
 1. Make build folder `mkdir build; cd build`
 2. Initialize cmake `cmake -DCMAKE_BUILD_TYPE="Debug|Release" ..`
@@ -36,10 +36,10 @@ The manual cmake steps:
 
 ### Build System
 
-- C++17 compiler
+- c++17 compiler
 - cmake (>= 3.22)
-- Python3 (>= 3.10 tested)
-- Bash (if running tools/)
+- python3 (>= 3.10 tested)
+- bash (if running tools/)
 
 ### Build Options
   
@@ -57,8 +57,8 @@ Ubuntu 22.04 is the baseline for support so all packages are assumed to be at le
   - libsodium
 - libandromeda-fuse
   - libfuse (2.x or 3.x) https://github.com/libfuse/libfuse
-    - for macOS, use OSXFUSE https://osxfuse.github.io/
-    - For Windows, install WinFSP (with Developer) https://winfsp.dev/rel/
+    - for macOS, OSXFUSE https://osxfuse.github.io/
+    - For Windows, WinFSP (2023/2.0, with Developer) https://winfsp.dev/rel/
 - andromeda-gui
   - Qt (5.x or 6.x)
 
