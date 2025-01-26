@@ -1,4 +1,5 @@
+@INCLUDE = tools/Doxyfile.inc
+
 INPUT = src/lib/andromeda-fuse
 OUTPUT_DIRECTORY = docs/lib/andromeda-fuse
 PROJECT_NAME = libandromeda-fuse
-@INCLUDE = tools/Doxyfile.inc

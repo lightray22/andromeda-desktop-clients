@@ -1,4 +1,0 @@
-INPUT = src/lib/andromeda-sync
-OUTPUT_DIRECTORY = docs/lib/andromeda-sync
-PROJECT_NAME = libandromeda-sync
-@INCLUDE = tools/Doxyfile.inc
